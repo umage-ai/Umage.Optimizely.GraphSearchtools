@@ -1,0 +1,40 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/pinned/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/pinned/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/pinned/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-card">
+    <div class="gst-toolbar">
+        <input id="pin-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
+        <select id="pin-collection-filter">
+            <option value="">@Loc.GetString("/graphsearchtools/tools/pinned/all_sites")</option>
+        </select>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="pin-add" class="gst-btn gst-btn--primary">+ @Loc.GetString("/graphsearchtools/tools/pinned/add")</button>
+    </div>
+
+    <table class="gst-table gst-pin-table">
+        <thead>
+        <tr>
+            <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site") <span class="gst-sort-arrow"></span></th>
+            <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase") <span class="gst-sort-arrow"></span></th>
+            <th data-sort="content" class="gst-pin-content-col">@Loc.GetString("/graphsearchtools/tools/pinned/col_content") <span class="gst-sort-arrow"></span></th>
+            <th class="gst-pin-actions-col"></th>
+        </tr>
+        </thead>
+        <tbody id="pin-grid"></tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned.js")"></script>
+}
