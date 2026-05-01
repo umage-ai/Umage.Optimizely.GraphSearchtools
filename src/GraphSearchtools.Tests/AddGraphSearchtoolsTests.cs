@@ -4,11 +4,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
+using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Infrastructure;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 
@@ -35,6 +39,13 @@ public class AddGraphSearchtoolsTests
         services.Should().Contain(d => d.ServiceType == typeof(UiStringsProvider));
         services.Should().Contain(d => d.ServiceType == typeof(FeatureAccessChecker));
 
+        // Phase 1: Graph admin client + tool services + helpers.
+        services.Should().Contain(d => d.ServiceType == typeof(IGraphAdminClient));
+        services.Should().Contain(d => d.ServiceType == typeof(IGraphCredentialsResolver));
+        services.Should().Contain(d => d.ServiceType == typeof(LanguageSiteEnumerator));
+        services.Should().Contain(d => d.ServiceType == typeof(PinnedService));
+        services.Should().Contain(d => d.ServiceType == typeof(SynonymsService));
+
         var provider = services.BuildServiceProvider();
 
         // Options bind correctly with the supplied configure-action overrides.
@@ -42,6 +53,8 @@ public class AddGraphSearchtoolsTests
         options.Value.AuthorizedRoles.Should().Contain("WebAdmins");
         options.Value.SearchableContentTypes.Should().Contain("_Page");
         options.Value.Features.Overview.Should().BeTrue();
+        options.Value.Features.Pinned.Should().BeTrue();
+        options.Value.Features.Synonyms.Should().BeTrue();
 
         // Auth policy is configured under the canonical name.
         var authOptions = provider.GetRequiredService<IOptions<AuthorizationOptions>>();
