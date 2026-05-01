@@ -85,6 +85,13 @@ modulesbin/
 # Test project transient module copies
 /src/GraphSearchtools.Tests/modules/
 
+# Addon project's _protected: only the GraphSearchtools subdir is source.
+# Other entries (CMS, Shell, EPiServer.Cms.UI.*, TinyMce, Profile, Settings)
+# are NuGet-restored zips that get copied in during build and must not be
+# committed.
+/src/GraphSearchtools/modules/_protected/*
+!/src/GraphSearchtools/modules/_protected/GraphSearchtools/
+
 # Local settings
 appsettings.local.json
 
