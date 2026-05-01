@@ -3,6 +3,8 @@
 @{
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
     ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/overview/title");
+
+    string Tile(string actionPath) => Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), actionPath);
 }
 
 @section NavItems {
@@ -14,12 +16,20 @@
 </div>
 
 <div class="gst-tool-grid">
-    @* Tools added in subsequent phases will appear here as cards. *@
-    <div class="gst-empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <a class="gst-tool-card" href="@Tile("GraphSearchtools/Pinned")">
+        <svg class="gst-tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v6m0 0l3.5 8.5L19 20l-7-2-7 2 3.5-3.5L12 8z"/>
         </svg>
-        <p>Phase 0 framework. Tools land in subsequent releases.</p>
-    </div>
+        <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/tools/pinned/title")</div>
+        <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/pinned/description")</div>
+    </a>
+
+    <a class="gst-tool-card" href="@Tile("GraphSearchtools/Synonyms")">
+        <svg class="gst-tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7h7M3 12h7M3 17h7"/>
+            <path d="M14 7l7 5-7 5"/>
+        </svg>
+        <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/tools/synonyms/title")</div>
+        <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/synonyms/description")</div>
+    </a>
 </div>

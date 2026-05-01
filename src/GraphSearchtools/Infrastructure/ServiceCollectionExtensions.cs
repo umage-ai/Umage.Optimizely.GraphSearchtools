@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
+using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Infrastructure;
 
@@ -40,6 +44,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<UserPreferencesService>();
 
         services.AddScoped<UiStringsProvider>();
+
+        services.AddScoped<IGraphCredentialsResolver, GraphCredentialsResolver>();
+        services.AddHttpClient<IGraphAdminClient, GraphAdminClient>();
+        services.AddScoped<LanguageSiteEnumerator>();
+        services.AddScoped<PinnedService>();
+        services.AddScoped<SynonymsService>();
 
         services.Configure<ProtectedModuleOptions>(options =>
         {
