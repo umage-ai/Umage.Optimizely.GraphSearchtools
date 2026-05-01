@@ -1,0 +1,42 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/connectivity/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/connectivity/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/connectivity/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-card gst-conn-summary">
+    <div class="gst-conn-overall">
+        <span id="conn-overall-dot" class="gst-conn-dot is-unknown"></span>
+        <span id="conn-overall-label" class="gst-conn-overall-label">@Loc.GetString("/graphsearchtools/tools/connectivity/probing")</span>
+    </div>
+    <div class="gst-conn-meta">
+        <span id="conn-gateway"></span>
+        <span id="conn-checked"></span>
+        <button type="button" id="conn-refresh" class="gst-btn">@Loc.GetString("/graphsearchtools/tools/connectivity/refresh")</button>
+    </div>
+</div>
+
+<div class="gst-card">
+    <table class="gst-table gst-conn-table">
+        <thead>
+        <tr>
+            <th class="gst-conn-status-col">@Loc.GetString("/graphsearchtools/tools/connectivity/col_status")</th>
+            <th class="gst-conn-probe-col">@Loc.GetString("/graphsearchtools/tools/connectivity/col_probe")</th>
+            <th>@Loc.GetString("/graphsearchtools/tools/connectivity/col_message")</th>
+        </tr>
+        </thead>
+        <tbody id="conn-grid"></tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/connectivity.js")"></script>
+}
