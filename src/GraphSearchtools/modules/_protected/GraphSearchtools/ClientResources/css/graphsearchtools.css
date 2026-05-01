@@ -1258,3 +1258,254 @@ td.bpe-editing select {
     font-size: 11px;
 }
 .gst-actions { display: flex; gap: var(--gst-space-sm); flex-shrink: 0; }
+
+/* ── Phase 2: Connectivity Tester ───────────────────────────────── */
+
+.gst-conn-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gst-space-md);
+    flex-wrap: wrap;
+}
+.gst-conn-overall {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.gst-conn-overall-label {
+    font-size: var(--gst-text-md);
+    font-weight: 600;
+    color: var(--gst-text);
+}
+.gst-conn-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--gst-space-md);
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-muted);
+    flex-wrap: wrap;
+}
+
+.gst-conn-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gst-text-muted);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+.gst-conn-dot.is-green   { background: var(--gst-success); box-shadow: 0 0 0 3px var(--gst-success-light); }
+.gst-conn-dot.is-amber   { background: var(--gst-warning); box-shadow: 0 0 0 3px var(--gst-warning-light); }
+.gst-conn-dot.is-red     { background: var(--gst-danger);  box-shadow: 0 0 0 3px var(--gst-danger-light); }
+.gst-conn-dot.is-unknown { background: var(--gst-text-muted); }
+
+.gst-conn-table .gst-conn-status-col { width: 130px; }
+.gst-conn-table .gst-conn-probe-col  { width: 200px; font-weight: 500; }
+.gst-conn-table td:first-child {
+    text-transform: capitalize;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Phase 2: Autocomplete Tester ───────────────────────────────── */
+
+.gst-ac-input {
+    flex: 1;
+    min-width: 240px;
+    padding: 7px 10px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-md);
+    font-family: var(--gst-font);
+    outline: none;
+}
+.gst-ac-input:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-ac-limit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-muted);
+}
+.gst-ac-limit input {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-sm);
+    font-family: var(--gst-font);
+}
+
+.gst-ac-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--gst-border);
+}
+.gst-ac-result {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gst-border);
+    font-size: var(--gst-text-sm);
+    font-family: var(--gst-font);
+}
+.gst-ac-result:hover { background: var(--gst-surface-hover); }
+.gst-ac-empty {
+    padding: 16px;
+    color: var(--gst-text-muted);
+    text-align: center;
+    font-style: italic;
+}
+
+/* ── Phase 2: Search Console ────────────────────────────────────── */
+
+.gst-sc-controls .gst-toolbar { gap: var(--gst-space-md); }
+
+.gst-sc-query {
+    flex: 1;
+    min-width: 280px;
+    padding: 7px 10px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-md);
+    font-family: var(--gst-font);
+    outline: none;
+}
+.gst-sc-query:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+
+.gst-sc-knobs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--gst-space-md);
+    padding: var(--gst-space-sm) 0 0;
+    border-top: 1px solid var(--gst-border);
+    margin-top: var(--gst-space-sm);
+}
+.gst-sc-knob {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-muted);
+}
+.gst-sc-knob span output {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--gst-text);
+    margin-left: 6px;
+}
+.gst-sc-knob input,
+.gst-sc-knob select {
+    padding: 5px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-sm);
+    font-family: var(--gst-font);
+}
+.gst-sc-knob input[type="range"] { padding: 0; }
+
+.gst-sc-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--gst-space-sm);
+}
+
+.gst-sc-query-text {
+    background: var(--gst-surface-active);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    padding: 12px;
+    font-family: var(--gst-font-mono, ui-monospace, monospace);
+    font-size: var(--gst-text-xs);
+    margin-bottom: var(--gst-space-sm);
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--gst-text);
+}
+
+.gst-sc-table .gst-sc-col-rank   { width: 40px; color: var(--gst-text-muted); }
+.gst-sc-table .gst-sc-col-type   { width: 160px; }
+.gst-sc-table .gst-sc-col-lang   { width: 60px; }
+.gst-sc-table .gst-sc-col-score  { width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
+.gst-sc-table .gst-sc-col-snippet {
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-secondary);
+    max-width: 480px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-sc-empty {
+    text-align: center;
+    color: var(--gst-text-muted);
+    padding: 24px;
+    font-style: italic;
+}
+
+/* ── Phase 2: Saved Queries ─────────────────────────────────────── */
+
+.gst-sq-table .gst-sq-col-ranking { width: 130px; font-size: var(--gst-text-xs); color: var(--gst-text-muted); }
+.gst-sq-table .gst-sq-col-locale  { width: 80px; font-size: var(--gst-text-xs); color: var(--gst-text-muted); }
+.gst-sq-table .gst-sq-col-actions { width: 220px; white-space: nowrap; text-align: right; }
+.gst-sq-table .gst-sq-col-actions .gst-btn { margin-left: 4px; }
+
+.gst-sq-name { font-weight: 600; }
+.gst-sq-desc { font-size: var(--gst-text-xs); color: var(--gst-text-muted); margin-top: 2px; }
+.gst-sq-query-cell {
+    font-family: var(--gst-font-mono, ui-monospace, monospace);
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-secondary);
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-sq-empty {
+    text-align: center;
+    color: var(--gst-text-muted);
+    padding: 24px;
+    font-style: italic;
+}
+
+/* Dialog form layout (used by Saved Queries; harmless to extend later) */
+.gst-sq-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: var(--gst-space-sm);
+}
+.gst-sq-field label {
+    font-size: var(--gst-text-xs);
+    font-weight: 500;
+    color: var(--gst-text-secondary);
+}
+.gst-sq-field input,
+.gst-sq-field select {
+    padding: 6px 10px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-sm);
+    font-family: var(--gst-font);
+    width: 100%;
+}
+.gst-sq-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--gst-space-sm);
+}
+
+/* Generic dialog footer + body padding (introduced for Saved Queries; available to other tools). */
+.gst-dialog__footer {
+    display: flex;
+    gap: var(--gst-space-sm);
+    justify-content: flex-end;
+    padding: 12px 16px;
+    border-top: 1px solid var(--gst-border);
+    background: var(--gst-surface);
+}
