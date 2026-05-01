@@ -55,7 +55,9 @@
 
     <div id="gst-dialog-container"></div>
     <script>
-        window.GST_BASE_URL = '@Html.Raw(Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), ""))';
+        // No trailing slash — JS callers concatenate as `BASE + '/Action'`. Stripping
+        // here once avoids `//Action` paths that won't match the convention route.
+        window.GST_BASE_URL = '@Html.Raw(Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "").TrimEnd('/'))';
         window.GST_CMS_URL = '@Html.Raw(Paths.ToResource("CMS", ""))';
         window.GST_ADMIN_URL = '@Html.Raw(Paths.ToResource("EPiServer.Cms.UI.Admin", "default"))';
         window.GST_STRINGS = @Html.Raw(JsonSerializer.Serialize(UiStrings.GetAll()));
