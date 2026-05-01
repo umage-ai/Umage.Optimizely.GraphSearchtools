@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<languages>
+  <language name="Spanish" id="es"><!-- TODO_TRANSLATE: strings below copied from en.xml -->
+    <!--
+      Optimizely looks up friendly names for PermissionTypes under this path.
+      /admin/permissiontype/groups/{Category}/description             -> category heading
+      /admin/permissiontype/groups/{Category}/permissions/{Name}      -> permission description
+      Element names MUST match the PermissionType(category, name) args in GraphSearchtoolsPermissions.cs.
+    -->
+    <admin>
+      <permissiontype>
+        <groups>
+          <GraphSearchtools>
+            <description>Graph Search Tools</description>
+            <permissions>
+              <Overview>Access the Graph Search Tools overview dashboard.</Overview>
+            </permissions>
+          </GraphSearchtools>
+        </groups>
+      </permissiontype>
+    </admin>
+    <graphsearchtools>
+      <menu>
+        <title>Graph Search Tools</title>
+        <overview>Overview</overview>
+        <about>About</about>
+      </menu>
+
+      <tools>
+        <overview>
+          <title>Overview</title>
+          <description>Dashboard of all Graph Search Tools.</description>
+        </overview>
+      </tools>
+
+      <about>
+        <title>About Graph Search Tools</title>
+        <description>Editor and admin tooling for Optimizely Graph: pinned results, synonyms, query playground, and relevancy tuning.</description>
+        <version>Version</version>
+        <repository>Repository</repository>
+        <license>License</license>
+        <poweredby>Powered by umage.ai</poweredby>
+      </about>
+
+      <ui>
+        <shared>
+          <loading>Loading...</loading>
+          <noresults>No results.</noresults>
+          <cancel>Cancel</cancel>
+          <apply>Apply</apply>
+          <close>Close</close>
+          <refresh>Refresh</refresh>
+          <save>Save</save>
+          <delete>Delete</delete>
+          <edit>Edit</edit>
+          <failed>Failed</failed>
+          <yes>Yes</yes>
+          <no>No</no>
+          <open>Open</open>
+          <all>All</all>
+          <prev>Previous</prev>
+          <next>Next</next>
+        </shared>
+        <components>
+          <picker_title>Select content</picker_title>
+          <picker_search>Search content...</picker_search>
+          <picker_noresults>No content matches your search.</picker_noresults>
+          <btn_cancel>Cancel</btn_cancel>
+          <btn_select>Select</btn_select>
+          <typepicker_title>Select content type</typepicker_title>
+          <typepicker_search>Search content types...</typepicker_search>
+          <typepicker_noresults>No content type matches your search.</typepicker_noresults>
+        </components>
+        <graphsearchtools>
+          <loading>Loading...</loading>
+          <noresults>No results.</noresults>
+        </graphsearchtools>
+      </ui>
+    </graphsearchtools>
+  </language>
+</languages>

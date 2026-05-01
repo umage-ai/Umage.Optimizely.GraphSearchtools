@@ -1,0 +1,25 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/overview/title");
+}
+
+@section NavItems {
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/menu/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/overview/description")</p>
+</div>
+
+<div class="gst-tool-grid">
+    @* Tools added in subsequent phases will appear here as cards. *@
+    <div class="gst-empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <p>Phase 0 framework. Tools land in subsequent releases.</p>
+    </div>
+</div>
