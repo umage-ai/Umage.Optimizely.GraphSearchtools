@@ -1,0 +1,34 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/autocomplete/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/autocomplete/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/autocomplete/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-card">
+    <div class="gst-toolbar">
+        <input id="ac-input" type="text" class="gst-ac-input"
+               placeholder="@Loc.GetString("/graphsearchtools/tools/autocomplete/placeholder")"
+               autocomplete="off" />
+        <select id="ac-locale" class="gst-select"></select>
+        <label class="gst-ac-limit">
+            @Loc.GetString("/graphsearchtools/tools/autocomplete/limit")
+            <input id="ac-limit" type="number" min="1" max="25" value="10" />
+        </label>
+        <div class="gst-toolbar__spacer"></div>
+        <span id="ac-meta" class="gst-muted"></span>
+    </div>
+
+    <ul id="ac-results" class="gst-ac-results"></ul>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/autocomplete.js")"></script>
+}

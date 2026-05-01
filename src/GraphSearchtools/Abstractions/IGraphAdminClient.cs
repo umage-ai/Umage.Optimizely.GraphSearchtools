@@ -25,4 +25,11 @@ public interface IGraphAdminClient
 
     Task<IReadOnlyList<ContentSearchHit>> SearchContentAsync(string query, string? locale, IReadOnlyList<string> contentTypes, CancellationToken cancellationToken);
     Task<IReadOnlyList<ContentSearchHit>> ResolveByGuidsAsync(IReadOnlyList<string> guids, IReadOnlyList<string> contentTypes, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns up to <paramref name="limit"/> autocomplete suggestions for
+    /// <paramref name="value"/> from the indexed <c>Name</c> field. Optionally
+    /// filtered by locale.
+    /// </summary>
+    Task<IReadOnlyList<string>> AutocompleteAsync(string value, string? locale, int limit, CancellationToken cancellationToken);
 }

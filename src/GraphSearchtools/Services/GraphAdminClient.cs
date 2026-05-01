@@ -224,6 +224,74 @@ public sealed class GraphAdminClient : IGraphAdminClient
         return await ExecuteContentQueryAsync(creds, graphqlRequest, allowList, deduplicate: true, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<string>> AutocompleteAsync(
+        string value,
+        string? locale,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
+        if (!creds.IsQueryConfigured)
+        {
+            throw new InvalidOperationException("Optimizely Content Graph query settings (GatewayAddress, SingleKey) are not configured.");
+        }
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Array.Empty<string>();
+        }
+
+        var clampedLimit = Math.Clamp(limit, 1, 25);
+        var locales = !string.IsNullOrWhiteSpace(locale) ? new[] { locale } : Array.Empty<string>();
+
+        var graphqlRequest = new
+        {
+            query = @"
+                query Autocomplete($value: String!, $limit: Int!, $locale: [Locales!]) {
+                    autocomplete(locale: $locale) {
+                        Name(value: $value, limit: $limit)
+                    }
+                }",
+            variables = new
+            {
+                value,
+                limit = clampedLimit,
+                locale = locales.Length > 0 ? (object)locales : null
+            }
+        };
+
+        var json = JsonSerializer.Serialize(graphqlRequest, _serializerOptions);
+        using var request = new HttpRequestMessage(HttpMethod.Post, BuildQueryEndpoint(creds))
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new GraphSearchApiException(response.StatusCode, body);
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        if (!doc.RootElement.TryGetProperty("data", out var data)
+            || !data.TryGetProperty("autocomplete", out var autocomplete)
+            || !autocomplete.TryGetProperty("Name", out var names)
+            || names.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        var results = new List<string>();
+        foreach (var item in names.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String)
+            {
+                var s = item.GetString();
+                if (!string.IsNullOrEmpty(s)) results.Add(s);
+            }
+        }
+        return results;
+    }
+
     private async Task<IReadOnlyList<ContentSearchHit>> ExecuteContentQueryAsync(
         GraphCredentials creds,
         object graphqlRequest,
