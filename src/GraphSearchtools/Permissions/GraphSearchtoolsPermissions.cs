@@ -19,4 +19,16 @@ public static class GraphSearchtoolsPermissions
 
     public static PermissionType Synonyms { get; } =
         new("GraphSearchtools", "Synonyms");
+
+    public static PermissionType Connectivity { get; } =
+        new("GraphSearchtools", "Connectivity");
+
+    public static PermissionType Autocomplete { get; } =
+        new("GraphSearchtools", "Autocomplete");
+
+    public static PermissionType SearchConsole { get; } =
+        new("GraphSearchtools", "SearchConsole");
+
+    public static PermissionType SavedQueries { get; } =
+        new("GraphSearchtools", "SavedQueries");
 }

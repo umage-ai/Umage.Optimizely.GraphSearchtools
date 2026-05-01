@@ -16,6 +16,10 @@
               <Overview>Access the Graph Search Tools overview dashboard.</Overview>
               <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
               <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
+              <Connectivity>Run Optimizely Graph connectivity diagnostics.</Connectivity>
+              <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
+              <SearchConsole>Run interactive Optimizely Graph queries.</SearchConsole>
+              <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
             </permissions>
           </GraphSearchtools>
         </groups>
@@ -27,6 +31,10 @@
         <overview>Overview</overview>
         <pinned>Pinned Results</pinned>
         <synonyms>Synonyms</synonyms>
+        <connectivity>Connectivity</connectivity>
+        <autocomplete>Autocomplete</autocomplete>
+        <searchconsole>Search Console</searchconsole>
+        <savedqueries>Saved Queries</savedqueries>
         <about>About</about>
       </menu>
 
@@ -57,6 +65,57 @@
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
         </synonyms>
+        <connectivity>
+          <title>Connectivity Tester</title>
+          <description>Verify the Optimizely Graph connection: gateway reachability, AppKey/Secret validity, query endpoint, and index population.</description>
+          <probing>Probing…</probing>
+          <refresh>Refresh</refresh>
+          <col_status>Status</col_status>
+          <col_probe>Probe</col_probe>
+          <col_message>Detail</col_message>
+        </connectivity>
+        <autocomplete>
+          <title>Autocomplete Tester</title>
+          <description>Try out the Optimizely Graph autocomplete field: type a prefix and see the suggestions Graph would surface to a search-as-you-type box.</description>
+          <placeholder>Type to see suggestions…</placeholder>
+          <limit>Limit</limit>
+        </autocomplete>
+        <searchconsole>
+          <title>Search Console</title>
+          <description>Run interactive Graph queries with ranking knobs (RELEVANCE/SEMANTIC/BOOST_ONLY/DOC, semantic weight, minimum score). The exact GraphQL document is exposed for copy-paste.</description>
+          <placeholder>Search phrase…</placeholder>
+          <run>Run</run>
+          <ranking>Ranking</ranking>
+          <semantic_weight>Semantic weight</semantic_weight>
+          <min_score>Minimum score</min_score>
+          <limit>Limit</limit>
+          <idle>Enter a query to run.</idle>
+          <show_query>Show query</show_query>
+          <col_name>Name</col_name>
+          <col_type>Type</col_type>
+          <col_lang>Lang</col_lang>
+          <col_score>Score</col_score>
+          <col_snippet>Snippet</col_snippet>
+        </searchconsole>
+        <savedqueries>
+          <title>Saved Queries</title>
+          <description>Save Search Console presets — phrase plus ranking knobs — and re-run them with one click. Stored locally per CMS install.</description>
+          <filter_placeholder>Filter saved queries…</filter_placeholder>
+          <add>New</add>
+          <col_name>Name</col_name>
+          <col_query>Query</col_query>
+          <col_ranking>Ranking</col_ranking>
+          <col_locale>Locale</col_locale>
+          <edit_title>Edit saved query</edit_title>
+          <field_name>Name</field_name>
+          <field_description>Description</field_description>
+          <field_query>Query</field_query>
+          <field_locale>Locale</field_locale>
+          <field_ranking>Ranking</field_ranking>
+          <field_weight>Semantic weight</field_weight>
+          <field_min_score>Minimum score</field_min_score>
+          <field_limit>Limit</field_limit>
+        </savedqueries>
       </tools>
 
       <about>
@@ -122,6 +181,48 @@
           <saved>Synonyms saved.</saved>
           <confirm_unsaved>You have unsaved synonym changes. Press OK to save, or Cancel to discard.</confirm_unsaved>
         </synonyms>
+        <connectivity>
+          <request_failed>Connectivity check failed</request_failed>
+          <probing>Probing…</probing>
+          <gateway>Gateway</gateway>
+          <gateway_unset>Gateway not configured</gateway_unset>
+          <checked_at>Checked at</checked_at>
+          <overall_green>All probes passed.</overall_green>
+          <overall_amber>Reachable with warnings.</overall_amber>
+          <overall_red>Connection problem.</overall_red>
+          <overall_unknown>Unknown status.</overall_unknown>
+        </connectivity>
+        <autocomplete>
+          <request_failed>Autocomplete failed</request_failed>
+          <no_results>No suggestions.</no_results>
+          <any_locale>Any locale</any_locale>
+          <returned_for>Returned %1 in %2 ms</returned_for>
+        </autocomplete>
+        <searchconsole>
+          <request_failed>Search failed</request_failed>
+          <running>Running…</running>
+          <any_locale>Any locale</any_locale>
+          <no_results>No matching content.</no_results>
+          <returned_for>Returned %1 of %2 in %3 ms</returned_for>
+          <error_query_required>Enter a query to run.</error_query_required>
+          <show_query>Show query</show_query>
+          <hide_query>Hide query</hide_query>
+        </searchconsole>
+        <savedqueries>
+          <request_failed>Saved query request failed</request_failed>
+          <no_items>No saved queries yet.</no_items>
+          <any_locale>Any locale</any_locale>
+          <action_run>Run</action_run>
+          <action_edit>Edit</action_edit>
+          <action_delete>Delete</action_delete>
+          <new_title>New saved query</new_title>
+          <edit_title>Edit saved query</edit_title>
+          <error_name_required>Name is required.</error_name_required>
+          <created>Saved query created.</created>
+          <updated>Saved query updated.</updated>
+          <deleted>Saved query deleted.</deleted>
+          <confirm_delete>Delete saved query "%1"?</confirm_delete>
+        </savedqueries>
       </ui>
     </graphsearchtools>
   </language>

@@ -47,6 +47,38 @@ public class GraphSearchtoolsController : Controller
     }
 
     [HttpGet]
+    public IActionResult Connectivity()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Connectivity), GraphSearchtoolsPermissions.Connectivity))
+            return Forbid();
+        return View("/Views/Connectivity/Index.cshtml");
+    }
+
+    [HttpGet]
+    public IActionResult Autocomplete()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Autocomplete), GraphSearchtoolsPermissions.Autocomplete))
+            return Forbid();
+        return View("/Views/Autocomplete/Index.cshtml");
+    }
+
+    [HttpGet]
+    public IActionResult SearchConsole()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SearchConsole), GraphSearchtoolsPermissions.SearchConsole))
+            return Forbid();
+        return View("/Views/SearchConsole/Index.cshtml");
+    }
+
+    [HttpGet]
+    public IActionResult SavedQueries()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SavedQueries), GraphSearchtoolsPermissions.SavedQueries))
+            return Forbid();
+        return View("/Views/SavedQueries/Index.cshtml");
+    }
+
+    [HttpGet]
     public IActionResult About()
     {
         return View("/Views/About/Index.cshtml");

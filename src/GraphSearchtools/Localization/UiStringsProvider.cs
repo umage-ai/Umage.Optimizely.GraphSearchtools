@@ -69,6 +69,52 @@ public class UiStringsProvider(LocalizationService loc)
             rule_placeholder = S("synonyms/rule_placeholder"),
             saved = S("synonyms/saved"),
             confirm_unsaved = S("synonyms/confirm_unsaved")
+        },
+        connectivity = new
+        {
+            request_failed = S("connectivity/request_failed"),
+            probing = S("connectivity/probing"),
+            gateway = S("connectivity/gateway"),
+            gateway_unset = S("connectivity/gateway_unset"),
+            checked_at = S("connectivity/checked_at"),
+            overall_green = S("connectivity/overall_green"),
+            overall_amber = S("connectivity/overall_amber"),
+            overall_red = S("connectivity/overall_red"),
+            overall_unknown = S("connectivity/overall_unknown")
+        },
+        autocomplete = new
+        {
+            request_failed = S("autocomplete/request_failed"),
+            no_results = S("autocomplete/no_results"),
+            any_locale = S("autocomplete/any_locale"),
+            returned_for = S("autocomplete/returned_for")
+        },
+        searchconsole = new
+        {
+            request_failed = S("searchconsole/request_failed"),
+            running = S("searchconsole/running"),
+            any_locale = S("searchconsole/any_locale"),
+            no_results = S("searchconsole/no_results"),
+            returned_for = S("searchconsole/returned_for"),
+            error_query_required = S("searchconsole/error_query_required"),
+            show_query = S("searchconsole/show_query"),
+            hide_query = S("searchconsole/hide_query")
+        },
+        savedqueries = new
+        {
+            request_failed = S("savedqueries/request_failed"),
+            no_items = S("savedqueries/no_items"),
+            any_locale = S("savedqueries/any_locale"),
+            action_run = S("savedqueries/action_run"),
+            action_edit = S("savedqueries/action_edit"),
+            action_delete = S("savedqueries/action_delete"),
+            new_title = S("savedqueries/new_title"),
+            edit_title = S("savedqueries/edit_title"),
+            error_name_required = S("savedqueries/error_name_required"),
+            created = S("savedqueries/created"),
+            updated = S("savedqueries/updated"),
+            deleted = S("savedqueries/deleted"),
+            confirm_delete = S("savedqueries/confirm_delete")
         }
     };
 }
