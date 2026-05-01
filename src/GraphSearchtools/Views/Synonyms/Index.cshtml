@@ -1,0 +1,49 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/synonyms/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/synonyms/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/synonyms/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-card">
+    <div class="gst-toolbar">
+        <select id="syn-language-filter"></select>
+        <input id="syn-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/synonyms/filter_placeholder")" />
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="syn-add" class="gst-btn gst-btn--primary">+ @Loc.GetString("/graphsearchtools/tools/synonyms/add")</button>
+    </div>
+
+    <table class="gst-table">
+        <thead>
+        <tr>
+            <th>@Loc.GetString("/graphsearchtools/tools/synonyms/col_rule")</th>
+            <th class="gst-syn-actions-col"></th>
+        </tr>
+        </thead>
+        <tbody id="syn-grid"></tbody>
+    </table>
+
+    <div class="gst-syn-footer">
+        <div class="gst-muted gst-syn-footer__help">
+            <strong>@Loc.GetString("/graphsearchtools/tools/synonyms/help_replacement_label")</strong>
+            <code>H2O =&gt; water</code> &mdash; @Loc.GetString("/graphsearchtools/tools/synonyms/help_replacement_text")
+            <br/>
+            <strong>@Loc.GetString("/graphsearchtools/tools/synonyms/help_equivalent_label")</strong>
+            <code>laptop, computer, pc</code> &mdash; @Loc.GetString("/graphsearchtools/tools/synonyms/help_equivalent_text")
+        </div>
+        <div class="gst-actions">
+            <button type="button" id="syn-save" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/synonyms/save")</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms.js")"></script>
+}
