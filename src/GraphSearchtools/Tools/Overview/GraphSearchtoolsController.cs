@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 
@@ -27,6 +28,22 @@ public class GraphSearchtoolsController : Controller
     public IActionResult Overview()
     {
         return View("/Views/Overview/Index.cshtml");
+    }
+
+    [HttpGet]
+    public IActionResult Pinned()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Pinned), GraphSearchtoolsPermissions.Pinned))
+            return Forbid();
+        return View("/Views/Pinned/Index.cshtml");
+    }
+
+    [HttpGet]
+    public IActionResult Synonyms()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Synonyms), GraphSearchtoolsPermissions.Synonyms))
+            return Forbid();
+        return View("/Views/Synonyms/Index.cshtml");
     }
 
     [HttpGet]

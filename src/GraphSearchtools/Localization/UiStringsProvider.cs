@@ -46,6 +46,29 @@ public class UiStringsProvider(LocalizationService loc)
         {
             loading = S("graphsearchtools/loading"),
             noresults = S("graphsearchtools/noresults")
+        },
+        pinned = new
+        {
+            request_failed = S("pinned/request_failed"),
+            all_sites = S("pinned/all_sites"),
+            action_save = S("pinned/action_save"),
+            action_delete = S("pinned/action_delete"),
+            search_placeholder = S("pinned/search_placeholder"),
+            error_phrase_and_content_required = S("pinned/error_phrase_and_content_required"),
+            created = S("pinned/created"),
+            updated = S("pinned/updated"),
+            deleted = S("pinned/deleted"),
+            confirm_delete = S("pinned/confirm_delete"),
+            no_sites = S("pinned/no_sites")
+        },
+        synonyms = new
+        {
+            request_failed = S("synonyms/request_failed"),
+            global = S("synonyms/global"),
+            action_remove = S("synonyms/action_remove"),
+            rule_placeholder = S("synonyms/rule_placeholder"),
+            saved = S("synonyms/saved"),
+            confirm_unsaved = S("synonyms/confirm_unsaved")
         }
     };
 }

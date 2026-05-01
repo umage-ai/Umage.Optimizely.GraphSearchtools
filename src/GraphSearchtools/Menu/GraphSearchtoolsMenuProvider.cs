@@ -39,6 +39,21 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Overview))
         };
 
+        // Editorial group (Phase 1): Pinned + Synonyms.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned Results"), BaseMenuPath + "/pinned",
+            GetResourcePath("GraphSearchtools/Pinned"))
+        {
+            SortIndex = 200,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Pinned))
+        };
+
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/synonyms", "Synonyms"), BaseMenuPath + "/synonyms",
+            GetResourcePath("GraphSearchtools/Synonyms"))
+        {
+            SortIndex = 210,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Synonyms))
+        };
+
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
             GetResourcePath("GraphSearchtools/About"))
         {

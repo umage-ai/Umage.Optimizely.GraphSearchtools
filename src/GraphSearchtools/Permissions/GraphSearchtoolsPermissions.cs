@@ -13,4 +13,10 @@ public static class GraphSearchtoolsPermissions
 {
     public static PermissionType Overview { get; } =
         new("GraphSearchtools", "Overview");
+
+    public static PermissionType Pinned { get; } =
+        new("GraphSearchtools", "Pinned");
+
+    public static PermissionType Synonyms { get; } =
+        new("GraphSearchtools", "Synonyms");
 }
