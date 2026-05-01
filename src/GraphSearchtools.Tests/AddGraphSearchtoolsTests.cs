@@ -11,7 +11,10 @@ using UmageAI.Optimizely.GraphSearchTools.Infrastructure;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Connectivity;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SearchConsole;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
@@ -46,6 +49,11 @@ public class AddGraphSearchtoolsTests
         services.Should().Contain(d => d.ServiceType == typeof(PinnedService));
         services.Should().Contain(d => d.ServiceType == typeof(SynonymsService));
 
+        // Phase 2: Connectivity / Search Console / Saved Queries services.
+        services.Should().Contain(d => d.ServiceType == typeof(ConnectivityService));
+        services.Should().Contain(d => d.ServiceType == typeof(SearchConsoleService));
+        services.Should().Contain(d => d.ServiceType == typeof(SavedQueriesService));
+
         var provider = services.BuildServiceProvider();
 
         // Options bind correctly with the supplied configure-action overrides.
@@ -55,6 +63,10 @@ public class AddGraphSearchtoolsTests
         options.Value.Features.Overview.Should().BeTrue();
         options.Value.Features.Pinned.Should().BeTrue();
         options.Value.Features.Synonyms.Should().BeTrue();
+        options.Value.Features.Connectivity.Should().BeTrue();
+        options.Value.Features.Autocomplete.Should().BeTrue();
+        options.Value.Features.SearchConsole.Should().BeTrue();
+        options.Value.Features.SavedQueries.Should().BeTrue();
 
         // Auth policy is configured under the canonical name.
         var authOptions = provider.GetRequiredService<IOptions<AuthorizationOptions>>();
