@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GraphSearchtools/GraphSearchtools.csproj" />
+    <Project Path="src/GraphSearchtools.SampleSite/GraphSearchtools.SampleSite.csproj" />
+    <Project Path="src/GraphSearchtools.SampleSiteCms13/GraphSearchtools.SampleSiteCms13.csproj" />
+    <Project Path="src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj" />
+  </Folder>
+</Solution>

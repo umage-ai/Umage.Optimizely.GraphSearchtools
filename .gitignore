@@ -1,0 +1,96 @@
+## .NET / Visual Studio
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Rider
+.idea/
+
+# User-specific files
+*.suo
+*.user
+*.sln.docstates
+
+# Build results
+*.dll
+*.pdb
+*.cache
+
+# NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/packages/
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.TestAdapter.config
+
+# Code coverage
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# Misc
+StyleCopReport.xml
+*.pidb
+*.svclog
+*.scc
+*.orig
+.mfractor/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Optimizely / EPiServer
+modulesbin/
+**/App_Data/*.mdf
+**/App_Data/*.ldf
+**/App_Data/blobs/
+
+# Sample site modules (copied during build, not source)
+/src/GraphSearchtools.SampleSite/modules/
+/src/GraphSearchtools.SampleSiteCms13/modules/
+
+# Test project transient module copies
+/src/GraphSearchtools.Tests/modules/
+
+# Local settings
+appsettings.local.json
+
+# Claude Code - include project settings, exclude local
+.claude/settings.local.json
+.playwright-mcp/
+.claude/worktrees/
+.worktrees/
+.chunkhound/
