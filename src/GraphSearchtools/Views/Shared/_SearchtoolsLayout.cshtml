@@ -1,0 +1,67 @@
+@using EPiServer.Framework.Web.Resources
+@using EPiServer.Shell
+@using EPiServer.Shell.Navigation
+@using System.Text.Json
+@inject UmageAI.Optimizely.GraphSearchTools.Localization.UiStringsProvider UiStrings
+@inject LocalizationService Loc
+@{
+    var title = ViewData["Title"]?.ToString() ?? "Graph Search Tools";
+    string ActionPath(string path) => Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), path);
+    string ClientResource(string path) => Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), path);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>@title - Graph Search Tools</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+
+    @* CMS Shell styles *@
+    @ClientResources.RenderResources("ShellCore")
+    @ClientResources.RenderResources("ShellCoreLightTheme")
+
+    <link rel="stylesheet" href="@ClientResource("ClientResources/css/graphsearchtools.css")" />
+    @RenderSection("Styles", required: false)
+</head>
+<body class="Sleek">
+    @Html.CreatePlatformNavigationMenu()
+
+    <div @Html.ApplyPlatformNavigation()>
+        <div class="gst-shell">
+            <header class="gst-header">
+                <a href="@ActionPath("GraphSearchtools/Overview")" class="gst-header__logo">
+                    <svg class="gst-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    Graph Search Tools
+                </a>
+                <nav class="gst-header__nav">
+                    @RenderSection("NavItems", required: false)
+                </nav>
+                <a href="@ActionPath("GraphSearchtools/About")" class="gst-header__about">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    @Loc.GetString("/graphsearchtools/menu/about")
+                </a>
+            </header>
+            <main class="gst-main">
+                <a class="gst-watermark" href="https://umage.ai/?utm_source=graphsearchtools" target="_blank" rel="noopener" title="Powered by umage.ai">
+                    Powered by umage.ai
+                </a>
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <div id="gst-dialog-container"></div>
+    <script>
+        window.GST_BASE_URL = '@Html.Raw(Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), ""))';
+        window.GST_CMS_URL = '@Html.Raw(Paths.ToResource("CMS", ""))';
+        window.GST_ADMIN_URL = '@Html.Raw(Paths.ToResource("EPiServer.Cms.UI.Admin", "default"))';
+        window.GST_STRINGS = @Html.Raw(JsonSerializer.Serialize(UiStrings.GetAll()));
+        window.GST_CMS13 = false;
+    </script>
+    <script src="@ClientResource("ClientResources/js/graphsearchtools.js")"></script>
+    <script src="@ClientResource("ClientResources/js/components.js")"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
