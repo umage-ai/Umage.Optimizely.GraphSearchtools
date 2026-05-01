@@ -1143,3 +1143,118 @@ td.bpe-editing select {
     display: block;
 }
 
+
+/* ── Phase 1: Pinned + Synonyms ─────────────────────────────────── */
+
+.gst-cell-input {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-sm);
+    background: transparent;
+    box-sizing: border-box;
+    font-family: var(--gst-font);
+}
+.gst-cell-input:hover { border-color: var(--gst-border); }
+.gst-cell-input:focus {
+    border-color: var(--gst-primary);
+    outline: none;
+    background: var(--gst-surface);
+}
+
+/* Sort arrows on column headers */
+.gst-sort-arrow {
+    margin-left: 4px;
+    font-size: 10px;
+    color: var(--gst-text-muted);
+}
+.gst-sort-arrow.is-active { color: var(--gst-primary); }
+
+/* Row dirty / new states (shared) */
+.gst-pin-row.is-dirty td,
+.gst-syn-row.is-dirty td { background: var(--gst-warning-light); }
+.gst-pin-row.is-new td,
+.gst-syn-row.is-new td   { background: var(--gst-success-light); }
+
+/* Pinned: content cell + dropdown */
+.gst-pin-content-col { min-width: 280px; }
+.gst-pin-actions-col { width: 60px; cursor: default; }
+.gst-pin-actions     { white-space: nowrap; }
+.gst-pin-content-cell { position: relative; }
+
+.gst-pin-content-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: var(--gst-text-xs);
+    font-weight: 500;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.gst-pin-content-pill.is-page    { background: var(--gst-primary-light); color: var(--gst-primary); }
+.gst-pin-content-pill.is-product { background: var(--gst-success-light); color: var(--gst-success); }
+.gst-pin-content-pill.is-unknown { background: var(--gst-surface-active); color: var(--gst-text-secondary); }
+
+.gst-pin-search-dropdown {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 20;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: 0 0 var(--gst-radius) var(--gst-radius);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+.gst-search-hit {
+    padding: 7px 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--gst-border);
+}
+.gst-search-hit:hover    { background: var(--gst-primary-light); }
+.gst-search-hit-name     { font-size: var(--gst-text-sm); color: var(--gst-text); }
+.gst-search-hit-meta     { font-size: var(--gst-text-xs); color: var(--gst-text-muted); white-space: nowrap; margin-left: 12px; }
+
+.gst-pin-delete-btn,
+.gst-pin-save-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gst-text-muted);
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: var(--gst-radius);
+    line-height: 1;
+}
+.gst-pin-delete-btn:hover { color: var(--gst-danger); background: var(--gst-danger-light); }
+.gst-pin-save-btn:hover   { color: var(--gst-primary); background: var(--gst-primary-light); }
+.gst-pin-save-btn.is-dirty { color: var(--gst-primary); }
+
+/* Synonyms */
+.gst-syn-actions-col { width: 50px; cursor: default; }
+.gst-syn-actions     { white-space: nowrap; }
+.gst-syn-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--gst-space-md);
+    gap: var(--gst-space-md);
+}
+.gst-syn-footer__help { flex: 1; font-size: var(--gst-text-xs); color: var(--gst-text-muted); line-height: 1.5; }
+.gst-syn-footer__help code {
+    background: var(--gst-surface-active);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+.gst-actions { display: flex; gap: var(--gst-space-sm); flex-shrink: 0; }
