@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <languages>
-  <language name="Chinese" id="zh-CN"><!-- TODO_TRANSLATE: strings below copied from en.xml -->
+  <language name="Chinese (Simplified)" id="zh-CN"><!-- TODO_TRANSLATE: strings below copied from en.xml -->
     <!--
       Optimizely looks up friendly names for PermissionTypes under this path.
       /admin/permissiontype/groups/{Category}/description             -> category heading
@@ -14,6 +14,8 @@
             <description>Graph Search Tools</description>
             <permissions>
               <Overview>Access the Graph Search Tools overview dashboard.</Overview>
+              <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
+              <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
             </permissions>
           </GraphSearchtools>
         </groups>
@@ -23,6 +25,8 @@
       <menu>
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
+        <pinned>Pinned Results</pinned>
+        <synonyms>Synonyms</synonyms>
         <about>About</about>
       </menu>
 
@@ -31,6 +35,28 @@
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
         </overview>
+        <pinned>
+          <title>Pinned Results</title>
+          <description>Pin specific content to appear at the top of the search results for chosen phrases, per site and language.</description>
+          <filter_placeholder>Filter by phrase or content...</filter_placeholder>
+          <all_sites>All sites</all_sites>
+          <add>Add</add>
+          <col_site>Site</col_site>
+          <col_phrase>Phrase</col_phrase>
+          <col_content>Content</col_content>
+        </pinned>
+        <synonyms>
+          <title>Synonyms</title>
+          <description>Manage replacement and equivalent synonym rules per language. Editors can change behaviour without re-indexing.</description>
+          <filter_placeholder>Filter rules...</filter_placeholder>
+          <add>Add</add>
+          <col_rule>Rule</col_rule>
+          <save>Save changes</save>
+          <help_replacement_label>Replacement</help_replacement_label>
+          <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
+          <help_equivalent_label>Equivalent</help_equivalent_label>
+          <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
+        </synonyms>
       </tools>
 
       <about>
@@ -75,6 +101,27 @@
           <loading>Loading...</loading>
           <noresults>No results.</noresults>
         </graphsearchtools>
+        <pinned>
+          <request_failed>Request failed</request_failed>
+          <all_sites>All sites</all_sites>
+          <action_save>Save</action_save>
+          <action_delete>Delete</action_delete>
+          <search_placeholder>Search for content...</search_placeholder>
+          <error_phrase_and_content_required>Phrase and content are required.</error_phrase_and_content_required>
+          <created>Pinned item created.</created>
+          <updated>Pinned item updated.</updated>
+          <deleted>Pinned item deleted.</deleted>
+          <confirm_delete>Delete this pinned item?</confirm_delete>
+          <no_sites>No sites available.</no_sites>
+        </pinned>
+        <synonyms>
+          <request_failed>Request failed</request_failed>
+          <global>Global</global>
+          <action_remove>Remove</action_remove>
+          <rule_placeholder>H2O =&gt; water  or  laptop, computer, pc</rule_placeholder>
+          <saved>Synonyms saved.</saved>
+          <confirm_unsaved>You have unsaved synonym changes. Press OK to save, or Cancel to discard.</confirm_unsaved>
+        </synonyms>
       </ui>
     </graphsearchtools>
   </language>
