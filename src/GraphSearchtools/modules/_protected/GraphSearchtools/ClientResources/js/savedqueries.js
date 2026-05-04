@@ -15,6 +15,9 @@
     var grid = document.getElementById('sq-grid');
     var filterInput = document.getElementById('sq-filter');
     var addBtn = document.getElementById('sq-add');
+    var emptyEl = document.getElementById('sq-empty');
+    var contentEl = document.getElementById('sq-content');
+    var emptyAddBtn = document.getElementById('sq-empty-add');
 
     var dialog = document.getElementById('sq-dialog');
     var dialogTitle = document.getElementById('sq-dialog-title');
@@ -105,6 +108,17 @@
     }
 
     function render() {
+        // No items at all → show the empty-state CTA card and hide the grid.
+        // Some items but the filter excludes them all → keep the grid visible
+        // (so the filter input stays reachable) and show an empty row.
+        if (!allItems.length) {
+            emptyEl.hidden = false;
+            contentEl.hidden = true;
+            return;
+        }
+        emptyEl.hidden = true;
+        contentEl.hidden = false;
+
         grid.innerHTML = '';
         var items = getFiltered();
         if (!items.length) {
@@ -112,7 +126,7 @@
             var td = document.createElement('td');
             td.colSpan = 5;
             td.className = 'gst-sq-empty';
-            td.textContent = STRINGS.no_items || 'No saved queries yet.';
+            td.textContent = STRINGS.no_filter_match || 'No saved queries match the filter.';
             tr.appendChild(td);
             grid.appendChild(tr);
             return;
@@ -245,6 +259,7 @@
     }
 
     addBtn.addEventListener('click', function () { openDialog(null); });
+    emptyAddBtn.addEventListener('click', function () { openDialog(null); });
     filterInput.addEventListener('input', render);
     dialogClose.addEventListener('click', closeDialog);
     dialogCancel.addEventListener('click', closeDialog);
