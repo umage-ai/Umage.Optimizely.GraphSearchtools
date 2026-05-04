@@ -170,7 +170,13 @@
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius-lg);
     box-shadow: var(--gst-shadow-sm);
+    padding: var(--gst-space-md) var(--gst-space-lg);
 }
+.gst-card + .gst-card { margin-top: var(--gst-space-md); }
+/* When a card uses the optional __header/__body subdivisions, those carry
+   their own padding — strip the base padding to avoid nesting it. */
+.gst-card:has(.gst-card__header),
+.gst-card:has(.gst-card__body) { padding: 0; }
 
 .gst-card__header {
     padding: var(--gst-space-md) var(--gst-space-lg);
@@ -1508,4 +1514,52 @@ td.bpe-editing select {
     padding: 12px 16px;
     border-top: 1px solid var(--gst-border);
     background: var(--gst-surface);
+}
+
+/* ── Combobox (filterable text-input dropdown) ─────────────────── */
+
+.gst-combobox {
+    position: relative;
+    width: 220px;
+}
+.gst-combobox input[type="text"] {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-sm);
+    font-family: var(--gst-font);
+    outline: none;
+    background: var(--gst-surface);
+}
+.gst-combobox input[type="text"]:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-combobox-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 2px;
+    z-index: 30;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+.gst-combobox-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text);
+    border-bottom: 1px solid var(--gst-border);
+}
+.gst-combobox-item:last-child { border-bottom: none; }
+.gst-combobox-item:hover,
+.gst-combobox-item.is-highlighted {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
 }
