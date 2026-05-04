@@ -85,9 +85,13 @@ public class UiStringsProvider(LocalizationService loc)
         autocomplete = new
         {
             request_failed = S("autocomplete/request_failed"),
+            schema_failed = S("autocomplete/schema_failed"),
             no_results = S("autocomplete/no_results"),
+            no_types = S("autocomplete/no_types"),
+            no_fields = S("autocomplete/no_fields"),
             any_locale = S("autocomplete/any_locale"),
-            returned_for = S("autocomplete/returned_for")
+            returned_for = S("autocomplete/returned_for"),
+            error_pick_type_and_field = S("autocomplete/error_pick_type_and_field")
         },
         searchconsole = new
         {
@@ -104,6 +108,7 @@ public class UiStringsProvider(LocalizationService loc)
         {
             request_failed = S("savedqueries/request_failed"),
             no_items = S("savedqueries/no_items"),
+            no_filter_match = S("savedqueries/no_filter_match"),
             any_locale = S("savedqueries/any_locale"),
             action_run = S("savedqueries/action_run"),
             action_edit = S("savedqueries/action_edit"),

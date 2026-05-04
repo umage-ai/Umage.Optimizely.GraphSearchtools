@@ -76,8 +76,13 @@
         </connectivity>
         <autocomplete>
           <title>Autocomplete Tester</title>
-          <description>Try out the Optimizely Graph autocomplete field: type a prefix and see the suggestions Graph would surface to a search-as-you-type box.</description>
+          <description>Try out the Optimizely Graph autocomplete field. Pick a content type and a field — the dropdowns are populated by introspecting the live Graph schema, so what you see is what's actually queryable on this tenant.</description>
           <placeholder>Type to see suggestions…</placeholder>
+          <type>Type</type>
+          <type_placeholder>Search content types…</type_placeholder>
+          <field>Field</field>
+          <field_placeholder>Search fields…</field_placeholder>
+          <locale_label>Locale</locale_label>
           <limit>Limit</limit>
         </autocomplete>
         <searchconsole>
@@ -100,12 +105,15 @@
         <savedqueries>
           <title>Saved Queries</title>
           <description>Save Search Console presets — phrase plus ranking knobs — and re-run them with one click. Stored locally per CMS install.</description>
+          <empty_message>No saved queries yet. Save Search Console presets so you and other editors can re-run them with one click.</empty_message>
+          <empty_cta>Create your first saved query</empty_cta>
           <filter_placeholder>Filter saved queries…</filter_placeholder>
           <add>New</add>
           <col_name>Name</col_name>
           <col_query>Query</col_query>
           <col_ranking>Ranking</col_ranking>
           <col_locale>Locale</col_locale>
+          <new_title>New saved query</new_title>
           <edit_title>Edit saved query</edit_title>
           <field_name>Name</field_name>
           <field_description>Description</field_description>
@@ -194,9 +202,13 @@
         </connectivity>
         <autocomplete>
           <request_failed>Autocomplete failed</request_failed>
+          <schema_failed>Could not load schema</schema_failed>
           <no_results>No suggestions.</no_results>
+          <no_types>No autocomplete types</no_types>
+          <no_fields>No fields</no_fields>
           <any_locale>Any locale</any_locale>
           <returned_for>Returned %1 in %2 ms</returned_for>
+          <error_pick_type_and_field>Pick a type and a field first.</error_pick_type_and_field>
         </autocomplete>
         <searchconsole>
           <request_failed>Search failed</request_failed>
@@ -211,6 +223,7 @@
         <savedqueries>
           <request_failed>Saved query request failed</request_failed>
           <no_items>No saved queries yet.</no_items>
+          <no_filter_match>No saved queries match the filter.</no_filter_match>
           <any_locale>Any locale</any_locale>
           <action_run>Run</action_run>
           <action_edit>Edit</action_edit>
