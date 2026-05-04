@@ -1,8 +1,12 @@
 @using EPiServer.Shell
+@using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries
 @inject LocalizationService Loc
+@inject QueryRunnerService Runner
 @{
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
     ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/savedqueries/title");
+    var defaultQueryActive = Runner.IsDefaultQueryActive;
+    var knobDisabled = defaultQueryActive ? "disabled" : null;
 }
 
 <div class="gst-page-header">
@@ -12,84 +16,100 @@
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-<div id="sq-empty" class="gst-card gst-empty" hidden>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-    </svg>
-    <p>@Loc.GetString("/graphsearchtools/tools/savedqueries/empty_message")</p>
-    <button type="button" id="sq-empty-add" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/savedqueries/empty_cta")</button>
-</div>
-
-<div id="sq-content" class="gst-card" hidden>
-    <div class="gst-toolbar">
-        <input id="sq-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/savedqueries/filter_placeholder")" />
-        <div class="gst-toolbar__spacer"></div>
-        <button type="button" id="sq-add" class="gst-btn gst-btn--primary">+ @Loc.GetString("/graphsearchtools/tools/savedqueries/add")</button>
+@if (defaultQueryActive)
+{
+    <div class="gst-alert gst-alert--info gst-sq-default-query-notice">
+        @Loc.GetString("/graphsearchtools/tools/savedqueries/default_query_active")
     </div>
-    <table class="gst-table gst-sq-table">
-        <thead>
-        <tr>
-            <th>@Loc.GetString("/graphsearchtools/tools/savedqueries/col_name")</th>
-            <th>@Loc.GetString("/graphsearchtools/tools/savedqueries/col_query")</th>
-            <th class="gst-sq-col-ranking">@Loc.GetString("/graphsearchtools/tools/savedqueries/col_ranking")</th>
-            <th class="gst-sq-col-locale">@Loc.GetString("/graphsearchtools/tools/savedqueries/col_locale")</th>
-            <th class="gst-sq-col-actions"></th>
-        </tr>
-        </thead>
-        <tbody id="sq-grid"></tbody>
-    </table>
+}
+
+<div class="gst-sq-layout">
+    @* ───────── Left rail: presets ───────── *@
+    <aside class="gst-card gst-sq-rail">
+        <div class="gst-sq-rail__head">
+            <span class="gst-sq-rail__title">@Loc.GetString("/graphsearchtools/tools/savedqueries/presets_title")</span>
+            <button type="button" id="sq-add" class="gst-btn gst-btn--sm gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/savedqueries/presets_add")</button>
+        </div>
+        <input id="sq-filter" type="text" class="gst-sq-rail__filter"
+               placeholder="@Loc.GetString("/graphsearchtools/tools/savedqueries/presets_filter_placeholder")" />
+        <div id="sq-presets" class="gst-sq-rail__list" aria-live="polite"></div>
+    </aside>
+
+    @* ───────── Main column: runner + results ───────── *@
+    <section class="gst-sq-main">
+        <div class="gst-card gst-sq-runner">
+            <div class="gst-sq-runner__row">
+                <input id="sq-query" type="text" class="gst-sq-query"
+                       placeholder="@Loc.GetString("/graphsearchtools/tools/savedqueries/placeholder")"
+                       autocomplete="off" />
+                <select id="sq-locale" class="gst-select"></select>
+                <button type="button" id="sq-run" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/savedqueries/run")</button>
+                <button type="button" id="sq-save" class="gst-btn">@Loc.GetString("/graphsearchtools/tools/savedqueries/save")</button>
+            </div>
+
+            <div class="gst-sq-knobs@(defaultQueryActive ? " gst-sq-knobs--locked" : null)">
+                <label class="gst-sq-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/savedqueries/ranking")</span>
+                    <select id="sq-ranking" class="gst-select" disabled="@knobDisabled">
+                        <option value="RELEVANCE">RELEVANCE</option>
+                        <option value="SEMANTIC">SEMANTIC</option>
+                        <option value="BOOST_ONLY">BOOST_ONLY</option>
+                        <option value="DOC">DOC</option>
+                    </select>
+                </label>
+                <label class="gst-sq-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/savedqueries/semantic_weight") <output id="sq-weight-out">0.2</output></span>
+                    <input id="sq-weight" type="range" min="-1" max="1" step="0.05" value="0.2" disabled="@knobDisabled" />
+                </label>
+                <label class="gst-sq-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/savedqueries/min_score")</span>
+                    <input id="sq-min-score" type="number" step="0.1" placeholder="—" disabled="@knobDisabled" />
+                </label>
+                <label class="gst-sq-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/savedqueries/limit")</span>
+                    <input id="sq-limit" type="number" min="1" max="100" value="25" />
+                </label>
+            </div>
+        </div>
+
+        <div class="gst-card gst-sq-results">
+            <div class="gst-sq-results__head">
+                <span id="sq-meta" class="gst-muted">@Loc.GetString("/graphsearchtools/tools/savedqueries/idle")</span>
+                <button type="button" id="sq-show-query" class="gst-btn gst-btn--sm" hidden>@Loc.GetString("/graphsearchtools/tools/savedqueries/show_query")</button>
+            </div>
+            <pre id="sq-query-text" class="gst-sq-query-text" hidden></pre>
+            <table class="gst-table gst-sq-results__table">
+                <thead>
+                <tr>
+                    <th class="gst-sq-col-rank">#</th>
+                    <th>@Loc.GetString("/graphsearchtools/tools/savedqueries/col_name")</th>
+                    <th class="gst-sq-col-type">@Loc.GetString("/graphsearchtools/tools/savedqueries/col_type")</th>
+                    <th class="gst-sq-col-lang">@Loc.GetString("/graphsearchtools/tools/savedqueries/col_lang")</th>
+                    <th class="gst-sq-col-score">@Loc.GetString("/graphsearchtools/tools/savedqueries/col_score")</th>
+                    <th>@Loc.GetString("/graphsearchtools/tools/savedqueries/col_snippet")</th>
+                </tr>
+                </thead>
+                <tbody id="sq-grid"></tbody>
+            </table>
+        </div>
+    </section>
 </div>
 
+@* ───────── Save dialog ───────── *@
 <div id="sq-dialog" class="gst-dialog-backdrop" hidden>
     <div class="gst-dialog">
         <div class="gst-dialog__header">
-            @* Default to "new" — the JS overwrites this on open. Picking "new"
-               is safer than "edit" because the most common entry path is
-               creating, and a stale-cache JS won't show a misleading title. *@
             <h2 id="sq-dialog-title" class="gst-dialog__title">@Loc.GetString("/graphsearchtools/tools/savedqueries/new_title")</h2>
             <button type="button" id="sq-dialog-close" class="gst-dialog__close">&times;</button>
         </div>
         <div class="gst-dialog__body">
             <div class="gst-sq-field">
                 <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_name") *</label>
-                <input id="sq-name" type="text" />
+                <input id="sq-dlg-name" type="text" />
             </div>
             <div class="gst-sq-field">
                 <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_description")</label>
-                <input id="sq-description" type="text" />
-            </div>
-            <div class="gst-sq-field">
-                <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_query") *</label>
-                <input id="sq-query" type="text" />
-            </div>
-            <div class="gst-sq-row">
-                <div class="gst-sq-field">
-                    <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_locale")</label>
-                    <select id="sq-locale"></select>
-                </div>
-                <div class="gst-sq-field">
-                    <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_ranking")</label>
-                    <select id="sq-ranking">
-                        <option value="RELEVANCE">RELEVANCE</option>
-                        <option value="SEMANTIC">SEMANTIC</option>
-                        <option value="BOOST_ONLY">BOOST_ONLY</option>
-                        <option value="DOC">DOC</option>
-                    </select>
-                </div>
-            </div>
-            <div class="gst-sq-row">
-                <div class="gst-sq-field">
-                    <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_weight")</label>
-                    <input id="sq-weight" type="number" step="0.05" min="-1" max="1" value="0.2" />
-                </div>
-                <div class="gst-sq-field">
-                    <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_min_score")</label>
-                    <input id="sq-min-score" type="number" step="0.1" placeholder="—" />
-                </div>
-                <div class="gst-sq-field">
-                    <label>@Loc.GetString("/graphsearchtools/tools/savedqueries/field_limit")</label>
-                    <input id="sq-limit" type="number" min="1" max="100" value="25" />
-                </div>
+                <input id="sq-dlg-description" type="text" />
             </div>
         </div>
         <div class="gst-dialog__footer">

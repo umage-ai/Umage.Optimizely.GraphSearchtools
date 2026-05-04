@@ -9,10 +9,9 @@ using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
-using UmageAI.Optimizely.GraphSearchTools.Tools.Connectivity;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
-using UmageAI.Optimizely.GraphSearchTools.Tools.SearchConsole;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Infrastructure;
@@ -53,8 +52,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<LanguageSiteEnumerator>();
         services.AddScoped<PinnedService>();
         services.AddScoped<SynonymsService>();
-        services.AddHttpClient<ConnectivityService>();
-        services.AddHttpClient<SearchConsoleService>();
+        services.AddHttpClient<HealthService>();
+        services.AddScoped<HealthScanService>();
+        services.AddHttpClient<QueryRunnerService>();
         services.AddSingleton<SavedQueriesService>();
 
         services.Configure<ProtectedModuleOptions>(options =>

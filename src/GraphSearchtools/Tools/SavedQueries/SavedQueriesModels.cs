@@ -4,9 +4,9 @@ using EPiServer.Data.Dynamic;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 
 /// <summary>
-/// DDS-persisted saved query — a named bundle of Search Console settings the
-/// editor wants to re-run later. Stored locally rather than upstream so it
-/// works without admin write access to Graph.
+/// DDS-persisted saved query — a named bundle of runner settings the editor
+/// wants to re-run later. Stored locally rather than upstream so it works
+/// without admin write access to Graph.
 /// </summary>
 [EPiServerDataStore(AutomaticallyCreateStore = true, AutomaticallyRemapStore = true, StoreName = "GraphSearchtools_SavedQueries")]
 public class SavedQueryRecord : IDynamicData
@@ -59,3 +59,37 @@ public sealed record SavedQueryPayload
     public double? MinimumScore { get; init; }
     public int Limit { get; init; } = 25;
 }
+
+// ── Runner request/response (was Tools/SearchConsole) ──────────────
+
+public sealed record RunnerRequest
+{
+    public string Query { get; init; } = string.Empty;
+    public string? Locale { get; init; }
+
+    /// <summary>RELEVANCE | SEMANTIC | BOOST_ONLY | DOC. Default RELEVANCE.</summary>
+    public string Ranking { get; init; } = "RELEVANCE";
+
+    /// <summary>Float between -1.0 and 1.0; default 0.2.</summary>
+    public double SemanticWeight { get; init; } = 0.2;
+
+    /// <summary>When set, cuts results below this score and auto-activates ranking.</summary>
+    public double? MinimumScore { get; init; }
+
+    public int Limit { get; init; } = 25;
+}
+
+public sealed record RunnerHit(
+    string Name,
+    string ContentType,
+    string Language,
+    int? ContentId,
+    string ContentGuid,
+    double Score,
+    string? FullTextSnippet);
+
+public sealed record RunnerResult(
+    int TotalCount,
+    long DurationMs,
+    string GraphQuery,
+    IReadOnlyList<RunnerHit> Hits);
