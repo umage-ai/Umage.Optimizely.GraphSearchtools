@@ -28,8 +28,21 @@ public interface IGraphAdminClient
 
     /// <summary>
     /// Returns up to <paramref name="limit"/> autocomplete suggestions for
-    /// <paramref name="value"/> from the indexed <c>Name</c> field. Optionally
-    /// filtered by locale.
+    /// <paramref name="value"/>, drawn from <c>{typeName}.autocomplete.{field}</c>.
+    /// The available types and fields are tenant-specific because they depend
+    /// on what the host marked <c>Searchable</c> in the CMS content model;
+    /// use <see cref="GetAutocompleteSchemaAsync"/> to discover them.
     /// </summary>
-    Task<IReadOnlyList<string>> AutocompleteAsync(string value, string? locale, int limit, CancellationToken cancellationToken);
+    Task<IReadOnlyList<string>> AutocompleteAsync(string typeName, string field, string value, string? locale, int limit, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Discovers the root content types that expose an <c>autocomplete</c>
+    /// field, plus the scalar string fields supported under each type's
+    /// autocomplete. Object-typed sub-fields (e.g. <c>ContentLink</c>,
+    /// <c>Language</c>) are excluded — only fields that accept
+    /// <c>(value, limit)</c> directly are returned.
+    /// </summary>
+    Task<IReadOnlyList<AutocompleteFieldDescriptor>> GetAutocompleteSchemaAsync(CancellationToken cancellationToken);
 }
+
+public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);
