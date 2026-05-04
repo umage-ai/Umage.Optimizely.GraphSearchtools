@@ -443,6 +443,64 @@ public sealed class GraphAdminClient : IGraphAdminClient
         return results;
     }
 
+    public async Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
+        if (!creds.IsQueryConfigured)
+        {
+            throw new InvalidOperationException("Optimizely Content Graph query settings (GatewayAddress, SingleKey) are not configured.");
+        }
+
+        // The schema's `Locales` enum is generated from the registered languages
+        // in the index, so introspecting it returns exactly what Graph can serve
+        // — independent of how the host CMS is configured.
+        const string introspection = @"
+            query GraphLocales {
+                __type(name: ""Locales"") {
+                    enumValues { name }
+                }
+            }";
+
+        var json = JsonSerializer.Serialize(new { query = introspection }, _serializerOptions);
+        using var request = new HttpRequestMessage(HttpMethod.Post, BuildQueryEndpoint(creds))
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new GraphSearchApiException(response.StatusCode, body);
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        if (!doc.RootElement.TryGetProperty("data", out var data)
+            || !data.TryGetProperty("__type", out var type)
+            || type.ValueKind != JsonValueKind.Object
+            || !type.TryGetProperty("enumValues", out var values)
+            || values.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        var results = new List<string>();
+        foreach (var value in values.EnumerateArray())
+        {
+            var name = GetString(value, "name");
+            if (string.IsNullOrEmpty(name)) continue;
+            // The schema includes two synthetic enum values: `ALL` (the wildcard
+            // for "any locale") and `neutralLanguage` (a placeholder for content
+            // without a language). Neither corresponds to a real branch; the UI
+            // already exposes "no locale filter" as its own picker option, so
+            // surfacing these would just produce duplicate / nonsensical entries.
+            if (string.Equals(name, "ALL", StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(name, "neutralLanguage", StringComparison.OrdinalIgnoreCase)) continue;
+            results.Add(name!);
+        }
+        results.Sort(StringComparer.OrdinalIgnoreCase);
+        return results;
+    }
+
     /// <summary>
     /// Returns the <c>fields</c> array of an OBJECT type, unwrapping NonNull
     /// (<c>ofType</c>) once if needed. Returns <see cref="JsonValueKind.Undefined"/>

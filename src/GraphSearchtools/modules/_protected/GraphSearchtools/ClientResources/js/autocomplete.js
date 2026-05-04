@@ -177,21 +177,24 @@
     }
 
     function loadLocales() {
-        return ajax(BASE + '/SitesApi/List')
-            .then(function (sites) {
+        // Pulls the Locales enum from the live Graph schema (see SitesApi/Locales)
+        // so the picker matches what Graph can serve, not what the host CMS
+        // happens to declare.
+        return ajax(BASE + '/SitesApi/Locales')
+            .then(function (locales) {
                 localeSelect.innerHTML = '';
-                var optAny = document.createElement('option');
-                optAny.value = '';
-                optAny.textContent = STRINGS.any_locale || 'Any locale';
-                localeSelect.appendChild(optAny);
-                (sites || []).forEach(function (site) {
+                var optAll = document.createElement('option');
+                optAll.value = '';
+                optAll.textContent = STRINGS.all_locales || 'ALL';
+                localeSelect.appendChild(optAll);
+                (locales || []).forEach(function (code) {
                     var opt = document.createElement('option');
-                    opt.value = site.languageCode;
-                    opt.textContent = site.title + ' (' + site.languageCode + ')';
+                    opt.value = code;
+                    opt.textContent = code;
                     localeSelect.appendChild(opt);
                 });
             })
-            .catch(function () { /* sites optional */ });
+            .catch(function () { /* locale picker is optional */ });
     }
 
     function typeOptions() {

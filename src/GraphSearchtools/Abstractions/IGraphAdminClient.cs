@@ -43,6 +43,14 @@ public interface IGraphAdminClient
     /// <c>(value, limit)</c> directly are returned.
     /// </summary>
     Task<IReadOnlyList<AutocompleteFieldDescriptor>> GetAutocompleteSchemaAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns the locale codes known to Optimizely Graph by introspecting the
+    /// <c>Locales</c> enum in the schema. The enum is generated from registered
+    /// languages and reflects what Graph itself can serve — not what the host
+    /// CMS has configured. Returns an empty list if the enum is missing.
+    /// </summary>
+    Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken);
 }
 
 public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);
