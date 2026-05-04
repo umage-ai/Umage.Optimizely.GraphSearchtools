@@ -12,7 +12,15 @@
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-<div class="gst-card">
+<div id="sq-empty" class="gst-card gst-empty" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+    </svg>
+    <p>@Loc.GetString("/graphsearchtools/tools/savedqueries/empty_message")</p>
+    <button type="button" id="sq-empty-add" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/savedqueries/empty_cta")</button>
+</div>
+
+<div id="sq-content" class="gst-card" hidden>
     <div class="gst-toolbar">
         <input id="sq-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/savedqueries/filter_placeholder")" />
         <div class="gst-toolbar__spacer"></div>
@@ -35,7 +43,10 @@
 <div id="sq-dialog" class="gst-dialog-backdrop" hidden>
     <div class="gst-dialog">
         <div class="gst-dialog__header">
-            <h2 id="sq-dialog-title" class="gst-dialog__title">@Loc.GetString("/graphsearchtools/tools/savedqueries/edit_title")</h2>
+            @* Default to "new" — the JS overwrites this on open. Picking "new"
+               is safer than "edit" because the most common entry path is
+               creating, and a stale-cache JS won't show a misleading title. *@
+            <h2 id="sq-dialog-title" class="gst-dialog__title">@Loc.GetString("/graphsearchtools/tools/savedqueries/new_title")</h2>
             <button type="button" id="sq-dialog-close" class="gst-dialog__close">&times;</button>
         </div>
         <div class="gst-dialog__body">
