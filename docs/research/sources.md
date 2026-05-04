@@ -1,11 +1,19 @@
 # Sources
 
-Research conducted 2026-04-30. URLs verified at the time of writing.
+Research conducted 2026-04-30 (2026-05-01 for the auth deep-dive in
+`graph-authentication.md`). URLs verified at the time of writing.
 
 ## Optimizely official documentation
 
 - [Overview of Optimizely Graph](https://docs.developers.optimizely.com/platform-optimizely/docs/overview-of-optimizely-graph)
 - [Get started with Optimizely Graph](https://docs.developers.optimizely.com/platform-optimizely/docs/get-started-with-optimizely-graph)
+- [Authentication overview](https://docs.developers.optimizely.com/platform-optimizely/docs/authentication)
+- [Basic auth](https://docs.developers.optimizely.com/platform-optimizely/docs/basic-auth) / [Basic auth from backend (config block)](https://docs.developers.optimizely.com/platform-optimizely/docs/basic-auth-from-backend)
+- [HMAC auth](https://docs.developers.optimizely.com/platform-optimizely/docs/hmac-auth)
+- [Single Key auth](https://docs.developers.optimizely.com/platform-optimizely/docs/api-single-key-auth)
+- [Configure CMS 12 to send content](https://docs.developers.optimizely.com/platform-optimizely/docs/configure-cms-12-to-send-content)
+- [Install and configure Optimizely Graph on your CMS site](https://docs.developers.optimizely.com/content-management-system/docs/install-and-configure-optimizely-graph-on-your-site)
+- [Manage webhooks](https://docs.developers.optimizely.com/platform-optimizely/docs/manage-webhooks)
 - [Site search — full-text, faceted, semantic](https://docs.developers.optimizely.com/platform-optimizely/docs/site-search)
 - [Full-text search support — match, contains, searchable fields](https://docs.developers.optimizely.com/platform-optimizely/docs/full-text-search-support)
 - [Search content with GraphQL — match operator, relevance, semantic ranking](https://docs.developers.optimizely.com/platform-optimizely/docs/search-content-with-graphql)
