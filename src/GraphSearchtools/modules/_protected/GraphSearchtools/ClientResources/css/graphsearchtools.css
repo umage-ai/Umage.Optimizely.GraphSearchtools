@@ -406,6 +406,11 @@
     justify-content: center;
     animation: gst-fade-in .15s ease;
 }
+/* The class above sets display:flex, which has the same selector specificity
+   as the UA's `[hidden] { display: none }` and — being defined later — wins.
+   Re-assert the hidden behavior with a more specific selector so the markup's
+   default `hidden` attribute keeps the dialog dismissed on first paint. */
+.gst-dialog-backdrop[hidden] { display: none; }
 
 .gst-dialog {
     background: var(--gst-surface);
@@ -1265,52 +1270,554 @@ td.bpe-editing select {
 }
 .gst-actions { display: flex; gap: var(--gst-space-sm); flex-shrink: 0; }
 
-/* ── Phase 2: Connectivity Tester ───────────────────────────────── */
+/* ── Phase 2: Health dashboard ──────────────────────────────────── */
 
-.gst-conn-summary {
+/* Status dot — shared by hero, KPIs, probes, history */
+.gst-health-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gst-text-muted);
+    flex-shrink: 0;
+}
+.gst-health-dot.is-green   { background: var(--gst-success); box-shadow: 0 0 0 3px var(--gst-success-light); }
+.gst-health-dot.is-amber   { background: var(--gst-warning); box-shadow: 0 0 0 3px var(--gst-warning-light); }
+.gst-health-dot.is-red     { background: var(--gst-danger);  box-shadow: 0 0 0 3px var(--gst-danger-light); }
+.gst-health-dot.is-unknown { background: var(--gst-text-muted); box-shadow: 0 0 0 3px var(--gst-border-light); }
+
+/* ── Hero ──────────────────────────────────────────────────────── */
+
+.gst-health-hero {
+    position: relative;
+    padding: 28px 28px 24px;
+    background:
+        linear-gradient(135deg, var(--gst-surface) 0%, var(--gst-surface) 60%, #f9fafc 100%);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--gst-space-lg);
+}
+/* subtle scanline texture for the "instrument panel" feel */
+.gst-health-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 23px,
+        rgba(0, 0, 0, 0.012) 24px,
+        transparent 25px
+    );
+    opacity: 0.7;
+}
+.gst-health-hero__signal {
     display: flex;
     align-items: center;
+    gap: 22px;
+    position: relative;
+    z-index: 1;
+}
+.gst-health-hero__pulse {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+.gst-health-hero__pulse-dot {
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    background: var(--gst-text-muted);
+    transition: background 280ms ease;
+}
+.gst-health-hero__pulse-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    color: var(--gst-text-muted);
+    opacity: 0;
+}
+.gst-health-hero[data-status="green"] .gst-health-hero__pulse-dot { background: var(--gst-success); }
+.gst-health-hero[data-status="amber"] .gst-health-hero__pulse-dot { background: var(--gst-warning); }
+.gst-health-hero[data-status="red"]   .gst-health-hero__pulse-dot { background: var(--gst-danger); }
+.gst-health-hero[data-status="green"] .gst-health-hero__pulse-ring { color: var(--gst-success); animation: gstHealthPulse 2.4s ease-out infinite; }
+.gst-health-hero[data-status="amber"] .gst-health-hero__pulse-ring { color: var(--gst-warning); animation: gstHealthPulse 1.6s ease-out infinite; }
+.gst-health-hero[data-status="red"]   .gst-health-hero__pulse-ring { color: var(--gst-danger);  animation: gstHealthPulse 1.2s ease-out infinite; }
+.gst-health-hero[data-status="checking"] .gst-health-hero__pulse-ring { color: var(--gst-info); animation: gstHealthPulse 0.9s linear infinite; }
+
+@keyframes gstHealthPulse {
+    0%   { transform: scale(0.7); opacity: 0.6; }
+    70%  { transform: scale(1.4); opacity: 0; }
+    100% { transform: scale(1.4); opacity: 0; }
+}
+
+.gst-health-hero__text { display: flex; flex-direction: column; gap: 4px; }
+.gst-health-hero__status {
+    font-family: var(--gst-font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    color: var(--gst-text);
+}
+.gst-health-hero[data-status="green"] .gst-health-hero__status { color: var(--gst-success); }
+.gst-health-hero[data-status="amber"] .gst-health-hero__status { color: var(--gst-warning); }
+.gst-health-hero[data-status="red"]   .gst-health-hero__status { color: var(--gst-danger); }
+.gst-health-hero__subtitle {
+    font-size: var(--gst-text-base);
+    color: var(--gst-text-secondary);
+    margin-top: 2px;
+}
+.gst-health-hero__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-muted);
+    margin-top: 8px;
+    font-family: var(--gst-font-mono);
+}
+.gst-health-hero__gateway { word-break: break-all; }
+.gst-health-hero__sep { opacity: 0.6; }
+
+.gst-health-hero__controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Auto-refresh toggle */
+.gst-health-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+.gst-health-toggle__label {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+}
+.gst-health-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.gst-health-toggle__pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--gst-surface-hover);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text-muted);
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.gst-health-toggle__pill::before { content: attr(data-off); }
+.gst-health-toggle input:checked + .gst-health-toggle__pill {
+    background: var(--gst-info-light);
+    border-color: var(--gst-info);
+    color: var(--gst-info);
+}
+.gst-health-toggle input:checked + .gst-health-toggle__pill::before { content: attr(data-on); }
+.gst-health-toggle input:focus-visible + .gst-health-toggle__pill {
+    outline: 2px solid var(--gst-primary);
+    outline-offset: 2px;
+}
+
+/* Run button — extends gst-btn--primary with a tiny activity dot */
+.gst-health-runbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    padding-right: 14px;
+}
+.gst-health-runbtn__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+}
+.gst-health-runbtn.is-loading .gst-health-runbtn__dot {
+    animation: gstHealthBlink 0.7s ease-in-out infinite;
+}
+@keyframes gstHealthBlink { 50% { opacity: 0.2; } }
+
+/* Auto-refresh progress bar (full width, bottom of hero) */
+.gst-health-hero__progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--gst-border-light);
+    overflow: hidden;
+}
+.gst-health-hero__progress-bar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--gst-info);
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+
+/* ── KPI tiles ─────────────────────────────────────────────────── */
+
+.gst-health-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--gst-space-md);
+    margin-top: var(--gst-space-md);
+}
+@media (max-width: 1100px) {
+    .gst-health-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.gst-health-kpi {
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: var(--gst-shadow-sm);
+}
+.gst-health-kpi__label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--gst-text-muted);
+}
+.gst-health-kpi__value {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--gst-text);
+    line-height: 1.1;
+}
+.gst-health-kpi__value--num {
+    font-family: var(--gst-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+}
+.gst-health-kpi__unit {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gst-text-muted);
+    letter-spacing: 0;
+}
+.gst-health-kpi__sub {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-muted);
+}
+
+/* ── Section heads (used by sparkline + probes + history) ──────── */
+
+.gst-health-section-head {
+    display: flex;
+    align-items: baseline;
     justify-content: space-between;
     gap: var(--gst-space-md);
-    flex-wrap: wrap;
+    margin-bottom: 12px;
 }
-.gst-conn-overall {
+.gst-health-section-head--padded {
+    padding: 16px 20px 0;
+    margin-bottom: 0;
+}
+.gst-health-section-head__title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: var(--gst-text-secondary);
+}
+.gst-health-section-head__legend {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-muted);
+    font-family: var(--gst-font-mono);
+}
+
+/* ── Scan timeline ──────────────────────────────────────────────── */
+
+.gst-health-timeline { padding-bottom: 14px; }
+.gst-health-timeline__canvas {
+    position: relative;
+    height: 80px;
+    background: linear-gradient(to bottom,
+        transparent 0,
+        transparent calc(100% - 1px),
+        var(--gst-border-light) calc(100% - 1px),
+        var(--gst-border-light) 100%);
+}
+.gst-health-timeline__canvas svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.gst-health-timeline__bar {
+    transition: opacity 140ms ease;
+}
+.gst-health-timeline__bar:hover { opacity: 0.7; }
+.gst-health-timeline__bar.is-green { fill: var(--gst-success); }
+.gst-health-timeline__bar.is-amber { fill: var(--gst-warning); }
+.gst-health-timeline__bar.is-red   { fill: var(--gst-danger); }
+.gst-health-timeline__empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+    font-style: italic;
+}
+.gst-health-timeline__empty[hidden] { display: none; }
+.gst-health-timeline__yaxis {
+    font-family: var(--gst-font-mono);
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-muted);
+    margin-right: 4px;
+}
+.gst-health-timeline__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 12px;
+    font-family: var(--gst-font);
+    font-size: var(--gst-text-sm);
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--gst-text-muted);
+    font-weight: 500;
+}
+.gst-health-timeline__legend-item::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+.gst-health-timeline__legend-item.is-green::before { background: var(--gst-success); }
+.gst-health-timeline__legend-item.is-amber::before { background: var(--gst-warning); }
+.gst-health-timeline__legend-item.is-red::before {
+    background: var(--gst-danger);
+    width: 3px;
+    border-radius: 1px;
+}
+
+/* ── Probes (cards) ────────────────────────────────────────────── */
+
+.gst-health-probes__list {
+    display: flex;
+    flex-direction: column;
+}
+.gst-health-probe {
+    padding: 14px 20px;
+    border-top: 1px solid var(--gst-border-light);
+    transition: background 140ms ease;
+    position: relative;
+}
+.gst-health-probe::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: transparent;
+    transition: background 140ms ease;
+}
+.gst-health-probe.is-green::before { background: var(--gst-success); }
+.gst-health-probe.is-amber::before { background: var(--gst-warning); }
+.gst-health-probe.is-red::before   { background: var(--gst-danger); }
+.gst-health-probe:hover { background: var(--gst-surface-hover); }
+.gst-health-probe:first-child { border-top: 1px solid var(--gst-border); }
+
+.gst-health-probe__head {
     display: flex;
     align-items: center;
     gap: 10px;
 }
-.gst-conn-overall-label {
-    font-size: var(--gst-text-md);
+.gst-health-probe__name {
+    flex: 1;
     font-weight: 600;
     color: var(--gst-text);
+    font-size: var(--gst-text-base);
 }
-.gst-conn-meta {
+.gst-health-probe__latency {
+    font-family: var(--gst-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--gst-text);
+    font-size: 15px;
+    letter-spacing: -0.01em;
+}
+.gst-health-probe__unit {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    margin-left: 2px;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+.gst-health-probe__target {
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    margin-top: 6px;
+    margin-left: 20px;
+    word-break: break-all;
+}
+.gst-health-probe__msg {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-secondary);
+    margin-top: 4px;
+    margin-left: 20px;
+}
+
+/* ── Issues panel ──────────────────────────────────────────────── */
+
+.gst-health-issues { margin-top: var(--gst-space-md); }
+.gst-health-issues__tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--gst-border-light);
+}
+.gst-health-issues__tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: 10px 14px;
+    font-family: var(--gst-font);
+    font-size: var(--gst-text-sm);
+    font-weight: 600;
+    color: var(--gst-text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 140ms ease, border-color 140ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.gst-health-issues__tab:hover { color: var(--gst-text); }
+.gst-health-issues__tab.is-active {
+    color: var(--gst-text);
+    border-bottom-color: var(--gst-primary);
+}
+.gst-health-issues__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--gst-surface-active);
+    color: var(--gst-text-muted);
+    font-family: var(--gst-font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.gst-health-issues__tab.is-active .gst-health-issues__count {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+}
+.gst-health-issues__list {
+    display: flex;
+    flex-direction: column;
+}
+.gst-health-issue {
+    padding: 12px 20px;
+    border-top: 1px solid var(--gst-border-light);
+    transition: background 140ms ease;
+    position: relative;
+}
+.gst-health-issue::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--gst-warning);
+}
+.gst-health-issue.is-resolved::before { background: var(--gst-success); }
+.gst-health-issue:hover { background: var(--gst-surface-hover); }
+.gst-health-issue:first-child { border-top: 1px solid var(--gst-border); }
+.gst-health-issue__head {
     display: flex;
     align-items: center;
-    gap: var(--gst-space-md);
-    font-size: var(--gst-text-xs);
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.gst-health-issue__name {
+    flex: 1;
+    font-weight: 600;
+    color: var(--gst-text);
+    font-size: var(--gst-text-base);
+}
+.gst-health-issue__name a { color: inherit; text-decoration: none; }
+.gst-health-issue__name a:hover { color: var(--gst-primary); text-decoration: underline; }
+.gst-health-issue__reason {
+    font-family: var(--gst-font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--gst-warning-light);
+    color: #5d4037;
+}
+.gst-health-issue.is-resolved .gst-health-issue__reason {
+    background: var(--gst-success-light);
+    color: var(--gst-success);
+}
+.gst-health-issue__meta {
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
     color: var(--gst-text-muted);
-    flex-wrap: wrap;
+    word-break: break-all;
+}
+.gst-health-issue__times {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    margin-top: 4px;
+}
+.gst-health-issues__empty {
+    text-align: center;
+    color: var(--gst-text-muted);
+    padding: 28px 20px;
+    font-style: italic;
+    font-size: var(--gst-text-sm);
 }
 
-.gst-conn-dot {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--gst-text-muted);
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
-}
-.gst-conn-dot.is-green   { background: var(--gst-success); box-shadow: 0 0 0 3px var(--gst-success-light); }
-.gst-conn-dot.is-amber   { background: var(--gst-warning); box-shadow: 0 0 0 3px var(--gst-warning-light); }
-.gst-conn-dot.is-red     { background: var(--gst-danger);  box-shadow: 0 0 0 3px var(--gst-danger-light); }
-.gst-conn-dot.is-unknown { background: var(--gst-text-muted); }
+/* Auto-mode meta line in the hero */
+.gst-health-hero__sep--auto { margin-left: 4px; }
+.gst-health-hero__auto-status { color: var(--gst-info); }
 
-.gst-conn-table .gst-conn-status-col { width: 130px; }
-.gst-conn-table .gst-conn-probe-col  { width: 200px; font-weight: 500; }
-.gst-conn-table td:first-child {
-    text-transform: capitalize;
-    font-variant-numeric: tabular-nums;
+@media (max-width: 720px) {
+    .gst-health-hero { grid-template-columns: 1fr; }
+    .gst-health-kpis { grid-template-columns: 1fr; }
+    .gst-health-hero__controls { justify-content: flex-start; }
 }
 
 /* ── Phase 2: Autocomplete Tester ───────────────────────────────── */
@@ -1365,13 +1872,187 @@ td.bpe-editing select {
     font-style: italic;
 }
 
-/* ── Phase 2: Search Console ────────────────────────────────────── */
+/* ── Phase 2: Saved Queries (combined runner + presets) ─────────── */
 
-.gst-sc-controls .gst-toolbar { gap: var(--gst-space-md); }
+.gst-sq-default-query-notice { margin-bottom: var(--gst-space-md); }
 
-.gst-sc-query {
+.gst-sq-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--gst-space-md);
+    align-items: flex-start;
+}
+@media (max-width: 900px) {
+    .gst-sq-layout { grid-template-columns: 1fr; }
+}
+
+/* ── Left rail: presets ───────────────────────────────────────── */
+
+.gst-sq-rail {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Stick the rail just under the page header / chrome — keep presets in
+       view while the user scrolls a long results list. */
+    position: sticky;
+    top: 60px;
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
+}
+.gst-sq-rail__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.gst-sq-rail__title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: var(--gst-text-secondary);
+}
+.gst-sq-rail__filter {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-sm);
+    font-family: var(--gst-font);
+    outline: none;
+}
+.gst-sq-rail__filter:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-sq-rail__list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 -4px;
+    padding: 0 4px;
+}
+.gst-sq-rail__empty {
+    text-align: center;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+    padding: 18px 12px;
+    font-style: italic;
+}
+
+/* ── Preset card ──────────────────────────────────────────────── */
+
+.gst-sq-preset {
+    border: 1px solid var(--gst-border-light);
+    border-left: 3px solid transparent;
+    border-radius: var(--gst-radius);
+    padding: 10px 12px;
+    background: var(--gst-surface);
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+    outline: none;
+}
+.gst-sq-preset:hover {
+    background: var(--gst-surface-hover);
+    border-left-color: var(--gst-primary);
+}
+.gst-sq-preset:focus-visible {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-sq-preset.is-loaded {
+    background: var(--gst-primary-light);
+    border-color: var(--gst-primary);
+    border-left-color: var(--gst-primary);
+}
+.gst-sq-preset__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.gst-sq-preset__name {
     flex: 1;
-    min-width: 280px;
+    font-weight: 600;
+    color: var(--gst-text);
+    font-size: var(--gst-text-base);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-sq-preset__actions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+.gst-sq-preset:hover .gst-sq-preset__actions,
+.gst-sq-preset:focus-within .gst-sq-preset__actions,
+.gst-sq-preset.is-loaded .gst-sq-preset__actions { opacity: 1; }
+.gst-sq-preset__act {
+    padding: 3px 4px !important;
+    color: var(--gst-text-muted);
+}
+.gst-sq-preset__act:hover { color: var(--gst-text); }
+.gst-sq-preset__act--danger:hover { color: var(--gst-danger); }
+.gst-sq-preset__act svg { width: 13px; height: 13px; }
+
+.gst-sq-preset__desc {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-secondary);
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-sq-preset__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-top: 6px;
+}
+.gst-sq-preset__phrase {
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.gst-sq-preset__pills {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.gst-sq-pill {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--gst-surface-active);
+    color: var(--gst-text-secondary);
+    font-family: var(--gst-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+/* ── Main column: runner + results ───────────────────────────── */
+
+.gst-sq-main { display: flex; flex-direction: column; gap: var(--gst-space-md); }
+
+.gst-sq-runner__row {
+    display: flex;
+    gap: var(--gst-space-sm);
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+.gst-sq-query {
+    flex: 1;
+    min-width: 240px;
     padding: 7px 10px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
@@ -1379,55 +2060,57 @@ td.bpe-editing select {
     font-family: var(--gst-font);
     outline: none;
 }
-.gst-sc-query:focus {
+.gst-sq-query:focus {
     border-color: var(--gst-primary);
     box-shadow: 0 0 0 3px var(--gst-primary-light);
 }
 
-.gst-sc-knobs {
+.gst-sq-knobs {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: var(--gst-space-md);
     padding: var(--gst-space-sm) 0 0;
     border-top: 1px solid var(--gst-border);
-    margin-top: var(--gst-space-sm);
+    margin-top: var(--gst-space-md);
 }
-.gst-sc-knob {
+.gst-sq-knobs--locked .gst-sq-knob { opacity: 0.55; }
+.gst-sq-knob {
     display: flex;
     flex-direction: column;
     gap: 4px;
     font-size: var(--gst-text-xs);
     color: var(--gst-text-muted);
 }
-.gst-sc-knob span output {
+.gst-sq-knob span output {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: var(--gst-text);
     margin-left: 6px;
 }
-.gst-sc-knob input,
-.gst-sc-knob select {
+.gst-sq-knob input,
+.gst-sq-knob select {
     padding: 5px 8px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
 }
-.gst-sc-knob input[type="range"] { padding: 0; }
+.gst-sq-knob input[type="range"] { padding: 0; }
 
-.gst-sc-results-header {
+/* ── Results ─────────────────────────────────────────────────── */
+
+.gst-sq-results__head {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--gst-space-sm);
 }
-
-.gst-sc-query-text {
+.gst-sq-query-text {
     background: var(--gst-surface-active);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     padding: 12px;
-    font-family: var(--gst-font-mono, ui-monospace, monospace);
+    font-family: var(--gst-font-mono);
     font-size: var(--gst-text-xs);
     margin-bottom: var(--gst-space-sm);
     overflow-x: auto;
@@ -1435,39 +2118,14 @@ td.bpe-editing select {
     color: var(--gst-text);
 }
 
-.gst-sc-table .gst-sc-col-rank   { width: 40px; color: var(--gst-text-muted); }
-.gst-sc-table .gst-sc-col-type   { width: 160px; }
-.gst-sc-table .gst-sc-col-lang   { width: 60px; }
-.gst-sc-table .gst-sc-col-score  { width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
-.gst-sc-table .gst-sc-col-snippet {
+.gst-sq-results__table .gst-sq-col-rank   { width: 40px; color: var(--gst-text-muted); }
+.gst-sq-results__table .gst-sq-col-type   { width: 160px; }
+.gst-sq-results__table .gst-sq-col-lang   { width: 60px; }
+.gst-sq-results__table .gst-sq-col-score  { width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
+.gst-sq-results__table .gst-sq-col-snippet {
     font-size: var(--gst-text-xs);
     color: var(--gst-text-secondary);
     max-width: 480px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.gst-sc-empty {
-    text-align: center;
-    color: var(--gst-text-muted);
-    padding: 24px;
-    font-style: italic;
-}
-
-/* ── Phase 2: Saved Queries ─────────────────────────────────────── */
-
-.gst-sq-table .gst-sq-col-ranking { width: 130px; font-size: var(--gst-text-xs); color: var(--gst-text-muted); }
-.gst-sq-table .gst-sq-col-locale  { width: 80px; font-size: var(--gst-text-xs); color: var(--gst-text-muted); }
-.gst-sq-table .gst-sq-col-actions { width: 220px; white-space: nowrap; text-align: right; }
-.gst-sq-table .gst-sq-col-actions .gst-btn { margin-left: 4px; }
-
-.gst-sq-name { font-weight: 600; }
-.gst-sq-desc { font-size: var(--gst-text-xs); color: var(--gst-text-muted); margin-top: 2px; }
-.gst-sq-query-cell {
-    font-family: var(--gst-font-mono, ui-monospace, monospace);
-    font-size: var(--gst-text-xs);
-    color: var(--gst-text-secondary);
-    max-width: 360px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1479,7 +2137,7 @@ td.bpe-editing select {
     font-style: italic;
 }
 
-/* Dialog form layout (used by Saved Queries; harmless to extend later) */
+/* Dialog form fields (still used by the Save dialog) */
 .gst-sq-field {
     display: flex;
     flex-direction: column;
@@ -1499,11 +2157,6 @@ td.bpe-editing select {
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
     width: 100%;
-}
-.gst-sq-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: var(--gst-space-sm);
 }
 
 /* Generic dialog footer + body padding (introduced for Saved Queries; available to other tools). */

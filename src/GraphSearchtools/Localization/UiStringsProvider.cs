@@ -70,17 +70,28 @@ public class UiStringsProvider(LocalizationService loc)
             saved = S("synonyms/saved"),
             confirm_unsaved = S("synonyms/confirm_unsaved")
         },
-        connectivity = new
+        health = new
         {
-            request_failed = S("connectivity/request_failed"),
-            probing = S("connectivity/probing"),
-            gateway = S("connectivity/gateway"),
-            gateway_unset = S("connectivity/gateway_unset"),
-            checked_at = S("connectivity/checked_at"),
-            overall_green = S("connectivity/overall_green"),
-            overall_amber = S("connectivity/overall_amber"),
-            overall_red = S("connectivity/overall_red"),
-            overall_unknown = S("connectivity/overall_unknown")
+            request_failed = S("health/request_failed"),
+            probing = S("health/probing"),
+            gateway_unset = S("health/gateway_unset"),
+            checked_just_now = S("health/checked_just_now"),
+            checked_seconds_ago = S("health/checked_seconds_ago"),
+            checked_minutes_ago = S("health/checked_minutes_ago"),
+            status_healthy = S("health/status_healthy"),
+            status_degraded = S("health/status_degraded"),
+            status_down = S("health/status_down"),
+            status_unknown = S("health/status_unknown"),
+            status_running = S("health/status_running"),
+            subtitle_healthy = S("health/subtitle_healthy"),
+            subtitle_degraded = S("health/subtitle_degraded"),
+            subtitle_down = S("health/subtitle_down"),
+            subtitle_unknown = S("health/subtitle_unknown"),
+            auto_enabled = S("health/auto_enabled"),
+            auto_disabled = S("health/auto_disabled"),
+            last_scan_at = S("health/last_scan_at"),
+            last_scan_never = S("health/last_scan_never"),
+            bar_tooltip = S("health/bar_tooltip")
         },
         autocomplete = new
         {
@@ -89,37 +100,34 @@ public class UiStringsProvider(LocalizationService loc)
             no_results = S("autocomplete/no_results"),
             no_types = S("autocomplete/no_types"),
             no_fields = S("autocomplete/no_fields"),
-            any_locale = S("autocomplete/any_locale"),
+            all_locales = S("autocomplete/all_locales"),
             returned_for = S("autocomplete/returned_for"),
             error_pick_type_and_field = S("autocomplete/error_pick_type_and_field")
-        },
-        searchconsole = new
-        {
-            request_failed = S("searchconsole/request_failed"),
-            running = S("searchconsole/running"),
-            any_locale = S("searchconsole/any_locale"),
-            no_results = S("searchconsole/no_results"),
-            returned_for = S("searchconsole/returned_for"),
-            error_query_required = S("searchconsole/error_query_required"),
-            show_query = S("searchconsole/show_query"),
-            hide_query = S("searchconsole/hide_query")
         },
         savedqueries = new
         {
             request_failed = S("savedqueries/request_failed"),
             no_items = S("savedqueries/no_items"),
             no_filter_match = S("savedqueries/no_filter_match"),
-            any_locale = S("savedqueries/any_locale"),
+            all_locales = S("savedqueries/all_locales"),
+            action_load = S("savedqueries/action_load"),
             action_run = S("savedqueries/action_run"),
             action_edit = S("savedqueries/action_edit"),
             action_delete = S("savedqueries/action_delete"),
             new_title = S("savedqueries/new_title"),
             edit_title = S("savedqueries/edit_title"),
             error_name_required = S("savedqueries/error_name_required"),
+            error_query_required = S("savedqueries/error_query_required"),
             created = S("savedqueries/created"),
             updated = S("savedqueries/updated"),
             deleted = S("savedqueries/deleted"),
-            confirm_delete = S("savedqueries/confirm_delete")
+            confirm_delete = S("savedqueries/confirm_delete"),
+            run_failed = S("savedqueries/run_failed"),
+            running = S("savedqueries/running"),
+            no_results = S("savedqueries/no_results"),
+            returned_for = S("savedqueries/returned_for"),
+            show_query = S("savedqueries/show_query"),
+            hide_query = S("savedqueries/hide_query")
         }
     };
 }

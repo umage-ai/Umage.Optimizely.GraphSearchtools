@@ -54,13 +54,13 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Synonyms))
         };
 
-        // Diagnostics group (Phase 2): Connectivity Tester first so it's the
-        // place editors look when something else is misbehaving.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/connectivity", "Connectivity"), BaseMenuPath + "/connectivity",
-            GetResourcePath("GraphSearchtools/Connectivity"))
+        // Diagnostics group (Phase 2): Health first so it's the place editors
+        // look when something else is misbehaving.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/health", "Health"), BaseMenuPath + "/health",
+            GetResourcePath("GraphSearchtools/Health"))
         {
             SortIndex = 300,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Connectivity))
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Health))
         };
 
         yield return new UrlMenuItem(L("/graphsearchtools/menu/autocomplete", "Autocomplete"), BaseMenuPath + "/autocomplete",
@@ -70,18 +70,11 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
         };
 
-        // Playground group (Phase 2): Search Console for ad-hoc query work.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchconsole", "Search Console"), BaseMenuPath + "/searchconsole",
-            GetResourcePath("GraphSearchtools/SearchConsole"))
-        {
-            SortIndex = 400,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchConsole))
-        };
-
+        // Playground group (Phase 2): Saved Queries — combined runner + presets.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/savedqueries", "Saved Queries"), BaseMenuPath + "/savedqueries",
             GetResourcePath("GraphSearchtools/SavedQueries"))
         {
-            SortIndex = 410,
+            SortIndex = 400,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SavedQueries))
         };
 

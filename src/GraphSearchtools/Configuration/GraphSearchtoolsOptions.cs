@@ -30,11 +30,51 @@ public class GraphSearchtoolsOptions
     public GraphConnectionOptions? Graph { get; set; }
 
     /// <summary>
-    /// Content type fully qualified names that the search picker / search console
-    /// should query. Defaults to ["_Page"] so the addon works out of the box on a
-    /// vanilla CMS install.
+    /// Content type fully qualified names that the search picker / saved-queries
+    /// runner should query. Defaults to ["_Page"] so the addon works out of the
+    /// box on a vanilla CMS install.
     /// </summary>
     public string[] SearchableContentTypes { get; set; } = ["_Page"];
+
+    /// <summary>
+    /// Saved Queries-specific options (incl. the runner's default GraphQL query).
+    /// </summary>
+    public SavedQueriesOptions SavedQueries { get; set; } = new();
+}
+
+/// <summary>
+/// Options that change the behavior of the Saved Queries runner.
+/// </summary>
+public class SavedQueriesOptions
+{
+    /// <summary>
+    /// Optional GraphQL query template that replaces the built-in generic Content
+    /// query. When set, the addon sends this query verbatim to Graph and the UI's
+    /// ranking knobs (ranking mode, semantic weight, minimum score) are ignored —
+    /// the query already encodes its own ranking and filters.
+    ///
+    /// The query receives these variables: <c>$q</c> / <c>$query</c> (the search
+    /// phrase), <c>$limit</c> (Int), <c>$locale</c> ([Locales!]), <c>$today</c>
+    /// (Date, today's date in yyyy-MM-dd). Declare the ones you need; GraphQL
+    /// ignores undeclared variables. Additional fixed variables can be supplied
+    /// via <see cref="DefaultQueryVariables"/>.
+    ///
+    /// The result is parsed generically: the first object under <c>data</c>
+    /// containing an <c>items</c> array is treated as the result block. Per-item
+    /// fields commonly read for display: Name, ContentType, ContentLink.{Id,
+    /// GuidValue}, Language.Name, _score, and a snippet field (one of _fulltext,
+    /// GetExcerpt, Excerpt, Description, Url).
+    /// </summary>
+    public string? DefaultQuery { get; set; }
+
+    /// <summary>
+    /// Additional GraphQL variables forwarded with the configured
+    /// <see cref="DefaultQuery"/>. Values are JSON-serialized as-is (strings,
+    /// numbers, booleans, arrays, nested objects). Useful for parameters the
+    /// query needs that don't change between runs — e.g. content-type filters
+    /// or pinned-collection keys.
+    /// </summary>
+    public Dictionary<string, object?> DefaultQueryVariables { get; set; } = new();
 }
 
 /// <summary>

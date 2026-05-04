@@ -1,0 +1,128 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/health/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/health/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/health/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+@* ───────── Hero: big status, subtitle, controls ───────── *@
+<div class="gst-card gst-health-hero" id="hl-hero" data-status="unknown">
+    <div class="gst-health-hero__signal">
+        <span class="gst-health-hero__pulse" aria-hidden="true">
+            <span class="gst-health-hero__pulse-dot"></span>
+            <span class="gst-health-hero__pulse-ring"></span>
+        </span>
+        <div class="gst-health-hero__text">
+            <div class="gst-health-hero__status" id="hl-status-word">—</div>
+            <div class="gst-health-hero__subtitle" id="hl-subtitle">@Loc.GetString("/graphsearchtools/tools/health/run")</div>
+            <div class="gst-health-hero__meta">
+                <span id="hl-gateway" class="gst-health-hero__gateway"></span>
+                <span class="gst-health-hero__sep" aria-hidden="true">·</span>
+                <span id="hl-checked" class="gst-health-hero__checked">—</span>
+                <span class="gst-health-hero__sep gst-health-hero__sep--auto" id="hl-auto-sep" aria-hidden="true" hidden>·</span>
+                <span id="hl-auto-status" class="gst-health-hero__auto-status" hidden></span>
+            </div>
+        </div>
+    </div>
+    <div class="gst-health-hero__controls">
+        <label class="gst-health-toggle">
+            <span class="gst-health-toggle__label">@Loc.GetString("/graphsearchtools/tools/health/auto_label")</span>
+            <input type="checkbox" id="hl-auto" />
+            <span class="gst-health-toggle__pill"
+                  data-on="@Loc.GetString("/graphsearchtools/tools/health/auto_on")"
+                  data-off="@Loc.GetString("/graphsearchtools/tools/health/auto_off")"></span>
+        </label>
+        <button type="button" id="hl-run" class="gst-btn gst-btn--primary gst-health-runbtn">
+            <span class="gst-health-runbtn__dot"></span>
+            <span>@Loc.GetString("/graphsearchtools/tools/health/run")</span>
+        </button>
+    </div>
+</div>
+
+@* ───────── KPI tiles ───────── *@
+<div class="gst-health-kpis">
+    <div class="gst-health-kpi" data-kpi="status">
+        <div class="gst-health-kpi__label">@Loc.GetString("/graphsearchtools/tools/health/kpi_status")</div>
+        <div class="gst-health-kpi__value">
+            <span class="gst-health-dot" id="hl-kpi-dot"></span>
+            <span id="hl-kpi-status">—</span>
+        </div>
+        <div class="gst-health-kpi__sub" id="hl-kpi-status-sub">—</div>
+    </div>
+    <div class="gst-health-kpi" data-kpi="latency">
+        <div class="gst-health-kpi__label">@Loc.GetString("/graphsearchtools/tools/health/kpi_avg_latency")</div>
+        <div class="gst-health-kpi__value gst-health-kpi__value--num">
+            <span id="hl-kpi-avg">—</span><span class="gst-health-kpi__unit">ms</span>
+        </div>
+        <div class="gst-health-kpi__sub">@Loc.GetString("/graphsearchtools/tools/health/kpi_session_label")</div>
+    </div>
+    <div class="gst-health-kpi" data-kpi="verified">
+        <div class="gst-health-kpi__label">@Loc.GetString("/graphsearchtools/tools/health/kpi_verified")</div>
+        <div class="gst-health-kpi__value gst-health-kpi__value--num">
+            <span id="hl-kpi-verified">—</span><span class="gst-health-kpi__unit">%</span>
+        </div>
+        <div class="gst-health-kpi__sub" id="hl-kpi-verified-sub">—</div>
+    </div>
+    <div class="gst-health-kpi" data-kpi="issues">
+        <div class="gst-health-kpi__label">@Loc.GetString("/graphsearchtools/tools/health/kpi_open_issues")</div>
+        <div class="gst-health-kpi__value gst-health-kpi__value--num">
+            <span id="hl-kpi-issues">0</span>
+        </div>
+        <div class="gst-health-kpi__sub" id="hl-kpi-issues-sub">@Loc.GetString("/graphsearchtools/tools/health/kpi_issues_clean")</div>
+    </div>
+</div>
+
+@* ───────── Scan timeline (server-side history) ───────── *@
+<div class="gst-card gst-health-timeline">
+    <div class="gst-health-section-head">
+        <span class="gst-health-section-head__title">@Loc.GetString("/graphsearchtools/tools/health/timeline_title")</span>
+        <span class="gst-health-section-head__legend">
+            <span class="gst-health-timeline__yaxis" id="hl-timeline-yaxis"></span>
+            <span class="gst-health-timeline__legend-item is-green">@Loc.GetString("/graphsearchtools/tools/health/timeline_legend_clean")</span>
+            <span class="gst-health-timeline__legend-item is-amber">@Loc.GetString("/graphsearchtools/tools/health/timeline_legend_missing")</span>
+            <span class="gst-health-timeline__legend-item is-red">@Loc.GetString("/graphsearchtools/tools/health/timeline_legend_down")</span>
+        </span>
+    </div>
+    <div class="gst-health-timeline__canvas" id="hl-timeline-canvas">
+        <svg id="hl-timeline-svg" viewBox="0 0 600 80" preserveAspectRatio="none" aria-hidden="true">
+            <g id="hl-timeline-bars"></g>
+        </svg>
+        <div class="gst-health-timeline__empty" id="hl-timeline-empty">@Loc.GetString("/graphsearchtools/tools/health/timeline_empty")</div>
+    </div>
+</div>
+
+@* ───────── Probes (cards) ───────── *@
+<div class="gst-card gst-card--flush gst-health-probes">
+    <div class="gst-health-section-head gst-health-section-head--padded">
+        <span class="gst-health-section-head__title">@Loc.GetString("/graphsearchtools/tools/health/probes_title")</span>
+    </div>
+    <div id="hl-probes" class="gst-health-probes__list" aria-live="polite"></div>
+</div>
+
+@* ───────── Issues panel ───────── *@
+<div class="gst-card gst-card--flush gst-health-issues" id="hl-issues-card">
+    <div class="gst-health-section-head gst-health-section-head--padded">
+        <span class="gst-health-section-head__title">@Loc.GetString("/graphsearchtools/tools/health/issues_title")</span>
+        <span class="gst-health-section-head__legend gst-muted" id="hl-issues-summary"></span>
+    </div>
+    <div class="gst-health-issues__tabs">
+        <button type="button" class="gst-health-issues__tab is-active" data-tab="open" id="hl-issues-tab-open">
+            @Loc.GetString("/graphsearchtools/tools/health/issues_open") <span class="gst-health-issues__count" id="hl-issues-count-open">0</span>
+        </button>
+        <button type="button" class="gst-health-issues__tab" data-tab="resolved" id="hl-issues-tab-resolved">
+            @Loc.GetString("/graphsearchtools/tools/health/issues_resolved") <span class="gst-health-issues__count" id="hl-issues-count-resolved">0</span>
+        </button>
+    </div>
+    <div id="hl-issues-list" class="gst-health-issues__list" aria-live="polite"></div>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/health.js")"></script>
+}
