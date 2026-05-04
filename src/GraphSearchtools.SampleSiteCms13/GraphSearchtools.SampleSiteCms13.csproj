@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>800e0205-cec7-4a2b-9c5d-249a12b7a589</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,9 +32,6 @@
     <ItemGroup>
       <GraphSearchtoolsModuleFiles Include="..\GraphSearchtools\modules\_protected\GraphSearchtools\**\*" />
     </ItemGroup>
-    <Copy
-      SourceFiles="@(GraphSearchtoolsModuleFiles)"
-      DestinationFiles="@(GraphSearchtoolsModuleFiles->'$(MSBuildProjectDirectory)\modules\_protected\GraphSearchtools\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(GraphSearchtoolsModuleFiles)" DestinationFiles="@(GraphSearchtoolsModuleFiles-&gt;'$(MSBuildProjectDirectory)\modules\_protected\GraphSearchtools\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 </Project>
