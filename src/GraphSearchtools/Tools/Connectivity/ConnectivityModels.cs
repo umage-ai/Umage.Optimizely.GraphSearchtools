@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Connectivity;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ConnectivityStatus
 {
     Unknown,
