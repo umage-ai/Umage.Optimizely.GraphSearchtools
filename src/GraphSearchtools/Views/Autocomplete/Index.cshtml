@@ -14,14 +14,34 @@
 
 <div class="gst-card">
     <div class="gst-toolbar">
+        <label class="gst-ac-knob">
+            <span>@Loc.GetString("/graphsearchtools/tools/autocomplete/type")</span>
+            <div class="gst-combobox">
+                <input id="ac-type" type="text" autocomplete="off"
+                       placeholder="@Loc.GetString("/graphsearchtools/tools/autocomplete/type_placeholder")" />
+            </div>
+        </label>
+        <label class="gst-ac-knob">
+            <span>@Loc.GetString("/graphsearchtools/tools/autocomplete/field")</span>
+            <div class="gst-combobox">
+                <input id="ac-field" type="text" autocomplete="off"
+                       placeholder="@Loc.GetString("/graphsearchtools/tools/autocomplete/field_placeholder")" />
+            </div>
+        </label>
+        <label class="gst-ac-knob">
+            <span>@Loc.GetString("/graphsearchtools/tools/autocomplete/locale_label")</span>
+            <select id="ac-locale" class="gst-select"></select>
+        </label>
+        <label class="gst-ac-knob gst-ac-limit">
+            <span>@Loc.GetString("/graphsearchtools/tools/autocomplete/limit")</span>
+            <input id="ac-limit" type="number" min="1" max="25" value="10" />
+        </label>
+    </div>
+
+    <div class="gst-toolbar">
         <input id="ac-input" type="text" class="gst-ac-input"
                placeholder="@Loc.GetString("/graphsearchtools/tools/autocomplete/placeholder")"
                autocomplete="off" />
-        <select id="ac-locale" class="gst-select"></select>
-        <label class="gst-ac-limit">
-            @Loc.GetString("/graphsearchtools/tools/autocomplete/limit")
-            <input id="ac-limit" type="number" min="1" max="25" value="10" />
-        </label>
         <div class="gst-toolbar__spacer"></div>
         <span id="ac-meta" class="gst-muted"></span>
     </div>
