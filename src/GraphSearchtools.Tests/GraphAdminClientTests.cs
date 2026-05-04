@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using FluentAssertions;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
@@ -68,12 +69,67 @@ public class GraphAdminClientTests
         body.Should().Be("water => H2O");
     }
 
+    [Fact]
+    public async Task GetGraphLocalesAsync_IntrospectsLocalesEnumAndStripsSyntheticValues()
+    {
+        HttpRequestMessage? captured = null;
+        string? body = null;
+        var handler = new StubHttpMessageHandler(async request =>
+        {
+            captured = request;
+            body = request.Content == null ? null : await request.Content.ReadAsStringAsync();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "{\"data\":{\"__type\":{\"enumValues\":[" +
+                    "{\"name\":\"en\"},{\"name\":\"da\"},{\"name\":\"sv\"}," +
+                    "{\"name\":\"ALL\"},{\"name\":\"neutralLanguage\"}]}}}",
+                    Encoding.UTF8, "application/json")
+            };
+        });
+        var client = new GraphAdminClient(new HttpClient(handler), QueryCredentialsResolver());
+
+        var locales = await client.GetGraphLocalesAsync(CancellationToken.None);
+
+        // Hit the GraphQL endpoint (POST), with the query string carrying the SingleKey.
+        captured!.Method.Should().Be(HttpMethod.Post);
+        captured.RequestUri!.AbsolutePath.Should().Be("/content/v2");
+        captured.RequestUri.Query.Should().Contain("auth=single-key");
+        // System.Text.Json's default encoder writes `"` as the unicode escape `"`.
+        body.Should().Contain("__type(name: \\u0022Locales\\u0022)");
+
+        // Both "ALL" and "neutralLanguage" are dropped — the picker provides its own
+        // wildcard option, and neutralLanguage isn't a real selectable branch.
+        locales.Should().Equal("da", "en", "sv");
+    }
+
+    [Fact]
+    public async Task GetGraphLocalesAsync_ReturnsEmptyWhenSchemaHasNoLocalesType()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"data\":{\"__type\":null}}", Encoding.UTF8, "application/json")
+        });
+        var client = new GraphAdminClient(new HttpClient(handler), QueryCredentialsResolver());
+
+        var locales = await client.GetGraphLocalesAsync(CancellationToken.None);
+
+        locales.Should().BeEmpty();
+    }
+
     private static IGraphCredentialsResolver CredentialsResolver()
         => new StaticCredentialsResolver(new GraphCredentials(
             "https://cg.optimizely.com",
             "app-key",
             "secret-key",
             string.Empty));
+
+    private static IGraphCredentialsResolver QueryCredentialsResolver()
+        => new StaticCredentialsResolver(new GraphCredentials(
+            "https://cg.optimizely.com",
+            "app-key",
+            "secret-key",
+            "single-key"));
 
     private sealed class StaticCredentialsResolver : IGraphCredentialsResolver
     {

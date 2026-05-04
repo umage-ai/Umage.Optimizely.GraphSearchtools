@@ -20,7 +20,7 @@
     var saveButton = document.getElementById('syn-save');
     var addButton = document.getElementById('syn-add');
 
-    var sites = [];
+    var graphLocales = [];
     var rows = [];
     var dirty = false;
     var currentLang = '';
@@ -72,18 +72,22 @@
         optGlobal.value = '';
         optGlobal.textContent = STRINGS.global || 'Global';
         synLanguageFilter.appendChild(optGlobal);
-        sites.forEach(function (site) {
+        graphLocales.forEach(function (code) {
             var opt = document.createElement('option');
-            opt.value = site.languageCode;
-            opt.textContent = site.title + ' (' + site.languageCode + ')';
+            opt.value = code;
+            opt.textContent = code;
             synLanguageFilter.appendChild(opt);
         });
     }
 
     function loadSitesAndInitial() {
-        ajax(BASE + '/SitesApi/List')
+        // Locale slots in Graph synonyms are routed by Graph's own locale codes,
+        // so the picker pulls from /SitesApi/Locales (schema introspection)
+        // rather than the host CMS site list — that way it stays accurate when
+        // the two have drifted.
+        ajax(BASE + '/SitesApi/Locales')
             .then(function (s) {
-                sites = s || [];
+                graphLocales = s || [];
                 renderLanguageFilter();
                 return loadForLanguage('');
             })
