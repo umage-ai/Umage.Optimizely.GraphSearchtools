@@ -69,6 +69,13 @@ public class AddGraphSearchtoolsTests
         options.Value.Features.Health.Should().BeTrue();
         options.Value.Features.Autocomplete.Should().BeTrue();
         options.Value.Features.SavedQueries.Should().BeTrue();
+        options.Value.Features.DecaySandbox.Should().BeTrue();
+
+        // Phase 3: Decay & Factor Sandbox is a client-side preview tool — no
+        // service registration, but its PermissionType must still resolve so
+        // it shows up in CMS Set Access Rights.
+        GraphSearchtoolsPermissions.DecaySandbox.Should().NotBeNull();
+        GraphSearchtoolsPermissions.DecaySandbox.Name.Should().Be("DecaySandbox");
 
         // Auth policy is configured under the canonical name.
         var authOptions = provider.GetRequiredService<IOptions<AuthorizationOptions>>();

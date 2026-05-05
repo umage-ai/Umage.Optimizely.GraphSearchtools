@@ -14,4 +14,5 @@ public class FeatureToggles
     public bool Autocomplete { get; set; } = true;
     public bool SavedQueries { get; set; } = true;
     public bool Profiles { get; set; } = true;
+    public bool DecaySandbox { get; set; } = true;
 }
