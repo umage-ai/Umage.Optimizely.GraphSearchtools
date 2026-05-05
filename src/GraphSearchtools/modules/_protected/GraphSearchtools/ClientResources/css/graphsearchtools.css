@@ -2522,3 +2522,89 @@ td.bpe-editing select {
     padding: 4px 10px;
     line-height: 1;
 }
+
+/* ── Request Logs (Phase 3) ───────────────────────────────────────── */
+.gst-rl-toolbar {
+    flex-wrap: wrap;
+    gap: var(--gst-space-sm);
+    align-items: center;
+}
+.gst-rl-pillgroup {
+    display: inline-flex;
+    border: 1px solid var(--gst-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.gst-rl-pill {
+    background: transparent;
+    border: 0;
+    padding: 4px 12px;
+    font: inherit;
+    color: var(--gst-text-secondary);
+    cursor: pointer;
+    line-height: 1.6;
+}
+.gst-rl-pill + .gst-rl-pill { border-left: 1px solid var(--gst-border); }
+.gst-rl-pill:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-rl-pill--active {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+    font-weight: 600;
+}
+.gst-rl-errors-toggle {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    cursor: pointer;
+}
+.gst-rl-search {
+    min-width: 220px;
+    padding: 4px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    font: inherit;
+    box-sizing: border-box;
+}
+.gst-rl-table tr.gst-rl-row { cursor: pointer; }
+.gst-rl-row--expanded > td { background: var(--gst-surface-hover); }
+.gst-rl-chevron-col { width: 28px; text-align: center; }
+.gst-rl-chevron { color: var(--gst-text-muted); font-size: 12px; }
+.gst-rl-dim { color: var(--gst-text-muted); }
+.gst-rl-expansion > td {
+    padding: 0;
+    background: var(--gst-surface);
+    border-top: 0;
+}
+.gst-rl-expansion__inner {
+    padding: var(--gst-space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-sm);
+}
+.gst-rl-section__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-weight: 600;
+    color: var(--gst-text-secondary);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-rl-pre {
+    background: var(--gst-surface-active);
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 360px;
+}
+.gst-rl-meta {
+    color: var(--gst-text-muted);
+    font-size: 11px;
+}
+.gst-rl-meta code { color: var(--gst-text-secondary); }

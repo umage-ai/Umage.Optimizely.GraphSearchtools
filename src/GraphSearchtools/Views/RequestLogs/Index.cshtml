@@ -1,0 +1,55 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/requestLogs/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/requestLogs/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/requestLogs/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-card">
+    <div class="gst-toolbar gst-rl-toolbar">
+        <div class="gst-rl-pillgroup" role="group" aria-label="Time window">
+            <button type="button" class="gst-rl-pill" data-window="1h">@Loc.GetString("/graphsearchtools/tools/requestLogs/filter_window_1h")</button>
+            <button type="button" class="gst-rl-pill gst-rl-pill--active" data-window="24h">@Loc.GetString("/graphsearchtools/tools/requestLogs/filter_window_24h")</button>
+            <button type="button" class="gst-rl-pill" data-window="7d">@Loc.GetString("/graphsearchtools/tools/requestLogs/filter_window_7d")</button>
+            <button type="button" class="gst-rl-pill" data-window="all">@Loc.GetString("/graphsearchtools/tools/requestLogs/filter_window_all")</button>
+        </div>
+        <label class="gst-rl-errors-toggle">
+            <input type="checkbox" id="rl-only-errors" />
+            <span>@Loc.GetString("/graphsearchtools/tools/requestLogs/filter_only_errors")</span>
+        </label>
+        <input type="text" id="rl-search-op"
+               class="gst-rl-search"
+               placeholder="@Loc.GetString("/graphsearchtools/tools/requestLogs/filter_search_op_placeholder")" />
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="rl-refresh" class="gst-btn">
+            @Loc.GetString("/graphsearchtools/ui/shared/refresh")
+        </button>
+    </div>
+
+    <table class="gst-table gst-rl-table">
+        <thead>
+            <tr>
+                <th>@Loc.GetString("/graphsearchtools/tools/requestLogs/col_when")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/requestLogs/col_op")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/requestLogs/col_status")</th>
+                <th class="num">@Loc.GetString("/graphsearchtools/tools/requestLogs/col_duration")</th>
+                <th class="num">@Loc.GetString("/graphsearchtools/tools/requestLogs/col_hits")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/requestLogs/col_ranking")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/requestLogs/col_caller")</th>
+                <th class="gst-rl-chevron-col" aria-hidden="true"></th>
+            </tr>
+        </thead>
+        <tbody id="rl-grid"></tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/request-logs.js")"></script>
+}

@@ -238,6 +238,13 @@ public class UiStringsProvider(LocalizationService loc)
             empty = C("empty"),
             load_failed = C("load_failed"),
             sync_failed = C("sync_failed")
+        },
+        requestLogs = new
+        {
+            empty = R("empty"),
+            copy_query = R("copy_query"),
+            copied = R("copied"),
+            load_failed = R("load_failed")
         }
     };
 }
