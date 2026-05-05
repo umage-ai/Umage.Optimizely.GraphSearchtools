@@ -13,10 +13,5 @@ public class FeatureToggles
     public bool Health { get; set; } = true;
     public bool Autocomplete { get; set; } = true;
     public bool SavedQueries { get; set; } = true;
-
-    // STUB: belongs to foundation agent — to be replaced at integration.
-    // The foundation agent introduces the Profiles toggle alongside the
-    // Search Profiles registration plumbing. Stubbed here so the UI scaffolding
-    // can reference it via nameof(FeatureToggles.Profiles).
     public bool Profiles { get; set; } = true;
 }

@@ -21,7 +21,13 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds Graph Search Tools with default options.
     /// </summary>
-    public static IServiceCollection AddGraphSearchtools(this IServiceCollection services)
+    /// <remarks>
+    /// Returns <see cref="IGraphSearchtoolsBuilder"/> so callers can chain
+    /// <c>.AddSearchProfile(...)</c>. This is a breaking change from earlier
+    /// previews — code that needs the underlying <see cref="IServiceCollection"/>
+    /// can read it from <see cref="IGraphSearchtoolsBuilder.Services"/>.
+    /// </remarks>
+    public static IGraphSearchtoolsBuilder AddGraphSearchtools(this IServiceCollection services)
     {
         return services.AddGraphSearchtools(_ => { });
     }
@@ -29,7 +35,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds Graph Search Tools with custom options.
     /// </summary>
-    public static IServiceCollection AddGraphSearchtools(
+    /// <remarks>
+    /// See remarks on <see cref="AddGraphSearchtools(IServiceCollection)"/>.
+    /// </remarks>
+    public static IGraphSearchtoolsBuilder AddGraphSearchtools(
         this IServiceCollection services,
         Action<GraphSearchtoolsOptions> configureOptions)
     {
@@ -57,12 +66,10 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<QueryRunnerService>();
         services.AddSingleton<SavedQueriesService>();
 
-        // STUB: belongs to foundation agent — to be replaced at integration.
-        // Profiles UI scaffolding needs an ISearchProfileRegistry and the
-        // SearchProfileEditService on the container. The foundation agent's
-        // registration replaces these with the validating singleton +
-        // DDS-backed edit store.
-        services.AddSingleton<ISearchProfileRegistry, EmptySearchProfileRegistry>();
+        // Phase 2.5: Search Profiles foundation. The registry collects every
+        // SearchProfile registered as a singleton (by AddSearchProfile) plus
+        // synthesises a Generic catchment.
+        services.AddSingleton<ISearchProfileRegistry, SearchProfileRegistry>();
         services.AddSingleton<SearchProfileEditService>();
         services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.ProfilesService>();
 
@@ -74,7 +81,7 @@ public static class ServiceCollectionExtensions
             });
         });
 
-        return services;
+        return new GraphSearchtoolsBuilder(services);
     }
 }
 

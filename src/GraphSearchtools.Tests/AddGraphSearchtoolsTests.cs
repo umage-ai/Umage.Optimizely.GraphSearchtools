@@ -53,6 +53,10 @@ public class AddGraphSearchtoolsTests
         services.Should().Contain(d => d.ServiceType == typeof(QueryRunnerService));
         services.Should().Contain(d => d.ServiceType == typeof(SavedQueriesService));
 
+        // Phase 2.5: Search Profiles registry + audit-log service.
+        services.Should().Contain(d => d.ServiceType == typeof(ISearchProfileRegistry));
+        services.Should().Contain(d => d.ServiceType == typeof(SearchProfileEditService));
+
         var provider = services.BuildServiceProvider();
 
         // Options bind correctly with the supplied configure-action overrides.
@@ -133,5 +137,49 @@ public class AddGraphSearchtoolsTests
             .WhoseValue!.ToString().Should().Be("ProductNode");
         options.Value.SavedQueries.DefaultQueryVariables.Should().ContainKey("contentType")
             .WhoseValue!.ToString().Should().Be("Content");
+    }
+
+    [Fact]
+    public void AddSearchProfile_RegistersProfileWithBuilderAndServiceCollection()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        var builder = services.AddGraphSearchtools()
+            .AddSearchProfile("site-search", p => p
+                .DisplayName("Site search")
+                .Sites("corporate")
+                .Locales("en")
+                .UsesSynonymSlot("site")
+                .UsesPinnedKey("site-{locale}"));
+
+        builder.Profiles.Should().ContainSingle().Which.Key.Should().Be("site-search");
+
+        // The profile is also a DI singleton so the registry can find it via IEnumerable<SearchProfile>.
+        var registered = services
+            .Where(d => d.ServiceType == typeof(SearchProfile))
+            .Select(d => d.ImplementationInstance)
+            .OfType<SearchProfile>()
+            .ToList();
+        registered.Should().ContainSingle().Which.Key.Should().Be("site-search");
+    }
+
+    [Fact]
+    public void AddSearchProfile_ThrowsOnDuplicateKey()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        var act = () => services.AddGraphSearchtools()
+            .AddSearchProfile("dup", p => p.DisplayName("first"))
+            .AddSearchProfile("dup", p => p.DisplayName("second"));
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*dup*");
     }
 }
