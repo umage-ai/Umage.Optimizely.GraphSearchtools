@@ -82,8 +82,7 @@ public class UiStringsProvider(LocalizationService loc)
             help_replacement_label = S("synonyms/help_replacement_label"),
             help_replacement_text = S("synonyms/help_replacement_text"),
             help_equivalent_label = S("synonyms/help_equivalent_label"),
-            help_equivalent_text = S("synonyms/help_equivalent_text"),
-            profile_locale = S("synonyms/profile_locale")
+            help_equivalent_text = S("synonyms/help_equivalent_text")
         },
         health = new
         {
@@ -205,8 +204,7 @@ public class UiStringsProvider(LocalizationService loc)
             no_results = S("savedqueries/no_results"),
             returned_for = S("savedqueries/returned_for"),
             show_query = S("savedqueries/show_query"),
-            hide_query = S("savedqueries/hide_query"),
-            profile_document_loaded = S("savedqueries/profile_document_loaded")
+            hide_query = S("savedqueries/hide_query")
         }
     };
 }

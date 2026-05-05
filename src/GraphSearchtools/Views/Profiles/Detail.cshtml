@@ -89,19 +89,6 @@
                         </div>
                     }
                     <div>
-                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/synonymSlot")</dt>
-                        <dd>
-                            @if (string.IsNullOrEmpty(Model.SynonymSlot))
-                            {
-                                <span class="gst-muted">—</span>
-                            }
-                            else
-                            {
-                                <span class="gst-mono">"@Model.SynonymSlot"</span>
-                            }
-                        </dd>
-                    </div>
-                    <div>
                         <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/pinnedKey")</dt>
                         <dd>
                             @if (string.IsNullOrEmpty(Model.PinnedKeyFormula))
@@ -158,15 +145,6 @@
                 </button>
                 <button type="button" class="gst-tab" data-tab="pinned">
                     @Loc.GetString("/graphsearchtools/profiles/detail/tabs/pinned")
-                </button>
-                @if (Model.HasSynonymTab)
-                {
-                    <button type="button" class="gst-tab" data-tab="synonyms">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/tabs/synonyms")
-                    </button>
-                }
-                <button type="button" class="gst-tab" data-tab="tryit">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/tryProd")
                 </button>
                 <button type="button" class="gst-tab" data-tab="audit">
                     @Loc.GetString("/graphsearchtools/profiles/detail/tabs/audit")
@@ -276,8 +254,7 @@
                         </div>
                     </div>
 
-                    @* Try-it side panel — minimal live preview. The richer Try-in-production-query
-                       tab (owned by the Diagnostics agent) lives separately. *@
+                    @* Try-it side panel — minimal in-context preview of the Pinned editor's effect. *@
                     <aside class="gst-card" style="margin: 0; align-self: start;">
                         <div class="gst-card__header">
                             <span class="gst-card__title">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryTitle")</span>
@@ -310,54 +287,9 @@
                                         <span id="gst-pin-tryit-stats"></span>
                                     </div>
                                 </div>
-                                <!-- TODO: hand-off to Diagnostics agent — richer Try-it (raw response,
-                                     score / fulltext debug projections) lives in the "Try in production
-                                     query" tab; the side panel here is intentionally minimal. -->
                             }
                         </div>
                     </aside>
-                </div>
-            </div>
-
-            @if (Model.HasSynonymTab)
-            {
-                <div class="gst-tab-pane" data-pane="synonyms" hidden>
-                    <div class="gst-card__body">
-                        <div id="gst-prof-synonyms-host"
-                             data-profile-key="@Model.Key"
-                             data-locales="@string.Join(",", Model.Locales)">
-                        </div>
-                    </div>
-                </div>
-            }
-
-            @* Phase 2.5 §4.3 — per-profile Try-it tab. Embeds the Saved Queries /
-               Diagnostics runner as an iframe scoped to this profile. The full
-               in-tab editor (variables, raw response, score / fulltext debug)
-               lands once the runner exposes a `GST.diagnostics.runner({...})`
-               factory; the iframe is the v0.2.5 path. *@
-            <div class="gst-tab-pane" data-pane="tryit" hidden>
-                <div class="gst-card__body">
-                    @if (string.IsNullOrEmpty(Model.GraphQLDocPath))
-                    {
-                        <div class="gst-prof-tryit-empty">
-                            <h3>@Loc.GetString("/graphsearchtools/profiles/detail/tryProd/title")</h3>
-                            <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/tryProd/noDocument")</p>
-                        </div>
-                    }
-                    else
-                    {
-                        var savedQueriesUrl = Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider),
-                            "GraphSearchtools/SavedQueries");
-                        var iframeSrc = $"{savedQueriesUrl}?embed=1&profileKey={Uri.EscapeDataString(Model.Key)}";
-                        <div class="gst-prof-tryit">
-                            <iframe id="gst-prof-tryit-frame"
-                                    class="gst-prof-tryit__frame"
-                                    src="@iframeSrc"
-                                    title="@Loc.GetString("/graphsearchtools/profiles/detail/tryProd/title")"
-                                    loading="lazy"></iframe>
-                        </div>
-                    }
                 </div>
             </div>
 
@@ -373,7 +305,6 @@
 </div>
 
 @section Scripts {
-    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/profiles.js")"></script>
     <script>

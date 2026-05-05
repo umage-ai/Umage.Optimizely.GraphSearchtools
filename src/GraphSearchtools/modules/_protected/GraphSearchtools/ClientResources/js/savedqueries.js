@@ -448,65 +448,15 @@
     dialog.addEventListener('click', function (e) { if (e.target === dialog) closeDialog(); });
     dlgName.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); savePreset(); } });
 
-    // ── Embed mode (Phase 2.5 §4.3) ───────────────────────────────
-    // When loaded inside the Profiles detail Try-it iframe, the page receives
-    // a profileKey via window.GST_DIAGNOSTICS_EMBED. We constrain the locale
-    // picker to the profile's locales and pre-fetch the registered GraphQL
-    // document so editors can see what production runs without leaving the tab.
-    var embedConfig = window.GST_DIAGNOSTICS_EMBED || null;
-    var profileLocales = null;          // null = no constraint
-    var profileDocument = null;         // { exists, path, body }
-
-    function loadEmbedContext() {
-        if (!embedConfig || !embedConfig.profileKey) return Promise.resolve();
-        var key = encodeURIComponent(embedConfig.profileKey);
-        return Promise.all([
-            ajax('/EPiServer/cms/graphsearchtools/api/profiles/' + key).catch(function () { return null; }),
-            ajax('/EPiServer/cms/graphsearchtools/api/profiles/' + key + '/document').catch(function () { return null; })
-        ]).then(function (results) {
-            var detail = results[0];
-            var doc = results[1];
-            if (detail && detail.summary && detail.summary.locales && detail.summary.locales.length) {
-                profileLocales = detail.summary.locales;
-            }
-            if (doc) profileDocument = doc;
-        });
-    }
-
-    function applyEmbedContext() {
-        if (!embedConfig) return;
-        if (profileLocales && profileLocales.length) {
-            // Constrain the locale dropdown to the profile's declared locales.
-            graphLocales = profileLocales.slice();
-            renderLocales();
-            // Default the picker to the profile's first locale (rather than ALL).
-            if (graphLocales.length === 1) localeSelect.value = graphLocales[0];
-        }
-        if (profileDocument && profileDocument.exists && profileDocument.body) {
-            // Surface the registered document path for the editor; the v0.2.5
-            // embed runner still uses the phrase + ranking knobs path — the
-            // full document editor lands when we extract the runner factory.
-            var notice = document.createElement('div');
-            notice.className = 'gst-alert gst-alert--info gst-sq-default-query-notice';
-            notice.textContent = (STRINGS.profile_document_loaded || 'Production query: ') + (profileDocument.path || '');
-            var alertHost = document.querySelector('.gst-sq-layout');
-            if (alertHost && alertHost.parentNode) {
-                alertHost.parentNode.insertBefore(notice, alertHost);
-            }
-        }
-    }
-
     // ── Boot ─────────────────────────────────────────────────────
 
     Promise.all([
         ajax(BASE + '/SitesApi/Locales'),
-        ajax(BASE + '/SavedQueriesApi/List'),
-        loadEmbedContext()
+        ajax(BASE + '/SavedQueriesApi/List')
     ]).then(function (results) {
         graphLocales = results[0] || [];
         presets = results[1] || [];
         renderLocales();
         renderPresets();
-        applyEmbedContext();
     }).catch(function (err) { setAlert(err.message, true); });
 })();

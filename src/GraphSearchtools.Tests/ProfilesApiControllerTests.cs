@@ -73,13 +73,13 @@ public class ProfilesApiControllerTests
         var hostEnv = new StubHostEnvironment();
         var service = new ProfilesService(registry, new SearchProfileEditService(), localization, hostEnv);
 
-        // The Index/Detail tests don't exercise the pinned or document
-        // endpoints, but the controller's constructor demands both deps. A
-        // loose IGraphAdminClient mock satisfies PinnedService.
+        // The Index/Detail tests don't exercise the pinned endpoint, but the
+        // controller's constructor demands the dep. A loose IGraphAdminClient
+        // mock satisfies PinnedService.
         var graphClient = new Mock<IGraphAdminClient>(MockBehavior.Loose).Object;
         var pinnedService = new PinnedService(graphClient);
 
-        var controller = new ProfilesApiController(service, registry, hostEnv, accessChecker, pinnedService, NullLogger<ProfilesApiController>.Instance);
+        var controller = new ProfilesApiController(service, registry, accessChecker, pinnedService, NullLogger<ProfilesApiController>.Instance);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity("test")) }

@@ -81,17 +81,11 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
         };
 
-        // Diagnostics (Phase 2.5): Saved Queries → Diagnostics rename + demotion.
-        // URL kept on /savedqueries for v0.2.5 link stability — the alias
-        // /diagnostics route serves the same view. Gate is the AND of the new
-        // Diagnostics flag and the legacy SavedQueries flag so a host that
-        // explicitly disables either one still hides the menu entry.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/diagnostics", "Diagnostics"), BaseMenuPath + "/diagnostics",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/savedqueries", "Saved Queries"), BaseMenuPath + "/savedqueries",
             GetResourcePath("GraphSearchtools/SavedQueries"))
         {
             SortIndex = 400,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Diagnostics))
-                && IsFeatureEnabled(context, nameof(FeatureToggles.SavedQueries))
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SavedQueries))
         };
 
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
