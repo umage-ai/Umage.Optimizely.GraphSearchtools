@@ -83,6 +83,22 @@ public class GraphSearchtoolsController : Controller
     }
 
     [HttpGet]
+    public IActionResult CustomDataSources()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.CustomDataSources), GraphSearchtoolsPermissions.CustomDataSources))
+            return Forbid();
+        return View("/Views/CustomDataSources/Index.cshtml");
+    }
+
+    [HttpGet]
+    public IActionResult RequestLogs()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.RequestLogs), GraphSearchtoolsPermissions.RequestLogs))
+            return Forbid();
+        return View("/Views/RequestLogs/Index.cshtml");
+    }
+
+    [HttpGet]
     public IActionResult About()
     {
         return View("/Views/About/Index.cshtml");

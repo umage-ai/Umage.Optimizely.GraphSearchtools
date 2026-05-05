@@ -9,8 +9,10 @@ using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.CustomDataSources;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
+using UmageAI.Optimizely.GraphSearchTools.Tools.RequestLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Webhooks;
@@ -66,6 +68,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<HealthScanService>();
         services.AddHttpClient<QueryRunnerService>();
         services.AddScoped<WebhooksService>();
+        services.AddScoped<CustomDataSourcesService>();
+        services.AddScoped<RequestLogsService>();
 
         // Phase 2.5: Search Profiles foundation. The registry collects every
         // SearchProfile registered as a singleton (by AddSearchProfile) plus

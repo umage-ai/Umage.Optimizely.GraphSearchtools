@@ -100,6 +100,26 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Webhooks))
         };
 
+        // Custom Data Sources (Phase 3) — read-only inspection of registered
+        // non-CMS sources, with a per-source "trigger resync" action. New
+        // sources are registered out-of-band by their own pipelines.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/customDataSources", "Custom Data Sources"), BaseMenuPath + "/customdatasources",
+            GetResourcePath("GraphSearchtools/CustomDataSources"))
+        {
+            SortIndex = 430,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.CustomDataSources))
+        };
+
+        // Request Logs (Phase 3) — recent Graph queries with timing, status,
+        // and ranking. Click-to-expand reveals the full GraphQL document and
+        // a "Copy query" button so it can be replayed via Search Console.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/requestLogs", "Request Logs"), BaseMenuPath + "/requestlogs",
+            GetResourcePath("GraphSearchtools/RequestLogs"))
+        {
+            SortIndex = 440,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.RequestLogs))
+        };
+
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
             GetResourcePath("GraphSearchtools/About"))
         {

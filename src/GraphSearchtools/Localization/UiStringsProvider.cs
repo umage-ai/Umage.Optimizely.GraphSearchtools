@@ -30,6 +30,20 @@ public class UiStringsProvider(LocalizationService loc)
     /// </summary>
     private string W(string key) => loc.GetString($"/graphsearchtools/tools/webhooks/{key}");
 
+    /// <summary>
+    /// Lookup for Custom Data Sources strings under
+    /// /graphsearchtools/tools/customDataSources/*. The page JS reads
+    /// status-badge labels and inline confirm/error messages from this section.
+    /// </summary>
+    private string C(string key) => loc.GetString($"/graphsearchtools/tools/customDataSources/{key}");
+
+    /// <summary>
+    /// Lookup for Request Logs strings under /graphsearchtools/tools/requestLogs/*.
+    /// The Request Logs JS reads the empty-state copy, the copy-query button
+    /// label, and the load-failed message from this section.
+    /// </summary>
+    private string R(string key) => loc.GetString($"/graphsearchtools/tools/requestLogs/{key}");
+
     public object GetAll() => new
     {
         shared = new
@@ -210,6 +224,20 @@ public class UiStringsProvider(LocalizationService loc)
             save_failed = W("save_failed"),
             delete_failed = W("delete_failed"),
             load_failed = W("load_failed")
+        },
+        customDataSources = new
+        {
+            sync = C("sync"),
+            sync_confirm = C("sync_confirm"),
+            sync_started = C("sync_started"),
+            status_healthy = C("status_healthy"),
+            status_syncing = C("status_syncing"),
+            status_stale = C("status_stale"),
+            status_failed = C("status_failed"),
+            status_unknown = C("status_unknown"),
+            empty = C("empty"),
+            load_failed = C("load_failed"),
+            sync_failed = C("sync_failed")
         }
     };
 }
