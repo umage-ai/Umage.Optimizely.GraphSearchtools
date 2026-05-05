@@ -9,9 +9,11 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
@@ -166,7 +168,10 @@ public class ProfilesApiControllerDocumentTests
         var hostEnv = new StubHostEnvironment { ContentRootPath = contentRoot };
         var service = new ProfilesService(registry, new SearchProfileEditService(), localization, hostEnv);
 
-        var controller = new ProfilesApiController(service, registry, hostEnv, accessChecker, NullLogger<ProfilesApiController>.Instance);
+        var graphClient = new Mock<IGraphAdminClient>(MockBehavior.Loose).Object;
+        var pinnedService = new PinnedService(graphClient);
+
+        var controller = new ProfilesApiController(service, registry, hostEnv, accessChecker, pinnedService, NullLogger<ProfilesApiController>.Instance);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity("test")) }
