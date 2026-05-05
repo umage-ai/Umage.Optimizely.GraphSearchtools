@@ -272,6 +272,7 @@
     function detail(opts) {
         opts = opts || {};
         var key = opts.profileKey || '';
+        var pinnedMounted = false;
 
         // Tab switching — local, mirrors the prototype's idiom.
         document.querySelectorAll('.gst-prof-tabs .gst-tab').forEach(function(btn) {
@@ -284,9 +285,32 @@
                     pane.hidden = pane.dataset.pane !== tab;
                 });
                 if (tab === 'audit')    loadAudit(key);
+                if (tab === 'pinned')   mountPinned();
                 if (tab === 'synonyms') detailSynonyms.init(key);
             });
         });
+
+        // Eagerly mount Pinned if it's the active tab on first paint, so the
+        // editor isn't empty when the user lands on the page.
+        var activeTab = document.querySelector('.gst-prof-tabs .gst-tab.active');
+        if (activeTab && activeTab.dataset.tab === 'pinned') {
+            mountPinned();
+        }
+
+        function mountPinned() {
+            if (pinnedMounted) return;
+            if (!window.GST || !window.GST.pinned || typeof window.GST.pinned.editor !== 'function') return;
+            pinnedMounted = true;
+            window.GST.pinned.editor({
+                profileKey: key,
+                sites: opts.sites || [],
+                locales: opts.locales || [],
+                isGeneric: !!opts.isGeneric,
+                isSiteShared: !!opts.isSiteShared,
+                pinnedKeyFormula: opts.pinnedKeyFormula || null,
+                hasGraphQLDoc: !!opts.hasGraphQLDoc
+            });
+        }
     }
 
     /**

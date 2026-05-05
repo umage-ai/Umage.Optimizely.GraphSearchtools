@@ -30,12 +30,16 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Overview/Index.cshtml");
     }
 
+    /// <summary>
+    /// Phase 2.5 §4.1: Pinned no longer has a standalone page. Marketers edit
+    /// pinned results via Profiles → {profile} → Pinned tab. We keep this
+    /// action for hosts that linked directly to <c>/pinned</c> and 301-redirect
+    /// to the Profiles index — they'll click into whichever profile they need.
+    /// </summary>
     [HttpGet]
     public IActionResult Pinned()
     {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Pinned), GraphSearchtoolsPermissions.Pinned))
-            return Forbid();
-        return View("/Views/Pinned/Index.cshtml");
+        return RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
     }
 
     [HttpGet]

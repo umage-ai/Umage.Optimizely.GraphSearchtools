@@ -49,14 +49,15 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Profiles))
         };
 
-        // Editorial group (Phase 1): Pinned + Synonyms.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned Results"), BaseMenuPath + "/pinned",
-            GetResourcePath("GraphSearchtools/Pinned"))
-        {
-            SortIndex = 200,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Pinned))
-        };
+        // Phase 2.5 §4.1: Pinned no longer has a top-level menu entry — pinned
+        // results are always profile-scoped (Graph keys them per collection),
+        // so marketers reach the editor via Profiles → {profile} → Pinned tab.
+        // The legacy /pinned URL still serves a 301 redirect for hosts that
+        // bookmark it (see GraphSearchtoolsController.Pinned). The Pinned
+        // FeatureToggle now gates the in-profile tab instead.
 
+        // Editorial group (Phase 1): Synonyms keeps its top-level entry
+        // because Graph's Global synonym slot needs a tenant-level surface.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/synonyms", "Synonyms"), BaseMenuPath + "/synonyms",
             GetResourcePath("GraphSearchtools/Synonyms"))
         {

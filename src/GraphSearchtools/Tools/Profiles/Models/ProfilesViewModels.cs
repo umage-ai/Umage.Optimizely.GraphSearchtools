@@ -107,6 +107,59 @@ public sealed record ProfileEditDto
 }
 
 /// <summary>
+/// Pinned-tab payload for the Profile detail page. Returned by
+/// <c>GET /api/profiles/{key}/pinned?site=&amp;locale=</c>. Includes the
+/// resolved <see cref="PinnedKey"/> so the UI can show the read-only "Pinned
+/// key:" line, and <see cref="CollectionId"/> so the JS can pass it back to
+/// the existing <c>/PinnedApi/CreateItem</c> endpoint without re-resolving.
+/// </summary>
+public sealed record ProfilePinnedResponse
+{
+    public string ProfileKey { get; init; } = string.Empty;
+    public string? Site { get; init; }
+    public string? Locale { get; init; }
+
+    /// <summary>Resolved Graph collection key, e.g. <c>"site-en"</c>. <c>null</c> for the Generic free-form view.</summary>
+    public string? PinnedKey { get; init; }
+
+    /// <summary>Graph collection id matching <see cref="PinnedKey"/>, or <c>null</c> when no collection exists yet.</summary>
+    public string? CollectionId { get; init; }
+
+    /// <summary>True when this is the synthesised Generic catchment with no formula — UI should fall back to free-form mode.</summary>
+    public bool IsGeneric { get; init; }
+
+    public IReadOnlyList<ProfilePinnedRow> Rows { get; init; } = Array.Empty<ProfilePinnedRow>();
+}
+
+/// <summary>
+/// Flat row shape per pinned item, decorated with the parent collection's key
+/// and id so the JS can route writes back through <c>PinnedApi/{Update,Delete}Item</c>.
+/// </summary>
+public sealed record ProfilePinnedRow
+{
+    public string Id { get; init; } = string.Empty;
+    public string CollectionId { get; init; } = string.Empty;
+    public string CollectionKey { get; init; } = string.Empty;
+    public string Phrases { get; init; } = string.Empty;
+    public string TargetKey { get; init; } = string.Empty;
+    public string? Language { get; init; }
+    public double Priority { get; init; }
+    public bool IsActive { get; init; }
+
+    public static ProfilePinnedRow From(PinnedCollectionResult col, PinnedItemResult item) => new()
+    {
+        Id = item.Id,
+        CollectionId = item.CollectionId is { Length: > 0 } cid ? cid : col.Id,
+        CollectionKey = col.Key,
+        Phrases = item.Phrases,
+        TargetKey = item.TargetKey,
+        Language = item.Language,
+        Priority = item.Priority,
+        IsActive = item.IsActive
+    };
+}
+
+/// <summary>
 /// Razor view model for <c>Views/Profiles/Detail.cshtml</c>. We pre-resolve
 /// localized strings + the synonym-tab visibility flag here rather than in
 /// the view so the markup stays declarative.

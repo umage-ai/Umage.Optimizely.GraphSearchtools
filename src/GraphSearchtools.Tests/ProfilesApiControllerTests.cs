@@ -9,9 +9,11 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models;
 
@@ -71,7 +73,14 @@ public class ProfilesApiControllerTests
         var hostEnv = new StubHostEnvironment();
         var service = new ProfilesService(registry, new SearchProfileEditService(), localization, hostEnv);
 
-        var controller = new ProfilesApiController(service, accessChecker, NullLogger<ProfilesApiController>.Instance);
+        // Phase 2.5 §4.1: ProfilesApiController now exposes a profile-scoped
+        // pinned listing endpoint, so it depends on PinnedService. The Index /
+        // Detail tests don't exercise that path — a pass-through over a loose
+        // IGraphAdminClient mock is enough.
+        var graphClient = new Mock<IGraphAdminClient>(MockBehavior.Loose).Object;
+        var pinnedService = new PinnedService(graphClient);
+
+        var controller = new ProfilesApiController(service, accessChecker, registry, pinnedService, NullLogger<ProfilesApiController>.Instance);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity("test")) }

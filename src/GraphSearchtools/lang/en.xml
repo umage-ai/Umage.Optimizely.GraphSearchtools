@@ -162,6 +162,9 @@
         inside <profiles> so additions stay mechanical to merge.
       -->
       <profiles>
+        <api>
+          <profileKeyRequired>profileKey is required when search profiles are registered.</profileKeyRequired>
+        </api>
         <generic>
           <name>Generic</name>
           <desc>Catchment for pinned collections and synonym groups that don't match a registered profile.</desc>
@@ -196,6 +199,14 @@
             <sites>Sites</sites>
             <synonymSlot>Synonym slot</synonymSlot>
           </meta>
+          <pinned>
+            <empty>No pinned items for this phrase yet.</empty>
+            <keyLabel>Pinned key</keyLabel>
+            <organicTitle>Organic results (no pins applied)</organicTitle>
+            <sharedSite>Shared across sites</sharedSite>
+            <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
+            <tryTitle>Live preview</tryTitle>
+          </pinned>
           <scopeProfile>Per profile</scopeProfile>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
