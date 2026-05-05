@@ -46,6 +46,16 @@ public record PinnedItemResult
     public string CollectionId { get; init; } = string.Empty;
     public string CreatedAt { get; init; } = string.Empty;
     public string UpdatedAt { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Optional expiry stamp — when set, Graph stops applying the pin past this
+    /// moment. Surfaced for the Phase 4 Pinned Result Coverage audit, which
+    /// flags pins whose <see cref="EffectiveTo"/> is in the past so editors
+    /// can prune stale rows. Null when the upstream API doesn't provide one
+    /// (the field is best-effort: not every Graph build returns it, in which
+    /// case the audit simply won't surface "Expired" issues for that tenant).
+    /// </summary>
+    public DateTime? EffectiveTo { get; init; }
 }
 
 public record SynonymsQuery
@@ -276,4 +286,99 @@ public record RequestLogEntryResult
     /// <summary>User-Agent header from the request, when available.</summary>
     [JsonPropertyName("userAgent")]
     public string? UserAgent { get; init; }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Index Inspector (Phase 4) — read-only projection of how the Graph index is
+// populated per content type, plus a surfaced count of items missing the basic
+// editorial fields (Name / Title). Powers the Phase 4 §6 "Index size by
+// content type; missing fields (Name/Title)" surface from
+// docs/implementation-plan.md.
+//
+// Pulled from the content GraphQL endpoint — auth is the SingleKey query
+// param, same as Health's index-population probe. The schema may or may not
+// expose `Content { types { name count } }`; if it doesn't, the client falls
+// back to one query per type listed in
+// GraphSearchtoolsOptions.SearchableContentTypes and aggregates the counts.
+//
+// TODO: verify schema — the `types` field on Content isn't part of the public
+// GraphQL surface we have on hand, and the per-type `where: { Name: { exists:
+// false } }` filter is best-effort. Real-world hosts can adjust the
+// per-type fallback query or the missing-field detection heuristic if Graph's
+// schema differs from what we assumed.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// One row in the per-content-type index breakdown. <see cref="MissingTeaserCount"/>
+/// and <see cref="MissingMainBodyCount"/> are nullable because not every
+/// content type carries these fields — when the schema doesn't expose them,
+/// the inspector leaves the column empty rather than reporting a misleading 0.
+/// </summary>
+public record ContentTypeIndexRow
+{
+    /// <summary>Fully-qualified content-type name as Graph reports it (e.g. <c>StandardPage</c>).</summary>
+    [JsonPropertyName("name")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>Total items of this type in the index across all locales / versions.</summary>
+    [JsonPropertyName("count")]
+    public int Count { get; init; }
+
+    /// <summary>
+    /// Items of this type with no <c>Name</c> field set. Populated when the
+    /// per-type missing-fields scan is supported; null when not.
+    /// </summary>
+    [JsonPropertyName("missingNameCount")]
+    public int? MissingNameCount { get; init; }
+
+    /// <summary>
+    /// Items of this type with no <c>Teaser</c> / summary text. Optional —
+    /// only some content types have a teaser field at all.
+    /// </summary>
+    [JsonPropertyName("missingTeaserCount")]
+    public int? MissingTeaserCount { get; init; }
+
+    /// <summary>
+    /// Items of this type with no <c>MainBody</c> field set. Optional —
+    /// only some content types carry a main body.
+    /// </summary>
+    [JsonPropertyName("missingMainBodyCount")]
+    public int? MissingMainBodyCount { get; init; }
+}
+
+/// <summary>
+/// Snapshot of the Graph index population captured at a point in time. The
+/// captured-at stamp lets the UI show "captured 30s ago" rather than relying
+/// on the request response time.
+/// </summary>
+public record IndexInspectionResult
+{
+    /// <summary>Total items across every content type, all locales / versions.</summary>
+    [JsonPropertyName("totalItems")]
+    public int TotalItems { get; init; }
+
+    /// <summary>Per-content-type breakdown. Sorted by caller; the service returns it count-desc.</summary>
+    [JsonPropertyName("perContentType")]
+    public List<ContentTypeIndexRow> PerContentType { get; init; } = new();
+
+    /// <summary>
+    /// Aggregate count of items missing the <c>Name</c> field across every
+    /// content type. Mirrors the sum of <see cref="ContentTypeIndexRow.MissingNameCount"/>
+    /// where populated; surfaced as a top-line stat so editors don't have to
+    /// scan the table to spot trouble.
+    /// </summary>
+    [JsonPropertyName("missingNameCount")]
+    public int MissingNameCount { get; init; }
+
+    /// <summary>
+    /// Aggregate count of items missing the <c>Title</c> / equivalent display
+    /// field. Currently set to <c>0</c> when the schema doesn't expose a
+    /// canonical Title field; the per-type rows carry the granular signal.
+    /// </summary>
+    [JsonPropertyName("missingTitleCount")]
+    public int MissingTitleCount { get; init; }
+
+    /// <summary>UTC moment when the inspection ran. Used by the UI for the freshness label.</summary>
+    [JsonPropertyName("capturedAt")]
+    public DateTime CapturedAt { get; init; }
 }

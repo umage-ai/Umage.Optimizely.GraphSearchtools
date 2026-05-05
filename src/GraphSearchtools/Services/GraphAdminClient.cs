@@ -990,4 +990,226 @@ public sealed class GraphAdminClient : IGraphAdminClient
         using var request = CreateRequest(HttpMethod.Post, $"api/datasources/{Uri.EscapeDataString(sourceName)}/sync");
         await SendNoContentAsync(request, cancellationToken);
     }
+
+    // ── Index Inspector (Phase 4) ─────────────────────────────────────────
+    // Goal: surface "how is the index populated?" in a single round-trip
+    // when possible, otherwise fan out per content type and aggregate.
+    //
+    // Strategy:
+    //   1. Try `Content { total(all: true) types { name count } }`.
+    //      That's the cheapest possible answer, but the `types` sub-field
+    //      isn't part of the public Graph schema we have on hand —
+    //      // TODO: verify schema.
+    //   2. If `types` isn't present (or returns an empty list), fall back to
+    //      one `{TypeName} { total }` query per content type in the host's
+    //      `SearchableContentTypes` allow-list. Each per-type query also
+    //      probes for items missing `Name` so the UI can flag them — when the
+    //      type name doesn't validate as a GraphQL identifier we skip rather
+    //      than risk an injected query.
+    //   3. Sum the per-type counts to derive `TotalItems` and the aggregate
+    //      `MissingNameCount`. `MissingTitleCount` stays 0 unless a future
+    //      schema exposes a canonical Title field — the per-type rows already
+    //      carry the granular signal.
+    public async Task<IndexInspectionResult> InspectIndexAsync(IReadOnlyList<string> searchableContentTypes, CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
+        if (!creds.IsQueryConfigured)
+        {
+            throw new InvalidOperationException("Optimizely Content Graph query settings (GatewayAddress, SingleKey) are not configured.");
+        }
+
+        var capturedAt = DateTime.UtcNow;
+        var endpoint = BuildQueryEndpoint(creds);
+
+        // Step 1 — attempt the combined snapshot. Wrapped in a defensive try
+        // so a schema mismatch (the most likely failure) degrades gracefully
+        // to the per-type fallback rather than propagating as an error.
+        // TODO: verify schema.
+        var combined = await TryInspectViaTypesAsync(endpoint, cancellationToken);
+        if (combined != null && combined.PerContentType.Count > 0)
+        {
+            return combined with { CapturedAt = capturedAt };
+        }
+
+        // Step 2 — per-type fallback. Honours the host's allow-list so we
+        // don't blast the gateway with introspection just to find type names.
+        var allowList = NormalizeContentTypes(searchableContentTypes);
+        var rows = new List<ContentTypeIndexRow>();
+        var totalItems = combined?.TotalItems ?? 0;
+        var missingNameAggregate = 0;
+
+        foreach (var typeName in allowList)
+        {
+            if (!IsValidGraphIdentifier(typeName))
+            {
+                // Defensive — shouldn't happen with the documented `_Page` /
+                // `_Content` defaults, but a malformed override would otherwise
+                // be a query-injection vector.
+                continue;
+            }
+
+            var (count, missingName) = await ProbeContentTypeAsync(endpoint, typeName, cancellationToken);
+            if (count == null) continue;
+
+            rows.Add(new ContentTypeIndexRow
+            {
+                Name = typeName,
+                Count = count.Value,
+                MissingNameCount = missingName
+            });
+
+            if (combined == null)
+            {
+                totalItems += count.Value;
+            }
+            if (missingName.HasValue) missingNameAggregate += missingName.Value;
+        }
+
+        rows.Sort((a, b) => b.Count.CompareTo(a.Count));
+
+        // If the combined snapshot returned a total but no per-type breakdown,
+        // honour its TotalItems. Otherwise the per-type sum wins — it's the
+        // only signal we trust without a `types` field.
+        if (combined?.TotalItems > 0 && rows.Count == 0)
+        {
+            totalItems = combined.TotalItems;
+        }
+
+        return new IndexInspectionResult
+        {
+            TotalItems = totalItems,
+            PerContentType = rows,
+            MissingNameCount = missingNameAggregate,
+            MissingTitleCount = 0,
+            CapturedAt = capturedAt
+        };
+    }
+
+    /// <summary>
+    /// Best-effort attempt at the single-round-trip snapshot. Returns null on
+    /// any error so the caller falls back to per-type queries — we never want
+    /// the inspector to fail outright when a schema feature isn't supported.
+    /// </summary>
+    private async Task<IndexInspectionResult?> TryInspectViaTypesAsync(string endpoint, CancellationToken cancellationToken)
+    {
+        // TODO: verify schema — `types { name count }` isn't part of the
+        // public Graph schema we have docs for. Wrapped in try/catch so a
+        // schema-mismatch GraphQL error or transport hiccup downgrades to
+        // the per-type fallback rather than failing the whole inspection.
+        try
+        {
+            const string queryDocument = "query InspectIndex { Content { total(all: true) types { name count } } }";
+            var json = JsonSerializer.Serialize(new { query = queryDocument }, _serializerOptions);
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode) return null;
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("data", out var data)
+                || !data.TryGetProperty("Content", out var content))
+            {
+                return null;
+            }
+
+            var total = 0;
+            if (content.TryGetProperty("total", out var totalEl) && totalEl.ValueKind == JsonValueKind.Number)
+            {
+                total = totalEl.GetInt32();
+            }
+
+            var rows = new List<ContentTypeIndexRow>();
+            if (content.TryGetProperty("types", out var typesEl) && typesEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var entry in typesEl.EnumerateArray())
+                {
+                    var name = GetString(entry, "name");
+                    if (string.IsNullOrEmpty(name)) continue;
+                    var count = 0;
+                    if (entry.TryGetProperty("count", out var c) && c.ValueKind == JsonValueKind.Number)
+                    {
+                        count = c.GetInt32();
+                    }
+                    rows.Add(new ContentTypeIndexRow { Name = name!, Count = count });
+                }
+                rows.Sort((a, b) => b.Count.CompareTo(a.Count));
+            }
+
+            return new IndexInspectionResult
+            {
+                TotalItems = total,
+                PerContentType = rows,
+                MissingNameCount = 0,
+                MissingTitleCount = 0,
+                CapturedAt = DateTime.UtcNow
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Per-type probe used as the fallback when the combined snapshot doesn't
+    /// expose a <c>types</c> sub-field. Returns the total count plus the
+    /// best-effort "missing Name" count. Both values are nullable so a schema
+    /// mismatch on the missing-name filter doesn't poison the whole row.
+    /// </summary>
+    private async Task<(int? Count, int? MissingName)> ProbeContentTypeAsync(string endpoint, string typeName, CancellationToken cancellationToken)
+    {
+        // typeName is validated as a GraphQL identifier by the caller; safe to
+        // inline. The `where: { Name: { exists: false } }` clause leans on
+        // Graph's standard filter set — // TODO: verify schema, the exists
+        // operator may not apply uniformly across all content type schemas.
+        var queryDocument = $@"
+            query InspectType {{
+                {typeName}(limit: 0) {{ total }}
+                Missing: {typeName}(limit: 0, where: {{ Name: {{ exists: false }} }}) {{ total }}
+            }}";
+
+        try
+        {
+            var json = JsonSerializer.Serialize(new { query = queryDocument }, _serializerOptions);
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return (null, null);
+            }
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("data", out var data))
+            {
+                return (null, null);
+            }
+
+            int? total = null;
+            if (data.TryGetProperty(typeName, out var typeEl)
+                && typeEl.TryGetProperty("total", out var t)
+                && t.ValueKind == JsonValueKind.Number)
+            {
+                total = t.GetInt32();
+            }
+
+            int? missing = null;
+            if (data.TryGetProperty("Missing", out var missingEl)
+                && missingEl.TryGetProperty("total", out var m)
+                && m.ValueKind == JsonValueKind.Number)
+            {
+                missing = m.GetInt32();
+            }
+
+            return (total, missing);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            return (null, null);
+        }
+    }
 }

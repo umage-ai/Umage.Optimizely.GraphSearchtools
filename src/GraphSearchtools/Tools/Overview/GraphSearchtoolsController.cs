@@ -113,6 +113,74 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/RequestLogs/Index.cshtml");
     }
 
+    /// <summary>
+    /// Phase 4 Wave 5 — Search Logs UI. Read-only analytics surface over the
+    /// search-log DDS table: top phrases, zero-result phrases, low-CTR
+    /// phrases, and a recent-events live tail.
+    /// </summary>
+    [HttpGet]
+    public IActionResult SearchLogs()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SearchLogs), GraphSearchtoolsPermissions.SearchLogs))
+            return Forbid();
+        return View("/Views/SearchLogs/Index.cshtml");
+    }
+
+    /// <summary>
+    /// Phase 4 Wave 5 — Index Inspector. Per-content-type index population +
+    /// missing editorial fields surface, refreshed on demand.
+    /// </summary>
+    [HttpGet]
+    public IActionResult IndexInspector()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.IndexInspector), GraphSearchtoolsPermissions.IndexInspector))
+            return Forbid();
+        return View("/Views/IndexInspector/Index.cshtml");
+    }
+
+    /// <summary>
+    /// Phase 4 Wave 5 — Synonym Coverage. Read-only analyzer that joins the
+    /// saved synonym blobs with the search-log table to surface unused
+    /// entries (prune candidates) and zero-result phrases that look like
+    /// missing synonyms (suggested adds).
+    /// </summary>
+    [HttpGet]
+    public IActionResult SynonymCoverage()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SynonymCoverage), GraphSearchtoolsPermissions.SynonymCoverage))
+            return Forbid();
+        return View("/Views/SynonymCoverage/Index.cshtml");
+    }
+
+    /// <summary>
+    /// Phase 4 Wave 5 §6 — Pinned Result Coverage audit. Joins Graph pinned
+    /// data with CMS content state and the 7-day search-log window to surface
+    /// broken targets (unpublished/deleted), expired pins, low-CTR pins,
+    /// no-activity pins, and overlap conflicts.
+    /// </summary>
+    [HttpGet]
+    public IActionResult PinnedCoverage()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.PinnedCoverage), GraphSearchtoolsPermissions.PinnedCoverage))
+            return Forbid();
+        return View("/Views/PinnedCoverage/Index.cshtml");
+    }
+
+    /// <summary>
+    /// Phase 4 Wave 5 §6 — Content Searchability Audit. Renders the runner
+    /// page; the actual scan kicks off via
+    /// <c>POST /ContentSearchabilityAuditApi/Run</c>. The view is gated on the
+    /// matching feature toggle + EPiServer permission so direct URL hits respect
+    /// the same access checks the menu does.
+    /// </summary>
+    [HttpGet]
+    public IActionResult ContentSearchabilityAudit()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.ContentSearchabilityAudit), GraphSearchtoolsPermissions.ContentSearchabilityAudit))
+            return Forbid();
+        return View("/Views/ContentSearchabilityAudit/Index.cshtml");
+    }
+
     [HttpGet]
     public IActionResult About()
     {

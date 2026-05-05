@@ -9,12 +9,18 @@ using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Tools.ContentSearchabilityAudit;
 using UmageAI.Optimizely.GraphSearchTools.Tools.CustomDataSources;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
+using UmageAI.Optimizely.GraphSearchTools.Tools.IndexInspector;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
+using UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
+using UmageAI.Optimizely.GraphSearchTools.Tools.RelevancyLab;
 using UmageAI.Optimizely.GraphSearchTools.Tools.RequestLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Webhooks;
 
@@ -88,6 +94,40 @@ public static class ServiceCollectionExtensions
         // Wave 5 tools (Search Logs UI, Pinned Result Coverage, Synonym
         // Coverage) read from this service; TelemetryApiController writes.
         services.AddSingleton<SearchLogService>();
+
+        // Phase 4 Wave 5: Index Inspector — per-content-type index population
+        // + missing-fields surface. Read-only; reuses the shared
+        // IGraphAdminClient HttpClient.
+        services.AddScoped<IndexInspectorService>();
+
+        // Phase 4 Wave 5: Search Logs UI — top phrases, zero-result phrases,
+        // low-CTR phrases, raw events. Thin wrapper around SearchLogService
+        // that defaults the time window and clamps `take`.
+        services.AddScoped<SearchLogsService>();
+
+        // Phase 4 Wave 5: Synonym Coverage — joins SynonymsService blobs with
+        // SearchLogService phrase aggregates. Read-only analyzer; the single
+        // GET endpoint serves a SynonymCoverageResult for the page to render.
+        services.AddScoped<SynonymCoverageService>();
+
+        // Phase 4 Wave 5 §6: Pinned Result Coverage audit. Read-only — joins
+        // Graph pinned data, IContentLoader content state, ISearchProfileRegistry
+        // (collection → profile mapping) and SearchLogService 7-day window.
+        services.AddScoped<PinnedCoverageService>();
+
+        // Phase 4 Wave 5 §6: Content Searchability Audit. On-demand local CMS
+        // scan that walks every published page under every site root and flags
+        // empty Name / MainBody / Tags plus oversize sortable string fields.
+        // Scoped because it depends on scoped IContentLoader / IContentTypeRepository.
+        services.AddScoped<ContentSearchabilityAuditService>();
+
+        // Phase 5: Relevancy Lab — DDS-backed golden set CRUD + run history,
+        // NDCG@10/MRR scoring, two-config comparison, CSV export. Singleton
+        // because DynamicDataStoreFactory is process-global; QueryRunnerService
+        // is HttpClient-bound (transient) so the run engine resolves it through
+        // the scope factory at run-time rather than as a captive dependency.
+        services.AddSingleton<RelevancyLabService>(sp =>
+            new RelevancyLabService(sp.GetRequiredService<IServiceScopeFactory>()));
 
         services.Configure<ProtectedModuleOptions>(options =>
         {
