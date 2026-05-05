@@ -331,9 +331,33 @@
                 </div>
             }
 
+            @* Phase 2.5 §4.3 — per-profile Try-it tab. Embeds the Saved Queries /
+               Diagnostics runner as an iframe scoped to this profile. The full
+               in-tab editor (variables, raw response, score / fulltext debug)
+               lands once the runner exposes a `GST.diagnostics.runner({...})`
+               factory; the iframe is the v0.2.5 path. *@
             <div class="gst-tab-pane" data-pane="tryit" hidden>
                 <div class="gst-card__body">
-                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                    @if (string.IsNullOrEmpty(Model.GraphQLDocPath))
+                    {
+                        <div class="gst-prof-tryit-empty">
+                            <h3>@Loc.GetString("/graphsearchtools/profiles/detail/tryProd/title")</h3>
+                            <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/tryProd/noDocument")</p>
+                        </div>
+                    }
+                    else
+                    {
+                        var savedQueriesUrl = Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider),
+                            "GraphSearchtools/SavedQueries");
+                        var iframeSrc = $"{savedQueriesUrl}?embed=1&profileKey={Uri.EscapeDataString(Model.Key)}";
+                        <div class="gst-prof-tryit">
+                            <iframe id="gst-prof-tryit-frame"
+                                    class="gst-prof-tryit__frame"
+                                    src="@iframeSrc"
+                                    title="@Loc.GetString("/graphsearchtools/profiles/detail/tryProd/title")"
+                                    loading="lazy"></iframe>
+                        </div>
+                    }
                 </div>
             </div>
 

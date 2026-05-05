@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
@@ -21,21 +22,24 @@ public class ProfilesApiController : Controller
     private const string FeatureName = nameof(FeatureToggles.Profiles);
 
     private readonly ProfilesService _service;
-    private readonly FeatureAccessChecker _accessChecker;
     private readonly ISearchProfileRegistry _registry;
+    private readonly IWebHostEnvironment _hostEnvironment;
+    private readonly FeatureAccessChecker _accessChecker;
     private readonly PinnedService _pinnedService;
     private readonly ILogger<ProfilesApiController> _logger;
 
     public ProfilesApiController(
         ProfilesService service,
-        FeatureAccessChecker accessChecker,
         ISearchProfileRegistry registry,
+        IWebHostEnvironment hostEnvironment,
+        FeatureAccessChecker accessChecker,
         PinnedService pinnedService,
         ILogger<ProfilesApiController> logger)
     {
         _service = service;
-        _accessChecker = accessChecker;
         _registry = registry;
+        _hostEnvironment = hostEnvironment;
+        _accessChecker = accessChecker;
         _pinnedService = pinnedService;
         _logger = logger;
     }
@@ -152,6 +156,43 @@ public class ProfilesApiController : Controller
         catch (Exception ex) { return Handle(ex); }
     }
 
+    /// <summary>
+    /// Resolves the profile's GraphQL document path against the host's
+    /// <see cref="IWebHostEnvironment.ContentRootPath"/> and returns its body.
+    /// Used by the per-profile Try-it tab to pre-populate the document editor.
+    /// </summary>
+    [HttpGet("{key}/document")]
+    public IActionResult GetDocument(string key)
+    {
+        if (!HasAccess()) return Forbid();
+        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Profile key is required." });
+
+        var profile = _registry.Get(key);
+        if (profile == null) return NotFound();
+
+        var path = profile.GraphQLDocumentPath;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return Ok(new ProfileDocumentResult(false, null, null));
+        }
+
+        try
+        {
+            var fullPath = Path.Combine(_hostEnvironment.ContentRootPath, path);
+            if (!System.IO.File.Exists(fullPath))
+            {
+                return Ok(new ProfileDocumentResult(false, path, null));
+            }
+            var body = System.IO.File.ReadAllText(fullPath);
+            return Ok(new ProfileDocumentResult(true, path, body));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Profiles document read failed for key '{Key}'.", key);
+            return Ok(new ProfileDocumentResult(false, path, null));
+        }
+    }
+
     private bool HasAccess()
         => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Profiles);
 
@@ -161,3 +202,10 @@ public class ProfilesApiController : Controller
         return Problem(title: "Profiles request failed.");
     }
 }
+
+/// <summary>
+/// JSON shape returned by <see cref="ProfilesApiController.GetDocument(string)"/>.
+/// <c>Exists</c> is false when the profile has no path declared OR the declared
+/// path does not resolve on disk; <c>Body</c> is the raw file text when it does.
+/// </summary>
+public sealed record ProfileDocumentResult(bool Exists, string? Path, string? Body);

@@ -8,6 +8,10 @@
     var title = ViewData["Title"]?.ToString() ?? "Graph Search Tools";
     string ActionPath(string path) => Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), path);
     string ClientResource(string path) => Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), path);
+    // Phase 2.5 §4.3 — `embed=1` query strips chrome (platform nav, header,
+    // watermark) so the view renders cleanly inside the per-profile Try-it
+    // iframe on the Profiles detail page.
+    var isEmbed = string.Equals(Context.Request.Query["embed"].ToString(), "1", StringComparison.Ordinal);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -22,35 +26,46 @@
     <link rel="stylesheet" href="@ClientResource("ClientResources/css/graphsearchtools.css")" />
     @RenderSection("Styles", required: false)
 </head>
-<body class="Sleek">
-    @Html.CreatePlatformNavigationMenu()
-
-    <div @Html.ApplyPlatformNavigation()>
-        <div class="gst-shell">
-            <header class="gst-header">
-                <a href="@ActionPath("GraphSearchtools/Overview")" class="gst-header__logo">
-                    <svg class="gst-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    Graph Search Tools
-                </a>
-                <nav class="gst-header__nav">
-                    @RenderSection("NavItems", required: false)
-                </nav>
-                <a href="@ActionPath("GraphSearchtools/About")" class="gst-header__about">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    @Loc.GetString("/graphsearchtools/menu/about")
-                </a>
-            </header>
+<body class="Sleek @(isEmbed ? "gst-embed" : null)">
+    @if (isEmbed)
+    {
+        <div class="gst-shell gst-shell--embed">
             <main class="gst-main">
-                <a class="gst-watermark" href="https://umage.ai/?utm_source=graphsearchtools" target="_blank" rel="noopener" title="Powered by umage.ai">
-                    Powered by umage.ai
-                </a>
                 @RenderBody()
             </main>
         </div>
-    </div>
+    }
+    else
+    {
+        @Html.CreatePlatformNavigationMenu()
+
+        <div @Html.ApplyPlatformNavigation()>
+            <div class="gst-shell">
+                <header class="gst-header">
+                    <a href="@ActionPath("GraphSearchtools/Overview")" class="gst-header__logo">
+                        <svg class="gst-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        Graph Search Tools
+                    </a>
+                    <nav class="gst-header__nav">
+                        @RenderSection("NavItems", required: false)
+                    </nav>
+                    <a href="@ActionPath("GraphSearchtools/About")" class="gst-header__about">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        @Loc.GetString("/graphsearchtools/menu/about")
+                    </a>
+                </header>
+                <main class="gst-main">
+                    <a class="gst-watermark" href="https://umage.ai/?utm_source=graphsearchtools" target="_blank" rel="noopener" title="Powered by umage.ai">
+                        Powered by umage.ai
+                    </a>
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
 
     <div id="gst-dialog-container"></div>
     <script>
