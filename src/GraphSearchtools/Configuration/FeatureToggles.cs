@@ -15,4 +15,12 @@ public class FeatureToggles
     public bool Profiles { get; set; } = true;
     public bool DecaySandbox { get; set; } = true;
     public bool Webhooks { get; set; } = true;
+
+    /// <summary>
+    /// Phase 4 foundation — gates the telemetry ingest endpoints
+    /// (<c>POST /TelemetryApi/SearchLog</c>, <c>POST /TelemetryApi/SearchLogBatch</c>).
+    /// Phase 4 Wave 5 analytics tools (Search Logs UI, Pinned Result Coverage,
+    /// Synonym Coverage) consume the data this captures.
+    /// </summary>
+    public bool Telemetry { get; set; } = true;
 }
