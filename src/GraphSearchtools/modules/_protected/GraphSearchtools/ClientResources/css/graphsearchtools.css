@@ -2608,3 +2608,54 @@ td.bpe-editing select {
     font-size: 11px;
 }
 .gst-rl-meta code { color: var(--gst-text-secondary); }
+
+/* ── Search Logs (Phase 4 Wave 5) ─────────────────────────────────── */
+/*
+   Four-card analytics grid backed by a single time-window pill. Three of the
+   four cards are phrase-level aggregates (top / zero-result / low-CTR); the
+   fourth spans the full row and renders the live tail of recent events.
+*/
+.gst-sl-toolbar-card { margin-bottom: var(--gst-space-md); }
+.gst-sl-toolbar { display: flex; align-items: center; gap: var(--gst-space-sm); padding: var(--gst-space-sm); }
+.gst-sl-pillgroup { display: inline-flex; gap: 0; }
+.gst-sl-pill {
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text);
+    padding: 4px 10px;
+    font: inherit;
+    cursor: pointer;
+}
+.gst-sl-pill + .gst-sl-pill { border-left: none; }
+.gst-sl-pill:first-child { border-radius: 4px 0 0 4px; }
+.gst-sl-pill:last-child { border-radius: 0 4px 4px 0; }
+.gst-sl-pill:hover { background: var(--gst-surface-hover); }
+.gst-sl-pill--active {
+    background: var(--gst-primary);
+    color: var(--gst-on-primary);
+    border-color: var(--gst-primary);
+}
+
+.gst-sl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--gst-space-md);
+}
+.gst-sl-card { display: flex; flex-direction: column; }
+.gst-sl-card--wide { grid-column: 1 / -1; }
+.gst-sl-card__head {
+    padding: var(--gst-space-sm) var(--gst-space-md);
+    border-bottom: 1px solid var(--gst-border);
+}
+.gst-sl-card__head h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gst-text-secondary); }
+
+.gst-sl-table { width: 100%; }
+.gst-sl-table td.num, .gst-sl-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.gst-sl-table--raw td { font-size: 12px; }
+.gst-sl-action-col { width: 1%; white-space: nowrap; text-align: right; }
+.gst-sl-link { color: var(--gst-link); text-decoration: none; font-size: 12px; }
+.gst-sl-link:hover { text-decoration: underline; }
+
+.gst-sl-empty { padding: var(--gst-space-md); margin-bottom: var(--gst-space-md); }
+.gst-sl-empty h2 { margin: 0 0 6px; font-size: 14px; }
+.gst-sl-empty p { margin: 0; color: var(--gst-text-muted); font-size: 13px; }
