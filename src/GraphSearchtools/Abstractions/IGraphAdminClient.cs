@@ -74,6 +74,19 @@ public interface IGraphAdminClient
     // create/delete — registration happens in the source's own pipeline.
     Task<IReadOnlyList<DataSourceResult>> GetDataSourcesAsync(CancellationToken cancellationToken);
     Task TriggerDataSourceSyncAsync(string sourceName, CancellationToken cancellationToken);
+
+    // ── Index Inspector (Phase 4) ────────────────────────────────────────
+    // Snapshot of how the Graph index is populated per content type, plus a
+    // best-effort count of items missing the basic editorial fields
+    // (Name / Title). Read-only — the inspector tool surfaces the result in a
+    // table; refresh is the only supported action.
+    //
+    // <paramref name="searchableContentTypes"/> is the per-host
+    // <c>GraphSearchtoolsOptions.SearchableContentTypes</c> allow-list. The
+    // implementation prefers a single <c>Content { types { name count } }</c>
+    // round-trip when the schema exposes it; when it doesn't, it falls back
+    // to one query per supplied type and aggregates the counts.
+    Task<IndexInspectionResult> InspectIndexAsync(IReadOnlyList<string> searchableContentTypes, CancellationToken cancellationToken);
 }
 
 public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);

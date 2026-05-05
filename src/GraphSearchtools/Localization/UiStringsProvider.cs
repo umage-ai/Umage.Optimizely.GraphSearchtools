@@ -51,6 +51,45 @@ public class UiStringsProvider(LocalizationService loc)
     /// </summary>
     private string ST(string key) => loc.GetString($"/graphsearchtools/tools/semanticTuner/{key}");
 
+    /// <summary>
+    /// Lookup for Index Inspector strings under
+    /// /graphsearchtools/tools/indexInspector/*. The Index Inspector JS reads
+    /// the warn-badge tooltip, empty-state copy and load-failed message from
+    /// this section.
+    /// </summary>
+    private string II(string key) => loc.GetString($"/graphsearchtools/tools/indexInspector/{key}");
+
+    /// <summary>
+    /// Lookup for Search Logs strings under /graphsearchtools/tools/searchLogs/*.
+    /// The Search Logs JS reads inline empty-card / status-badge / link / load-
+    /// failed messages from this section.
+    /// </summary>
+    private string SL(string key) => loc.GetString($"/graphsearchtools/tools/searchLogs/{key}");
+
+    /// <summary>
+    /// Lookup for Pinned Result Coverage strings under
+    /// /graphsearchtools/tools/pinnedCoverage/*. The Pinned Coverage JS reads
+    /// the kind-badge labels, generated-at prefix, fix-link button, and empty/
+    /// load-failed copy from this section.
+    /// </summary>
+    private string PC(string key) => loc.GetString($"/graphsearchtools/tools/pinnedCoverage/{key}");
+
+    /// <summary>
+    /// Lookup for Synonym Coverage strings under
+    /// /graphsearchtools/tools/synonymCoverage/*. The Synonym Coverage JS reads
+    /// the generated-at prefix, prune/add link labels, and empty / no-logs /
+    /// load-failed copy from this section.
+    /// </summary>
+    private string SC(string key) => loc.GetString($"/graphsearchtools/tools/synonymCoverage/{key}");
+
+    /// <summary>
+    /// Lookup for Content Searchability Audit strings under
+    /// /graphsearchtools/tools/contentSearchabilityAudit/*. The audit JS reads
+    /// the kind labels, stat labels, run/running button text, table column
+    /// headers, and empty / run-failed copy from this section.
+    /// </summary>
+    private string CSA(string key) => loc.GetString($"/graphsearchtools/tools/contentSearchabilityAudit/{key}");
+
     public object GetAll() => new
     {
         shared = new
@@ -276,6 +315,82 @@ public class UiStringsProvider(LocalizationService loc)
             ranking_semantic = ST("ranking_semantic"),
             ranking_boostonly = ST("ranking_boostonly"),
             ranking_doc = ST("ranking_doc")
+        },
+        indexInspector = new
+        {
+            refresh = II("refresh"),
+            total_items = II("total_items"),
+            content_types = II("content_types"),
+            missing_name = II("missing_name"),
+            missing_title = II("missing_title"),
+            captured_at = II("captured_at"),
+            col_type = II("col_type"),
+            col_count = II("col_count"),
+            col_missing_name = II("col_missing_name"),
+            col_missing_teaser = II("col_missing_teaser"),
+            col_missing_body = II("col_missing_body"),
+            status_warn = II("status_warn"),
+            empty = II("empty"),
+            load_failed = II("load_failed")
+        },
+        searchLogs = new
+        {
+            add_as_synonym = SL("add_as_synonym"),
+            tune_pinned = SL("tune_pinned"),
+            empty_title = SL("empty_title"),
+            empty_body = SL("empty_body"),
+            load_failed = SL("load_failed")
+        },
+        pinnedCoverage = new
+        {
+            generated_at = PC("generated_at"),
+            run_audit = PC("run_audit"),
+            issue_kind_unpublished = PC("issue_kind_unpublished"),
+            issue_kind_deleted = PC("issue_kind_deleted"),
+            issue_kind_expired = PC("issue_kind_expired"),
+            issue_kind_low_ctr = PC("issue_kind_low_ctr"),
+            issue_kind_no_activity = PC("issue_kind_no_activity"),
+            col_kind = PC("col_kind"),
+            col_phrase = PC("col_phrase"),
+            col_target = PC("col_target"),
+            col_collection = PC("col_collection"),
+            col_detail = PC("col_detail"),
+            fix_in_profile = PC("fix_in_profile"),
+            overlaps_title = PC("overlaps_title"),
+            overlap_phrase = PC("overlap_phrase"),
+            overlap_collections = PC("overlap_collections"),
+            empty = PC("empty"),
+            load_failed = PC("load_failed")
+        },
+        synonymCoverage = new
+        {
+            generated_at = SC("generated_at"),
+            prune_in_synonyms = SC("prune_in_synonyms"),
+            add_in_synonyms = SC("add_in_synonyms"),
+            empty = SC("empty"),
+            no_logs = SC("no_logs"),
+            load_failed = SC("load_failed")
+        },
+        contentAudit = new
+        {
+            run = CSA("run"),
+            running = CSA("running"),
+            scanned_at = CSA("scanned_at"),
+            items_scanned = CSA("items_scanned"),
+            issues_total = CSA("issues_total"),
+            kind_missing_name = CSA("kind_missing_name"),
+            kind_missing_main_body = CSA("kind_missing_main_body"),
+            kind_no_tags = CSA("kind_no_tags"),
+            kind_oversize_sort = CSA("kind_oversize_sort"),
+            col_kind = CSA("col_kind"),
+            col_name = CSA("col_name"),
+            col_type = CSA("col_type"),
+            col_detail = CSA("col_detail"),
+            col_edit = CSA("col_edit"),
+            edit = CSA("edit"),
+            empty = CSA("empty"),
+            load_failed = CSA("load_failed"),
+            run_failed = CSA("run_failed")
         }
     };
 }

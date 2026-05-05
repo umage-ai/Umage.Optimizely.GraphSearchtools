@@ -25,6 +25,11 @@
               <CustomDataSources>Inspect non-CMS data sources registered with Optimizely Graph and trigger a full resync per source.</CustomDataSources>
               <RequestLogs>View recent Optimizely Graph queries with timing, ranking and result count; replay one in Search Console.</RequestLogs>
               <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
+              <IndexInspector>Inspect Optimizely Graph index population per content type, missing fields, and reindex deltas.</IndexInspector>
+              <SearchLogs>View Search Logs analytics — top phrases, zero-result phrases, low-CTR phrases, recent raw events.</SearchLogs>
+              <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
+              <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
+              <ContentSearchabilityAudit>Scan the CMS content tree for empty Name / MainBody / Tags and string fields exceeding Graph's 1024-character sortable-field limit.</ContentSearchabilityAudit>
             </permissions>
           </GraphSearchtools>
         </groups>
@@ -44,6 +49,11 @@
         <customDataSources>Custom Data Sources</customDataSources>
         <requestLogs>Request Logs</requestLogs>
         <semanticTuner>Semantic Weight Tuner</semanticTuner>
+        <indexInspector>Index Inspector</indexInspector>
+        <searchLogs>Search Logs</searchLogs>
+        <synonymCoverage>Synonym Coverage</synonymCoverage>
+        <pinnedCoverage>Pinned Coverage</pinnedCoverage>
+        <contentSearchabilityAudit>Content Searchability Audit</contentSearchabilityAudit>
         <about>About</about>
       </menu>
 
@@ -237,6 +247,93 @@
           <ranking_boostonly>Boost only</ranking_boostonly>
           <ranking_doc>Doc</ranking_doc>
         </semanticTuner>
+        <indexInspector>
+          <title>Index Inspector</title>
+          <description>Inspect Optimizely Graph index population per content type, surface items missing the basic editorial fields (Name / Title), and spot recent reindex deltas. Read-only — refresh re-runs the inspection.</description>
+          <refresh>Refresh</refresh>
+          <total_items>Total items</total_items>
+          <content_types>Content types</content_types>
+          <missing_name>Missing Name</missing_name>
+          <missing_title>Missing Title</missing_title>
+          <captured_at>Captured</captured_at>
+          <col_type>Content type</col_type>
+          <col_count>Items</col_count>
+          <col_missing_name>Missing Name</col_missing_name>
+          <col_missing_teaser>Missing Teaser</col_missing_teaser>
+          <col_missing_body>Missing MainBody</col_missing_body>
+          <status_warn>Items missing Name — fix in CMS so they're searchable.</status_warn>
+          <empty>No content types in the index. Configure SearchableContentTypes or check the Health page.</empty>
+          <load_failed>Could not load index snapshot.</load_failed>
+        </indexInspector>
+        <searchLogs>
+          <title>Search Logs</title>
+          <description>Top queries, zero-result phrases, low-CTR head queries, and a live tail of recent search events. The synonym-mining and pinned-tuning surface — every row links into the tool that fixes it.</description>
+          <window_1h>Last 1h</window_1h>
+          <window_24h>Last 24h</window_24h>
+          <window_7d>Last 7d</window_7d>
+          <window_30d>Last 30d</window_30d>
+          <top_title>Top phrases</top_title>
+          <zero_results_title>Zero-result phrases</zero_results_title>
+          <low_ctr_title>Low-CTR phrases</low_ctr_title>
+          <raw_title>Recent events</raw_title>
+          <col_phrase>Phrase</col_phrase>
+          <col_count>Count</col_count>
+          <col_locale>Locale</col_locale>
+          <col_profile>Profile</col_profile>
+          <col_when>When</col_when>
+          <col_top_result>Top click</col_top_result>
+          <col_duration>Duration</col_duration>
+          <col_status>Status</col_status>
+          <add_as_synonym>→ add as synonym?</add_as_synonym>
+          <tune_pinned>→ tune pinned?</tune_pinned>
+          <empty_title>No telemetry yet</empty_title>
+          <empty_body>Wire host queries to POST /api/telemetry/searchlog from your search SDK to populate this surface. Until then, the cards stay empty.</empty_body>
+          <load_failed>Could not load search logs.</load_failed>
+        </searchLogs>
+        <synonymCoverage>
+          <title>Synonym Coverage</title>
+          <description>Joins your saved synonyms with the recent search-log window to surface two complementary actions: prune entries that never matched a logged query, and add synonyms for top zero-result phrases that look like missing rules.</description>
+          <generated_at>Generated</generated_at>
+          <refresh>Refresh</refresh>
+          <unused_title>Unused synonyms</unused_title>
+          <unused_subtitle>Synonym entries with no matching query in the last 30 days. Likely candidates to prune.</unused_subtitle>
+          <col_language>Language</col_language>
+          <col_entry>Entry</col_entry>
+          <col_reason>Reason</col_reason>
+          <suggested_title>Suggested adds</suggested_title>
+          <suggested_subtitle>Top zero-result phrases that look like typos or missing synonyms. The closest indexed term is shown when the analyzer found one.</suggested_subtitle>
+          <col_phrase>Phrase</col_phrase>
+          <col_hits>Hits</col_hits>
+          <col_closest>Closest indexed term</col_closest>
+          <col_similarity>Edit distance</col_similarity>
+          <prune_in_synonyms>Prune in Synonyms</prune_in_synonyms>
+          <add_in_synonyms>Add in Synonyms</add_in_synonyms>
+          <empty>No prune candidates — every synonym entry fired at least once.</empty>
+          <load_failed>Could not load synonym coverage.</load_failed>
+          <no_logs>No zero-result phrases in the window — nothing to suggest.</no_logs>
+        </synonymCoverage>
+        <pinnedCoverage>
+          <title>Pinned Result Coverage</title>
+          <description>Audit every pinned result against live CMS state and the recent search-log window. Surfaces broken targets (unpublished or deleted), expired pins, pins earning no clicks, pins with no recent activity, and phrases pinned in more than one collection.</description>
+          <generated_at>Generated</generated_at>
+          <run_audit>Run audit</run_audit>
+          <issue_kind_unpublished>Unpublished</issue_kind_unpublished>
+          <issue_kind_deleted>Deleted</issue_kind_deleted>
+          <issue_kind_expired>Expired</issue_kind_expired>
+          <issue_kind_low_ctr>Low CTR</issue_kind_low_ctr>
+          <issue_kind_no_activity>No activity</issue_kind_no_activity>
+          <col_kind>Issue</col_kind>
+          <col_phrase>Phrase</col_phrase>
+          <col_target>Target</col_target>
+          <col_collection>Collection</col_collection>
+          <col_detail>Detail</col_detail>
+          <fix_in_profile>Fix in profile</fix_in_profile>
+          <overlaps_title>Phrase overlaps</overlaps_title>
+          <overlap_phrase>Phrase</overlap_phrase>
+          <overlap_collections>Collections</overlap_collections>
+          <empty>No pinned issues found.</empty>
+          <load_failed>Could not load coverage audit.</load_failed>
+        </pinnedCoverage>
       </tools>
 
       <!--

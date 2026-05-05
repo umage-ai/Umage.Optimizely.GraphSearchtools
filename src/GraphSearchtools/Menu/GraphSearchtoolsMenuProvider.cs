@@ -81,6 +81,17 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
         };
 
+        // Index Inspector (Phase 4) — per-content-type index population +
+        // missing-fields surface. Sits with the diagnostic group (Health 300,
+        // Autocomplete 310) so editors can scan "is the index actually
+        // populated and well-formed?" in one place.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/indexInspector", "Index Inspector"), BaseMenuPath + "/indexinspector",
+            GetResourcePath("GraphSearchtools/IndexInspector"))
+        {
+            SortIndex = 320,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.IndexInspector))
+        };
+
         // Tuning power tools group (Phase 3) — Decay & Factor Sandbox is a
         // client-side preview, no Graph calls.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/decaySandbox", "Decay & Factor Sandbox"), BaseMenuPath + "/decaysandbox",
@@ -128,6 +139,65 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         {
             SortIndex = 450,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SemanticTuner))
+        };
+
+        // Analytics & audits group (Phase 4 Wave 5). Search Logs leads the
+        // group because it's the synonym-mining surface every other Wave 5
+        // tool feeds off: top phrases, zero-result phrases, low-CTR phrases,
+        // recent raw events.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search Logs"), BaseMenuPath + "/searchlogs",
+            GetResourcePath("GraphSearchtools/SearchLogs"))
+        {
+            SortIndex = 510,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchLogs))
+        };
+
+        // Pinned Result Coverage (Phase 4 Wave 5 §6) — read-only audit that
+        // joins Graph pinned data with CMS content state and the 7-day
+        // search-log window. Surfaces broken targets (unpublished/deleted),
+        // expired pins, low-CTR pins, no-activity pins, and overlap conflicts
+        // (same phrase pinned in multiple collections).
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinnedCoverage", "Pinned Coverage"), BaseMenuPath + "/pinnedcoverage",
+            GetResourcePath("GraphSearchtools/PinnedCoverage"))
+        {
+            SortIndex = 520,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.PinnedCoverage))
+        };
+
+        // Synonym Coverage (Phase 4 Wave 5) — joins the saved synonym blobs
+        // with the search-log table to surface unused entries (prune
+        // candidates) and zero-result phrases that look like missing synonyms
+        // (suggested adds). Read-only; both tables deep-link into the
+        // Synonyms editor.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/synonymCoverage", "Synonym Coverage"), BaseMenuPath + "/synonymcoverage",
+            GetResourcePath("GraphSearchtools/SynonymCoverage"))
+        {
+            SortIndex = 530,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SynonymCoverage))
+        };
+
+        // Content Searchability Audit (Phase 4 Wave 5 §6) — local CMS scan
+        // that flags pages whose editorial fields will trip Graph's relevance
+        // (empty Name / MainBody / Tags) or its 1024-char sortable-field
+        // limit. On-demand only because the scan walks every published page
+        // under every site root.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/contentSearchabilityAudit", "Content Searchability Audit"), BaseMenuPath + "/contentsearchabilityaudit",
+            GetResourcePath("GraphSearchtools/ContentSearchabilityAudit"))
+        {
+            SortIndex = 540,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.ContentSearchabilityAudit))
+        };
+
+        // Relevancy Lab (Phase 5) — golden query sets, NDCG@10 + MRR scoring,
+        // run history, two-config side-by-side comparison, CSV export. Sits
+        // after the Wave 5 audits because it builds on top of them: tune via
+        // Decay/SemanticTuner, observe coverage via the audits, then validate
+        // changes here against a curated golden set.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/relevancyLab", "Relevancy Lab"), BaseMenuPath + "/relevancylab",
+            GetResourcePath("RelevancyLab/Index"))
+        {
+            SortIndex = 600,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.RelevancyLab))
         };
 
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
