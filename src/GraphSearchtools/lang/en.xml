@@ -22,6 +22,7 @@
               <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
               <CustomDataSources>Inspect non-CMS data sources registered with Optimizely Graph and trigger a full resync per source.</CustomDataSources>
+              <RequestLogs>View recent Optimizely Graph queries with timing, ranking and result count; replay one in Search Console.</RequestLogs>
               <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
             </permissions>
           </GraphSearchtools>
@@ -40,6 +41,7 @@
         <decaySandbox>Decay &amp; Factor Sandbox</decaySandbox>
         <webhooks>Webhooks</webhooks>
         <customDataSources>Custom Data Sources</customDataSources>
+        <requestLogs>Request Logs</requestLogs>
         <about>About</about>
       </menu>
 
@@ -187,6 +189,27 @@
           <load_failed>Could not load data sources.</load_failed>
           <sync_failed>Could not trigger sync.</sync_failed>
         </customDataSources>
+        <requestLogs>
+          <title>Request Logs</title>
+          <description>Recent Optimizely Graph queries with timing, ranking, and result count. Click a row to inspect the full GraphQL document and copy it for replay in Search Console.</description>
+          <col_when>When</col_when>
+          <col_op>Op</col_op>
+          <col_status>Status</col_status>
+          <col_duration>Duration</col_duration>
+          <col_hits>Hits</col_hits>
+          <col_ranking>Ranking</col_ranking>
+          <col_caller>Caller</col_caller>
+          <filter_window_1h>Last 1h</filter_window_1h>
+          <filter_window_24h>Last 24h</filter_window_24h>
+          <filter_window_7d>Last 7d</filter_window_7d>
+          <filter_window_all>All</filter_window_all>
+          <filter_only_errors>Only errors</filter_only_errors>
+          <filter_search_op_placeholder>Search by operation name…</filter_search_op_placeholder>
+          <copy_query>Copy query</copy_query>
+          <copied>Copied</copied>
+          <empty>No request logs in this window.</empty>
+          <load_failed>Could not load request logs.</load_failed>
+        </requestLogs>
       </tools>
 
       <!--
