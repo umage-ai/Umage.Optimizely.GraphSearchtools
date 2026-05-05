@@ -17,8 +17,9 @@ invisible to the marketer.
 This proposal introduces **Search Profiles** as the marketer-facing unit of
 configuration. A profile is a developer-declared description of one search
 surface in the customer solution (header search, product listing, knowledge
-base, …). Pinned results, synonyms, and the diagnostic playground are then
-scoped to profiles instead of to the tenant.
+base, …). Pinned results are then scoped to profiles instead of to the
+tenant. (Synonyms remain tenant-global per the status note above; the
+diagnostic playground was dropped — Health alone covers diagnostic needs.)
 
 ---
 
