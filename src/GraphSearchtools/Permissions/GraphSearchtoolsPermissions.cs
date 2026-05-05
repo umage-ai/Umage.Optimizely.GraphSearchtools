@@ -32,4 +32,8 @@ public static class GraphSearchtoolsPermissions
     // Phase 2.5 — Search Profiles top-level surface.
     public static PermissionType Profiles { get; } =
         new("GraphSearchtools", "Profiles");
+
+    // Phase 3 — client-side ranking-curve preview tool.
+    public static PermissionType DecaySandbox { get; } =
+        new("GraphSearchtools", "DecaySandbox");
 }

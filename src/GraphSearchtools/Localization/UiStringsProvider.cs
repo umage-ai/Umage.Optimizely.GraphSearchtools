@@ -16,6 +16,14 @@ public class UiStringsProvider(LocalizationService loc)
     /// </summary>
     private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
 
+    /// <summary>
+    /// Lookup for Decay &amp; Factor Sandbox strings under
+    /// /graphsearchtools/tools/decaySandbox/*. The tool has no /ui/* keys of its
+    /// own (it's purely client-side and the page-level strings live with the
+    /// rest of the per-tool tree), so we surface them here for the JS.
+    /// </summary>
+    private string D(string key) => loc.GetString($"/graphsearchtools/tools/decaySandbox/{key}");
+
     public object GetAll() => new
     {
         shared = new
@@ -180,6 +188,11 @@ public class UiStringsProvider(LocalizationService loc)
                     }
                 }
             }
+        },
+        decaySandbox = new
+        {
+            copy = D("copy"),
+            copied = D("copied")
         },
         savedqueries = new
         {

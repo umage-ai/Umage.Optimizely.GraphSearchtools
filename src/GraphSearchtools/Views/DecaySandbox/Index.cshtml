@@ -1,0 +1,138 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/decaySandbox/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/decaySandbox/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/decaySandbox/description")</p>
+</div>
+
+<div class="gst-decay-grid">
+
+    @* ───────── Decay panel ───────── *@
+    <section class="gst-card gst-decay-panel" data-decay-panel>
+        <div class="gst-card__header">
+            <span class="gst-card__title">@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/title")</span>
+        </div>
+        <div class="gst-card__body">
+            <div class="gst-decay-knobs">
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/field")</span>
+                    <input data-d="field" type="text" value="PublishedDate" autocomplete="off" />
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/function")</span>
+                    <div class="gst-decay-pillset" role="radiogroup" data-d="function">
+                        <button type="button" role="radio" data-value="gauss" aria-checked="true">gauss</button>
+                        <button type="button" role="radio" data-value="linear" aria-checked="false">linear</button>
+                        <button type="button" role="radio" data-value="exp" aria-checked="false">exp</button>
+                    </div>
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/origin")</span>
+                    <input data-d="origin" type="text" value="now" autocomplete="off" />
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/scale")</span>
+                    <input data-d="scale" type="text" value="30d" autocomplete="off" />
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/offset")</span>
+                    <input data-d="offset" type="text" value="0d" autocomplete="off" />
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/decay") <output data-d="decay-out">0.50</output></span>
+                    <input data-d="decay" type="range" min="0.01" max="0.99" step="0.01" value="0.5" />
+                </label>
+            </div>
+
+            <div class="gst-decay-plot">
+                <svg data-d="plot" viewBox="0 0 320 160" preserveAspectRatio="none" aria-hidden="true">
+                    <rect class="gst-decay-plot__bg" x="0" y="0" width="320" height="160"/>
+                    <g data-d="grid"></g>
+                    <path data-d="curve" class="gst-decay-plot__curve" fill="none"/>
+                    <line data-d="scale-marker" class="gst-decay-plot__marker"/>
+                </svg>
+                <div class="gst-decay-plot__axis">
+                    <span>0</span>
+                    <span data-d="axis-scale">scale</span>
+                    <span data-d="axis-max">3·scale</span>
+                </div>
+            </div>
+
+            <div class="gst-decay-emit">
+                <pre class="gst-mono" data-d="fragment"></pre>
+                <button type="button" class="gst-btn gst-btn--sm" data-d="copy">
+                    @Loc.GetString("/graphsearchtools/tools/decaySandbox/copy")
+                </button>
+            </div>
+        </div>
+    </section>
+
+    @* ───────── Factor panel ───────── *@
+    <section class="gst-card gst-decay-panel" data-factor-panel>
+        <div class="gst-card__header">
+            <span class="gst-card__title">@Loc.GetString("/graphsearchtools/tools/decaySandbox/factor/title")</span>
+        </div>
+        <div class="gst-card__body">
+            <div class="gst-decay-knobs">
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/decay/field")</span>
+                    <input data-f="field" type="text" value="NumClicks" autocomplete="off" />
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/factor/modifier")</span>
+                    <div class="gst-decay-pillset" role="radiogroup" data-f="modifier">
+                        <button type="button" role="radio" data-value="NONE" aria-checked="false">NONE</button>
+                        <button type="button" role="radio" data-value="SQRT" aria-checked="true">SQRT</button>
+                        <button type="button" role="radio" data-value="LOG" aria-checked="false">LOG</button>
+                        <button type="button" role="radio" data-value="RECIPROCAL" aria-checked="false">RECIP</button>
+                        <button type="button" role="radio" data-value="SQUARE" aria-checked="false">SQUARE</button>
+                    </div>
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/factor/factor")</span>
+                    <input data-f="factor" type="number" step="0.1" value="1.0" />
+                </label>
+                <label class="gst-decay-knob">
+                    <span>@Loc.GetString("/graphsearchtools/tools/decaySandbox/factor/missing")</span>
+                    <input data-f="missing" type="number" step="0.1" value="1" />
+                </label>
+            </div>
+
+            <div class="gst-decay-plot">
+                <svg data-f="plot" viewBox="0 0 320 160" preserveAspectRatio="none" aria-hidden="true">
+                    <rect class="gst-decay-plot__bg" x="0" y="0" width="320" height="160"/>
+                    <g data-f="grid"></g>
+                    <path data-f="curve" class="gst-decay-plot__curve" fill="none"/>
+                </svg>
+                <div class="gst-decay-plot__axis">
+                    <span>0</span>
+                    <span>field value</span>
+                    <span data-f="axis-max">100</span>
+                </div>
+            </div>
+
+            <div class="gst-decay-emit">
+                <pre class="gst-mono" data-f="fragment"></pre>
+                <button type="button" class="gst-btn gst-btn--sm" data-f="copy">
+                    @Loc.GetString("/graphsearchtools/tools/decaySandbox/copy")
+                </button>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/decay-sandbox.js")"></script>
+    <script>
+        (function () {
+            GST.decaySandbox.decay({ container: document.querySelector('[data-decay-panel]') });
+            GST.decaySandbox.factor({ container: document.querySelector('[data-factor-panel]') });
+        })();
+    </script>
+}

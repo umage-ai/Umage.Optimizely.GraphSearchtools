@@ -20,6 +20,7 @@
               <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
               <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
+              <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
             </permissions>
           </GraphSearchtools>
         </groups>
@@ -35,6 +36,7 @@
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
         <savedqueries>Saved Queries</savedqueries>
+        <decaySandbox>Decay &amp; Factor Sandbox</decaySandbox>
         <about>About</about>
       </menu>
 
@@ -148,6 +150,27 @@
           <field_min_score>Minimum score</field_min_score>
           <field_limit>Limit</field_limit>
         </savedqueries>
+        <decaySandbox>
+          <title>Decay &amp; Factor Sandbox</title>
+          <description>Visualize Gaussian / linear / exp decay and factor-modifier curves before pasting them into a Graph query. Pure preview — no live Graph calls.</description>
+          <decay>
+            <title>Decay</title>
+            <field>Field</field>
+            <function>Function</function>
+            <origin>Origin</origin>
+            <scale>Scale</scale>
+            <offset>Offset</offset>
+            <decay>Decay at scale</decay>
+          </decay>
+          <factor>
+            <title>Factor</title>
+            <modifier>Modifier</modifier>
+            <factor>Factor</factor>
+            <missing>Missing value</missing>
+          </factor>
+          <copy>Copy</copy>
+          <copied>Copied</copied>
+        </decaySandbox>
       </tools>
 
       <!--

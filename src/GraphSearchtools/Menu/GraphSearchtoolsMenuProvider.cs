@@ -88,6 +88,17 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SavedQueries))
         };
 
+        // Tuning power tools group (Phase 3) — Decay & Factor Sandbox is a
+        // client-side preview, no Graph calls. Sits next to Saved Queries so
+        // editors can flip from "what fragment do I want" to "paste it into a
+        // saved query" without losing their place.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/decaySandbox", "Decay & Factor Sandbox"), BaseMenuPath + "/decaysandbox",
+            GetResourcePath("GraphSearchtools/DecaySandbox"))
+        {
+            SortIndex = 410,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.DecaySandbox))
+        };
+
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
             GetResourcePath("GraphSearchtools/About"))
         {

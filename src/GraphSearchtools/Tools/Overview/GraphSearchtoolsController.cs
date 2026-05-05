@@ -75,6 +75,14 @@ public class GraphSearchtoolsController : Controller
     }
 
     [HttpGet]
+    public IActionResult DecaySandbox()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.DecaySandbox), GraphSearchtoolsPermissions.DecaySandbox))
+            return Forbid();
+        return View("/Views/DecaySandbox/Index.cshtml");
+    }
+
+    [HttpGet]
     public IActionResult About()
     {
         return View("/Views/About/Index.cshtml");
