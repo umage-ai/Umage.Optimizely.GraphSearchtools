@@ -403,6 +403,41 @@ content. This is the editorial workflow the seed addon doesn't have today.
 
 ---
 
+## 4a. Phase 2.5 — Search Profiles (proposed)
+
+A re-architecting of how Pinned, Synonyms, and Saved Queries scope their
+configuration. Instead of marketers tuning tenant-global pinned collections
+and synonym slots that may or may not be wired into the production query,
+developers register **Search Profiles** describing each search surface
+(header search, knowledge base, …) and the editorial tools become
+profile-scoped.
+
+Headline UX changes:
+
+- New **Profiles** top-level menu entry between Overview and Synonyms, with
+  an index page (table) and a profile detail page (5 tabs: Overview, Pinned,
+  Synonyms, Try in production query, Audit log).
+- **Pinned** removed from the top-level menu — accessed via Profiles →
+  detail → Pinned tab. Includes a Try-it side panel for live A/B preview.
+- **Synonyms** keeps its top-level entry, with a new Global vs. per-profile
+  scope switcher.
+- **Saved Queries → Diagnostics** rename + menu demotion (already covered in
+  §4 of the design doc).
+- Always-present **Generic** profile as the catchment for legacy / orphan
+  pinned collections; ensures zero-config installs don't regress.
+
+Full design — registration API, data model, tool integration, migration
+path — in [`docs/search-profiles-design.md`](search-profiles-design.md).
+Reference markup for the new pages in
+[`docs/prototypes/search-profiles.html`](prototypes/search-profiles.html);
+all new CSS lives under `gst-prof-*` / `gst-pin-*` prefixes ready to fold
+into `graphsearchtools.css`.
+
+Tagged `v0.2.5` (or rolled into `v0.3.0` if shipped together with the tuning
+power tools below).
+
+---
+
 ## 5. Phase 3 — Tuning power tools
 
 The "make levers visible" group:
