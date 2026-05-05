@@ -10,6 +10,12 @@ public class UiStringsProvider(LocalizationService loc)
 {
     private string S(string key) => loc.GetString($"/graphsearchtools/ui/{key}");
 
+    /// <summary>
+    /// Lookup outside the /ui/* tree — used for top-level Profile loc keys at
+    /// /graphsearchtools/profiles/* that the Profiles JS reads via GST.s().
+    /// </summary>
+    private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
+
     public object GetAll() => new
     {
         shared = new
@@ -103,6 +109,69 @@ public class UiStringsProvider(LocalizationService loc)
             all_locales = S("autocomplete/all_locales"),
             returned_for = S("autocomplete/returned_for"),
             error_pick_type_and_field = S("autocomplete/error_pick_type_and_field")
+        },
+        // Phase 2.5 — Search Profiles. Reads from the top-level
+        // /graphsearchtools/profiles/* tree rather than /ui/* so the loc paths
+        // line up with the design doc and stay grouped near the foundation
+        // agent's profile-builder strings.
+        profiles = new
+        {
+            requestFailed = P("requestFailed"),
+            cols = new
+            {
+                profile = P("index/cols/profile"),
+                scope = P("index/cols/scope"),
+                tuning = P("index/cols/tuning"),
+                status = P("index/cols/status"),
+                lastEdited = P("index/cols/lastEdited")
+            },
+            stats = new
+            {
+                profiles = P("index/stats/profiles"),
+                pinned = P("index/stats/pinned"),
+                synonyms = P("index/stats/synonyms"),
+                coverage = P("index/stats/coverage"),
+                sites = P("index/stats/sites"),
+                locales = P("index/stats/locales")
+            },
+            status = new
+            {
+                tuned = P("status/tuned"),
+                needsReview = P("status/needsReview"),
+                docMissing = P("status/docMissing"),
+                freeForm = P("status/freeForm"),
+                cold = P("status/cold")
+            },
+            time = new
+            {
+                justNow = P("time/justNow"),
+                minutesAgo = P("time/minutesAgo"),
+                hoursAgo = P("time/hoursAgo"),
+                daysAgo = P("time/daysAgo")
+            },
+            detail = new
+            {
+                comingSoon = P("detail/comingSoon"),
+                sharedWarning = P("detail/sharedWarning"),
+                meta = new
+                {
+                    allSites = P("detail/meta/allSites"),
+                    allLocales = P("detail/meta/allLocales")
+                },
+                audit = new
+                {
+                    empty = P("detail/audit/empty"),
+                    col = new
+                    {
+                        @when = P("detail/audit/col/when"),
+                        who = P("detail/audit/col/who"),
+                        kind = P("detail/audit/col/kind"),
+                        action = P("detail/audit/col/action"),
+                        subject = P("detail/audit/col/subject"),
+                        locale = P("detail/audit/col/locale")
+                    }
+                }
+            }
         },
         savedqueries = new
         {

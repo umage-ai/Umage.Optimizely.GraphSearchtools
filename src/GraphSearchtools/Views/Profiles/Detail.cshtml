@@ -1,0 +1,226 @@
+@using EPiServer.Shell
+@using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models
+@model UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models.ProfileDetailViewModel
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Model.DisplayName;
+    var docExistsClass = Model.GraphQLDocExists ? "gst-mono" : "gst-mono gst-prof-meta__missing";
+}
+
+<div class="gst-page-header">
+    <div class="gst-page-header__title">
+        <h1>@Model.DisplayName</h1>
+        @if (!string.IsNullOrEmpty(Model.DescriptionResolved))
+        {
+            <p>@Model.DescriptionResolved</p>
+        }
+    </div>
+    <div class="gst-flex">
+        <a href="/EPiServer/cms/graphsearchtools/profiles" class="gst-btn">
+            @Loc.GetString("/graphsearchtools/profiles/detail/backToList")
+        </a>
+    </div>
+</div>
+
+<div id="gst-prof-detail-alert" class="gst-alert" hidden></div>
+
+<div class="gst-prof-layout" data-profile-key="@Model.Key">
+    @* ───────── Left rail: profile metadata ───────── *@
+    <aside class="gst-prof-rail">
+        <div class="gst-card">
+            <div class="gst-card__body">
+                <h2>@Model.DisplayName</h2>
+                <div class="gst-prof-name__key">@Model.Key</div>
+
+                <dl class="gst-prof-meta">
+                    <div>
+                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</dt>
+                        <dd>
+                            @if (Model.Sites.Count == 0)
+                            {
+                                <span class="gst-badge gst-badge--default">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/meta/allSites")
+                                </span>
+                            }
+                            else
+                            {
+                                <div class="gst-flex" style="gap: 4px; flex-wrap: wrap">
+                                    @foreach (var site in Model.Sites)
+                                    {
+                                        <span class="gst-badge gst-badge--default">@site</span>
+                                    }
+                                </div>
+                            }
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</dt>
+                        <dd>
+                            @if (Model.Locales.Count == 0)
+                            {
+                                <span class="gst-badge gst-badge--default">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/meta/allLocales")
+                                </span>
+                            }
+                            else
+                            {
+                                <div class="gst-flex" style="gap: 4px; flex-wrap: wrap">
+                                    @foreach (var loc in Model.Locales)
+                                    {
+                                        <span class="gst-badge gst-badge--primary">@loc</span>
+                                    }
+                                </div>
+                            }
+                        </dd>
+                    </div>
+                    @if (Model.SearchedFields.Count > 0)
+                    {
+                        <div>
+                            <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/searchedFields")</dt>
+                            <dd>
+                                <div class="gst-flex" style="gap: 4px; flex-wrap: wrap">
+                                    @foreach (var field in Model.SearchedFields)
+                                    {
+                                        <span class="gst-badge gst-badge--default">@field</span>
+                                    }
+                                </div>
+                            </dd>
+                        </div>
+                    }
+                    <div>
+                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/synonymSlot")</dt>
+                        <dd>
+                            @if (string.IsNullOrEmpty(Model.SynonymSlot))
+                            {
+                                <span class="gst-muted">—</span>
+                            }
+                            else
+                            {
+                                <span class="gst-mono">"@Model.SynonymSlot"</span>
+                            }
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/pinnedKey")</dt>
+                        <dd>
+                            @if (string.IsNullOrEmpty(Model.PinnedKeyFormula))
+                            {
+                                <span class="gst-muted">—</span>
+                            }
+                            else
+                            {
+                                <span class="gst-mono">@Model.PinnedKeyFormula</span>
+                            }
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/ranking")</dt>
+                        <dd>
+                            @Model.RankingName.ToUpperInvariant() · @Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/graphqlDoc")</dt>
+                        <dd>
+                            @if (string.IsNullOrEmpty(Model.GraphQLDocPath))
+                            {
+                                <span class="gst-muted">—</span>
+                            }
+                            else
+                            {
+                                <span class="@docExistsClass">@Model.GraphQLDocPath</span>
+                                @if (!Model.GraphQLDocExists)
+                                {
+                                    <span class="em">@Loc.GetString("/graphsearchtools/profiles/detail/meta/docNotFound")</span>
+                                }
+                            }
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        @if (Model.IsSiteShared)
+        {
+            <div class="gst-alert gst-alert--warning" style="margin-top: var(--gst-space-md)">
+                @Loc.GetString("/graphsearchtools/profiles/detail/sharedWarning")
+            </div>
+        }
+    </aside>
+
+    @* ───────── Main column: tabs + editor ───────── *@
+    <section>
+        <div class="gst-card">
+            <div class="gst-tabs gst-prof-tabs">
+                <button type="button" class="gst-tab active" data-tab="overview">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/overview")
+                </button>
+                <button type="button" class="gst-tab" data-tab="pinned">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/pinned")
+                </button>
+                @if (Model.HasSynonymTab)
+                {
+                    <button type="button" class="gst-tab" data-tab="synonyms">
+                        @Loc.GetString("/graphsearchtools/profiles/detail/tabs/synonyms")
+                    </button>
+                }
+                <button type="button" class="gst-tab" data-tab="tryit">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/tryProd")
+                </button>
+                <button type="button" class="gst-tab" data-tab="audit">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/audit")
+                    <span id="gst-prof-audit-badge" class="gst-badge gst-badge--default" hidden>0</span>
+                </button>
+            </div>
+
+            <div class="gst-tab-pane" data-pane="overview">
+                <div class="gst-card__body">
+                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                </div>
+            </div>
+
+            <div class="gst-tab-pane" data-pane="pinned" hidden>
+                <div class="gst-card__body">
+                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                </div>
+            </div>
+
+            @if (Model.HasSynonymTab)
+            {
+                <div class="gst-tab-pane" data-pane="synonyms" hidden>
+                    <div class="gst-card__body">
+                        <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                    </div>
+                </div>
+            }
+
+            <div class="gst-tab-pane" data-pane="tryit" hidden>
+                <div class="gst-card__body">
+                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                </div>
+            </div>
+
+            <div class="gst-tab-pane" data-pane="audit" hidden>
+                <div class="gst-card__body">
+                    <div id="gst-prof-audit-host">
+                        <p class="gst-muted">@Loc.GetString("/graphsearchtools/ui/shared/loading")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/profiles.js")"></script>
+    <script>
+        (function() {
+            if (window.GST && window.GST.profiles && typeof window.GST.profiles.detail === 'function') {
+                window.GST.profiles.detail({
+                    profileKey: '@Html.Raw(Model.Key)'
+                });
+            }
+        })();
+    </script>
+}

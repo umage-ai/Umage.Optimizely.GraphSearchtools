@@ -28,4 +28,8 @@ public static class GraphSearchtoolsPermissions
 
     public static PermissionType SavedQueries { get; } =
         new("GraphSearchtools", "SavedQueries");
+
+    // Phase 2.5 — Search Profiles top-level surface.
+    public static PermissionType Profiles { get; } =
+        new("GraphSearchtools", "Profiles");
 }

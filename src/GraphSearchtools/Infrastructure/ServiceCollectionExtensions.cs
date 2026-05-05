@@ -57,6 +57,15 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<QueryRunnerService>();
         services.AddSingleton<SavedQueriesService>();
 
+        // STUB: belongs to foundation agent — to be replaced at integration.
+        // Profiles UI scaffolding needs an ISearchProfileRegistry and the
+        // SearchProfileEditService on the container. The foundation agent's
+        // registration replaces these with the validating singleton +
+        // DDS-backed edit store.
+        services.AddSingleton<ISearchProfileRegistry, EmptySearchProfileRegistry>();
+        services.AddSingleton<SearchProfileEditService>();
+        services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.ProfilesService>();
+
         services.Configure<ProtectedModuleOptions>(options =>
         {
             options.Items.Add(new ModuleDetails
