@@ -1,0 +1,15 @@
+query AlloySearch($q: String!, $locale: [Locales!], $limit: Int = 20) {
+  Content(
+    where: { _fulltext: { match: $q } }
+    locale: $locale
+    limit: $limit
+    orderBy: { _ranking: SEMANTIC }
+  ) {
+    items {
+      Name
+      ContentType
+      _score
+      _fulltext
+    }
+  }
+}
