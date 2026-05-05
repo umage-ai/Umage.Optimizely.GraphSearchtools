@@ -74,6 +74,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SearchProfileEditService>();
         services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.ProfilesService>();
 
+        // Phase 4 foundation: search-log DDS table + ingest endpoint. Phase 4
+        // Wave 5 tools (Search Logs UI, Pinned Result Coverage, Synonym
+        // Coverage) read from this service; TelemetryApiController writes.
+        services.AddSingleton<SearchLogService>();
+
         services.Configure<ProtectedModuleOptions>(options =>
         {
             options.Items.Add(new ModuleDetails

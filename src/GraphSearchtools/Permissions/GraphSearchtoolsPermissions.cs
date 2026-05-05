@@ -37,4 +37,9 @@ public static class GraphSearchtoolsPermissions
     // Phase 3 — Optimizely Graph webhook administration (list, create, delete).
     public static PermissionType Webhooks { get; } =
         new("GraphSearchtools", "Webhooks");
+
+    // Phase 4 foundation — push search-log telemetry from host search surfaces
+    // into the GraphSearchtools log table (consumed by Phase 4 Wave 5 tools).
+    public static PermissionType Telemetry { get; } =
+        new("GraphSearchtools", "Telemetry");
 }

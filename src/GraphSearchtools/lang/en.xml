@@ -21,6 +21,7 @@
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
               <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
+              <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
             </permissions>
           </GraphSearchtools>
         </groups>
