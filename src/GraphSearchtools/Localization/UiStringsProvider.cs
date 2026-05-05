@@ -210,31 +210,6 @@ public class UiStringsProvider(LocalizationService loc)
             save_failed = W("save_failed"),
             delete_failed = W("delete_failed"),
             load_failed = W("load_failed")
-        },
-        savedqueries = new
-        {
-            request_failed = S("savedqueries/request_failed"),
-            no_items = S("savedqueries/no_items"),
-            no_filter_match = S("savedqueries/no_filter_match"),
-            all_locales = S("savedqueries/all_locales"),
-            action_load = S("savedqueries/action_load"),
-            action_run = S("savedqueries/action_run"),
-            action_edit = S("savedqueries/action_edit"),
-            action_delete = S("savedqueries/action_delete"),
-            new_title = S("savedqueries/new_title"),
-            edit_title = S("savedqueries/edit_title"),
-            error_name_required = S("savedqueries/error_name_required"),
-            error_query_required = S("savedqueries/error_query_required"),
-            created = S("savedqueries/created"),
-            updated = S("savedqueries/updated"),
-            deleted = S("savedqueries/deleted"),
-            confirm_delete = S("savedqueries/confirm_delete"),
-            run_failed = S("savedqueries/run_failed"),
-            running = S("savedqueries/running"),
-            no_results = S("savedqueries/no_results"),
-            returned_for = S("savedqueries/returned_for"),
-            show_query = S("savedqueries/show_query"),
-            hide_query = S("savedqueries/hide_query")
         }
     };
 }

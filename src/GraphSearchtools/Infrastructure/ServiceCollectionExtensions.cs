@@ -65,7 +65,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<HealthService>();
         services.AddScoped<HealthScanService>();
         services.AddHttpClient<QueryRunnerService>();
-        services.AddSingleton<SavedQueriesService>();
         services.AddScoped<WebhooksService>();
 
         // Phase 2.5: Search Profiles foundation. The registry collects every

@@ -67,14 +67,6 @@ public class GraphSearchtoolsController : Controller
     }
 
     [HttpGet]
-    public IActionResult SavedQueries()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SavedQueries), GraphSearchtoolsPermissions.SavedQueries))
-            return Forbid();
-        return View("/Views/SavedQueries/Index.cshtml");
-    }
-
-    [HttpGet]
     public IActionResult DecaySandbox()
     {
         if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.DecaySandbox), GraphSearchtoolsPermissions.DecaySandbox))
