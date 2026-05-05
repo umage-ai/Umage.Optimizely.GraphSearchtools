@@ -1,41 +1,78 @@
-// STUB: belongs to foundation agent — to be replaced at integration.
-//
-// In-memory placeholder for the audit-log + last-edited-summary store
-// described in docs/search-profiles-design.md §3.2. The real version is
-// DDS-backed and writes a row per pinned/synonym edit. This stub returns
-// empty enumerables so the Audit tab + last-edited column can render
-// against it before the foundation agent's table lands.
+using EPiServer.Data.Dynamic;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Services;
 
-public sealed class SearchProfileEditService
-{
-    /// <summary>Newest-first list of edits for a profile, capped at <paramref name="take"/>.</summary>
-    public IEnumerable<SearchProfileEdit> ListForProfile(string profileKey, int take)
-        => Array.Empty<SearchProfileEdit>();
-
-    /// <summary>Most recent edit for the profile, or null if none.</summary>
-    public SearchProfileEdit? LatestForProfile(string profileKey) => null;
-}
-
 /// <summary>
-/// Single audit-log entry. Field set per design §3.2 — kept as a POCO with
-/// public setters so the foundation agent's DDS POCO can target the same
-/// shape without ceremony.
+/// Append-and-read access to the <see cref="SearchProfileEdit"/> DDS table.
+/// Used by Pinned / Synonyms controllers to log changes; used by the Profiles
+/// index and detail UI to display "last edited" hints and the audit log.
 /// </summary>
-public sealed class SearchProfileEdit
+/// <remarks>
+/// DDS is process-global (singleton factory), so this service is registered as
+/// a singleton too. Methods are tolerant of the store not being available (e.g.
+/// when running outside an Optimizely host) — they degrade to no-op / empty
+/// rather than throwing.
+/// </remarks>
+public class SearchProfileEditService
 {
-    public string ProfileKey { get; set; } = string.Empty;
-    public string? Site { get; set; }
-    public string? Locale { get; set; }
-    /// <summary>"pinned" | "synonym" — kept open as string for forward-compat.</summary>
-    public string Kind { get; set; } = string.Empty;
-    /// <summary>"create" | "update" | "delete" | "reorder".</summary>
-    public string Action { get; set; } = string.Empty;
-    /// <summary>Phrase, slot, or other short identifier for the affected entity.</summary>
-    public string? Subject { get; set; }
-    public string? ActorId { get; set; }
-    public string? ActorName { get; set; }
-    public DateTime At { get; set; }
-    public string? Note { get; set; }
+    /// <summary>Append a new audit row.</summary>
+    public virtual void Append(SearchProfileEdit entry)
+    {
+        if (entry == null) throw new ArgumentNullException(nameof(entry));
+        if (entry.At == default) entry.At = DateTime.UtcNow;
+
+        var store = TryGetStore();
+        if (store == null) return;
+        store.Save(entry);
+    }
+
+    /// <summary>
+    /// List recent edits for a profile, newest-first. <paramref name="take"/> is
+    /// clamped to <c>[1, 1000]</c>; default is 100 (the Audit log tab paginates
+    /// at this size).
+    /// </summary>
+    public virtual IEnumerable<SearchProfileEdit> ListForProfile(string profileKey, int take = 100)
+    {
+        if (string.IsNullOrEmpty(profileKey)) return Array.Empty<SearchProfileEdit>();
+
+        var store = TryGetStore();
+        if (store == null) return Array.Empty<SearchProfileEdit>();
+
+        var clamped = Math.Clamp(take, 1, 1000);
+        return store.Items<SearchProfileEdit>()
+            .Where(e => e.ProfileKey == profileKey)
+            .OrderByDescending(e => e.At)
+            .Take(clamped)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Most recent edit for a profile, or <c>null</c> when none exists. Drives
+    /// the Profiles index "Last edited" column.
+    /// </summary>
+    public virtual SearchProfileEdit? LatestForProfile(string profileKey)
+    {
+        if (string.IsNullOrEmpty(profileKey)) return null;
+
+        var store = TryGetStore();
+        if (store == null) return null;
+
+        return store.Items<SearchProfileEdit>()
+            .Where(e => e.ProfileKey == profileKey)
+            .OrderByDescending(e => e.At)
+            .FirstOrDefault();
+    }
+
+    private static DynamicDataStore? TryGetStore()
+    {
+        try
+        {
+            return DynamicDataStoreFactory.Instance?.GetStore(typeof(SearchProfileEdit))
+                ?? DynamicDataStoreFactory.Instance?.CreateStore(typeof(SearchProfileEdit));
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

@@ -151,12 +151,18 @@
       </tools>
 
       <!--
-        Phase 2.5 — Search Profiles UI strings.
-        The foundation agent adds builder/registration/Generic-profile keys to
-        the same <profiles> element. Keep entries alphabetised by key path so
-        the eventual textual merge stays mechanical.
+        Phase 2.5 — Search Profiles. Keys are alphabetised by element path
+        inside <profiles> so additions stay mechanical to merge.
       -->
       <profiles>
+        <generic>
+          <name>Generic</name>
+          <desc>Catchment for pinned collections and synonym groups that don't match a registered profile.</desc>
+        </generic>
+        <registration>
+          <invalidKey>Profile key must match [a-z0-9-]+.</invalidKey>
+          <unknownSite>Site '{0}' is not registered with the CMS — profile will still load.</unknownSite>
+        </registration>
         <detail>
           <audit>
             <col>
