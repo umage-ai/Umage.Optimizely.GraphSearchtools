@@ -21,6 +21,7 @@
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
               <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
+              <CustomDataSources>Inspect non-CMS data sources registered with Optimizely Graph and trigger a full resync per source.</CustomDataSources>
               <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
             </permissions>
           </GraphSearchtools>
@@ -38,6 +39,7 @@
         <autocomplete>Autocomplete</autocomplete>
         <decaySandbox>Decay &amp; Factor Sandbox</decaySandbox>
         <webhooks>Webhooks</webhooks>
+        <customDataSources>Custom Data Sources</customDataSources>
         <about>About</about>
       </menu>
 
@@ -164,6 +166,27 @@
           <delete_failed>Could not delete webhook.</delete_failed>
           <load_failed>Could not load webhooks.</load_failed>
         </webhooks>
+        <customDataSources>
+          <title>Custom Data Sources</title>
+          <description>Inspect non-CMS data sources registered with Optimizely Graph — CMS connectors, PIM feeds, custom pipelines. Trigger a full resync when an upstream source has drifted.</description>
+          <col_name>Name</col_name>
+          <col_type>Type</col_type>
+          <col_items>Items</col_items>
+          <col_lastSynced>Last synced</col_lastSynced>
+          <col_status>Status</col_status>
+          <col_actions></col_actions>
+          <sync>Sync now</sync>
+          <sync_confirm>Trigger a full resync of '%1'? Graph will re-pull every item from this source.</sync_confirm>
+          <sync_started>Sync started for '%1'.</sync_started>
+          <status_healthy>Healthy</status_healthy>
+          <status_syncing>Syncing</status_syncing>
+          <status_stale>Stale</status_stale>
+          <status_failed>Failed</status_failed>
+          <status_unknown>Unknown</status_unknown>
+          <empty>No custom data sources registered. Sources are registered out-of-band by their own pipelines.</empty>
+          <load_failed>Could not load data sources.</load_failed>
+          <sync_failed>Could not trigger sync.</sync_failed>
+        </customDataSources>
       </tools>
 
       <!--

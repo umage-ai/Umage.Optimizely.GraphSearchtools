@@ -15,6 +15,8 @@ public class FeatureToggles
     public bool Profiles { get; set; } = true;
     public bool DecaySandbox { get; set; } = true;
     public bool Webhooks { get; set; } = true;
+    public bool CustomDataSources { get; set; } = true;
+    public bool RequestLogs { get; set; } = true;
 
     /// <summary>
     /// Phase 4 foundation — gates the telemetry ingest endpoints

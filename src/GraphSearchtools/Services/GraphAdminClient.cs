@@ -502,6 +502,140 @@ public sealed class GraphAdminClient : IGraphAdminClient
         await SendNoContentAsync(request, cancellationToken);
     }
 
+    // ── Request Logs (Phase 3) ────────────────────────────────────────────
+    // TODO: verify against Optimizely Graph admin API. The request-log
+    // endpoint isn't part of the public docs we have on hand — the path
+    // `/api/requestlogs` and the `take` query parameter follow the
+    // convention used by `/api/webhooks`. Auth is the same Basic
+    // (AppKey:Secret) header. The response shape is probed defensively:
+    // bare array, or wrapped envelopes (`logs`, `entries`, `data`) — Graph's
+    // other admin surfaces vary between these and we'd rather degrade
+    // gracefully than empty the table on a server upgrade.
+
+    public async Task<IReadOnlyList<RequestLogEntryResult>> GetRequestLogsAsync(int take, CancellationToken cancellationToken)
+    {
+        var clamped = Math.Clamp(take, 1, 1000);
+        using var request = CreateRequest(HttpMethod.Get, $"api/requestlogs?take={clamped}");
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new GraphSearchApiException(response.StatusCode, content);
+        }
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<RequestLogEntryResult>();
+        }
+
+        using var doc = JsonDocument.Parse(content);
+        var root = doc.RootElement;
+        JsonElement arrayElement;
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = root;
+        }
+        else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("logs", out var logs) && logs.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = logs;
+        }
+        else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("entries", out var entries) && entries.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = entries;
+        }
+        else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("data", out var dataNode) && dataNode.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = dataNode;
+        }
+        else
+        {
+            return Array.Empty<RequestLogEntryResult>();
+        }
+
+        var results = new List<RequestLogEntryResult>(arrayElement.GetArrayLength());
+        foreach (var entry in arrayElement.EnumerateArray())
+        {
+            results.Add(MapRequestLogEntry(entry));
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// Maps one entry from the Graph request-log endpoint to the DTO. We map
+    /// element-by-element rather than letting <see cref="JsonSerializer"/>
+    /// bind directly because Graph's internal field names aren't fully
+    /// documented and shift between gateway versions: <c>at</c> vs
+    /// <c>timestamp</c>, <c>durationMs</c> vs <c>elapsedMs</c>, etc. Probing
+    /// known aliases keeps the tool useful on staging/dev gateways without
+    /// requiring a server roll.
+    /// </summary>
+    private static RequestLogEntryResult MapRequestLogEntry(JsonElement entry)
+    {
+        var query = GetRlString(entry, "query") ?? GetRlString(entry, "document") ?? string.Empty;
+        var variables = GetRlVariables(entry);
+        var rankingFromBody = GetRlString(entry, "ranking") ?? ExtractRankingFromQuery(query);
+        var resultCount = GetRlInt(entry, "resultCount") ?? GetRlInt(entry, "totalCount") ?? GetRlInt(entry, "hits");
+
+        return new RequestLogEntryResult
+        {
+            Id = GetRlString(entry, "id") ?? GetRlString(entry, "requestId") ?? string.Empty,
+            At = GetRlDateTime(entry, "at") ?? GetRlDateTime(entry, "timestamp") ?? GetRlDateTime(entry, "createdAt") ?? default,
+            Method = GetRlString(entry, "method") ?? "POST",
+            Operation = GetRlString(entry, "operation") ?? GetRlString(entry, "operationName"),
+            Query = query,
+            Variables = variables,
+            Status = GetRlInt(entry, "status") ?? GetRlInt(entry, "statusCode") ?? 0,
+            DurationMs = GetRlInt(entry, "durationMs") ?? GetRlInt(entry, "elapsedMs") ?? GetRlInt(entry, "duration") ?? 0,
+            ResultCount = resultCount,
+            Ranking = rankingFromBody,
+            CallerIp = GetRlString(entry, "callerIp") ?? GetRlString(entry, "ip") ?? GetRlString(entry, "remoteAddr"),
+            UserAgent = GetRlString(entry, "userAgent") ?? GetRlString(entry, "ua")
+        };
+    }
+
+    private static string? GetRlVariables(JsonElement entry)
+    {
+        if (entry.ValueKind != JsonValueKind.Object || !entry.TryGetProperty("variables", out var v)) return null;
+        return v.ValueKind switch
+        {
+            JsonValueKind.String => v.GetString(),
+            JsonValueKind.Object or JsonValueKind.Array => v.GetRawText(),
+            JsonValueKind.Null or JsonValueKind.Undefined => null,
+            _ => v.GetRawText()
+        };
+    }
+
+    private static string? GetRlString(JsonElement el, string name)
+        => el.ValueKind == JsonValueKind.Object
+           && el.TryGetProperty(name, out var p)
+           && p.ValueKind == JsonValueKind.String
+            ? p.GetString()
+            : null;
+
+    private static int? GetRlInt(JsonElement el, string name)
+    {
+        if (el.ValueKind != JsonValueKind.Object || !el.TryGetProperty(name, out var p)) return null;
+        if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var i)) return i;
+        if (p.ValueKind == JsonValueKind.String && int.TryParse(p.GetString(), out var s)) return s;
+        return null;
+    }
+
+    private static DateTime? GetRlDateTime(JsonElement el, string name)
+    {
+        if (el.ValueKind != JsonValueKind.Object || !el.TryGetProperty(name, out var p)) return null;
+        if (p.ValueKind == JsonValueKind.String && p.TryGetDateTime(out var dt)) return dt;
+        return null;
+    }
+
+    private static string? ExtractRankingFromQuery(string query)
+    {
+        if (string.IsNullOrEmpty(query)) return null;
+        var match = System.Text.RegularExpressions.Regex.Match(
+            query,
+            @"_ranking\s*:\s*([A-Z_]+)",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
     public async Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken)
     {
         var creds = _credentials.Resolve();
@@ -794,5 +928,66 @@ public sealed class GraphAdminClient : IGraphAdminClient
         {
             throw new InvalidOperationException("Optimizely Content Graph settings (GatewayAddress, AppKey, Secret) are not configured.");
         }
+    }
+
+    // ── Custom Data Sources (Phase 3) ─────────────────────────────────────
+    // TODO: verify against Optimizely Graph data-sources API docs.
+    // Endpoint shape `/api/datasources` and `/api/datasources/{name}/sync`
+    // mirrors the rest of the admin surface; auth is the same Basic header.
+
+    public async Task<IReadOnlyList<DataSourceResult>> GetDataSourcesAsync(CancellationToken cancellationToken)
+    {
+        using var request = CreateRequest(HttpMethod.Get, "api/datasources");
+        // Graph's response shape isn't fully nailed down in public docs:
+        // probe for a bare array OR a wrapped envelope ({sources: [...]} or
+        // {data: [...]}) so a future server-side wrapper change doesn't
+        // silently empty the list.
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new GraphSearchApiException(response.StatusCode, content);
+        }
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<DataSourceResult>();
+        }
+
+        using var doc = JsonDocument.Parse(content);
+        var root = doc.RootElement;
+        JsonElement arrayElement;
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = root;
+        }
+        else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("sources", out var sources) && sources.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = sources;
+        }
+        else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("data", out var dataNode) && dataNode.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = dataNode;
+        }
+        else
+        {
+            return Array.Empty<DataSourceResult>();
+        }
+
+        var raw = arrayElement.GetRawText();
+        return JsonSerializer.Deserialize<List<DataSourceResult>>(raw, _serializerOptions) ?? new List<DataSourceResult>();
+    }
+
+    public async Task TriggerDataSourceSyncAsync(string sourceName, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(sourceName))
+        {
+            throw new ArgumentException("Data source name is required.", nameof(sourceName));
+        }
+        // TODO: verify against Optimizely Graph data-sources API docs — the
+        // expected verb (POST vs PUT) and trigger sub-path (`sync` vs
+        // `resync`) are inferred from the convention used by other Graph
+        // admin endpoints.
+        using var request = CreateRequest(HttpMethod.Post, $"api/datasources/{Uri.EscapeDataString(sourceName)}/sync");
+        await SendNoContentAsync(request, cancellationToken);
     }
 }

@@ -59,6 +59,21 @@ public interface IGraphAdminClient
     Task<IReadOnlyList<WebhookResult>> GetWebhooksAsync(CancellationToken cancellationToken);
     Task<WebhookResult> CreateWebhookAsync(WebhookPayload payload, CancellationToken cancellationToken);
     Task DeleteWebhookAsync(string id, CancellationToken cancellationToken);
+
+    // ── Request Logs (Phase 3) ───────────────────────────────────────────
+    // Recent Graph queries with timing + status. Read-only; the tool surfaces
+    // the entries in a click-to-replay log view. The service layer clamps
+    // <paramref name="take"/> to [1, 1000] so a wild caller can't pin the
+    // gateway with a malformed paging parameter.
+    Task<IReadOnlyList<RequestLogEntryResult>> GetRequestLogsAsync(int take, CancellationToken cancellationToken);
+
+    // ── Custom Data Sources (Phase 3) ────────────────────────────────────
+    // Non-CMS sources push into the Graph index out-of-band (CMS, Commerce,
+    // PIM connectors, custom scripts). The admin tool surfaces a read-only
+    // list and lets ops trigger a full resync per source. v1 has no
+    // create/delete — registration happens in the source's own pipeline.
+    Task<IReadOnlyList<DataSourceResult>> GetDataSourcesAsync(CancellationToken cancellationToken);
+    Task TriggerDataSourceSyncAsync(string sourceName, CancellationToken cancellationToken);
 }
 
 public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);

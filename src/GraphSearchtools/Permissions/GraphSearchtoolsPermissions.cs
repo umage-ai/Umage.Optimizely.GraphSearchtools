@@ -38,6 +38,10 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Webhooks { get; } =
         new("GraphSearchtools", "Webhooks");
 
+    // Phase 3 — recent Graph queries (timing + ranking + replay).
+    public static PermissionType RequestLogs { get; } =
+        new("GraphSearchtools", "RequestLogs");
+
     // Phase 4 foundation — push search-log telemetry from host search surfaces
     // into the GraphSearchtools log table (consumed by Phase 4 Wave 5 tools).
     public static PermissionType Telemetry { get; } =
