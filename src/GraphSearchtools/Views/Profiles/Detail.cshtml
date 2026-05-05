@@ -190,7 +190,10 @@
             {
                 <div class="gst-tab-pane" data-pane="synonyms" hidden>
                     <div class="gst-card__body">
-                        <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                        <div id="gst-prof-synonyms-host"
+                             data-profile-key="@Model.Key"
+                             data-locales="@string.Join(",", Model.Locales)">
+                        </div>
                     </div>
                 </div>
             }
@@ -213,6 +216,7 @@
 </div>
 
 @section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/profiles.js")"></script>
     <script>
         (function() {
