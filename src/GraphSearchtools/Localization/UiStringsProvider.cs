@@ -74,7 +74,16 @@ public class UiStringsProvider(LocalizationService loc)
             action_remove = S("synonyms/action_remove"),
             rule_placeholder = S("synonyms/rule_placeholder"),
             saved = S("synonyms/saved"),
-            confirm_unsaved = S("synonyms/confirm_unsaved")
+            confirm_unsaved = S("synonyms/confirm_unsaved"),
+            filter_placeholder = S("synonyms/filter_placeholder"),
+            add = S("synonyms/add"),
+            col_rule = S("synonyms/col_rule"),
+            save = S("synonyms/save"),
+            help_replacement_label = S("synonyms/help_replacement_label"),
+            help_replacement_text = S("synonyms/help_replacement_text"),
+            help_equivalent_label = S("synonyms/help_equivalent_label"),
+            help_equivalent_text = S("synonyms/help_equivalent_text"),
+            profile_locale = S("synonyms/profile_locale")
         },
         health = new
         {

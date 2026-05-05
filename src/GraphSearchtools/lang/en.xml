@@ -64,6 +64,13 @@
           <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
+          <scope_label>Scope</scope_label>
+          <scope_global>Global</scope_global>
+          <scope_profile>Per profile</scope_profile>
+          <global_warning>Global synonyms apply to every query that consumes the global slot. Edit with care.</global_warning>
+          <profile_picker>Profile</profile_picker>
+          <profile_locale>Locale</profile_locale>
+          <profile_no_slot>This profile has no synonym slot — nothing to tune.</profile_no_slot>
         </synonyms>
         <health>
           <title>Health</title>
@@ -189,6 +196,7 @@
             <sites>Sites</sites>
             <synonymSlot>Synonym slot</synonymSlot>
           </meta>
+          <scopeProfile>Per profile</scopeProfile>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
             <audit>Audit log</audit>
@@ -304,6 +312,15 @@
           <rule_placeholder>H2O =&gt; water  or  laptop, computer, pc</rule_placeholder>
           <saved>Synonyms saved.</saved>
           <confirm_unsaved>You have unsaved synonym changes. Press OK to save, or Cancel to discard.</confirm_unsaved>
+          <filter_placeholder>Filter rules...</filter_placeholder>
+          <add>Add</add>
+          <col_rule>Rule</col_rule>
+          <save>Save changes</save>
+          <help_replacement_label>Replacement</help_replacement_label>
+          <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
+          <help_equivalent_label>Equivalent</help_equivalent_label>
+          <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
+          <profile_locale>Locale</profile_locale>
         </synonyms>
         <health>
           <request_failed>Health check failed</request_failed>
