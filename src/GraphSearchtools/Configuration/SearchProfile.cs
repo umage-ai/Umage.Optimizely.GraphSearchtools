@@ -41,12 +41,6 @@ public sealed class SearchProfile
     public IReadOnlyList<string> SearchedFields { get; init; } = Array.Empty<string>();
 
     /// <summary>
-    /// Graph synonym slot (<c>synonym_slot</c>) consumed by the production
-    /// query. <c>null</c> hides the per-profile Synonyms tab.
-    /// </summary>
-    public string? SynonymSlot { get; init; }
-
-    /// <summary>
     /// Resolves the pinned-results collection key for a given locale. <c>null</c>
     /// hides the per-profile Pinned tab. The lambda lets multi-site solutions
     /// declare per-site keys (e.g. <c>locale =&gt; $"corp-{locale}"</c>).

@@ -149,11 +149,9 @@
         function renderStats(profiles) {
             var sites = new Set();
             var locales = new Set();
-            var synSlots = new Set();
             profiles.forEach(function(p) {
                 (p.sites || []).forEach(function(x) { sites.add(x); });
                 (p.locales || []).forEach(function(x) { locales.add(x); });
-                if (p.synonymSlot) synSlots.add(p.synonymSlot);
             });
 
             setText('gst-prof-stat-count', profiles.length);
@@ -284,9 +282,8 @@
                 document.querySelectorAll('.gst-tab-pane').forEach(function(pane) {
                     pane.hidden = pane.dataset.pane !== tab;
                 });
-                if (tab === 'audit')    loadAudit(key);
-                if (tab === 'pinned')   mountPinned();
-                if (tab === 'synonyms') detailSynonyms.init(key);
+                if (tab === 'audit')  loadAudit(key);
+                if (tab === 'pinned') mountPinned();
             });
         });
 
@@ -312,41 +309,6 @@
             });
         }
     }
-
-    /**
-     * Mount the synonyms editor inside the profile detail's Synonyms tab. The
-     * tab is hidden when the profile has no SynonymSlot (the Razor view
-     * doesn't render the host element in that case), so we just no-op.
-     *
-     * Reuses GST.synonyms.detailMount — same component as the "Per profile"
-     * mode on the top-level Synonyms page (Phase 2.5 §4.2 design doc).
-     *
-     * Exposed at window.GST.profiles.detail.synonyms so callers (and tests)
-     * can re-trigger the mount if needed.
-     */
-    var detailSynonyms = {
-        _mounted: false,
-        init: function(profileKey) {
-            if (this._mounted) return;
-            var host = document.getElementById('gst-prof-synonyms-host');
-            if (!host) return; // tab not rendered (no SynonymSlot)
-            if (!window.GST || !window.GST.synonyms || typeof window.GST.synonyms.detailMount !== 'function') {
-                console.warn('GST.synonyms.detailMount unavailable');
-                return;
-            }
-            var locales = (host.dataset.locales || '')
-                .split(',')
-                .map(function(s) { return s.trim(); })
-                .filter(function(s) { return s.length > 0; });
-            window.GST.synonyms.detailMount({
-                container: host,
-                profileKey: profileKey || host.dataset.profileKey || '',
-                locales: locales
-            });
-            this._mounted = true;
-        }
-    };
-    detail.synonyms = detailSynonyms;
 
     var _auditLoaded = false;
 

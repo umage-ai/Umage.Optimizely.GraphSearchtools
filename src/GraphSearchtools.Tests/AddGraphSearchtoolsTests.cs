@@ -153,7 +153,6 @@ public class AddGraphSearchtoolsTests
                 .DisplayName("Site search")
                 .Sites("corporate")
                 .Locales("en")
-                .UsesSynonymSlot("site")
                 .UsesPinnedKey("site-{locale}"));
 
         builder.Profiles.Should().ContainSingle().Which.Key.Should().Be("site-search");

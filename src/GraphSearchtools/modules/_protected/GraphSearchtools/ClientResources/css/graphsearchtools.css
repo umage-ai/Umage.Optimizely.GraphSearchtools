@@ -2351,34 +2351,6 @@ td.bpe-editing select {
 .gst-pin-keyline__hint { margin-left: auto; color: var(--gst-text-muted); font-size: 11px; }
 .gst-pin-keyline__hint code { font-family: var(--gst-font-mono); color: var(--gst-text-secondary); }
 
-/* ── Try-it tab (Phase 2.5 §4.3) ─────────────────────────────
-   Iframe wrapper for the per-profile diagnostic runner. The frame loads the
-   Saved Queries view in `embed=1` mode (chrome stripped via _SearchtoolsLayout).
-*/
-.gst-prof-tryit { display: block; }
-.gst-prof-tryit__frame {
-    width: 100%;
-    min-height: 720px;
-    border: 1px solid var(--gst-border);
-    border-radius: var(--gst-radius);
-    background: var(--gst-bg-card);
-}
-.gst-prof-tryit-empty {
-    padding: var(--gst-space-lg) var(--gst-space-md);
-    text-align: center;
-}
-.gst-prof-tryit-empty h3 {
-    margin: 0 0 8px;
-    font-size: var(--gst-text-md);
-    font-weight: 600;
-}
-
-/* Embed mode (`?embed=1`) drops shell padding so the iframe content sits
-   flush inside the parent's Try-it tab card. */
-body.gst-embed { background: transparent; }
-.gst-shell--embed { padding: 0; }
-.gst-shell--embed .gst-main { padding: var(--gst-space-md); }
-
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 1100px) {
     .gst-prof-layout { grid-template-columns: 1fr; }

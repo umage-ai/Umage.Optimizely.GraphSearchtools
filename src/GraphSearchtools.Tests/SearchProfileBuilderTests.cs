@@ -43,7 +43,6 @@ public class SearchProfileBuilderTests
             .Sites("corporate", "blog")
             .Locales("EN", "da", "sv")
             .SearchedFields("Name", "TeaserText")
-            .UsesSynonymSlot("site")
             .UsesPinnedKey("site-{locale}")
             .SemanticBlend(0.4, GraphRanking.Semantic)
             .GraphQLDocument("Queries/SiteSearch.graphql")
@@ -58,7 +57,6 @@ public class SearchProfileBuilderTests
         profile.Sites.Should().Equal("corporate", "blog");
         profile.Locales.Should().Equal("en", "da", "sv");
         profile.SearchedFields.Should().Equal("Name", "TeaserText");
-        profile.SynonymSlot.Should().Be("site");
         profile.PinnedKeyForLocale.Should().NotBeNull();
         profile.SemanticWeight.Should().BeApproximately(0.4, 1e-9);
         profile.Ranking.Should().Be(GraphRanking.Semantic);

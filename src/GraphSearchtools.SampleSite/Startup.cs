@@ -44,7 +44,6 @@ public class Startup
                 .Description("Header search across the Alloy demo content.")
                 .Locales("en")
                 .SearchedFields("Name", "MetaDescription", "MainBody")
-                .UsesSynonymSlot("alloy")
                 .UsesPinnedKey("alloy-{locale}")
                 .SemanticBlend(0.3, GraphRanking.Semantic)
                 .GraphQLDocument("Queries/AlloySearch.graphql"))

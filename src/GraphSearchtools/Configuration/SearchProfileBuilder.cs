@@ -18,7 +18,6 @@ public sealed class SearchProfileBuilder
     private List<string> _sites = new();
     private List<string> _locales = new();
     private List<string> _searchedFields = new();
-    private string? _synonymSlot;
     private Func<string, string>? _pinnedKeyForLocale;
     private double _semanticWeight = 0.2;
     private GraphRanking _ranking = GraphRanking.Relevance;
@@ -81,12 +80,6 @@ public sealed class SearchProfileBuilder
             .Where(f => !string.IsNullOrWhiteSpace(f))
             .Select(f => f.Trim())
             .ToList();
-        return this;
-    }
-
-    public SearchProfileBuilder UsesSynonymSlot(string slot)
-    {
-        _synonymSlot = string.IsNullOrWhiteSpace(slot) ? null : slot.Trim();
         return this;
     }
 
@@ -187,7 +180,6 @@ public sealed class SearchProfileBuilder
             Sites = _sites.AsReadOnly(),
             Locales = _locales.AsReadOnly(),
             SearchedFields = _searchedFields.AsReadOnly(),
-            SynonymSlot = _synonymSlot,
             PinnedKeyForLocale = _pinnedKeyForLocale,
             SemanticWeight = _semanticWeight,
             Ranking = _ranking,

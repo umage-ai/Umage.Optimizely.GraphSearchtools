@@ -34,12 +34,6 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
-        <diagnostics>Diagnostics</diagnostics>
-        <!--
-          Phase 2.5 §4.3 renamed this entry to <diagnostics>. The legacy key is
-          retained for back-compat with anything still referencing
-          /graphsearchtools/menu/savedqueries — remove in a future major.
-        -->
         <savedqueries>Saved Queries</savedqueries>
         <about>About</about>
       </menu>
@@ -70,13 +64,6 @@
           <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
-          <scope_label>Scope</scope_label>
-          <scope_global>Global</scope_global>
-          <scope_profile>Per profile</scope_profile>
-          <global_warning>Global synonyms apply to every query that consumes the global slot. Edit with care.</global_warning>
-          <profile_picker>Profile</profile_picker>
-          <profile_locale>Locale</profile_locale>
-          <profile_no_slot>This profile has no synonym slot — nothing to tune.</profile_no_slot>
         </synonyms>
         <health>
           <title>Health</title>
@@ -203,7 +190,6 @@
             <ranking>Ranking · semantic blend</ranking>
             <searchedFields>Searched fields</searchedFields>
             <sites>Sites</sites>
-            <synonymSlot>Synonym slot</synonymSlot>
           </meta>
           <pinned>
             <empty>No pinned items for this phrase yet.</empty>
@@ -213,23 +199,12 @@
             <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
             <tryTitle>Live preview</tryTitle>
           </pinned>
-          <scopeProfile>Per profile</scopeProfile>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
             <audit>Audit log</audit>
             <overview>Overview</overview>
             <pinned>Pinned results</pinned>
-            <synonyms>Synonyms</synonyms>
-            <tryProd>Try in production query</tryProd>
           </tabs>
-          <tryProd>
-            <debug>Score / fulltext</debug>
-            <noDocument>No GraphQL document declared for this profile.</noDocument>
-            <raw>Raw response</raw>
-            <results>Results</results>
-            <run>Run</run>
-            <title>Run the production query</title>
-          </tryProd>
         </detail>
         <index>
           <cols>
@@ -345,7 +320,6 @@
           <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
-          <profile_locale>Locale</profile_locale>
         </synonyms>
         <health>
           <request_failed>Health check failed</request_failed>
@@ -402,7 +376,6 @@
           <returned_for>Returned %1 of %2 in %3 ms</returned_for>
           <show_query>Show query</show_query>
           <hide_query>Hide query</hide_query>
-          <profile_document_loaded>Production query: </profile_document_loaded>
         </savedqueries>
       </ui>
     </graphsearchtools>

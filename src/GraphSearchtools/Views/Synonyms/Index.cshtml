@@ -10,67 +10,40 @@
     <p>@Loc.GetString("/graphsearchtools/tools/synonyms/description")</p>
 </div>
 
-@* ────────── Phase 2.5 §4.2: scope switcher pill ────────── *@
-<div class="gst-card" style="margin-bottom: var(--gst-space-md, 12px)">
-    <div class="gst-card__body">
-        <div class="gst-flex" style="gap: var(--gst-space-md, 12px); align-items: center; flex-wrap: wrap">
-            <span class="gst-muted">@Loc.GetString("/graphsearchtools/tools/synonyms/scope_label")</span>
+<div id="gst-alert" class="gst-alert" hidden></div>
 
-            <div id="gst-syn-scope" class="gst-tabs gst-tabs--pill" role="tablist">
-                <button type="button" id="gst-syn-scope-global"
-                        class="gst-tab is-active" role="tab">
-                    @Loc.GetString("/graphsearchtools/tools/synonyms/scope_global")
-                </button>
-                <button type="button" id="gst-syn-scope-profile"
-                        class="gst-tab" role="tab">
-                    @Loc.GetString("/graphsearchtools/tools/synonyms/scope_profile")
-                </button>
-            </div>
+<div class="gst-card">
+    <div class="gst-toolbar">
+        <select id="syn-language-filter"></select>
+        <input id="syn-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/synonyms/filter_placeholder")" />
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="syn-add" class="gst-btn gst-btn--primary">+ @Loc.GetString("/graphsearchtools/tools/synonyms/add")</button>
+    </div>
 
-            @* Global mode controls — language picker. *@
-            <div id="gst-syn-global-controls" class="gst-flex" style="gap: 8px; align-items: center">
-                <label class="gst-muted" for="gst-syn-global-language">
-                    @Loc.GetString("/graphsearchtools/tools/synonyms/profile_locale")
-                </label>
-                <select id="gst-syn-global-language"></select>
-            </div>
+    <table class="gst-table">
+        <thead>
+        <tr>
+            <th>@Loc.GetString("/graphsearchtools/tools/synonyms/col_rule")</th>
+            <th class="gst-syn-actions-col"></th>
+        </tr>
+        </thead>
+        <tbody id="syn-grid"></tbody>
+    </table>
 
-            @* Per-profile mode controls — profile + locale dropdowns. *@
-            <div id="gst-syn-profile-controls" class="gst-flex" style="gap: 8px; align-items: center" hidden>
-                <label class="gst-muted" for="gst-syn-profile">
-                    @Loc.GetString("/graphsearchtools/tools/synonyms/profile_picker")
-                </label>
-                <select id="gst-syn-profile"></select>
-                <label class="gst-muted" for="gst-syn-profile-locale">
-                    @Loc.GetString("/graphsearchtools/tools/synonyms/profile_locale")
-                </label>
-                <select id="gst-syn-profile-locale"></select>
-            </div>
+    <div class="gst-syn-footer">
+        <div class="gst-muted gst-syn-footer__help">
+            <strong>@Loc.GetString("/graphsearchtools/tools/synonyms/help_replacement_label")</strong>
+            <code>H2O =&gt; water</code> &mdash; @Loc.GetString("/graphsearchtools/tools/synonyms/help_replacement_text")
+            <br/>
+            <strong>@Loc.GetString("/graphsearchtools/tools/synonyms/help_equivalent_label")</strong>
+            <code>laptop, computer, pc</code> &mdash; @Loc.GetString("/graphsearchtools/tools/synonyms/help_equivalent_text")
         </div>
-
-        <div id="gst-syn-global-warning" class="gst-alert gst-alert--warning" style="margin-top: var(--gst-space-md, 12px)">
-            @Loc.GetString("/graphsearchtools/tools/synonyms/global_warning")
-        </div>
-        <div id="gst-syn-profile-no-slot" class="gst-alert gst-alert--warning" style="margin-top: var(--gst-space-md, 12px)" hidden>
-            @Loc.GetString("/graphsearchtools/tools/synonyms/profile_no_slot")
+        <div class="gst-actions">
+            <button type="button" id="syn-save" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/synonyms/save")</button>
         </div>
     </div>
 </div>
 
-<div id="gst-alert" class="gst-alert" hidden></div>
-
-@* The editor renders into this host — see synonyms.js. *@
-<div class="gst-card">
-    <div id="gst-syn-editor-host"></div>
-</div>
-
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms.js")"></script>
-    <script>
-        (function() {
-            if (window.GST && window.GST.synonyms && typeof window.GST.synonyms.pageInit === 'function') {
-                window.GST.synonyms.pageInit();
-            }
-        })();
-    </script>
 }

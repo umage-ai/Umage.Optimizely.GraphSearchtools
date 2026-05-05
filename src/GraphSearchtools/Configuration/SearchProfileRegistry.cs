@@ -112,7 +112,6 @@ public sealed class SearchProfileRegistry : ISearchProfileRegistry
             Sites = sites,
             Locales = locales,
             SearchedFields = Array.Empty<string>(),
-            SynonymSlot = null,
             PinnedKeyForLocale = null,
             SemanticWeight = 0.2,
             Ranking = GraphRanking.Relevance,

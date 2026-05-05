@@ -35,8 +35,6 @@ public sealed record ProfileSummary
     public IReadOnlyList<string> Sites { get; init; } = Array.Empty<string>();
     public IReadOnlyList<string> Locales { get; init; } = Array.Empty<string>();
 
-    public string? SynonymSlot { get; init; }
-
     /// <summary>True iff the profile declares a GraphQL document path.</summary>
     public bool HasGraphQLDoc { get; init; }
     public string? GraphQLDocPath { get; init; }
@@ -161,21 +159,19 @@ public sealed record ProfilePinnedRow
 
 /// <summary>
 /// Razor view model for <c>Views/Profiles/Detail.cshtml</c>. We pre-resolve
-/// localized strings + the synonym-tab visibility flag here rather than in
-/// the view so the markup stays declarative.
+/// localized strings here rather than in the view so the markup stays
+/// declarative.
 /// </summary>
 public sealed class ProfileDetailViewModel
 {
     public string Key { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string? DescriptionResolved { get; set; }
-    public bool HasSynonymTab { get; set; }
     public bool IsGeneric { get; set; }
     public bool IsSiteShared { get; set; }
     public IReadOnlyList<string> Sites { get; set; } = Array.Empty<string>();
     public IReadOnlyList<string> Locales { get; set; } = Array.Empty<string>();
     public IReadOnlyList<string> SearchedFields { get; set; } = Array.Empty<string>();
-    public string? SynonymSlot { get; set; }
     public string? PinnedKeyFormula { get; set; }
     public string RankingName { get; set; } = nameof(GraphRanking.Relevance);
     public double SemanticWeight { get; set; }
