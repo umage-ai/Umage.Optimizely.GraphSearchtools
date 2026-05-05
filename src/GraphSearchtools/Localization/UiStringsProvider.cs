@@ -205,7 +205,8 @@ public class UiStringsProvider(LocalizationService loc)
             no_results = S("savedqueries/no_results"),
             returned_for = S("savedqueries/returned_for"),
             show_query = S("savedqueries/show_query"),
-            hide_query = S("savedqueries/hide_query")
+            hide_query = S("savedqueries/hide_query"),
+            profile_document_loaded = S("savedqueries/profile_document_loaded")
         }
     };
 }

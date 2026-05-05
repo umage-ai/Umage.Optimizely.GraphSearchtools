@@ -74,6 +74,21 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/SavedQueries/Index.cshtml");
     }
 
+    /// <summary>
+    /// Phase 2.5 — Saved Queries was renamed to Diagnostics. The new URL aliases
+    /// the same view so links going forward use the new word; the legacy
+    /// /SavedQueries route stays in place for back-compat in v0.2.5.
+    /// </summary>
+    [HttpGet]
+    public IActionResult Diagnostics()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Diagnostics), GraphSearchtoolsPermissions.SavedQueries))
+            return Forbid();
+        if (!_accessChecker.IsFeatureEnabled(nameof(FeatureToggles.SavedQueries)))
+            return Forbid();
+        return View("/Views/SavedQueries/Index.cshtml");
+    }
+
     [HttpGet]
     public IActionResult About()
     {

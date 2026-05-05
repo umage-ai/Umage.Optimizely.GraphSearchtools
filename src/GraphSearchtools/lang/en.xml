@@ -34,6 +34,12 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
+        <diagnostics>Diagnostics</diagnostics>
+        <!--
+          Phase 2.5 §4.3 renamed this entry to <diagnostics>. The legacy key is
+          retained for back-compat with anything still referencing
+          /graphsearchtools/menu/savedqueries — remove in a future major.
+        -->
         <savedqueries>Saved Queries</savedqueries>
         <about>About</about>
       </menu>
@@ -216,6 +222,14 @@
             <synonyms>Synonyms</synonyms>
             <tryProd>Try in production query</tryProd>
           </tabs>
+          <tryProd>
+            <debug>Score / fulltext</debug>
+            <noDocument>No GraphQL document declared for this profile.</noDocument>
+            <raw>Raw response</raw>
+            <results>Results</results>
+            <run>Run</run>
+            <title>Run the production query</title>
+          </tryProd>
         </detail>
         <index>
           <cols>
@@ -388,6 +402,7 @@
           <returned_for>Returned %1 of %2 in %3 ms</returned_for>
           <show_query>Show query</show_query>
           <hide_query>Hide query</hide_query>
+          <profile_document_loaded>Production query: </profile_document_loaded>
         </savedqueries>
       </ui>
     </graphsearchtools>
