@@ -2659,3 +2659,11 @@ td.bpe-editing select {
 .gst-sl-empty { padding: var(--gst-space-md); margin-bottom: var(--gst-space-md); }
 .gst-sl-empty h2 { margin: 0 0 6px; font-size: 14px; }
 .gst-sl-empty p { margin: 0; color: var(--gst-text-muted); font-size: 13px; }
+
+/* ── Synonym Coverage (Phase 4 Wave 5) ────────────────────────────── */
+.gst-sc-toolbar { margin-bottom: var(--gst-space-md); }
+.gst-sc-meta { color: var(--gst-text-muted); font-size: 12px; }
+.gst-sc-actions-col { width: 1%; white-space: nowrap; text-align: right; }
+.gst-sc-row td { vertical-align: middle; }
+.gst-sc-row .gst-mono { font-size: 12px; }
+.gst-card__subtitle { color: var(--gst-text-muted); font-size: 12px; margin: 4px 0 0; }
