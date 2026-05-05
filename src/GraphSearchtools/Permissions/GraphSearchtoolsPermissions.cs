@@ -36,4 +36,8 @@ public static class GraphSearchtoolsPermissions
     // Phase 3 — client-side ranking-curve preview tool.
     public static PermissionType DecaySandbox { get; } =
         new("GraphSearchtools", "DecaySandbox");
+
+    // Phase 3 — Optimizely Graph webhook administration (list, create, delete).
+    public static PermissionType Webhooks { get; } =
+        new("GraphSearchtools", "Webhooks");
 }

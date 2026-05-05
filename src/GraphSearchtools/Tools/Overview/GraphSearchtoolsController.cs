@@ -83,6 +83,14 @@ public class GraphSearchtoolsController : Controller
     }
 
     [HttpGet]
+    public IActionResult Webhooks()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Webhooks), GraphSearchtoolsPermissions.Webhooks))
+            return Forbid();
+        return View("/Views/Webhooks/Index.cshtml");
+    }
+
+    [HttpGet]
     public IActionResult About()
     {
         return View("/Views/About/Index.cshtml");

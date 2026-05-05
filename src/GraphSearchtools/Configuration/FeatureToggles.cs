@@ -15,4 +15,5 @@ public class FeatureToggles
     public bool SavedQueries { get; set; } = true;
     public bool Profiles { get; set; } = true;
     public bool DecaySandbox { get; set; } = true;
+    public bool Webhooks { get; set; } = true;
 }

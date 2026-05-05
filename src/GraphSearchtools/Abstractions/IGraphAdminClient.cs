@@ -51,6 +51,14 @@ public interface IGraphAdminClient
     /// CMS has configured. Returns an empty list if the enum is missing.
     /// </summary>
     Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken);
+
+    // ── Webhooks (Phase 3) ───────────────────────────────────────────────
+    // Graph's webhooks admin API exposes only list / create / delete — no
+    // PATCH/PUT — so the Webhooks tool models "edit" as delete + recreate.
+
+    Task<IReadOnlyList<WebhookResult>> GetWebhooksAsync(CancellationToken cancellationToken);
+    Task<WebhookResult> CreateWebhookAsync(WebhookPayload payload, CancellationToken cancellationToken);
+    Task DeleteWebhookAsync(string id, CancellationToken cancellationToken);
 }
 
 public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);

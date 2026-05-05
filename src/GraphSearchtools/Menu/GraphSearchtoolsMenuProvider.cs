@@ -99,6 +99,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.DecaySandbox))
         };
 
+        // Webhooks (Phase 3) — list/create/delete Graph webhooks. Edits are
+        // delete + recreate per the upstream constraint; the page surfaces
+        // that honestly via an info banner.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/webhooks", "Webhooks"), BaseMenuPath + "/webhooks",
+            GetResourcePath("GraphSearchtools/Webhooks"))
+        {
+            SortIndex = 420,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Webhooks))
+        };
+
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
             GetResourcePath("GraphSearchtools/About"))
         {

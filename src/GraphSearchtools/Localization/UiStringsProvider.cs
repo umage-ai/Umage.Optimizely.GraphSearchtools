@@ -24,6 +24,12 @@ public class UiStringsProvider(LocalizationService loc)
     /// </summary>
     private string D(string key) => loc.GetString($"/graphsearchtools/tools/decaySandbox/{key}");
 
+    /// <summary>
+    /// Lookup for Webhooks strings under /graphsearchtools/tools/webhooks/*.
+    /// Webhooks JS reads inline confirm/empty/save messages from this section.
+    /// </summary>
+    private string W(string key) => loc.GetString($"/graphsearchtools/tools/webhooks/{key}");
+
     public object GetAll() => new
     {
         shared = new
@@ -193,6 +199,17 @@ public class UiStringsProvider(LocalizationService loc)
         {
             copy = D("copy"),
             copied = D("copied")
+        },
+        webhooks = new
+        {
+            empty = W("empty"),
+            status_active = W("status_active"),
+            status_disabled = W("status_disabled"),
+            delete = W("delete"),
+            delete_confirm = W("delete_confirm"),
+            save_failed = W("save_failed"),
+            delete_failed = W("delete_failed"),
+            load_failed = W("load_failed")
         },
         savedqueries = new
         {
