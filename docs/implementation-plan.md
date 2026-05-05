@@ -447,36 +447,33 @@ power tools below).
 
 ## 5. Phase 3 — Tuning power tools
 
-The "make levers visible" group:
+Shipped 2026-05-05.
 
-| Tool | Detail |
+| Tool | Status |
 |---|---|
-| **Decay & Factor Sandbox** | Visualize Gaussian decay (`origin` / `scale` / `rate`) and `factor` modifier curves (`SQRT`/`LOG`/`RECIPROCAL`/`SQUARE`/`NONE`). Output the GraphQL fragment ready to paste. |
-| **Semantic Weight Tuner** | Tiered policy (e.g. `≤2 tokens → RELEVANCE`, `≥3 tokens → SEMANTIC w=0.3`). Persist as a config bundle and emit `appsettings.json` snippet. |
-| **Schema Inspector** | Per-content-type view: searchable / filterable / facetable per field. Hits Graph schema endpoint. |
-| **Webhooks** | List/create/delete Graph webhooks. Edit = recreate per the upstream constraint, with a clear UI hint. |
-| **Custom Data Sources** | Inspect non-CMS sources, trigger full resync per source. |
-| **Request Logs** | Recent Graph queries with timing + ranking + result count. Click → replay in Search Console. |
+| **Decay & Factor Sandbox** | ✅ Shipped (commit `2c6bf66`). Pure client-side preview of Gaussian / linear / exp decay + factor modifier curves. Emits GraphQL fragment with copy button. Linear/exp variants ship with `// TODO: verify` comments since Graph documentation only confirms the Gaussian form. |
+| **Semantic Weight Tuner** | ✅ Shipped (commit `815e952`). Token-count-tiered ranking policy editor backed by DDS; also emits `appsettings.json` snippet for cold-start fallback. Bound config + saved DDS row are independent surfaces. |
+| ~~**Schema Inspector**~~ | ❌ Skipped — Optimizely Graph already ships GraphiQL with schema introspection; reimplementing is no value-add. |
+| **Webhooks** | ✅ Shipped (commit `e1b6bd6`). List/create/delete via the `{gateway}/api/webhooks` admin endpoint. Edit = delete + recreate per upstream constraint, surfaced with an info banner. API DTOs carry `// TODO: verify` markers (medium confidence on response shape). |
+| **Custom Data Sources** | ✅ Shipped (commit `09c8b23`). Read-only listing via `{gateway}/api/datasources` with per-source "trigger resync" action. Defensive envelope probing in the client. |
+| **Request Logs** | ✅ Shipped (commit `3d3750d`). Recent Graph queries with timing/status/ranking; click-to-expand row reveals full GraphQL document + Copy button for replay. Endpoint shape is best-effort with aggressive field-alias probing. |
 
-These all reuse `IGraphAdminClient` (extended with new methods per surface) and the
-table/dialog components from the framework. No new framework code.
-
-Tagged `v0.3.0`.
+Tagged `v0.3.0` (or rolled into `v0.4.0` if shipped together with Phase 4).
 
 ---
 
 ## 6. Phase 4 — Analytics & audits
 
-| Tool | Source |
-|---|---|
-| **Search Logs** | Top queries, zero-result %, low-CTR head queries, session-rephrasing pairs — the synonym-mining surface in `docs/research/relevancy-optimization.md` §6.1. Two ingestion paths: (a) the host site POSTs each public-search hit to a `GraphSearchtools` log endpoint (preferred — gives CTR), (b) we poll Graph's request log API as fallback. |
-| **Index Health** | Index size by content type; missing fields (Name/Title); strings flagged unsearchable that "should be"; recent reindex deltas. |
-| **Content Searchability Audit** | Local content scan: empty `Name`, missing `MainBody`, no `Tags`, sortable text fields > 1024 chars (per `optimizely-graph-site-search.md` §3 caveat). Deep-links to edit-mode. |
-| **Pinned Result Coverage** | Pin overlap heatmap, expired pins, low-CTR pins, pins where target content was unpublished/deleted. |
-| **Synonym Coverage** | Synonyms not used in any logged query (suggest pruning); top zero-result queries that look like missing synonyms (suggest adding). |
+Shipped 2026-05-05.
 
-These tools require log capture; introduce a small `DynamicDataStore` table for
-search-log ingest (same pattern EditorPowertools uses for its analysis jobs).
+| Tool | Status |
+|---|---|
+| **SearchLog foundation** | ✅ Shipped (commit `4edfb3c`). DDS-backed `SearchLogService` with `Append`/`AppendBatch` + the aggregations the analytics tools consume (`TopPhrases`, `ZeroResultPhrases`, `LowCtrPhrases`, `ListSince`, `ListForProfile`). Telemetry ingest at `POST /api/telemetry/searchlog` (single + batch); both `[Authorize]` + `[RequireAjax]`. Stale-window 24h past / 5min future, quietly drops with 202. Host SDK posts per public-search hit. |
+| **Search Logs UI** | ✅ Shipped (commit `b486eb6`). 4-card layout (Top phrases / Zero-result / Low-CTR / Raw events). Time-window pill (1h/24h/7d/30d). Empty state guides editors to wire host telemetry. Zero-result rows deep-link to Synonyms; low-CTR rows deep-link to Profiles. |
+| **Index Inspector** | ✅ Shipped (commit `f8e7b19`). Per-content-type index population + `MissingNameCount` / `MissingTitleCount` surface. Calls `Content { total(all: true) types { name count } }` first, falls back to per-content-type `total` queries when the schema doesn't expose `types`. |
+| **Content Searchability Audit** | ✅ Shipped (commit `cfab70a`). Local CMS scan via `IContentLoader` + `IContentTypeRepository`. Detects MissingName, MissingMainBody, NoTags, OversizeSortField (string properties marked Searchable with content > 1024 chars). Per-kind output capped at 200 with `Truncated` flag. Deep-link to CMS edit-mode per row. |
+| **Pinned Result Coverage** | ✅ Shipped (commit `bc0f525`). Joins live Graph collections + `IContentLoader` + `SearchLogService` (7-day window). Surfaces unpublished / deleted targets, expired pins (via new `PinnedItemResult.EffectiveTo`), low-CTR pins (CTR < 0.05 with min 5 sessions), and overlap (same phrase pinned in multiple collections). Per-issue deep-link into the owning Profile's Pinned tab. |
+| **Synonym Coverage** | ✅ Shipped (commit `46b48b2`). Joins synonyms (via `SynonymsService`, parses both equivalent `a, b, c` and replacement `a => b, c` rules — only LHS triggers count) with 30-day log window. Two surfaces: unused entries (prune-link) + suggested adds (zero-result phrases not already covered, optionally annotated with closest indexed term via Levenshtein ≤ 2). |
 
 Tagged `v0.4.0`.
 
@@ -484,15 +481,14 @@ Tagged `v0.4.0`.
 
 ## 7. Phase 5 — Relevancy Lab
 
-The most ambitious tool — build only after Search Console has matured.
+Shipped 2026-05-05 (commit `[Phase 5 commit]`).
 
-- Define a "golden query set" (query + expected top-N content).
-- Run the set against two configurations.
-- Show NDCG@10 / MRR per query and overall, per-query winners, and a deltas table.
-- Export as CSV.
-
-Backed by repeated `Content` queries with varying `where`/`orderBy`, tracked in a
-DDS-backed result store so historical runs can be compared.
+- ✅ Golden query set CRUD (DDS-stored): `(phrase, expectedTop: List<ExpectedHit>)` bundles, weighted, per-locale.
+- ✅ Run engine reuses `QueryRunnerService` for per-phrase Graph calls (via `IServiceScopeFactory` to keep the captive-dependency rule clean).
+- ✅ Scoring: standard NDCG@10 (DCG using `ExpectedHit.Weight` as relevance, normalised by ideal DCG over the expected list) and MRR (1/rank of first ExpectedHit found in actual top-N).
+- ✅ Persisted runs in DDS so historical runs can be compared.
+- ✅ Side-by-side compare view emits per-phrase deltas sorted by absolute NDCG delta.
+- ✅ CSV export.
 
 Tagged `v0.5.0`.
 
