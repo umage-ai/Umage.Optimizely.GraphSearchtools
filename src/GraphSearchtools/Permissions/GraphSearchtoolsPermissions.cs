@@ -46,6 +46,10 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType RequestLogs { get; } =
         new("GraphSearchtools", "RequestLogs");
 
+    // Phase 3 — non-CMS data sources (list, trigger resync).
+    public static PermissionType CustomDataSources { get; } =
+        new("GraphSearchtools", "CustomDataSources");
+
     // Phase 4 foundation — push search-log telemetry from host search surfaces
     // into the GraphSearchtools log table (consumed by Phase 4 Wave 5 tools).
     public static PermissionType Telemetry { get; } =
