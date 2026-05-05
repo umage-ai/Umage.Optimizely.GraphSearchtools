@@ -120,6 +120,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.RequestLogs))
         };
 
+        // Semantic Weight Tuner (Phase 3) — token-count-tiered ranking policy
+        // editor. Pure client + tiny persistence layer; emits an
+        // appsettings.json snippet alongside the saved DDS row.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/semanticTuner", "Semantic Weight Tuner"), BaseMenuPath + "/semantictuner",
+            GetResourcePath("SemanticTuner/Index"))
+        {
+            SortIndex = 450,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SemanticTuner))
+        };
+
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
             GetResourcePath("GraphSearchtools/About"))
         {

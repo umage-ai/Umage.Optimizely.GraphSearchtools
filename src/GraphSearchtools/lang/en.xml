@@ -20,6 +20,7 @@
               <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
               <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
+              <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
               <CustomDataSources>Inspect non-CMS data sources registered with Optimizely Graph and trigger a full resync per source.</CustomDataSources>
               <RequestLogs>View recent Optimizely Graph queries with timing, ranking and result count; replay one in Search Console.</RequestLogs>
@@ -42,6 +43,7 @@
         <webhooks>Webhooks</webhooks>
         <customDataSources>Custom Data Sources</customDataSources>
         <requestLogs>Request Logs</requestLogs>
+        <semanticTuner>Semantic Weight Tuner</semanticTuner>
         <about>About</about>
       </menu>
 
@@ -210,6 +212,31 @@
           <empty>No request logs in this window.</empty>
           <load_failed>Could not load request logs.</load_failed>
         </requestLogs>
+        <semanticTuner>
+          <title>Semantic Weight Tuner</title>
+          <description>Tier the Optimizely Graph ranking mode and semantic weight by query token count — e.g. "1–2 tokens lean RELEVANCE, 3+ tokens go SEMANTIC w=0.3". Saved policy persists in DDS and is also emitted as an appsettings.json snippet you can paste into the host config for cold-start fallback.</description>
+          <tier_min_tokens>Min tokens</tier_min_tokens>
+          <tier_max_tokens>Max tokens</tier_max_tokens>
+          <tier_ranking>Ranking</tier_ranking>
+          <tier_weight>Semantic weight</tier_weight>
+          <tier_description>Description (optional)</tier_description>
+          <tier_max_unbounded>∞</tier_max_unbounded>
+          <add_tier>+ Add tier</add_tier>
+          <remove_tier>Remove tier</remove_tier>
+          <save>Save policy</save>
+          <saved>Policy saved.</saved>
+          <save_failed>Could not save policy.</save_failed>
+          <load_failed>Could not load policy.</load_failed>
+          <snippet_label>appsettings.json snippet</snippet_label>
+          <snippet_help>Drop this into the host's appsettings.json. The bound config acts as a cold-start fallback; the saved DDS row above is the runtime source of truth.</snippet_help>
+          <copy>Copy</copy>
+          <copied>Copied</copied>
+          <empty>No tiers defined yet. Add a tier to start tuning.</empty>
+          <ranking_relevance>Relevance</ranking_relevance>
+          <ranking_semantic>Semantic</ranking_semantic>
+          <ranking_boostonly>Boost only</ranking_boostonly>
+          <ranking_doc>Doc</ranking_doc>
+        </semanticTuner>
       </tools>
 
       <!--

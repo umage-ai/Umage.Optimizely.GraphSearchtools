@@ -14,6 +14,7 @@ using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
@@ -76,6 +77,12 @@ public class AddGraphSearchtoolsTests
         // it shows up in CMS Set Access Rights.
         GraphSearchtoolsPermissions.DecaySandbox.Should().NotBeNull();
         GraphSearchtoolsPermissions.DecaySandbox.Name.Should().Be("DecaySandbox");
+
+        // Phase 3: Semantic Weight Tuner — DDS-backed policy editor.
+        services.Should().Contain(d => d.ServiceType == typeof(SemanticTunerService));
+        GraphSearchtoolsPermissions.SemanticTuner.Should().NotBeNull();
+        GraphSearchtoolsPermissions.SemanticTuner.Name.Should().Be("SemanticTuner");
+        options.Value.Features.SemanticTuner.Should().BeTrue();
 
         // Auth policy is configured under the canonical name.
         var authOptions = provider.GetRequiredService<IOptions<AuthorizationOptions>>();

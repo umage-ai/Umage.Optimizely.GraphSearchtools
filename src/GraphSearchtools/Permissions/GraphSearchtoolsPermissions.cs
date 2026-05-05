@@ -34,6 +34,10 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType DecaySandbox { get; } =
         new("GraphSearchtools", "DecaySandbox");
 
+    // Phase 3 — token-count-tiered Semantic Weight Tuner policy editor.
+    public static PermissionType SemanticTuner { get; } =
+        new("GraphSearchtools", "SemanticTuner");
+
     // Phase 3 — Optimizely Graph webhook administration (list, create, delete).
     public static PermissionType Webhooks { get; } =
         new("GraphSearchtools", "Webhooks");

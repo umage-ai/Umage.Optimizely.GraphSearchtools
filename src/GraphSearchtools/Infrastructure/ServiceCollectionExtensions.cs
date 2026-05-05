@@ -14,6 +14,7 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.RequestLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Webhooks;
 
@@ -70,6 +71,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<WebhooksService>();
         services.AddScoped<CustomDataSourcesService>();
         services.AddScoped<RequestLogsService>();
+
+        // Phase 3: Semantic Weight Tuner — DDS-backed policy editor. Singleton
+        // because the underlying DynamicDataStoreFactory is process-global and
+        // the service is otherwise stateless.
+        services.AddSingleton<SemanticTunerService>();
 
         // Phase 2.5: Search Profiles foundation. The registry collects every
         // SearchProfile registered as a singleton (by AddSearchProfile) plus

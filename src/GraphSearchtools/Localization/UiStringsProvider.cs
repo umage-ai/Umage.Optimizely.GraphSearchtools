@@ -44,6 +44,13 @@ public class UiStringsProvider(LocalizationService loc)
     /// </summary>
     private string R(string key) => loc.GetString($"/graphsearchtools/tools/requestLogs/{key}");
 
+    /// <summary>
+    /// Lookup for Semantic Weight Tuner strings under
+    /// /graphsearchtools/tools/semanticTuner/*. The page is a thin client; all
+    /// labels and toast messages route through this section.
+    /// </summary>
+    private string ST(string key) => loc.GetString($"/graphsearchtools/tools/semanticTuner/{key}");
+
     public object GetAll() => new
     {
         shared = new
@@ -245,6 +252,30 @@ public class UiStringsProvider(LocalizationService loc)
             copy_query = R("copy_query"),
             copied = R("copied"),
             load_failed = R("load_failed")
+        },
+        semanticTuner = new
+        {
+            tier_min_tokens = ST("tier_min_tokens"),
+            tier_max_tokens = ST("tier_max_tokens"),
+            tier_max_unbounded = ST("tier_max_unbounded"),
+            tier_ranking = ST("tier_ranking"),
+            tier_weight = ST("tier_weight"),
+            tier_description = ST("tier_description"),
+            add_tier = ST("add_tier"),
+            remove_tier = ST("remove_tier"),
+            save = ST("save"),
+            saved = ST("saved"),
+            save_failed = ST("save_failed"),
+            load_failed = ST("load_failed"),
+            snippet_label = ST("snippet_label"),
+            snippet_help = ST("snippet_help"),
+            copy = ST("copy"),
+            copied = ST("copied"),
+            empty = ST("empty"),
+            ranking_relevance = ST("ranking_relevance"),
+            ranking_semantic = ST("ranking_semantic"),
+            ranking_boostonly = ST("ranking_boostonly"),
+            ranking_doc = ST("ranking_doc")
         }
     };
 }
