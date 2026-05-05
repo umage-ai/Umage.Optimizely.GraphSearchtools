@@ -2489,3 +2489,36 @@ td.bpe-editing select {
 @media (max-width: 720px) {
     .gst-decay-knobs { grid-template-columns: 1fr; }
 }
+
+/* ─── Webhooks (Phase 3) ─────────────────────────────────────── */
+.gst-webhook-actions-col { width: 1%; white-space: nowrap; }
+.gst-webhook-field {
+    margin-bottom: var(--gst-space-md);
+}
+.gst-webhook-field > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.gst-webhook-field > input,
+.gst-webhook-field > select {
+    width: 100%;
+    box-sizing: border-box;
+}
+.gst-webhook-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.gst-webhook-kv-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
+    align-items: center;
+}
+.gst-webhook-kv-row input { box-sizing: border-box; width: 100%; }
+.gst-webhook-kv-remove {
+    padding: 4px 10px;
+    line-height: 1;
+}
