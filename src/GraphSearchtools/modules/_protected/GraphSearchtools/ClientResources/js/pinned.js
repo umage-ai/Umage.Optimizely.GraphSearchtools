@@ -51,6 +51,7 @@
     }
 
     function setAlert(message, isError) {
+        if (!alertBox) return; // legacy DOM not present (Profile detail page)
         if (!message) {
             alertBox.hidden = true;
             alertBox.textContent = '';
@@ -546,16 +547,463 @@
     }
 
     // --- Bind events ---
+    //
+    // The Phase 2.5 redesign moved the legacy free-form Pinned page to a 301
+    // redirect (Profiles → {profile} → Pinned tab takes its place). The bundle
+    // still loads on the Profiles index/detail because the layout includes
+    // it for the editor factory below — guard the legacy bindings so missing
+    // DOM elements don't throw on those pages.
 
-    addButton.addEventListener('click', addNewRow);
-    pinFilter.addEventListener('input', renderGrid);
-    pinCollectionFilter.addEventListener('change', renderGrid);
+    if (pinGrid && addButton && pinFilter && pinCollectionFilter) {
+        addButton.addEventListener('click', addNewRow);
+        pinFilter.addEventListener('input', renderGrid);
+        pinCollectionFilter.addEventListener('change', renderGrid);
 
-    document.addEventListener('click', function (e) {
-        if (activeDropdown && !e.target.closest('.gst-pin-content-cell')) {
-            closeActiveDropdown();
+        document.addEventListener('click', function (e) {
+            if (activeDropdown && !e.target.closest('.gst-pin-content-cell')) {
+                closeActiveDropdown();
+            }
+        });
+
+        loadAll();
+    }
+})();
+
+/**
+ * Phase 2.5 §4.1 — Profile-scoped Pinned editor.
+ *
+ * Mounted from the Profile detail view's Pinned tab. Hydrates the site/locale
+ * pickers (already rendered by Razor) and wires the rows table + add/save/delete
+ * actions. Writes go through PinnedApi/{Create,Update,Delete}Item with a
+ * profileKey query parameter so the audit log gets a row.
+ *
+ * Usage:
+ *   GST.pinned.editor({
+ *     profileKey: 'site-search',
+ *     sites:    ['corporate', 'blog'],
+ *     locales:  ['en', 'da'],
+ *     isGeneric: false,
+ *     isSiteShared: false,
+ *     pinnedKeyFormula: 'site-{locale}',
+ *     hasGraphQLDoc: true,
+ *   });
+ */
+(function () {
+    'use strict';
+
+    var BASE = window.GST_BASE_URL || '';
+    var STRINGS = (window.GST_STRINGS && window.GST_STRINGS.pinned) || {};
+    var PROFILE_API = '/EPiServer/cms/graphsearchtools/api/profiles';
+
+    function s(path, fallback) {
+        if (window.GST && typeof window.GST.s === 'function') return window.GST.s(path, fallback);
+        return fallback;
+    }
+    function escHtml(v) {
+        if (window.GST && typeof window.GST.escHtml === 'function') return window.GST.escHtml(v);
+        return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+    }
+
+    function ajax(url, opts) {
+        opts = opts || {};
+        var headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (opts.body) headers['Content-Type'] = 'application/json';
+        return fetch(url, {
+            method: opts.method || 'GET',
+            headers: headers,
+            credentials: 'same-origin',
+            body: opts.body ? JSON.stringify(opts.body) : undefined
+        }).then(function (resp) {
+            if (!resp.ok) {
+                return resp.text().then(function (t) {
+                    var msg = STRINGS.request_failed || 'Request failed';
+                    try {
+                        var parsed = t ? JSON.parse(t) : null;
+                        if (parsed && parsed.message) msg = parsed.message;
+                    } catch (_) { /* ignore non-JSON bodies */ }
+                    throw new Error(msg + ' (' + resp.status + ')');
+                });
+            }
+            if (resp.status === 204) return null;
+            return resp.json();
+        });
+    }
+
+    /**
+     * Resolves the Pinned key locally for display. Mirrors the server-side
+     * SearchProfile.PinnedKeyForLocale formula passed in via pinnedKeyFormula —
+     * the JS doesn't know about locales/sites until the user picks one.
+     */
+    function resolveKey(formula, locale) {
+        if (!formula) return null;
+        if (formula.indexOf('{locale}') === -1) return formula;
+        return formula.replace('{locale}', locale || '');
+    }
+
+    function editor(opts) {
+        opts = opts || {};
+        var profileKey = opts.profileKey;
+        if (!profileKey) return null;
+
+        var rowsTbody = document.getElementById('gst-pin-rows');
+        var organicTbody = document.getElementById('gst-pin-organic-rows');
+        var phrasesEl = document.getElementById('gst-pin-phrases');
+        var siteSel = document.getElementById('gst-pin-site');
+        var localeSel = document.getElementById('gst-pin-locale');
+        var keylineEl = document.getElementById('gst-pin-keyline-value');
+        var alertEl = document.getElementById('gst-pin-tab-alert');
+        var addBtn = document.getElementById('gst-pin-add');
+        var titleEl = document.getElementById('gst-pin-board-title');
+
+        if (!rowsTbody) return null;
+
+        var state = {
+            site: siteSel && !siteSel.disabled ? siteSel.value : '',
+            locale: localeSel && !localeSel.disabled ? localeSel.value : '',
+            collectionId: null,
+            pinnedKey: null,
+            isGeneric: !!opts.isGeneric,
+            rows: [],
+            activePhrase: null
+        };
+
+        function setAlert(message, isError) {
+            if (!alertEl) return;
+            if (!message) { alertEl.hidden = true; alertEl.textContent = ''; alertEl.classList.remove('gst-alert--danger'); return; }
+            alertEl.hidden = false;
+            alertEl.textContent = message;
+            alertEl.classList.toggle('gst-alert--danger', !!isError);
         }
-    });
 
-    loadAll();
+        function refreshKeyline() {
+            if (!keylineEl) return;
+            var resolved = resolveKey(opts.pinnedKeyFormula, state.locale) || '—';
+            keylineEl.textContent = resolved;
+        }
+
+        function uniquePhrases(rows) {
+            var seen = {};
+            var ordered = [];
+            rows.forEach(function (r) {
+                var key = (r.phrases || '').trim();
+                if (!key) return;
+                if (!seen[key]) { seen[key] = 0; ordered.push(key); }
+                seen[key]++;
+            });
+            return ordered.map(function (p) { return { phrase: p, count: seen[p] }; });
+        }
+
+        function renderPhrases() {
+            if (!phrasesEl) return;
+            phrasesEl.innerHTML = '';
+            var phrases = uniquePhrases(state.rows);
+            if (state.activePhrase == null && phrases.length > 0) {
+                state.activePhrase = phrases[0].phrase;
+            }
+            phrases.forEach(function (p) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'gst-pin-phrase' + (p.phrase === state.activePhrase ? ' active' : '');
+                btn.innerHTML = escHtml(p.phrase) + ' <span class="gst-pin-phrase__count">' + p.count + '</span>';
+                btn.addEventListener('click', function () {
+                    state.activePhrase = p.phrase;
+                    renderPhrases();
+                    renderRows();
+                });
+                phrasesEl.appendChild(btn);
+            });
+
+            // "+ new phrase" affordance
+            var addPhrase = document.createElement('button');
+            addPhrase.type = 'button';
+            addPhrase.className = 'gst-pin-phrase gst-pin-phrase--add';
+            addPhrase.textContent = '+ ' + s('pinned.detail.newPhrase', 'new phrase');
+            addPhrase.addEventListener('click', function () { addNewRow(/* promptForPhrase */ true); });
+            phrasesEl.appendChild(addPhrase);
+        }
+
+        function renderRows() {
+            rowsTbody.innerHTML = '';
+            if (titleEl) {
+                if (state.activePhrase) {
+                    titleEl.innerHTML = 'Pinned for <code class="gst-mono">"' + escHtml(state.activePhrase) + '"</code>';
+                } else if (state.rows.length === 0) {
+                    titleEl.textContent = s('profiles.detail.pinned.empty', 'No pinned items for this phrase yet.');
+                }
+            }
+
+            var rows = state.rows.filter(function (r) {
+                return !state.activePhrase || (r.phrases || '').trim() === state.activePhrase;
+            });
+
+            if (rows.length === 0 && !state.rows.length) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="3" class="gst-muted" style="padding: var(--gst-space-md)">'
+                    + escHtml(s('profiles.detail.pinned.empty', 'No pinned items for this phrase yet.')) + '</td>';
+                rowsTbody.appendChild(tr);
+                return;
+            }
+
+            rows.forEach(function (row, i) {
+                rowsTbody.appendChild(buildRow(row, i + 1));
+            });
+        }
+
+        function buildRow(row, rank) {
+            var tr = document.createElement('tr');
+            tr.className = 'gst-pin-row is-pinned' + (row._dirty ? ' is-dirty' : '') + (row._isNew ? ' is-new' : '');
+
+            var rankCell = document.createElement('td');
+            rankCell.innerHTML = '<span class="gst-pin-row__rank">' + rank + '</span>';
+            tr.appendChild(rankCell);
+
+            // Content cell — phrase input + targetKey input. Kept simple in v1;
+            // the richer content picker (Components.openContentPicker) ships in
+            // a later iteration so the editor stays small.
+            var contentCell = document.createElement('td');
+            contentCell.className = 'gst-pin-content-cell';
+            var phraseInput = document.createElement('input');
+            phraseInput.type = 'text';
+            phraseInput.className = 'gst-cell-input';
+            phraseInput.placeholder = s('pinned.detail.phrasePlaceholder', 'Phrase');
+            phraseInput.value = row.phrases || '';
+            phraseInput.addEventListener('input', function () {
+                row.phrases = phraseInput.value;
+                markDirty(row, tr);
+            });
+            var targetInput = document.createElement('input');
+            targetInput.type = 'text';
+            targetInput.className = 'gst-cell-input';
+            targetInput.placeholder = s('pinned.detail.targetPlaceholder', 'Content GUID');
+            targetInput.value = row.targetKey || '';
+            targetInput.style.marginTop = '4px';
+            targetInput.addEventListener('input', function () {
+                row.targetKey = targetInput.value;
+                markDirty(row, tr);
+            });
+            contentCell.appendChild(phraseInput);
+            contentCell.appendChild(targetInput);
+            tr.appendChild(contentCell);
+
+            // Actions
+            var actCell = document.createElement('td');
+            actCell.className = 'gst-pin-actions';
+            actCell.appendChild(buildBtn('save', row, tr, function () { saveRow(row, tr); }));
+            actCell.appendChild(buildBtn('delete', row, tr, function () { deleteRow(row); }));
+            tr.appendChild(actCell);
+
+            return tr;
+        }
+
+        function buildBtn(kind, row, tr, onClick) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            if (kind === 'save') {
+                btn.className = 'gst-pin-save-btn' + (row._dirty ? ' is-dirty' : '');
+                btn.innerHTML = '&#x2714;';
+                btn.title = STRINGS.action_save || 'Save';
+            } else {
+                btn.className = 'gst-pin-delete-btn';
+                btn.innerHTML = '&#x2716;';
+                btn.title = STRINGS.action_delete || 'Delete';
+            }
+            btn.addEventListener('click', onClick);
+            return btn;
+        }
+
+        function markDirty(row, tr) {
+            row._dirty = true;
+            tr.classList.add('is-dirty');
+            var saveBtn = tr.querySelector('.gst-pin-save-btn');
+            if (saveBtn) saveBtn.classList.add('is-dirty');
+        }
+
+        function loadRows() {
+            setAlert(null);
+            var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
+                + '/pinned?site=' + encodeURIComponent(state.site || '')
+                + '&locale=' + encodeURIComponent(state.locale || '');
+            ajax(url).then(function (resp) {
+                resp = resp || {};
+                state.collectionId = resp.collectionId || null;
+                state.pinnedKey = resp.pinnedKey || null;
+                state.isGeneric = !!resp.isGeneric;
+                state.rows = (resp.rows || []).map(function (r) { return Object.assign({}, r); });
+                state.activePhrase = null;
+                refreshKeyline();
+                renderPhrases();
+                renderRows();
+            }).catch(function (err) {
+                setAlert(err.message, true);
+            });
+        }
+
+        function saveRow(row, tr) {
+            if (!row.phrases || !row.phrases.trim() || !row.targetKey || !row.targetKey.trim()) {
+                setAlert(STRINGS.error_phrase_and_content_required || 'Phrase and content are required.', true);
+                return;
+            }
+            var payload = {
+                phrases: row.phrases.trim(),
+                targetKey: row.targetKey.trim(),
+                language: state.locale || null,
+                priority: row.priority || 1000,
+                isActive: row.isActive !== false
+            };
+            // We need a collectionId to write items into. Generic profiles may not
+            // have one yet; the server-side resolution is the authority on this
+            // — for v1 we surface the error rather than auto-creating from JS.
+            if (!state.collectionId) {
+                setAlert(s('profiles.detail.pinned.noCollection',
+                    'No pinned collection exists yet for this site/locale. Create one server-side first.'), true);
+                return;
+            }
+            var qs = '&profileKey=' + encodeURIComponent(profileKey)
+                + '&site=' + encodeURIComponent(state.site || '')
+                + '&locale=' + encodeURIComponent(state.locale || '');
+            var url, method;
+            if (row._isNew) {
+                url = BASE + '/PinnedApi/CreateItem?collectionId=' + encodeURIComponent(state.collectionId) + qs;
+                method = 'POST';
+            } else {
+                url = BASE + '/PinnedApi/UpdateItem?collectionId=' + encodeURIComponent(state.collectionId)
+                    + '&id=' + encodeURIComponent(row.id) + qs;
+                method = 'PUT';
+            }
+            ajax(url, { method: method, body: payload }).then(function (result) {
+                if (row._isNew && result && result.id) { row.id = result.id; row._isNew = false; }
+                row._dirty = false;
+                setAlert(STRINGS[row._isNew ? 'created' : 'updated']
+                    || (row._isNew ? 'Pinned item created.' : 'Pinned item updated.'));
+                renderPhrases();
+                renderRows();
+            }).catch(function (err) { setAlert(err.message, true); });
+        }
+
+        function deleteRow(row) {
+            if (row._isNew) {
+                state.rows = state.rows.filter(function (r) { return r !== row; });
+                renderPhrases();
+                renderRows();
+                return;
+            }
+            if (!confirm(STRINGS.confirm_delete || 'Delete this pinned item?')) return;
+            var qs = '?collectionId=' + encodeURIComponent(state.collectionId)
+                + '&id=' + encodeURIComponent(row.id)
+                + '&profileKey=' + encodeURIComponent(profileKey)
+                + '&site=' + encodeURIComponent(state.site || '')
+                + '&locale=' + encodeURIComponent(state.locale || '')
+                + '&phrases=' + encodeURIComponent(row.phrases || '');
+            ajax(BASE + '/PinnedApi/DeleteItem' + qs, { method: 'DELETE' }).then(function () {
+                state.rows = state.rows.filter(function (r) { return r !== row; });
+                setAlert(STRINGS.deleted || 'Pinned item deleted.');
+                renderPhrases();
+                renderRows();
+            }).catch(function (err) { setAlert(err.message, true); });
+        }
+
+        function addNewRow(promptForPhrase) {
+            var phrase = state.activePhrase || '';
+            if (promptForPhrase) {
+                phrase = window.prompt(s('pinned.detail.promptPhrase', 'New phrase')) || '';
+                phrase = phrase.trim();
+                if (!phrase) return;
+                state.activePhrase = phrase;
+            }
+            var row = {
+                id: null,
+                collectionId: state.collectionId,
+                collectionKey: state.pinnedKey,
+                phrases: phrase,
+                targetKey: '',
+                language: state.locale || null,
+                priority: 1000,
+                isActive: true,
+                _dirty: true,
+                _isNew: true
+            };
+            state.rows.push(row);
+            renderPhrases();
+            renderRows();
+        }
+
+        // --- Try-it side panel (minimal). Calls SavedQueriesApi/Run with the
+        //     profile's locale; the with-pins column reflects the pinned items
+        //     above (locally — we don't yet resolve content names). ---
+        function wireTryIt() {
+            if (!opts.hasGraphQLDoc) return;
+            var qInput = document.getElementById('gst-pin-tryit-q');
+            var aOl = document.getElementById('gst-pin-tryit-a');
+            var bOl = document.getElementById('gst-pin-tryit-b');
+            var stats = document.getElementById('gst-pin-tryit-stats');
+            if (!qInput || !aOl || !bOl) return;
+
+            var debounce = null;
+            qInput.addEventListener('input', function () {
+                clearTimeout(debounce);
+                debounce = setTimeout(run, 350);
+            });
+
+            function run() {
+                var q = qInput.value.trim();
+                if (q.length < 2) { aOl.innerHTML = ''; bOl.innerHTML = ''; if (stats) stats.textContent = ''; return; }
+                ajax(BASE + '/SavedQueriesApi/Run', {
+                    method: 'POST',
+                    body: { query: q, locale: state.locale || null, ranking: 'RELEVANCE', limit: 10 }
+                }).then(function (result) {
+                    var hits = (result && result.hits) || [];
+                    aOl.innerHTML = hits.map(function (h) {
+                        return '<li>' + escHtml(h.name || h.contentGuid) + '</li>';
+                    }).join('') || '<li class="gst-muted">—</li>';
+
+                    // With-pins column: pinned items first (those whose phrases include q),
+                    // then the organic hits filtered to remove dupes.
+                    var pinHits = state.rows.filter(function (r) {
+                        return r.phrases && r.phrases.toLowerCase().indexOf(q.toLowerCase()) !== -1;
+                    });
+                    var pinnedKeys = {};
+                    pinHits.forEach(function (p) { pinnedKeys[(p.targetKey || '').toLowerCase()] = true; });
+                    var organic = hits.filter(function (h) { return !pinnedKeys[(h.contentGuid || '').toLowerCase()]; });
+                    bOl.innerHTML =
+                        pinHits.map(function (p) { return '<li class="is-pin">' + escHtml(p.targetKey) + '</li>'; }).join('')
+                        + organic.map(function (h) { return '<li>' + escHtml(h.name || h.contentGuid) + '</li>'; }).join('');
+
+                    if (stats) {
+                        stats.textContent = (result.durationMs || 0) + ' ms · ' + hits.length + ' results';
+                    }
+                }).catch(function () { /* swallow — preview is non-fatal */ });
+            }
+        }
+
+        // --- Wire pickers ---
+        if (siteSel && !siteSel.disabled) {
+            siteSel.addEventListener('change', function () {
+                state.site = siteSel.value;
+                loadRows();
+            });
+        }
+        if (localeSel && !localeSel.disabled) {
+            localeSel.addEventListener('change', function () {
+                state.locale = localeSel.value;
+                loadRows();
+            });
+        }
+        if (addBtn) {
+            addBtn.addEventListener('click', function () { addNewRow(true); });
+        }
+
+        refreshKeyline();
+        loadRows();
+        wireTryIt();
+
+        return {
+            reload: loadRows
+        };
+    }
+
+    window.GST = window.GST || {};
+    window.GST.pinned = window.GST.pinned || {};
+    window.GST.pinned.editor = editor;
 })();

@@ -180,9 +180,142 @@
                 </div>
             </div>
 
+            @* Phase 2.5 §4.1 — Pinned tab editor. Site & locale pickers are
+               constrained to the profile's declared scope; the resolved Graph
+               collection key is shown read-only below the controls. The right
+               rail Try-it side panel runs the registered GraphQL document for
+               this profile. JS hydrates everything via /api/profiles/{key}/pinned. *@
             <div class="gst-tab-pane" data-pane="pinned" hidden>
+                <div id="gst-pin-tab-alert" class="gst-alert" hidden></div>
+
                 <div class="gst-card__body">
-                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                    <div class="gst-pin-controls">
+                        <div class="gst-field">
+                            <label for="gst-pin-site">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</label>
+                            <select id="gst-pin-site" class="gst-select"
+                                    @(Model.IsSiteShared || Model.Sites.Count <= 1 ? "disabled" : "")>
+                                @if (Model.IsSiteShared)
+                                {
+                                    <option value="">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/sharedSite")</option>
+                                }
+                                else if (Model.Sites.Count == 0)
+                                {
+                                    <option value="">@Loc.GetString("/graphsearchtools/profiles/detail/meta/allSites")</option>
+                                }
+                                else
+                                {
+                                    @foreach (var site in Model.Sites)
+                                    {
+                                        <option value="@site">@site</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="gst-field">
+                            <label for="gst-pin-locale">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</label>
+                            <select id="gst-pin-locale" class="gst-select"
+                                    @(Model.Locales.Count == 0 ? "disabled" : "")>
+                                @if (Model.Locales.Count == 0)
+                                {
+                                    <option value="">@Loc.GetString("/graphsearchtools/profiles/detail/meta/allLocales")</option>
+                                }
+                                else
+                                {
+                                    @foreach (var loc in Model.Locales)
+                                    {
+                                        <option value="@loc">@loc</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="gst-field" style="margin-left: auto">
+                            <label>&nbsp;</label>
+                            <button type="button" id="gst-pin-add" class="gst-btn gst-btn--primary">
+                                + @Loc.GetString("/graphsearchtools/tools/pinned/add")
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="gst-pin-keyline">
+                        <span class="gst-pin-keyline__label">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/keyLabel")</span>
+                        <span class="gst-pin-keyline__value gst-mono" id="gst-pin-keyline-value">—</span>
+                        @if (!string.IsNullOrEmpty(Model.GraphQLDocPath))
+                        {
+                            <span class="gst-pin-keyline__hint">
+                                <code class="gst-mono">@Model.GraphQLDocPath</code>
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <div class="gst-pin-with-tryit" style="padding: 0 var(--gst-space-lg) var(--gst-space-lg)">
+                    @* Pin board: phrases at top, pinned items below, organic results under a divider *@
+                    <div>
+                        <div class="gst-card" style="margin: 0">
+                            <div class="gst-pin-phrases" id="gst-pin-phrases"></div>
+
+                            <div class="gst-pin-board__head">
+                                <h3 id="gst-pin-board-title">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/empty")</h3>
+                            </div>
+
+                            <table class="gst-table gst-pin-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-rank">#</th>
+                                        <th>@Loc.GetString("/graphsearchtools/tools/pinned/col_content")</th>
+                                        <th class="col-actions"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gst-pin-rows"></tbody>
+                                <tbody id="gst-pin-organic-rows">
+                                    <tr class="gst-pin-divider" hidden>
+                                        <td colspan="3">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/organicTitle")</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    @* Try-it side panel — minimal live preview. The richer Try-in-production-query
+                       tab (owned by the Diagnostics agent) lives separately. *@
+                    <aside class="gst-card" style="margin: 0; align-self: start;">
+                        <div class="gst-card__header">
+                            <span class="gst-card__title">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryTitle")</span>
+                        </div>
+                        <div class="gst-card__body">
+                            @if (string.IsNullOrEmpty(Model.GraphQLDocPath))
+                            {
+                                <p class="gst-muted" style="font-size: var(--gst-text-sm)">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryDisabled")
+                                </p>
+                            }
+                            else
+                            {
+                                <div id="gst-pin-tryit">
+                                    <div class="gst-tryit__input">
+                                        <span>Q</span>
+                                        <input id="gst-pin-tryit-q" type="text" placeholder="Try a phrase…" />
+                                    </div>
+                                    <div class="gst-tryit__compare">
+                                        <div class="gst-tryit__col a">
+                                            <h4>Without pins</h4>
+                                            <ol id="gst-pin-tryit-a"></ol>
+                                        </div>
+                                        <div class="gst-tryit__col b">
+                                            <h4>With pins</h4>
+                                            <ol id="gst-pin-tryit-b"></ol>
+                                        </div>
+                                    </div>
+                                    <div class="gst-tryit__footer">
+                                        <span id="gst-pin-tryit-stats"></span>
+                                    </div>
+                                </div>
+                                <!-- TODO: hand-off to Diagnostics agent — richer Try-it (raw response,
+                                     score / fulltext debug projections) lives in the "Try in production
+                                     query" tab; the side panel here is intentionally minimal. -->
+                            }
+                        </div>
+                    </aside>
                 </div>
             </div>
 
@@ -217,12 +350,19 @@
 
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/profiles.js")"></script>
     <script>
         (function() {
             if (window.GST && window.GST.profiles && typeof window.GST.profiles.detail === 'function') {
                 window.GST.profiles.detail({
-                    profileKey: '@Html.Raw(Model.Key)'
+                    profileKey: '@Html.Raw(Model.Key)',
+                    sites: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Sites)),
+                    locales: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Locales)),
+                    isGeneric: @(Model.IsGeneric ? "true" : "false"),
+                    isSiteShared: @(Model.IsSiteShared ? "true" : "false"),
+                    pinnedKeyFormula: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PinnedKeyFormula)),
+                    hasGraphQLDoc: @(Model.GraphQLDocExists ? "true" : "false")
                 });
             }
         })();
