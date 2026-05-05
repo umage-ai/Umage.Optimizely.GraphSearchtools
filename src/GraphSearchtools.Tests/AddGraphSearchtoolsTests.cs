@@ -48,10 +48,11 @@ public class AddGraphSearchtoolsTests
         services.Should().Contain(d => d.ServiceType == typeof(PinnedService));
         services.Should().Contain(d => d.ServiceType == typeof(SynonymsService));
 
-        // Phase 2: Health / Saved Queries (runner + presets) services.
+        // Phase 2: Health + the Saved Queries runner (the user-facing preset
+        // CRUD surface was dropped in favour of Graph's own GraphiQL; the
+        // runner stays because the Pinned tab's A/B preview hits it).
         services.Should().Contain(d => d.ServiceType == typeof(HealthService));
         services.Should().Contain(d => d.ServiceType == typeof(QueryRunnerService));
-        services.Should().Contain(d => d.ServiceType == typeof(SavedQueriesService));
 
         // Phase 2.5: Search Profiles registry + audit-log service.
         services.Should().Contain(d => d.ServiceType == typeof(ISearchProfileRegistry));
@@ -68,7 +69,6 @@ public class AddGraphSearchtoolsTests
         options.Value.Features.Synonyms.Should().BeTrue();
         options.Value.Features.Health.Should().BeTrue();
         options.Value.Features.Autocomplete.Should().BeTrue();
-        options.Value.Features.SavedQueries.Should().BeTrue();
         options.Value.Features.DecaySandbox.Should().BeTrue();
 
         // Phase 3: Decay & Factor Sandbox is a client-side preview tool — no

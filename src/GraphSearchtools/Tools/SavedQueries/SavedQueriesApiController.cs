@@ -8,99 +8,36 @@ using UmageAI.Optimizely.GraphSearchTools.Services;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 
+/// <summary>
+/// Internal runner endpoint used by the Pinned tab's A/B preview. The Saved
+/// Queries top-level surface was removed in favour of relying on Graph's own
+/// GraphiQL playground for ad-hoc query exploration. The class name and
+/// <c>/SavedQueriesApi</c> route are preserved so the Pinned JS keeps hitting
+/// <c>/SavedQueriesApi/Run</c> unmodified.
+/// </summary>
 [Authorize(Policy = "codeart:graphsearchtools")]
 public class SavedQueriesApiController : Controller
 {
-    private const string FeatureName = nameof(FeatureToggles.SavedQueries);
+    private const string FeatureName = nameof(FeatureToggles.Pinned);
 
-    private readonly SavedQueriesService _service;
     private readonly QueryRunnerService _runner;
     private readonly FeatureAccessChecker _accessChecker;
     private readonly ILogger<SavedQueriesApiController> _logger;
 
     public SavedQueriesApiController(
-        SavedQueriesService service,
         QueryRunnerService runner,
         FeatureAccessChecker accessChecker,
         ILogger<SavedQueriesApiController> logger)
     {
-        _service = service;
         _runner = runner;
         _accessChecker = accessChecker;
         _logger = logger;
     }
 
-    [HttpGet]
-    public IActionResult List()
-    {
-        if (!HasAccess()) return Forbid();
-        try { return Ok(_service.List()); }
-        catch (Exception ex) { return Handle(ex); }
-    }
-
-    [HttpGet]
-    public IActionResult Get(string id)
-    {
-        if (!HasAccess()) return Forbid();
-        var dto = _service.Get(id);
-        return dto == null ? NotFound() : Ok(dto);
-    }
-
-    [HttpPost]
-    [RequireAjax]
-    public IActionResult Create([FromBody] SavedQueryPayload payload)
-    {
-        if (!HasAccess()) return Forbid();
-        if (payload == null || string.IsNullOrWhiteSpace(payload.Name))
-        {
-            return BadRequest(new { message = "Name is required." });
-        }
-        try { return Ok(_service.Create(payload)); }
-        catch (Exception ex) { return Handle(ex); }
-    }
-
-    [HttpPut]
-    [RequireAjax]
-    public IActionResult Update(string id, [FromBody] SavedQueryPayload payload)
-    {
-        if (!HasAccess()) return Forbid();
-        if (payload == null) return BadRequest(new { message = "Payload is required." });
-        try
-        {
-            var dto = _service.Update(id, payload);
-            return dto == null ? NotFound() : Ok(dto);
-        }
-        catch (Exception ex) { return Handle(ex); }
-    }
-
-    [HttpDelete]
-    [RequireAjax]
-    public IActionResult Delete([FromQuery] string id)
-    {
-        if (!HasAccess()) return Forbid();
-        try
-        {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                _logger.LogWarning("SavedQueries Delete called without an id.");
-                return NotFound(new { message = "Missing id parameter." });
-            }
-            var ok = _service.Delete(id);
-            if (!ok)
-            {
-                _logger.LogWarning("SavedQueries Delete: no record matched id '{Id}'.", id);
-                return NotFound(new { message = "No saved query found for the supplied id." });
-            }
-            return NoContent();
-        }
-        catch (Exception ex) { return Handle(ex); }
-    }
-
     /// <summary>
-    /// Executes a Graph query (the "Run" button on the page) and returns the
-    /// hits plus the literal GraphQL document we sent — same shape the old
-    /// Search Console returned, now living in this controller because the
-    /// runner UI was folded into Saved Queries.
+    /// Executes a Graph query and returns the hits plus the literal GraphQL
+    /// document we sent. Only consumer is the Pinned tab's A/B side panel —
+    /// gated on the Pinned feature toggle / permission accordingly.
     /// </summary>
     [HttpPost]
     [RequireAjax]
@@ -127,11 +64,5 @@ public class SavedQueriesApiController : Controller
     }
 
     private bool HasAccess()
-        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.SavedQueries);
-
-    private IActionResult Handle(Exception ex)
-    {
-        _logger.LogError(ex, "SavedQueries API error.");
-        return Problem(title: "Saved queries request failed.");
-    }
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Pinned);
 }

@@ -19,7 +19,6 @@
               <Health>Run Optimizely Graph health probes — gateway, credentials, query endpoint, index population.</Health>
               <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
-              <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
               <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
             </permissions>
@@ -36,7 +35,6 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
-        <savedqueries>Saved Queries</savedqueries>
         <decaySandbox>Decay &amp; Factor Sandbox</decaySandbox>
         <webhooks>Webhooks</webhooks>
         <about>About</about>
@@ -115,43 +113,6 @@
           <locale_label>Locale</locale_label>
           <limit>Limit</limit>
         </autocomplete>
-        <savedqueries>
-          <title>Saved Queries</title>
-          <description>Run Optimizely Graph queries interactively, then save the phrase + ranking knobs as a named preset so you (or another editor) can re-run them with one click.</description>
-          <presets_title>Saved queries</presets_title>
-          <presets_filter_placeholder>Filter saved queries…</presets_filter_placeholder>
-          <presets_empty>No saved queries yet — run a query and save one.</presets_empty>
-          <presets_no_match>No saved queries match the filter.</presets_no_match>
-          <presets_add>+ New</presets_add>
-          <runner_title>Run</runner_title>
-          <placeholder>Search phrase…</placeholder>
-          <run>Run</run>
-          <save>Save…</save>
-          <save_update>Update saved query</save_update>
-          <save_as_new>Save as new…</save_as_new>
-          <ranking>Ranking</ranking>
-          <semantic_weight>Semantic weight</semantic_weight>
-          <min_score>Minimum score</min_score>
-          <limit>Limit</limit>
-          <idle>Enter a phrase, or pick a preset.</idle>
-          <show_query>Show query</show_query>
-          <col_name>Name</col_name>
-          <col_type>Type</col_type>
-          <col_lang>Lang</col_lang>
-          <col_score>Score</col_score>
-          <col_snippet>Snippet</col_snippet>
-          <default_query_active>A custom default query is configured for this site. The ranking knobs are disabled because the configured query controls its own ranking.</default_query_active>
-          <new_title>New saved query</new_title>
-          <edit_title>Edit saved query</edit_title>
-          <field_name>Name</field_name>
-          <field_description>Description</field_description>
-          <field_query>Query</field_query>
-          <field_locale>Locale</field_locale>
-          <field_ranking>Ranking</field_ranking>
-          <field_weight>Semantic weight</field_weight>
-          <field_min_score>Minimum score</field_min_score>
-          <field_limit>Limit</field_limit>
-        </savedqueries>
         <decaySandbox>
           <title>Decay &amp; Factor Sandbox</title>
           <description>Visualize Gaussian / linear / exp decay and factor-modifier curves before pasting them into a Graph query. Pure preview — no live Graph calls.</description>
@@ -407,30 +368,6 @@
           <returned_for>Returned %1 in %2 ms</returned_for>
           <error_pick_type_and_field>Pick a type and a field first.</error_pick_type_and_field>
         </autocomplete>
-        <savedqueries>
-          <request_failed>Request failed</request_failed>
-          <no_items>No saved queries yet.</no_items>
-          <no_filter_match>No saved queries match the filter.</no_filter_match>
-          <all_locales>ALL</all_locales>
-          <action_load>Load</action_load>
-          <action_run>Run</action_run>
-          <action_edit>Edit</action_edit>
-          <action_delete>Delete</action_delete>
-          <new_title>New saved query</new_title>
-          <edit_title>Edit saved query</edit_title>
-          <error_name_required>Name is required.</error_name_required>
-          <error_query_required>Enter a query to run.</error_query_required>
-          <created>Saved query saved.</created>
-          <updated>Saved query updated.</updated>
-          <deleted>Saved query deleted.</deleted>
-          <confirm_delete>Delete saved query "%1"?</confirm_delete>
-          <run_failed>Search failed</run_failed>
-          <running>Running…</running>
-          <no_results>No matching content.</no_results>
-          <returned_for>Returned %1 of %2 in %3 ms</returned_for>
-          <show_query>Show query</show_query>
-          <hide_query>Hide query</hide_query>
-        </savedqueries>
       </ui>
     </graphsearchtools>
   </language>
