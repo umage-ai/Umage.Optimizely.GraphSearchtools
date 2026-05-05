@@ -403,35 +403,42 @@ content. This is the editorial workflow the seed addon doesn't have today.
 
 ---
 
-## 4a. Phase 2.5 — Search Profiles (proposed)
+## 4a. Phase 2.5 — Search Profiles
 
-A re-architecting of how Pinned, Synonyms, and Saved Queries scope their
-configuration. Instead of marketers tuning tenant-global pinned collections
-and synonym slots that may or may not be wired into the production query,
-developers register **Search Profiles** describing each search surface
-(header search, knowledge base, …) and the editorial tools become
-profile-scoped.
+A re-architecting of how Pinned scopes its configuration. Instead of marketers
+tuning tenant-global pinned collections that may or may not be wired into the
+production query, developers register **Search Profiles** describing each
+search surface (header search, knowledge base, …) and the Pinned editor
+becomes profile-scoped.
+
+Shipped: 2026-05-05 on `redesign/search-profiles` — see commits
+e3b3f7f..8140b86.
 
 Headline UX changes:
 
 - New **Profiles** top-level menu entry between Overview and Synonyms, with
-  an index page (table) and a profile detail page (5 tabs: Overview, Pinned,
-  Synonyms, Try in production query, Audit log).
+  an index page (table) and a profile detail page (3 tabs: Overview, Pinned,
+  Audit log).
 - **Pinned** removed from the top-level menu — accessed via Profiles →
-  detail → Pinned tab. Includes a Try-it side panel for live A/B preview.
-- **Synonyms** keeps its top-level entry, with a new Global vs. per-profile
-  scope switcher.
-- **Saved Queries → Diagnostics** rename + menu demotion (already covered in
-  §4 of the design doc).
+  detail → Pinned tab. Includes a Try-it side panel for live A/B preview
+  (in-context editor preview, not a separate diagnostic surface).
+- ~~**Synonyms** keeps its top-level entry, with a new Global vs. per-profile
+  scope switcher.~~ **Reverted:** Graph admin synonyms are tenant-global and
+  language-keyed only; Synonyms remains the unchanged Phase 1 per-language
+  editor with no profile scope.
+- ~~**Saved Queries → Diagnostics** rename + menu demotion.~~ **Reverted:**
+  Health is sufficient as the diagnostic surface; Saved Queries keeps its
+  name and place.
 - Always-present **Generic** profile as the catchment for legacy / orphan
   pinned collections; ensures zero-config installs don't regress.
 
 Full design — registration API, data model, tool integration, migration
-path — in [`docs/search-profiles-design.md`](search-profiles-design.md).
+path — in [`docs/search-profiles-design.md`](search-profiles-design.md), which
+carries a top-of-doc supersede note for the two reverted items above.
 Reference markup for the new pages in
 [`docs/prototypes/search-profiles.html`](prototypes/search-profiles.html);
-all new CSS lives under `gst-prof-*` / `gst-pin-*` prefixes ready to fold
-into `graphsearchtools.css`.
+all new CSS lives under `gst-prof-*` / `gst-pin-*` prefixes folded into
+`graphsearchtools.css`.
 
 Tagged `v0.2.5` (or rolled into `v0.3.0` if shipped together with the tuning
 power tools below).
