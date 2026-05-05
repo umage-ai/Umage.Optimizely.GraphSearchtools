@@ -1,0 +1,345 @@
+/**
+ * Graph Search Tools — Search Profiles UI (Phase 2.5)
+ *
+ * Two entry points:
+ *   GST.profiles.index({ detailUrlBase })   — wires up the index table.
+ *   GST.profiles.detail({ profileKey })     — wires up the detail page tabs +
+ *                                              fetches the audit log.
+ *
+ * Read-only against the JSON API at /EPiServer/cms/graphsearchtools/api/profiles.
+ */
+(function() {
+    'use strict';
+
+    var API_BASE = '/EPiServer/cms/graphsearchtools/api/profiles';
+
+    function s(path, fallback) {
+        return GST.s(path, fallback);
+    }
+
+    function escHtml(v) {
+        return GST.escHtml(v);
+    }
+
+    /** "2 hrs ago", "—", etc. */
+    function relativeTime(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return '—';
+        var diff = (Date.now() - d.getTime()) / 1000;
+        if (diff < 60)        return s('profiles.time.justNow', 'just now');
+        if (diff < 3600)      return Math.floor(diff / 60) + ' ' + s('profiles.time.minutesAgo', 'min ago');
+        if (diff < 86400)     return Math.floor(diff / 3600) + ' ' + s('profiles.time.hoursAgo', 'hrs ago');
+        return Math.floor(diff / 86400) + ' ' + s('profiles.time.daysAgo', 'days ago');
+    }
+
+    function statusBadge(status) {
+        var key, klass;
+        switch (status) {
+            case 'Tuned':       key = 'profiles.status.tuned';       klass = 'gst-badge--success'; break;
+            case 'NeedsReview': key = 'profiles.status.needsReview'; klass = 'gst-badge--warning'; break;
+            case 'DocMissing':  key = 'profiles.status.docMissing';  klass = 'gst-badge--danger';  break;
+            case 'FreeForm':    key = 'profiles.status.freeForm';    klass = 'gst-badge--default'; break;
+            case 'Cold':        key = 'profiles.status.cold';        klass = 'gst-badge--default'; break;
+            default:            key = 'profiles.status.cold';        klass = 'gst-badge--default';
+        }
+        // Server may also return integer enum values from JSON serializer config —
+        // map those defensively.
+        return '<span class="gst-badge ' + klass + '"><span class="gst-badge__dot"></span>'
+            + escHtml(s(key, status)) + '</span>';
+    }
+
+    /** Render Sites & locales cell. */
+    function scopeCell(p) {
+        var sitesHtml = (p.sites && p.sites.length)
+            ? p.sites.map(function(x) { return '<span class="gst-badge gst-badge--default">' + escHtml(x) + '</span>'; }).join('')
+            : '<span class="gst-badge gst-badge--default">' + escHtml(s('profiles.detail.meta.allSites', 'all sites')) + '</span>';
+        var localesHtml = (p.locales && p.locales.length)
+            ? p.locales.map(function(x) { return '<span class="gst-badge gst-badge--primary">' + escHtml(x) + '</span>'; }).join('')
+            : '<span class="gst-badge gst-badge--default">' + escHtml(s('profiles.detail.meta.allLocales', 'all locales')) + '</span>';
+        return '<div class="gst-prof-scope">' + sitesHtml + '</div>'
+             + '<div class="gst-prof-scope" style="margin-top: 4px">' + localesHtml + '</div>';
+    }
+
+    /** Render the three-bar tuning column. */
+    function tuningCell(p) {
+        // v1: actual pin / synonym counts require live Graph calls we haven't
+        // wired yet. Bars show the semantic-blend weight only; pins/syns rows
+        // collapse to "—" until the counts arrive.
+        var sw = (typeof p.semanticWeight === 'number') ? p.semanticWeight : 0;
+        var swPct = Math.max(0, Math.min(100, Math.abs(sw) * 100));
+        var swDisplay = (sw === 0) ? '—' : sw.toFixed(2);
+        return '<div class="gst-prof-bars">'
+            +     '<span class="gst-prof-bars__name">pins</span>'
+            +     '<span class="gst-prof-bars__bar" style="--w: 0%"></span>'
+            +     '<span class="gst-prof-bars__num">—</span>'
+            +     '<span class="gst-prof-bars__name">syns</span>'
+            +     '<span class="gst-prof-bars__bar muted" style="--w: 0%"></span>'
+            +     '<span class="gst-prof-bars__num">—</span>'
+            +     '<span class="gst-prof-bars__name">sem.</span>'
+            +     '<span class="gst-prof-bars__bar" style="--w: ' + swPct + '%"></span>'
+            +     '<span class="gst-prof-bars__num">' + swDisplay + '</span>'
+            +  '</div>';
+    }
+
+    function profileCell(p) {
+        var subPath = p.graphQLDocPath
+            ? p.key + ' · ' + p.graphQLDocPath
+            : p.key;
+        return '<div class="gst-prof-name">'
+            +     '<div class="gst-prof-name__title">' + escHtml(p.displayName || p.key) + '</div>'
+            +     '<div class="gst-prof-name__key">' + escHtml(subPath) + '</div>'
+            +  '</div>';
+    }
+
+    function lastEditedCell(p) {
+        if (!p.lastEditedAt) {
+            return '<span class="gst-prof-status__line">—</span>';
+        }
+        var byPart = p.lastEditedBy ? ' · ' + escHtml(p.lastEditedBy) : '';
+        return '<span class="gst-prof-status__line">' + escHtml(relativeTime(p.lastEditedAt)) + byPart + '</span>';
+    }
+
+    function chevronCell() {
+        return '<svg class="gst-prof-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+            + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+    }
+
+    /** ---------------- INDEX ---------------- */
+    function index(opts) {
+        opts = opts || {};
+        var detailUrlBase = opts.detailUrlBase || '/EPiServer/cms/graphsearchtools/profiles/';
+
+        var tableHost  = document.getElementById('gst-prof-table-host');
+        var emptyEl    = document.getElementById('gst-prof-empty');
+        var alertEl    = document.getElementById('gst-prof-alert');
+        var searchEl   = document.getElementById('gst-prof-search');
+        var siteEl     = document.getElementById('gst-prof-site-filter');
+        var localeEl   = document.getElementById('gst-prof-locale-filter');
+        var countEl    = document.getElementById('gst-prof-count');
+
+        if (!tableHost) return;
+
+        GST.showLoading(tableHost);
+
+        GST.fetchJson(API_BASE).then(function(profiles) {
+            if (!profiles || profiles.length === 0) {
+                tableHost.innerHTML = '';
+                if (emptyEl) emptyEl.hidden = false;
+                renderStats([]);
+                if (countEl) countEl.textContent = '';
+                return;
+            }
+            renderStats(profiles);
+            populateFilters(profiles);
+            renderTable(profiles);
+        }).catch(function(err) {
+            tableHost.innerHTML = '';
+            showAlert(s('profiles.requestFailed', 'Failed to load profiles.'), 'danger');
+            console.error('Profiles list failed', err);
+        });
+
+        function showAlert(msg, kind) {
+            if (!alertEl) return;
+            alertEl.className = 'gst-alert gst-alert--' + (kind || 'warning');
+            alertEl.textContent = msg;
+            alertEl.hidden = false;
+        }
+
+        function renderStats(profiles) {
+            var sites = new Set();
+            var locales = new Set();
+            var synSlots = new Set();
+            profiles.forEach(function(p) {
+                (p.sites || []).forEach(function(x) { sites.add(x); });
+                (p.locales || []).forEach(function(x) { locales.add(x); });
+                if (p.synonymSlot) synSlots.add(p.synonymSlot);
+            });
+
+            setText('gst-prof-stat-count', profiles.length);
+            var subParts = [];
+            if (sites.size)   subParts.push(sites.size + ' ' + s('profiles.stats.sites', 'sites'));
+            if (locales.size) subParts.push(locales.size + ' ' + s('profiles.stats.locales', 'locales'));
+            setText('gst-prof-stat-count-sub', subParts.join(' · '));
+
+            // Pinned + synonym counts require Graph calls — scaffolded with em
+            // dashes until the counts arrive (see ProfilesService note).
+            setText('gst-prof-stat-pinned', '—');
+            setText('gst-prof-stat-synonyms', '—');
+        }
+
+        function setText(id, value) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = value == null ? '' : String(value);
+        }
+
+        function populateFilters(profiles) {
+            var sites = new Set();
+            var locales = new Set();
+            profiles.forEach(function(p) {
+                (p.sites || []).forEach(function(x) { sites.add(x); });
+                (p.locales || []).forEach(function(x) { locales.add(x); });
+            });
+            fillSelect(siteEl, sites);
+            fillSelect(localeEl, locales);
+        }
+
+        function fillSelect(el, values) {
+            if (!el) return;
+            // Preserve the first "All …" option, drop and rebuild the rest.
+            var first = el.querySelector('option');
+            el.innerHTML = '';
+            if (first) el.appendChild(first);
+            Array.from(values).sort().forEach(function(v) {
+                var o = document.createElement('option');
+                o.value = v;
+                o.textContent = v;
+                el.appendChild(o);
+            });
+        }
+
+        function renderTable(profiles) {
+            var table = document.createElement('table');
+            table.className = 'gst-table gst-prof-table';
+            table.innerHTML =
+                '<thead><tr>'
+                + '<th style="width: 28%">' + escHtml(s('profiles.cols.profile', 'Profile')) + '</th>'
+                + '<th style="width: 18%" class="col-scope">' + escHtml(s('profiles.cols.scope', 'Sites & locales')) + '</th>'
+                + '<th style="width: 22%" class="col-tuning">' + escHtml(s('profiles.cols.tuning', 'Tuning')) + '</th>'
+                + '<th style="width: 18%">' + escHtml(s('profiles.cols.status', 'Status')) + '</th>'
+                + '<th>' + escHtml(s('profiles.cols.lastEdited', 'Last edited')) + '</th>'
+                + '<th style="width: 32px"></th>'
+                + '</tr></thead><tbody></tbody>';
+            tableHost.innerHTML = '';
+            tableHost.appendChild(table);
+
+            var tbody = table.querySelector('tbody');
+            profiles.forEach(function(p) {
+                var tr = document.createElement('tr');
+                tr.dataset.key = p.key || '';
+                tr.dataset.search = ((p.displayName || '') + ' ' + (p.key || '') + ' ' + (p.descriptionResolved || '')).toLowerCase();
+                tr.dataset.sites = (p.sites || []).join('|');
+                tr.dataset.locales = (p.locales || []).join('|');
+
+                tr.innerHTML =
+                    '<td>' + profileCell(p) + '</td>'
+                    + '<td class="col-scope">' + scopeCell(p) + '</td>'
+                    + '<td class="col-tuning">' + tuningCell(p) + '</td>'
+                    + '<td>' + statusBadge(typeof p.status === 'number' ? statusFromInt(p.status) : p.status) + '</td>'
+                    + '<td>' + lastEditedCell(p) + '</td>'
+                    + '<td>' + chevronCell() + '</td>';
+
+                tr.addEventListener('click', function() {
+                    if (!p.key) return;
+                    window.location.href = detailUrlBase + encodeURIComponent(p.key);
+                });
+                tbody.appendChild(tr);
+            });
+
+            applyFilters();
+        }
+
+        function statusFromInt(i) {
+            return ['Tuned', 'NeedsReview', 'DocMissing', 'FreeForm', 'Cold'][i] || 'Cold';
+        }
+
+        function applyFilters() {
+            if (!tableHost) return;
+            var q = (searchEl && searchEl.value || '').toLowerCase().trim();
+            var site = siteEl && siteEl.value || '';
+            var locale = localeEl && localeEl.value || '';
+            var rows = tableHost.querySelectorAll('tbody tr');
+            var visible = 0;
+            rows.forEach(function(tr) {
+                var matchQ = !q || tr.dataset.search.indexOf(q) >= 0;
+                var matchS = !site || tr.dataset.sites.split('|').indexOf(site) >= 0 || tr.dataset.sites === '';
+                var matchL = !locale || tr.dataset.locales.split('|').indexOf(locale) >= 0 || tr.dataset.locales === '';
+                var show = matchQ && matchS && matchL;
+                tr.hidden = !show;
+                if (show) visible++;
+            });
+            if (countEl) {
+                countEl.textContent = visible + ' ' + s('profiles.cols.profile', 'profiles').toLowerCase();
+            }
+        }
+
+        if (searchEl) searchEl.addEventListener('input', applyFilters);
+        if (siteEl)   siteEl.addEventListener('change', applyFilters);
+        if (localeEl) localeEl.addEventListener('change', applyFilters);
+    }
+
+    /** ---------------- DETAIL ---------------- */
+    function detail(opts) {
+        opts = opts || {};
+        var key = opts.profileKey || '';
+
+        // Tab switching — local, mirrors the prototype's idiom.
+        document.querySelectorAll('.gst-prof-tabs .gst-tab').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tab = btn.dataset.tab;
+                document.querySelectorAll('.gst-prof-tabs .gst-tab').forEach(function(x) {
+                    x.classList.toggle('active', x === btn);
+                });
+                document.querySelectorAll('.gst-tab-pane').forEach(function(pane) {
+                    pane.hidden = pane.dataset.pane !== tab;
+                });
+                if (tab === 'audit') loadAudit(key);
+            });
+        });
+    }
+
+    var _auditLoaded = false;
+
+    function loadAudit(key) {
+        if (_auditLoaded) return;
+        _auditLoaded = true;
+
+        var host = document.getElementById('gst-prof-audit-host');
+        var badge = document.getElementById('gst-prof-audit-badge');
+        if (!host) return;
+
+        GST.showLoading(host);
+
+        GST.fetchJson(API_BASE + '/' + encodeURIComponent(key) + '/audit?take=100').then(function(rows) {
+            if (!rows || rows.length === 0) {
+                GST.showEmpty(host, s('profiles.detail.audit.empty', 'No edits recorded yet.'));
+                if (badge) badge.hidden = true;
+                return;
+            }
+            renderAudit(host, rows);
+            if (badge) {
+                badge.hidden = false;
+                badge.textContent = rows.length;
+            }
+        }).catch(function(err) {
+            host.innerHTML = '<p class="gst-muted">' + escHtml(s('profiles.requestFailed', 'Failed to load audit log.')) + '</p>';
+            console.error('Audit log failed', err);
+        });
+    }
+
+    function renderAudit(host, rows) {
+        var html = '<table class="gst-table gst-prof-audit-table"><thead><tr>'
+            + '<th>' + escHtml(s('profiles.detail.audit.col.when', 'When')) + '</th>'
+            + '<th>' + escHtml(s('profiles.detail.audit.col.who', 'Who')) + '</th>'
+            + '<th>' + escHtml(s('profiles.detail.audit.col.kind', 'Kind')) + '</th>'
+            + '<th>' + escHtml(s('profiles.detail.audit.col.action', 'Action')) + '</th>'
+            + '<th>' + escHtml(s('profiles.detail.audit.col.subject', 'Subject')) + '</th>'
+            + '<th>' + escHtml(s('profiles.detail.audit.col.locale', 'Locale')) + '</th>'
+            + '</tr></thead><tbody>';
+        rows.forEach(function(r) {
+            html += '<tr>'
+                + '<td>' + escHtml(relativeTime(r.at)) + '</td>'
+                + '<td>' + escHtml(r.actorName || r.actorId || '—') + '</td>'
+                + '<td>' + escHtml(r.kind || '—') + '</td>'
+                + '<td>' + escHtml(r.action || '—') + '</td>'
+                + '<td>' + escHtml(r.subject || '—') + '</td>'
+                + '<td>' + escHtml(r.locale || '—') + '</td>'
+                + '</tr>';
+        });
+        html += '</tbody></table>';
+        host.innerHTML = html;
+    }
+
+    window.GST = window.GST || {};
+    window.GST.profiles = { index: index, detail: detail };
+})();

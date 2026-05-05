@@ -39,6 +39,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Overview))
         };
 
+        // Phase 2.5 — Search Profiles top-level surface. Sits between Overview
+        // and the editorial tools so marketers land on the per-surface tuning
+        // index before drilling into individual data shapes.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/profiles", "Profiles"), BaseMenuPath + "/profiles",
+            "/EPiServer/cms/graphsearchtools/profiles")
+        {
+            SortIndex = 150,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Profiles))
+        };
+
         // Editorial group (Phase 1): Pinned + Synonyms.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned Results"), BaseMenuPath + "/pinned",
             GetResourcePath("GraphSearchtools/Pinned"))

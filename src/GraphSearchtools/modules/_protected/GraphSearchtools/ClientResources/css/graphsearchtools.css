@@ -2216,3 +2216,147 @@ td.bpe-editing select {
     background: var(--gst-primary-light);
     color: var(--gst-primary);
 }
+
+/* ============================================================
+   Search Profiles (Phase 2.5) — gst-prof-* / gst-pin-*
+   ============================================================ */
+
+/* ── Profile index table (specialised .gst-table) ──────────── */
+.gst-prof-table td { padding: var(--gst-space-md); }
+.gst-prof-table tr { cursor: pointer; }
+.gst-prof-table tr.is-active td {
+    background: var(--gst-primary-light);
+    box-shadow: inset 3px 0 0 var(--gst-primary);
+}
+.gst-prof-table tr.is-active:hover td { background: var(--gst-primary-light); }
+
+.gst-prof-name { display: flex; flex-direction: column; gap: 2px; }
+.gst-prof-name__title {
+    font-size: var(--gst-text-base);
+    font-weight: 600;
+    color: var(--gst-text);
+    display: flex; align-items: center; gap: 6px;
+}
+.gst-prof-name__title .gst-prof-name__sub {
+    font-weight: 400;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+}
+.gst-prof-name__key { font-family: var(--gst-font-mono); font-size: 11px; color: var(--gst-text-muted); }
+
+.gst-prof-scope { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.gst-prof-bars { display: grid; grid-template-columns: 36px 1fr 28px; row-gap: 4px; column-gap: 8px; align-items: center; min-width: 160px; }
+.gst-prof-bars__name {
+    font-family: var(--gst-font-mono);
+    font-size: 10px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-prof-bars__bar {
+    height: 4px;
+    background: var(--gst-surface-active);
+    border-radius: 2px;
+    position: relative; overflow: hidden;
+}
+.gst-prof-bars__bar::after {
+    content: ""; position: absolute; inset: 0; width: var(--w, 0%);
+    background: var(--gst-primary);
+    border-radius: 2px;
+}
+.gst-prof-bars__bar.muted::after { background: var(--gst-text-muted); }
+.gst-prof-bars__num { font-family: var(--gst-font-mono); font-size: 10px; color: var(--gst-text-secondary); text-align: right; }
+
+.gst-prof-status { display: flex; flex-direction: column; gap: 2px; }
+.gst-prof-status__line { font-size: 11px; color: var(--gst-text-muted); }
+
+.gst-prof-arrow {
+    color: var(--gst-text-muted);
+    transition: color .15s, transform .15s;
+    width: 16px; height: 16px;
+}
+.gst-prof-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
+
+/* ── Profile detail layout ──────────────────────────────────── */
+.gst-prof-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--gst-space-md);
+    align-items: flex-start;
+}
+.gst-prof-rail { position: sticky; top: calc(48px + var(--gst-space-lg)); }
+
+.gst-prof-rail .gst-card__body { padding: var(--gst-space-md) var(--gst-space-lg); }
+.gst-prof-rail h2 { font-size: var(--gst-text-xl); font-weight: 600; margin-bottom: 2px; }
+.gst-prof-rail .gst-prof-name__key { margin-bottom: var(--gst-space-md); }
+
+.gst-prof-meta { display: flex; flex-direction: column; gap: var(--gst-space-md); margin: 0; }
+.gst-prof-meta dt {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+.gst-prof-meta dd { font-size: var(--gst-text-sm); color: var(--gst-text); }
+.gst-prof-meta dd .em { color: var(--gst-text-secondary); font-size: 11px; display: block; margin-top: 2px; }
+.gst-prof-meta__missing { color: var(--gst-danger); }
+
+/* ── Detail page tabs (specialised .gst-tabs) ───────────────── */
+.gst-prof-tabs { margin: 0; padding: 0 var(--gst-space-lg); }
+.gst-prof-tabs .gst-badge { margin-left: 6px; }
+
+/* ── Audit log table ────────────────────────────────────────── */
+.gst-prof-audit-table th { padding: var(--gst-space-sm) var(--gst-space-md); }
+.gst-prof-audit-table td { padding: var(--gst-space-sm) var(--gst-space-md); white-space: nowrap; }
+.gst-prof-audit-table td:nth-child(5) { white-space: normal; }
+
+/* ── Pinned editor (specialised) ────────────────────────────── */
+.gst-pin-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: var(--gst-space-md);
+    align-items: end;
+}
+.gst-pin-controls .gst-field { display: flex; flex-direction: column; gap: 4px; }
+.gst-pin-controls .gst-field label {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-pin-controls .gst-field .gst-select { width: 100%; }
+
+.gst-pin-keyline {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: var(--gst-bg);
+    border: 1px dashed var(--gst-border);
+    border-radius: var(--gst-radius);
+    margin-top: var(--gst-space-md);
+    font-size: var(--gst-text-sm);
+}
+.gst-pin-keyline__label {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-pin-keyline__value {
+    font-family: var(--gst-font-mono);
+    color: var(--gst-primary);
+    font-weight: 600;
+}
+.gst-pin-keyline__hint { margin-left: auto; color: var(--gst-text-muted); font-size: 11px; }
+.gst-pin-keyline__hint code { font-family: var(--gst-font-mono); color: var(--gst-text-secondary); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .gst-prof-layout { grid-template-columns: 1fr; }
+    .gst-prof-rail { position: static; }
+}
+@media (max-width: 720px) {
+    .gst-pin-controls { grid-template-columns: 1fr 1fr; }
+    .gst-prof-table .col-tuning, .gst-prof-table .col-scope { display: none; }
+}
