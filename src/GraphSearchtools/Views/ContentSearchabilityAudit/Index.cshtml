@@ -1,0 +1,58 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-card">
+    <div class="gst-toolbar">
+        <button type="button" id="csa-run" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/run")</button>
+        <span id="csa-running" class="gst-toolbar__hint" hidden>@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/running")</span>
+        <div class="gst-toolbar__spacer"></div>
+        <span id="csa-scanned-at" class="gst-toolbar__hint"></span>
+    </div>
+
+    <div id="csa-stats" class="gst-csa-stats" hidden>
+        <div class="gst-csa-stat">
+            <div class="gst-csa-stat__label">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/items_scanned")</div>
+            <div class="gst-csa-stat__value" id="csa-stat-scanned">0</div>
+        </div>
+        <div class="gst-csa-stat">
+            <div class="gst-csa-stat__label">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/issues_total")</div>
+            <div class="gst-csa-stat__value" id="csa-stat-total">0</div>
+        </div>
+        <div class="gst-csa-stat" data-kind="MissingName">
+            <div class="gst-csa-stat__label">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/kind_missing_name")</div>
+            <div class="gst-csa-stat__value" id="csa-stat-MissingName">0</div>
+        </div>
+        <div class="gst-csa-stat" data-kind="MissingMainBody">
+            <div class="gst-csa-stat__label">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/kind_missing_main_body")</div>
+            <div class="gst-csa-stat__value" id="csa-stat-MissingMainBody">0</div>
+        </div>
+        <div class="gst-csa-stat" data-kind="NoTags">
+            <div class="gst-csa-stat__label">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/kind_no_tags")</div>
+            <div class="gst-csa-stat__value" id="csa-stat-NoTags">0</div>
+        </div>
+        <div class="gst-csa-stat" data-kind="OversizeSortField">
+            <div class="gst-csa-stat__label">@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/kind_oversize_sort")</div>
+            <div class="gst-csa-stat__value" id="csa-stat-OversizeSortField">0</div>
+        </div>
+    </div>
+
+    <div id="csa-results"></div>
+    <div id="csa-empty" class="gst-empty" hidden>
+        <p>@Loc.GetString("/graphsearchtools/tools/contentSearchabilityAudit/empty")</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/content-searchability-audit.js")"></script>
+}
