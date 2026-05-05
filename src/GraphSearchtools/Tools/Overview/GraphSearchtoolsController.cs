@@ -82,6 +82,21 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Webhooks/Index.cshtml");
     }
 
+    /// <summary>
+    /// Phase 3 — Semantic Weight Tuner. The dedicated
+    /// <c>SemanticTunerController</c> hosts the canonical menu URL; this
+    /// action preserves the per-tool action pattern shared with DecaySandbox /
+    /// Webhooks so direct links to
+    /// <c>/cms/graphsearchtools/GraphSearchtools/SemanticTuner</c> resolve too.
+    /// </summary>
+    [HttpGet]
+    public IActionResult SemanticTuner()
+    {
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SemanticTuner), GraphSearchtoolsPermissions.SemanticTuner))
+            return Forbid();
+        return View("/Views/SemanticTuner/Index.cshtml");
+    }
+
     [HttpGet]
     public IActionResult CustomDataSources()
     {
