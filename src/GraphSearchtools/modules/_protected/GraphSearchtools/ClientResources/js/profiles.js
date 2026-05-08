@@ -108,7 +108,9 @@
     /** ---------------- INDEX ---------------- */
     function index(opts) {
         opts = opts || {};
-        var detailUrlBase = opts.detailUrlBase || '/EPiServer/cms/graphsearchtools/profiles/';
+        // Detail URL is the index URL with a `?key=...` query so the CMS
+        // shell maps both surfaces to the same registered menu item.
+        var detailUrlBase = opts.detailUrlBase || '/EPiServer/cms/graphsearchtools/profiles?key=';
 
         var tableHost  = document.getElementById('gst-prof-table-host');
         var emptyEl    = document.getElementById('gst-prof-empty');

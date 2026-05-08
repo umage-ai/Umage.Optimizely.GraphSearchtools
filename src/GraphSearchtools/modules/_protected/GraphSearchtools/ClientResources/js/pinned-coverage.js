@@ -18,9 +18,11 @@
     /**
      * Profile detail URL — anchored on `#pinned` so we land directly on the
      * Pinned tab. Hosts that bookmark `/pinned` are 301'd to /profiles, so
-     * this is the canonical fix-up location post-Phase-2.5.
+     * this is the canonical fix-up location post-Phase-2.5. The detail
+     * surface is served as `?key=...` on the index URL so the CMS shell can
+     * resolve the section's product-id from the registered menu URL.
      */
-    var PROFILE_URL_BASE = '/EPiServer/cms/graphsearchtools/profiles/';
+    var PROFILE_URL_BASE = '/EPiServer/cms/graphsearchtools/profiles?key=';
 
     var GST = window.GST = window.GST || {};
     GST.pinnedCoverage = GST.pinnedCoverage || {};
