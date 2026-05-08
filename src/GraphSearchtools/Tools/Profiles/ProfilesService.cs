@@ -1,8 +1,12 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using EPiServer.Framework.Localization;
 using Microsoft.AspNetCore.Hosting;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
 
@@ -18,17 +22,23 @@ public sealed class ProfilesService
     private readonly SearchProfileEditService _edits;
     private readonly LocalizationService _localization;
     private readonly IWebHostEnvironment _hostEnvironment;
+    private readonly IGraphAdminClient _graphAdmin;
+    private readonly QueryRunnerService _runner;
 
     public ProfilesService(
         ISearchProfileRegistry registry,
         SearchProfileEditService edits,
         LocalizationService localization,
-        IWebHostEnvironment hostEnvironment)
+        IWebHostEnvironment hostEnvironment,
+        IGraphAdminClient graphAdmin,
+        QueryRunnerService runner)
     {
         _registry = registry;
         _edits = edits;
         _localization = localization;
         _hostEnvironment = hostEnvironment;
+        _graphAdmin = graphAdmin;
+        _runner = runner;
     }
 
     public IReadOnlyList<ProfileSummary> ListSummaries()
@@ -73,17 +83,28 @@ public sealed class ProfilesService
         var profile = _registry.Get(key);
         if (profile == null) return null;
 
-        var graphqlExists = false;
-        if (!string.IsNullOrWhiteSpace(profile.GraphQLDocumentPath))
+        // Inline content takes precedence — the host code passed the actual
+        // query string in via GraphQLDocumentInline, so there's no file to
+        // load and the "exists" check is implicitly satisfied.
+        var hasInline = !string.IsNullOrWhiteSpace(profile.GraphQLDocumentContent);
+        var graphqlExists = hasInline;
+        string? content = profile.GraphQLDocumentContent;
+
+        if (!hasInline && !string.IsNullOrWhiteSpace(profile.GraphQLDocumentPath))
         {
             try
             {
                 var fullPath = Path.Combine(_hostEnvironment.ContentRootPath, profile.GraphQLDocumentPath);
                 graphqlExists = File.Exists(fullPath);
+                if (graphqlExists)
+                {
+                    content = File.ReadAllText(fullPath);
+                }
             }
             catch
             {
                 graphqlExists = false;
+                content = null;
             }
         }
 
@@ -101,7 +122,9 @@ public sealed class ProfilesService
             RankingName = profile.Ranking.ToString(),
             SemanticWeight = profile.SemanticWeight,
             GraphQLDocPath = profile.GraphQLDocumentPath,
-            GraphQLDocExists = graphqlExists
+            GraphQLDocExists = graphqlExists,
+            GraphQLDocContent = content,
+            GraphQLDocIsInline = hasInline
         };
     }
 
@@ -109,8 +132,12 @@ public sealed class ProfilesService
     {
         var displayName = profile.DisplayName?.Resolve(_localization) ?? profile.Key;
         var description = profile.Description?.Resolve(_localization);
-        var hasDoc = !string.IsNullOrWhiteSpace(profile.GraphQLDocumentPath);
-        var docExists = hasDoc && DocumentExists(profile.GraphQLDocumentPath!);
+        // Inline content always "exists" by virtue of being in the registration;
+        // path-based registrations need the file to be on disk.
+        var hasInline = !string.IsNullOrWhiteSpace(profile.GraphQLDocumentContent);
+        var hasPath = !string.IsNullOrWhiteSpace(profile.GraphQLDocumentPath);
+        var hasDoc = hasInline || hasPath;
+        var docExists = hasInline || (hasPath && DocumentExists(profile.GraphQLDocumentPath!));
         var lastEdit = _edits.LatestForProfile(profile.Key);
         var isGeneric = string.Equals(profile.Key, GenericKey, StringComparison.OrdinalIgnoreCase);
 
@@ -212,5 +239,127 @@ public sealed class ProfilesService
         {
             return false;
         }
+    }
+
+    // Strips a `usePinned: { ... }` directive (with a single level of nested
+    // braces, which matches the shape AlloySearchService emits) from a query
+    // string. Used when no pinned collection exists for the requested locale —
+    // sending `collectionId: ""` to Graph 400s, dropping the directive lets
+    // the rest of the query run.
+    private static readonly Regex UsePinnedRegex = new(@"\busePinned\s*:\s*\{[^{}]*\}", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Runs the registered profile's GraphQL document against Graph after
+    /// substituting the runtime placeholders the addon's representative form
+    /// uses (<c>"$phrase"</c>, <c>"$pinnedCollectionId"</c>). Returns null
+    /// when the profile is unknown or carries no inline document.
+    /// </summary>
+    /// <remarks>
+    /// This is the Profiles tab's preview endpoint — it deliberately does NOT
+    /// look at <c>SavedQueries.DefaultQuery</c>, so a tenant-specific runner
+    /// query configured at the host level can't pollute other profiles' Try-it.
+    /// </remarks>
+    public async Task<RunnerResult?> RunPreviewAsync(string profileKey, string phrase, string? locale, CancellationToken cancellationToken)
+    {
+        var profile = _registry.Get(profileKey);
+        if (profile == null) return null;
+        var template = profile.GraphQLDocumentContent;
+        if (string.IsNullOrWhiteSpace(template)) return null;
+        if (string.IsNullOrWhiteSpace(phrase)) return new RunnerResult(0, 0, template, Array.Empty<RunnerHit>());
+
+        var query = template.Replace("\"$phrase\"", JsonSerializer.Serialize(phrase));
+
+        // Resolve the pinned collection id for this profile + locale, if any.
+        // Missing or empty → strip the usePinned directive so Graph doesn't
+        // see a literal "$pinnedCollectionId" string or an empty id.
+        string? collectionId = null;
+        if (profile.PinnedKeyForLocale != null)
+        {
+            try
+            {
+                var pinnedKey = profile.PinnedKeyForLocale(locale ?? string.Empty);
+                if (!string.IsNullOrEmpty(pinnedKey))
+                {
+                    var collections = await _graphAdmin.GetCollectionsAsync(cancellationToken);
+                    collectionId = collections
+                        .FirstOrDefault(c => string.Equals(c.Key, pinnedKey, StringComparison.OrdinalIgnoreCase))
+                        ?.Id;
+                }
+            }
+            catch
+            {
+                // Best-effort — fall through with no pin.
+                collectionId = null;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(collectionId))
+        {
+            query = query.Replace("\"$pinnedCollectionId\"", JsonSerializer.Serialize(collectionId));
+        }
+        else
+        {
+            query = UsePinnedRegex.Replace(query, string.Empty);
+        }
+
+        var result = await _runner.RunRawAsync(query, variables: null, cancellationToken);
+
+        // Mark which hits Graph would have pinned for this phrase. Mirrors
+        // Graph's usePinned semantics on the server: load the collection's
+        // items, keep targetKeys whose phrases match the preview phrase
+        // (case-insensitive, comma-tokenized), then stamp Pinned=true on
+        // RunnerHits whose ContentGuid is in that set. The UI gets a hard
+        // boolean so the renderer doesn't have to reverse-engineer it from
+        // the editor's local state — and it works regardless of which
+        // tenant or how the registered query is shaped, as long as the
+        // query projects ContentLink.GuidValue.
+        if (!string.IsNullOrEmpty(collectionId) && result.Hits.Count > 0)
+        {
+            try
+            {
+                var pinnedTargets = await BuildPinnedTargetSetAsync(collectionId!, phrase, cancellationToken);
+                if (pinnedTargets.Count > 0)
+                {
+                    var marked = new List<RunnerHit>(result.Hits.Count);
+                    foreach (var hit in result.Hits)
+                    {
+                        var isPinned = !string.IsNullOrEmpty(hit.ContentGuid)
+                            && pinnedTargets.Contains(hit.ContentGuid);
+                        marked.Add(isPinned ? hit with { Pinned = true } : hit);
+                    }
+                    result = result with { Hits = marked };
+                }
+            }
+            catch
+            {
+                // Pinned-marking is decorative; never let it break the preview.
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<HashSet<string>> BuildPinnedTargetSetAsync(string collectionId, string phrase, CancellationToken cancellationToken)
+    {
+        var items = await _graphAdmin.GetItemsAsync(collectionId, cancellationToken);
+        var phraseLower = phrase.Trim().ToLowerInvariant();
+        var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            if (string.IsNullOrEmpty(item.TargetKey)) continue;
+            if (string.IsNullOrEmpty(item.Phrases)) continue;
+            // Phrase semantics: an item applies to the preview phrase when any
+            // of its comma-separated phrases case-insensitively contains, or
+            // is contained by, the preview phrase. Mirrors the loose match
+            // pattern used elsewhere in the editor.
+            var matches = item.Phrases.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Any(token =>
+                {
+                    var t = token.ToLowerInvariant();
+                    return t.Length > 0 && (t == phraseLower || t.Contains(phraseLower) || phraseLower.Contains(t));
+                });
+            if (matches) targets.Add(item.TargetKey);
+        }
+        return targets;
     }
 }

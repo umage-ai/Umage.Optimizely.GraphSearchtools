@@ -53,7 +53,7 @@ public class SavedQueriesApiController : Controller
         }
         catch (GraphSearchApiException ex)
         {
-            _logger.LogWarning(ex, "Saved Queries run failed with status {StatusCode}.", ex.StatusCode);
+            _logger.LogWarning(ex, "Saved Queries run failed with status {StatusCode}. Graph response body: {Body}", ex.StatusCode, ex.ResponseContent);
             return StatusCode(ex.StatusCode, new { message = "Graph query failed." });
         }
         catch (InvalidOperationException ex)

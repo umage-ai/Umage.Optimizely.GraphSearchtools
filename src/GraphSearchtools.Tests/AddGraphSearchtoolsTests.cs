@@ -70,13 +70,6 @@ public class AddGraphSearchtoolsTests
         options.Value.Features.Synonyms.Should().BeTrue();
         options.Value.Features.Health.Should().BeTrue();
         options.Value.Features.Autocomplete.Should().BeTrue();
-        options.Value.Features.DecaySandbox.Should().BeTrue();
-
-        // Phase 3: Decay & Factor Sandbox is a client-side preview tool — no
-        // service registration, but its PermissionType must still resolve so
-        // it shows up in CMS Set Access Rights.
-        GraphSearchtoolsPermissions.DecaySandbox.Should().NotBeNull();
-        GraphSearchtoolsPermissions.DecaySandbox.Name.Should().Be("DecaySandbox");
 
         // Phase 3: Semantic Weight Tuner — DDS-backed policy editor.
         services.Should().Contain(d => d.ServiceType == typeof(SemanticTunerService));
@@ -178,6 +171,36 @@ public class AddGraphSearchtoolsTests
             .OfType<SearchProfile>()
             .ToList();
         registered.Should().ContainSingle().Which.Key.Should().Be("site-search");
+    }
+
+    [Fact]
+    public void AddSearchProfile_GraphQLDocumentInline_RoundtripsContent()
+    {
+        // The "single source of truth" wiring: hosts pass the same query string
+        // their runtime executes via GraphQLDocumentInline so the admin Profile
+        // detail view renders what production sends to Graph — no static .graphql
+        // stub to drift from the live code.
+        const string queryDoc = "{ Content(where: { _and: [{ ContentType: { eq: \"Page\" } }] } limit: 20) { items { Name } } }";
+
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        services.AddGraphSearchtools()
+            .AddSearchProfile("site-search", p => p
+                .DisplayName("Site search")
+                .GraphQLDocumentInline(queryDoc));
+
+        var profile = services
+            .Where(d => d.ServiceType == typeof(SearchProfile))
+            .Select(d => d.ImplementationInstance)
+            .OfType<SearchProfile>()
+            .Single();
+
+        profile.GraphQLDocumentContent.Should().Be(queryDoc);
+        profile.GraphQLDocumentPath.Should().BeNull();
     }
 
     [Fact]

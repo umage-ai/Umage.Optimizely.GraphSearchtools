@@ -56,9 +56,20 @@ public sealed class SearchProfile
     /// <summary>
     /// Path (relative to the host's content root) to the GraphQL document the
     /// production code uses for this profile. <c>null</c> disables the
-    /// Try-it tab.
+    /// Try-it tab. Mutually exclusive in spirit with
+    /// <see cref="GraphQLDocumentContent"/>: pick whichever matches how the
+    /// host code stores its query.
     /// </summary>
     public string? GraphQLDocumentPath { get; init; }
+
+    /// <summary>
+    /// Inline GraphQL document text. Used when the production query is built
+    /// in code rather than authored in a file — the host can pass the same
+    /// string the runtime executes so the admin Profile detail view always
+    /// reflects what's running in production. Takes precedence over
+    /// <see cref="GraphQLDocumentPath"/> when both are set.
+    /// </summary>
+    public string? GraphQLDocumentContent { get; init; }
 
     /// <summary>
     /// Variables passed to <see cref="GraphQLDocumentPath"/> in addition to the

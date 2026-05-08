@@ -152,6 +152,33 @@ public class ProfilesApiController : Controller
         catch (Exception ex) { return Handle(ex); }
     }
 
+    /// <summary>
+    /// Pinned-tab Try-it preview. Runs the profile's registered GraphQL
+    /// document (with <c>$phrase</c> / <c>$pinnedCollectionId</c> substitutions)
+    /// against Graph and returns the hits. Independent of the
+    /// <c>SavedQueries.DefaultQuery</c> runner so a tenant-specific config
+    /// can't break previews on other profiles.
+    /// </summary>
+    [HttpGet("{key}/preview")]
+    public async Task<IActionResult> Preview(string key, [FromQuery] string? phrase, [FromQuery] string? locale, CancellationToken cancellationToken)
+    {
+        if (!HasAccess()) return Forbid();
+        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Profile key is required." });
+        if (string.IsNullOrWhiteSpace(phrase) || phrase.Trim().Length < 2)
+        {
+            // Surface a uniform empty payload for short-or-blank phrases so
+            // the client-side debouncer doesn't have to special-case 400.
+            return Ok(new { hits = Array.Empty<object>(), totalCount = 0, durationMs = 0L });
+        }
+        try
+        {
+            var result = await _service.RunPreviewAsync(key, phrase!.Trim(), locale, cancellationToken);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+        catch (Exception ex) { return Handle(ex); }
+    }
+
     private bool HasAccess()
         => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Profiles);
 

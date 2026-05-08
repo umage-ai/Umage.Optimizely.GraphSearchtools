@@ -1,8 +1,10 @@
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Infrastructure;
 using UmageAI.Optimizely.GraphSearchTools.SampleSite.Extensions;
+using UmageAI.Optimizely.GraphSearchTools.SampleSite.Services;
 using EPiServer.Cms.Shell;
 using EPiServer.Cms.UI.AspNetIdentity;
+using EPiServer.DependencyInjection;
 using EPiServer.Scheduler;
 using EPiServer.ServiceLocation;
 using EPiServer.Web.Routing;
@@ -34,11 +36,25 @@ public class Startup
             .AddAdminUserRegistration()
             .AddEmbeddedLocalization<Startup>();
 
+        // Optimizely Graph CMS integration. Reads credentials and gateway from
+        // the Optimizely:ContentGraph configuration section by default. With
+        // empty creds the package still registers its services so the addon can
+        // run against an unconfigured Graph (admin endpoints will surface the
+        // missing-creds state instead of failing at startup).
+        // ContentGraph depends on the Content Delivery API for serialization,
+        // so AddContentDeliveryApi must be called first.
+        services.AddContentDeliveryApi(_ => { });
+        services.AddContentGraph(_ => { });
+
         // Graph Search Tools
         services.AddGraphSearchtools(options =>
             {
                 // Configure options here or in appsettings.json under "CodeArt:GraphSearchtools"
             })
+            // Single source of truth: AlloySearchService.SampleHitsQueryDocument
+            // is the same string the runtime executes (modulo dynamic facet
+            // / phrase substitution), so the admin Profile detail view always
+            // reflects what the storefront actually sends to Optimizely Graph.
             .AddSearchProfile("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
@@ -46,13 +62,24 @@ public class Startup
                 .SearchedFields("Name", "MetaDescription", "MainBody")
                 .UsesPinnedKey("alloy-{locale}")
                 .SemanticBlend(0.3, GraphRanking.Semantic)
-                .GraphQLDocument("Queries/AlloySearch.graphql"))
+                .GraphQLDocumentInline(AlloySearchService.SampleHitsQueryDocument))
             .AddSearchProfile("alloy-products", p => p
                 .DisplayName("Product cards")
                 .Description("Pinned recommendations for the product/teaser surface.")
                 .Locales("en")
                 .SearchedFields("Name", "TeaserText")
                 .UsesPinnedKey("alloy-products-{locale}"));
+
+        // Faceted site-search service used by /search. Each request issues
+        // four parallel queries (hits + per-facet count sources + keyword
+        // enumeration) so facet counts stay stable across a click — see
+        // Services/AlloySearchService.cs and the faceted-search guidelines.
+        services.AddHttpClient<AlloySearchService>();
+
+        // Featured products on the start page. Reads ProductPages with the
+        // alloy-products profile's pinned collection applied so marketers can
+        // curate the order via the GraphSearchtools admin.
+        services.AddHttpClient<FeaturedProductsService>();
 
         // Required by Wangkanai.Detection
         services.AddDetection();
@@ -87,6 +114,9 @@ public class Startup
         {
             endpoints.MapContent();
             endpoints.MapGraphSearchtools();
+            // Attribute-routed MVC controllers — used by SearchSuggestController
+            // for the autocomplete JSON endpoint at /api/search/suggest.
+            endpoints.MapControllers();
         });
     }
 }
