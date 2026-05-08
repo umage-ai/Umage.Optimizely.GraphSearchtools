@@ -326,9 +326,35 @@
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
             <audit>Audit log</audit>
+            <details>Details</details>
             <overview>Overview</overview>
-            <pinned>Pinned results</pinned>
+            <pinned>Pinned</pinned>
+            <synonyms>Synonyms</synonyms>
           </tabs>
+          <workspace>
+            <consoleLabel>Profile tools</consoleLabel>
+            <livePreviewEyebrow>Try-it</livePreviewEyebrow>
+            <livePreviewTitle>Live preview</livePreviewTitle>
+            <previewDisabledTitle>Preview unavailable</previewDisabledTitle>
+            <previewLabel>Live preview</previewLabel>
+            <scopeLabel>Scope</scopeLabel>
+            <switcherLabel>Profile tools</switcherLabel>
+          </workspace>
+          <synonyms>
+            <addRule>Add rule</addRule>
+            <discard>Discard</discard>
+            <empty>No synonym rules for this language yet.</empty>
+            <global>Global</global>
+            <globalNote>Synonyms are stored globally per language — edits here affect every profile that searches in this language.</globalNote>
+            <helpSummary>Rule format</helpSummary>
+            <language>Language</language>
+            <save>Save synonyms</save>
+            <title>Synonym rules</title>
+          </synonyms>
+          <details>
+            <auditTitle>Audit log</auditTitle>
+            <metaTitle>Profile metadata</metaTitle>
+          </details>
         </detail>
         <index>
           <cols>

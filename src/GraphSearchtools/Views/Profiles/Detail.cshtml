@@ -6,34 +6,383 @@
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
     ViewData["Title"] = Model.DisplayName;
     var docExistsClass = Model.GraphQLDocExists ? "gst-mono" : "gst-mono gst-prof-meta__missing";
+
+    // Selector visibility — hide controls that wouldn't actually change the
+    // resolved scope. Site is hidden when the profile is site-shared (formula
+    // ignores site) or there's at most one site to pick. Locale is hidden when
+    // the profile declares no locales or only one locale.
+    var siteSelectable = Model.Sites.Count > 1 && !Model.IsSiteShared;
+    var localeSelectable = Model.Locales.Count > 1;
+    var siteLabel = Model.IsSiteShared
+        ? Loc.GetString("/graphsearchtools/profiles/detail/pinned/sharedSite")
+        : (Model.Sites.Count == 1 ? Model.Sites[0]
+            : Loc.GetString("/graphsearchtools/profiles/detail/meta/allSites"));
+    var localeLabel = Model.Locales.Count == 1
+        ? Model.Locales[0]
+        : Loc.GetString("/graphsearchtools/profiles/detail/meta/allLocales");
 }
 
-<div class="gst-page-header">
+<div class="gst-page-header gst-prof-detail-header">
     <div class="gst-page-header__title">
+        <div class="gst-prof-detail-header__crumb">
+            <a href="/EPiServer/cms/graphsearchtools/profiles" class="gst-prof-detail-header__back">
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                    <path d="M9 11L4.5 7 9 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                @Loc.GetString("/graphsearchtools/profiles/detail/backToList")
+            </a>
+            <span class="gst-prof-detail-header__sep" aria-hidden="true">·</span>
+            <code class="gst-prof-detail-header__key">@Model.Key</code>
+        </div>
         <h1>@Model.DisplayName</h1>
         @if (!string.IsNullOrEmpty(Model.DescriptionResolved))
         {
             <p>@Model.DescriptionResolved</p>
         }
     </div>
-    <div class="gst-flex">
-        <a href="/EPiServer/cms/graphsearchtools/profiles" class="gst-btn">
-            @Loc.GetString("/graphsearchtools/profiles/detail/backToList")
-        </a>
-    </div>
 </div>
 
 <div id="gst-prof-detail-alert" class="gst-alert" hidden></div>
 
-<div class="gst-prof-layout" data-profile-key="@Model.Key">
-    @* ───────── Left rail: profile metadata ───────── *@
-    <aside class="gst-prof-rail">
-        <div class="gst-card">
-            <div class="gst-card__body">
-                <h2>@Model.DisplayName</h2>
-                <div class="gst-prof-name__key">@Model.Key</div>
+<div class="gst-prof-workspace" data-profile-key="@Model.Key">
 
-                <dl class="gst-prof-meta">
+    @* ───────── LEFT: live preview workshop ───────── *@
+    <section class="gst-prof-preview" aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/previewLabel")">
+        <div class="gst-prof-preview__inner">
+            <header class="gst-prof-preview__head">
+                <div class="gst-prof-preview__heading">
+                    <span class="gst-prof-preview__eyebrow">
+                        @Loc.GetString("/graphsearchtools/profiles/detail/workspace/livePreviewEyebrow")
+                    </span>
+                    <h2 class="gst-prof-preview__title">
+                        @Loc.GetString("/graphsearchtools/profiles/detail/workspace/livePreviewTitle")
+                    </h2>
+                </div>
+                <div class="gst-prof-preview__pickers" role="group"
+                     aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/scopeLabel")">
+
+                    @if (siteSelectable)
+                    {
+                        <label class="gst-prof-chip gst-prof-chip--input" for="gst-pin-site">
+                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <select id="gst-pin-site" class="gst-prof-chip__select">
+                                @foreach (var site in Model.Sites)
+                                {
+                                    <option value="@site">@site</option>
+                                }
+                            </select>
+                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
+                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
+                            </svg>
+                        </label>
+                    }
+                    else
+                    {
+                        <span class="gst-prof-chip gst-prof-chip--static">
+                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <span class="gst-prof-chip__value">@siteLabel</span>
+                        </span>
+                        @* Hidden but enabled — pinned.js reads `.value` via getElementById
+                           and skips it as an event source when there's nothing to change. *@
+                        <select id="gst-pin-site" class="gst-prof-chip__hidden" aria-hidden="true" tabindex="-1">
+                            <option value="@(Model.Sites.Count == 1 ? Model.Sites[0] : "")"></option>
+                        </select>
+                    }
+
+                    @if (localeSelectable)
+                    {
+                        <label class="gst-prof-chip gst-prof-chip--input" for="gst-pin-locale">
+                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <select id="gst-pin-locale" class="gst-prof-chip__select">
+                                @foreach (var loc in Model.Locales)
+                                {
+                                    <option value="@loc">@loc</option>
+                                }
+                            </select>
+                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
+                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
+                            </svg>
+                        </label>
+                    }
+                    else
+                    {
+                        <span class="gst-prof-chip gst-prof-chip--static">
+                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <span class="gst-prof-chip__value">@localeLabel</span>
+                        </span>
+                        <select id="gst-pin-locale" class="gst-prof-chip__hidden" aria-hidden="true" tabindex="-1">
+                            <option value="@(Model.Locales.Count == 1 ? Model.Locales[0] : "")"></option>
+                        </select>
+                    }
+                </div>
+            </header>
+
+            <div class="gst-prof-preview__body">
+
+                @if (!string.IsNullOrEmpty(Model.PinnedKeyFormula))
+                {
+                    <div class="gst-prof-preview__keyline">
+                        <span class="gst-prof-preview__keyline-label">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/keyLabel")
+                        </span>
+                        <code id="gst-pin-keyline-value" class="gst-prof-preview__keyline-value">—</code>
+                        @if (Model.IsSiteShared)
+                        {
+                            <span class="gst-prof-preview__keyline-warn"
+                                  title="@Loc.GetString("/graphsearchtools/profiles/detail/sharedWarning")">
+                                ⚠
+                            </span>
+                        }
+                    </div>
+                }
+
+                <div id="gst-pin-tab-alert" class="gst-alert" hidden></div>
+
+                @if (!Model.GraphQLDocExists)
+                {
+                    <div class="gst-prof-preview__empty">
+                        <div class="gst-prof-preview__empty-glyph" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" width="32" height="32">
+                                <circle cx="14" cy="14" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="20.6" y1="20.6" x2="27" y2="27" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <p class="gst-prof-preview__empty-title">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/workspace/previewDisabledTitle")
+                        </p>
+                        <p class="gst-prof-preview__empty-body">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryDisabled")
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div id="gst-pin-tryit" class="gst-serp gst-prof-preview__serp">
+                        <label class="gst-serp__input" for="gst-pin-tryit-q">
+                            <svg class="gst-serp__glyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                                <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                                <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                            </svg>
+                            <input id="gst-pin-tryit-q" type="text"
+                                   placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/serpPlaceholder")"
+                                   autocomplete="off" />
+                        </label>
+                        <div id="gst-pin-tryit-stats" class="gst-serp__stats" aria-live="polite"></div>
+                        <ul id="gst-pin-tryit-results" class="gst-serp__results"></ul>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ───────── RIGHT: tools console ───────── *@
+    <section class="gst-prof-console" aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/consoleLabel")">
+        <nav class="gst-prof-switcher" role="tablist"
+             aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/switcherLabel")">
+            <button type="button" class="gst-prof-switcher__btn is-active"
+                    role="tab" aria-selected="true" data-panel="pinned" id="gst-prof-tab-pinned">
+                <span class="gst-prof-switcher__icon" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="14" height="14">
+                        <path d="M8 1.5 L9.6 5.3 L13.7 5.7 L10.6 8.4 L11.5 12.4 L8 10.4 L4.5 12.4 L5.4 8.4 L2.3 5.7 L6.4 5.3 Z"
+                              fill="currentColor"/>
+                    </svg>
+                </span>
+                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/pinned")</span>
+            </button>
+            <button type="button" class="gst-prof-switcher__btn"
+                    role="tab" aria-selected="false" data-panel="synonyms" id="gst-prof-tab-synonyms">
+                <span class="gst-prof-switcher__icon" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+                        <path d="M2.5 5.5 H8 L10.5 3 M2.5 10.5 H8 L10.5 13"/>
+                        <circle cx="12" cy="3" r="1.4" fill="currentColor" stroke="none"/>
+                        <circle cx="12" cy="13" r="1.4" fill="currentColor" stroke="none"/>
+                        <circle cx="2" cy="8" r="1.4" fill="currentColor" stroke="none"/>
+                    </svg>
+                </span>
+                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/synonyms")</span>
+            </button>
+            <button type="button" class="gst-prof-switcher__btn"
+                    role="tab" aria-selected="false" data-panel="details" id="gst-prof-tab-details">
+                <span class="gst-prof-switcher__icon" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+                        <rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/>
+                        <path d="M5 6 H11 M5 8.5 H11 M5 11 H8.5"/>
+                    </svg>
+                </span>
+                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/details")</span>
+            </button>
+        </nav>
+
+        @* Phase 6 redesign — flat sortable / filterable grid, in-place
+           editing, content-by-name typeahead. The phrase-tabs grouping
+           was removed in favour of a single grid where Phrase is just
+           another column; the toolbar carries a global filter and a
+           count chip. The "Save all" drawer surfaces only when there
+           are unsaved rows. *@
+        <article class="gst-prof-panel is-active" data-panel="pinned"
+                 role="tabpanel" aria-labelledby="gst-prof-tab-pinned">
+            <div class="gst-pinedit">
+                <div class="gst-pinedit__cmdbar">
+                    <div class="gst-pinedit__searchbox">
+                        <svg class="gst-pinedit__searchglyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                            <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                            <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        </svg>
+                        <input type="text" id="gst-pinedit-global"
+                               class="gst-pinedit__searchinput"
+                               placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/globalFilter")"
+                               autocomplete="off" />
+                    </div>
+                    <span class="gst-pinedit__count" id="gst-pinedit-count" aria-live="polite">0</span>
+                    <span class="gst-pinedit__sep" aria-hidden="true"></span>
+                    <button type="button" id="gst-pinedit-add" class="gst-pinedit__addbtn">
+                        <span class="gst-pinedit__addbtn__plus">＋</span>
+                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/addRow")</span>
+                    </button>
+                </div>
+
+                <div class="gst-pinedit__grid-wrap">
+                    <table class="gst-pinedit__grid" role="grid">
+                        <thead>
+                            <tr class="gst-pinedit__head-sort">
+                                <th class="gst-pinedit__col gst-pinedit__col--rank" data-sort="rank">
+                                    <button type="button" class="gst-pinedit__sortbtn">
+                                        <span>#</span><span class="gst-pinedit__caret"></span>
+                                    </button>
+                                </th>
+                                <th class="gst-pinedit__col gst-pinedit__col--phrase" data-sort="phrases">
+                                    <button type="button" class="gst-pinedit__sortbtn">
+                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPhrase")</span>
+                                        <span class="gst-pinedit__caret"></span>
+                                    </button>
+                                </th>
+                                <th class="gst-pinedit__col gst-pinedit__col--target" data-sort="contentName">
+                                    <button type="button" class="gst-pinedit__sortbtn">
+                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colTarget")</span>
+                                        <span class="gst-pinedit__caret"></span>
+                                    </button>
+                                </th>
+                                <th class="gst-pinedit__col gst-pinedit__col--type" data-sort="contentType">
+                                    <button type="button" class="gst-pinedit__sortbtn">
+                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colType")</span>
+                                        <span class="gst-pinedit__caret"></span>
+                                    </button>
+                                </th>
+                                <th class="gst-pinedit__col gst-pinedit__col--priority" data-sort="priority">
+                                    <button type="button" class="gst-pinedit__sortbtn">
+                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPriority")</span>
+                                        <span class="gst-pinedit__caret"></span>
+                                    </button>
+                                </th>
+                                <th class="gst-pinedit__col gst-pinedit__col--actions" aria-hidden="true"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="gst-pinedit-rows"></tbody>
+                    </table>
+                    <div id="gst-pinedit-empty" class="gst-pinedit__empty" hidden>
+                        <p>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/emptyHeadline")</p>
+                        <button type="button" class="gst-pinedit__empty-add" id="gst-pinedit-empty-add">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/addFirst")
+                        </button>
+                    </div>
+                </div>
+
+                <div id="gst-pinedit-drawer" class="gst-pinedit__drawer" hidden>
+                    <span class="gst-pinedit__drawer__count">
+                        <strong id="gst-pinedit-dirty-count">0</strong>
+                        @Loc.GetString("/graphsearchtools/profiles/detail/pinned/unsaved")
+                    </span>
+                    <div class="gst-pinedit__drawer__actions">
+                        <button type="button" class="gst-pinedit__drawer__btn" id="gst-pinedit-discard">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/discardAll")
+                        </button>
+                        <button type="button" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary" id="gst-pinedit-save-all">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/saveAll")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        @* Synonyms panel — pulls from the global per-language synonym pool. *@
+        <article class="gst-prof-panel" data-panel="synonyms" hidden
+                 role="tabpanel" aria-labelledby="gst-prof-tab-synonyms">
+            <div id="gst-prof-syn" class="gst-prof-syn" data-loaded="false">
+                <header class="gst-prof-syn__head">
+                    <div class="gst-prof-syn__heading">
+                        <h3 class="gst-prof-syn__title">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/title")
+                        </h3>
+                        <p class="gst-prof-syn__note">
+                            @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/globalNote")
+                        </p>
+                    </div>
+                    @if (Model.Locales.Count > 1)
+                    {
+                        <label class="gst-prof-chip gst-prof-chip--input" for="gst-prof-syn-lang">
+                            <span class="gst-prof-chip__label">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/language")
+                            </span>
+                            <select id="gst-prof-syn-lang" class="gst-prof-chip__select">
+                                <option value="">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/global")
+                                </option>
+                                @foreach (var loc in Model.Locales)
+                                {
+                                    <option value="@loc">@loc</option>
+                                }
+                            </select>
+                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
+                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
+                            </svg>
+                        </label>
+                    }
+                </header>
+
+                <div id="gst-prof-syn-alert" class="gst-alert" hidden></div>
+
+                <div class="gst-prof-syn__body">
+                    <ul id="gst-prof-syn-rows" class="gst-prof-syn__rows"></ul>
+                    <div id="gst-prof-syn-empty" class="gst-prof-syn__empty" hidden>
+                        @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/empty")
+                    </div>
+                </div>
+
+                <footer class="gst-prof-syn__foot">
+                    <button type="button" id="gst-prof-syn-add" class="gst-pinedit__addbtn gst-prof-syn__addbtn">
+                        <span class="gst-pinedit__addbtn__plus">＋</span>
+                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRule")</span>
+                    </button>
+                    <div class="gst-prof-syn__foot-spacer"></div>
+                    <button type="button" id="gst-prof-syn-discard" class="gst-pinedit__drawer__btn" hidden>
+                        @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/discard")
+                    </button>
+                    <button type="button" id="gst-prof-syn-save" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary" disabled>
+                        @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/save")
+                    </button>
+                </footer>
+
+                <details class="gst-prof-syn__help">
+                    <summary>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/helpSummary")</summary>
+                    <dl class="gst-prof-syn__help-dl">
+                        <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_label"):</dt>
+                        <dd><code>laptop =&gt; computer</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_text")</dd>
+                        <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_label"):</dt>
+                        <dd><code>laptop, computer, pc</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_text")</dd>
+                    </dl>
+                </details>
+            </div>
+        </article>
+
+        @* Details panel — profile metadata + GraphQL doc + audit log *@
+        <article class="gst-prof-panel" data-panel="details" hidden
+                 role="tabpanel" aria-labelledby="gst-prof-tab-details">
+
+            <section class="gst-prof-details__section">
+                <h3 class="gst-prof-details__title">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/details/metaTitle")
+                </h3>
+                <dl class="gst-prof-meta gst-prof-details__meta">
                     <div>
                         <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</dt>
                         <dd>
@@ -129,249 +478,51 @@
                         </dd>
                     </div>
                 </dl>
-            </div>
-        </div>
 
-        @if (Model.IsSiteShared)
-        {
-            <div class="gst-alert gst-alert--warning" style="margin-top: var(--gst-space-md)">
-                @Loc.GetString("/graphsearchtools/profiles/detail/sharedWarning")
-            </div>
-        }
-    </aside>
-
-    @* ───────── Main column: tabs + editor ───────── *@
-    <section>
-        <div class="gst-card">
-            <div class="gst-tabs gst-prof-tabs">
-                <button type="button" class="gst-tab active" data-tab="overview">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/overview")
-                </button>
-                <button type="button" class="gst-tab" data-tab="pinned">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/pinned")
-                </button>
-                <button type="button" class="gst-tab" data-tab="audit">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/tabs/audit")
-                    <span id="gst-prof-audit-badge" class="gst-badge gst-badge--default" hidden>0</span>
-                </button>
-            </div>
-
-            <div class="gst-tab-pane" data-pane="overview">
-                <div class="gst-card__body">
-                    <h3 style="margin-top: 0">@Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlTitle")</h3>
-                    @if (string.IsNullOrEmpty(Model.GraphQLDocContent))
-                    {
-                        <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlEmpty")</p>
-                    }
-                    else
-                    {
-                        <p class="gst-muted" style="font-size: var(--gst-text-sm)">
-                            @if (Model.GraphQLDocIsInline)
-                            {
-                                @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlInlineNote")
-                            }
-                            else
-                            {
-                                @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlPathNote")
-                            }
-                        </p>
-                        <pre class="gst-mono" style="background: var(--gst-color-surface-2, #f5f5f5); padding: var(--gst-space-md); border-radius: 4px; overflow-x: auto; white-space: pre; font-size: var(--gst-text-sm)"><code>@Model.GraphQLDocContent</code></pre>
-                    }
-                </div>
-            </div>
-
-            @* Phase 2.5 §4.1 — Pinned tab editor. Site & locale pickers are
-               constrained to the profile's declared scope; the resolved Graph
-               collection key is shown read-only below the controls. The right
-               rail Try-it side panel runs the registered GraphQL document for
-               this profile. JS hydrates everything via /api/profiles/{key}/pinned. *@
-            <div class="gst-tab-pane" data-pane="pinned" hidden>
-                <div id="gst-pin-tab-alert" class="gst-alert" hidden></div>
-
-                <div class="gst-card__body">
-                    <div class="gst-pin-controls">
-                        <div class="gst-field">
-                            <label for="gst-pin-site">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</label>
-                            <select id="gst-pin-site" class="gst-select"
-                                    @(Model.IsSiteShared || Model.Sites.Count <= 1 ? "disabled" : "")>
-                                @if (Model.IsSiteShared)
-                                {
-                                    <option value="">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/sharedSite")</option>
-                                }
-                                else if (Model.Sites.Count == 0)
-                                {
-                                    <option value="">@Loc.GetString("/graphsearchtools/profiles/detail/meta/allSites")</option>
-                                }
-                                else
-                                {
-                                    @foreach (var site in Model.Sites)
-                                    {
-                                        <option value="@site">@site</option>
-                                    }
-                                }
-                            </select>
-                        </div>
-                        <div class="gst-field">
-                            <label for="gst-pin-locale">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</label>
-                            <select id="gst-pin-locale" class="gst-select"
-                                    @(Model.Locales.Count == 0 ? "disabled" : "")>
-                                @if (Model.Locales.Count == 0)
-                                {
-                                    <option value="">@Loc.GetString("/graphsearchtools/profiles/detail/meta/allLocales")</option>
-                                }
-                                else
-                                {
-                                    @foreach (var loc in Model.Locales)
-                                    {
-                                        <option value="@loc">@loc</option>
-                                    }
-                                }
-                            </select>
-                        </div>
+                @if (Model.IsSiteShared)
+                {
+                    <div class="gst-alert gst-alert--warning gst-prof-details__shared">
+                        @Loc.GetString("/graphsearchtools/profiles/detail/sharedWarning")
                     </div>
+                }
+            </section>
 
-                    <div class="gst-pin-keyline">
-                        <span class="gst-pin-keyline__label">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/keyLabel")</span>
-                        <span class="gst-pin-keyline__value gst-mono" id="gst-pin-keyline-value">—</span>
-                        @if (!string.IsNullOrEmpty(Model.GraphQLDocPath))
+            <section class="gst-prof-details__section">
+                <h3 class="gst-prof-details__title">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlTitle")
+                </h3>
+                @if (string.IsNullOrEmpty(Model.GraphQLDocContent))
+                {
+                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlEmpty")</p>
+                }
+                else
+                {
+                    <p class="gst-prof-details__sublabel">
+                        @if (Model.GraphQLDocIsInline)
                         {
-                            <span class="gst-pin-keyline__hint">
-                                <code class="gst-mono">@Model.GraphQLDocPath</code>
-                            </span>
+                            @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlInlineNote")
                         }
+                        else
+                        {
+                            @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlPathNote")
+                        }
+                    </p>
+                    <div class="gst-codeblock" data-gst-copy>
+                        <pre class="gst-prof-details__doc gst-mono"><code>@Model.GraphQLDocContent</code></pre>
                     </div>
+                }
+            </section>
+
+            <section class="gst-prof-details__section">
+                <h3 class="gst-prof-details__title">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/details/auditTitle")
+                    <span id="gst-prof-audit-badge" class="gst-badge gst-badge--default" hidden>0</span>
+                </h3>
+                <div id="gst-prof-audit-host" class="gst-prof-details__audit">
+                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/ui/shared/loading")</p>
                 </div>
-
-                <div class="gst-pin-with-tryit" style="padding: 0 var(--gst-space-lg) var(--gst-space-lg)">
-                    @* Phase 6 redesign — flat sortable / filterable grid, in-place
-                       editing, content-by-name typeahead. The phrase-tabs grouping
-                       was removed in favour of a single grid where Phrase is just
-                       another column; the toolbar carries a global filter and a
-                       count chip. The "Save all" drawer surfaces only when there
-                       are unsaved rows. *@
-                    <div class="gst-pinedit">
-                        <div class="gst-pinedit__cmdbar">
-                            <div class="gst-pinedit__searchbox">
-                                <svg class="gst-pinedit__searchglyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                                    <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                                    <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                                </svg>
-                                <input type="text" id="gst-pinedit-global"
-                                       class="gst-pinedit__searchinput"
-                                       placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/globalFilter")"
-                                       autocomplete="off" />
-                            </div>
-                            <span class="gst-pinedit__count" id="gst-pinedit-count" aria-live="polite">0</span>
-                            <span class="gst-pinedit__sep" aria-hidden="true"></span>
-                            <button type="button" id="gst-pinedit-add" class="gst-pinedit__addbtn">
-                                <span class="gst-pinedit__addbtn__plus">＋</span>
-                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/addRow")</span>
-                            </button>
-                        </div>
-
-                        <div class="gst-pinedit__grid-wrap">
-                            <table class="gst-pinedit__grid" role="grid">
-                                <thead>
-                                    <tr class="gst-pinedit__head-sort">
-                                        <th class="gst-pinedit__col gst-pinedit__col--rank" data-sort="rank">
-                                            <button type="button" class="gst-pinedit__sortbtn">
-                                                <span>#</span><span class="gst-pinedit__caret"></span>
-                                            </button>
-                                        </th>
-                                        <th class="gst-pinedit__col gst-pinedit__col--phrase" data-sort="phrases">
-                                            <button type="button" class="gst-pinedit__sortbtn">
-                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPhrase")</span>
-                                                <span class="gst-pinedit__caret"></span>
-                                            </button>
-                                        </th>
-                                        <th class="gst-pinedit__col gst-pinedit__col--target" data-sort="contentName">
-                                            <button type="button" class="gst-pinedit__sortbtn">
-                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colTarget")</span>
-                                                <span class="gst-pinedit__caret"></span>
-                                            </button>
-                                        </th>
-                                        <th class="gst-pinedit__col gst-pinedit__col--type" data-sort="contentType">
-                                            <button type="button" class="gst-pinedit__sortbtn">
-                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colType")</span>
-                                                <span class="gst-pinedit__caret"></span>
-                                            </button>
-                                        </th>
-                                        <th class="gst-pinedit__col gst-pinedit__col--priority" data-sort="priority">
-                                            <button type="button" class="gst-pinedit__sortbtn">
-                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPriority")</span>
-                                                <span class="gst-pinedit__caret"></span>
-                                            </button>
-                                        </th>
-                                        <th class="gst-pinedit__col gst-pinedit__col--actions" aria-hidden="true"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="gst-pinedit-rows"></tbody>
-                            </table>
-                            <div id="gst-pinedit-empty" class="gst-pinedit__empty" hidden>
-                                <p>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/emptyHeadline")</p>
-                                <button type="button" class="gst-pinedit__empty-add" id="gst-pinedit-empty-add">
-                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/addFirst")
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="gst-pinedit-drawer" class="gst-pinedit__drawer" hidden>
-                            <span class="gst-pinedit__drawer__count">
-                                <strong id="gst-pinedit-dirty-count">0</strong>
-                                @Loc.GetString("/graphsearchtools/profiles/detail/pinned/unsaved")
-                            </span>
-                            <div class="gst-pinedit__drawer__actions">
-                                <button type="button" class="gst-pinedit__drawer__btn" id="gst-pinedit-discard">
-                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/discardAll")
-                                </button>
-                                <button type="button" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary" id="gst-pinedit-save-all">
-                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/saveAll")
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* Try-it side panel — minimal in-context preview of the Pinned editor's effect. *@
-                    <aside class="gst-card" style="margin: 0; align-self: start;">
-                        <div class="gst-card__header">
-                            <span class="gst-card__title">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryTitle")</span>
-                        </div>
-                        <div class="gst-card__body">
-                            @if (!Model.GraphQLDocExists)
-                            {
-                                <p class="gst-muted" style="font-size: var(--gst-text-sm)">
-                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryDisabled")
-                                </p>
-                            }
-                            else
-                            {
-                                <div id="gst-pin-tryit" class="gst-serp">
-                                    <label class="gst-serp__input" for="gst-pin-tryit-q">
-                                        <svg class="gst-serp__glyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                                            <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                                            <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                                        </svg>
-                                        <input id="gst-pin-tryit-q" type="text"
-                                               placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/serpPlaceholder")"
-                                               autocomplete="off" />
-                                    </label>
-                                    <div id="gst-pin-tryit-stats" class="gst-serp__stats" aria-live="polite"></div>
-                                    <ul id="gst-pin-tryit-results" class="gst-serp__results"></ul>
-                                </div>
-                            }
-                        </div>
-                    </aside>
-                </div>
-            </div>
-
-            <div class="gst-tab-pane" data-pane="audit" hidden>
-                <div class="gst-card__body">
-                    <div id="gst-prof-audit-host">
-                        <p class="gst-muted">@Loc.GetString("/graphsearchtools/ui/shared/loading")</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+            </section>
+        </article>
     </section>
 </div>
 
