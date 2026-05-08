@@ -1,9 +1,9 @@
 query AlloySearch($q: String!, $locale: [Locales!], $limit: Int = 20) {
   Content(
-    where: { _fulltext: { match: $q } }
+    where: { _fulltext: { match: $q, synonyms: ONE } }
     locale: $locale
     limit: $limit
-    orderBy: { _ranking: SEMANTIC }
+    orderBy: { _ranking: SEMANTIC, _minimumScore: 2 }
   ) {
     items {
       Name

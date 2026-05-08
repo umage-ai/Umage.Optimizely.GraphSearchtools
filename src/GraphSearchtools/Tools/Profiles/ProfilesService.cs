@@ -124,7 +124,9 @@ public sealed class ProfilesService
             GraphQLDocPath = profile.GraphQLDocumentPath,
             GraphQLDocExists = graphqlExists,
             GraphQLDocContent = content,
-            GraphQLDocIsInline = hasInline
+            GraphQLDocIsInline = hasInline,
+            QueryAppliesPinned = !string.IsNullOrEmpty(content) && UsePinnedRegex.IsMatch(content),
+            QueryAppliesSynonyms = !string.IsNullOrEmpty(content) && SynonymsArgRegex.IsMatch(content)
         };
     }
 
@@ -247,6 +249,13 @@ public sealed class ProfilesService
     // sending `collectionId: ""` to Graph 400s, dropping the directive lets
     // the rest of the query run.
     private static readonly Regex UsePinnedRegex = new(@"\busePinned\s*:\s*\{[^{}]*\}", RegexOptions.Compiled);
+
+    // Detects opt-in to Graph's synonym pool — the `synonyms: ONE|TWO` argument
+    // inside an `_fulltext` clause. Without it, Graph silently bypasses the
+    // synonym index even when rules are stored under the matching language. We
+    // accept either slot enum so a profile that targets the staging slot still
+    // reads as "applies synonyms".
+    private static readonly Regex SynonymsArgRegex = new(@"\bsynonyms\s*:\s*(ONE|TWO)\b", RegexOptions.Compiled);
 
     /// <summary>
     /// Runs the registered profile's GraphQL document against Graph after

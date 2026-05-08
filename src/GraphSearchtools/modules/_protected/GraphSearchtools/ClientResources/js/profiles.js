@@ -552,6 +552,11 @@
                 state.rows.forEach(function(r) { r.dirty = false; r.isNew = false; });
                 renderRows();
                 setAlert(s('synonyms.saved', 'Synonyms saved.'));
+                // Tell the live preview to drop its cached rules for this lang
+                // so the next preview reflects the edit.
+                window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
+                    detail: { lang: state.lang || '' }
+                }));
             }).catch(function(err) {
                 setAlert((err && err.message) || s('synonyms.request_failed', 'Failed to save synonyms.'), true);
             });

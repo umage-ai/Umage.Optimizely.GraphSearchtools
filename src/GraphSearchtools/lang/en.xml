@@ -355,6 +355,18 @@
             <auditTitle>Audit log</auditTitle>
             <metaTitle>Profile metadata</metaTitle>
           </details>
+          <unwiredPinned>
+            <tabTitle>Pinned results not wired into this query</tabTitle>
+            <title>Pinned results not wired into this query</title>
+            <body>This profile's registered GraphQL query doesn't include the usePinned directive, so any pins saved here won't reach the storefront SERP.</body>
+            <howto>To enable, add the directive to your storefront query:</howto>
+          </unwiredPinned>
+          <unwiredSynonyms>
+            <tabTitle>Synonyms not wired into this query</tabTitle>
+            <title>Synonyms not wired into this query</title>
+            <body>This profile's registered GraphQL query doesn't opt in to Graph's synonym pool, so synonym rules won't be applied at storefront query time.</body>
+            <howto>To enable, pass synonyms: ONE inside _fulltext (use TWO if you maintain a staging slot):</howto>
+          </unwiredSynonyms>
         </detail>
         <index>
           <cols>
