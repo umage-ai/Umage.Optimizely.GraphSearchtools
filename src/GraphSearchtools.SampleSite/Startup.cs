@@ -58,7 +58,10 @@ public class Startup
             .AddSearchProfile("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
-                .Locales("en")
+                // Stock Alloy ships with English + Swedish content branches; the
+                // preview picker on the Profile detail surfaces both so admins
+                // can verify pinned/synonym wiring per locale.
+                .Locales("en", "sv")
                 .SearchedFields("Name", "MetaDescription", "MainBody")
                 .UsesPinnedKey("alloy-{locale}")
                 .SemanticBlend(0.3, GraphRanking.Semantic)

@@ -14,11 +14,19 @@ public class SearchPageController : PageControllerBase<SearchPage>
         _search = search;
     }
 
-    public async Task<IActionResult> Index(SearchPage currentPage, string q, [FromQuery(Name = "type")] string[] type, [FromQuery(Name = "lang")] string[] lang, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(SearchPage currentPage, string q, [FromQuery(Name = "type")] string[] type, CancellationToken cancellationToken)
     {
+        // Active language branch for the SearchPage. PageContext.LanguageID
+        // is set by Optimizely's page route to the language code being served
+        // (e.g. "en" / "sv"). Passing it through gives the service everything
+        // it needs to filter by locale AND resolve the matching pinned-results
+        // collection without the controller having to know the formula.
+        var locale = PageContext?.LanguageID;
+
         var model = new SearchContentModel(currentPage)
         {
-            SearchedQuery = q ?? string.Empty
+            SearchedQuery = q ?? string.Empty,
+            ActiveLocale = locale
         };
 
         try
@@ -27,7 +35,7 @@ public class SearchPageController : PageControllerBase<SearchPage>
             {
                 Query = q,
                 SelectedContentTypes = type ?? Array.Empty<string>(),
-                SelectedLanguages = lang ?? Array.Empty<string>()
+                Locale = locale
             }, cancellationToken);
 
             if (!result.Configured)
@@ -39,7 +47,6 @@ public class SearchPageController : PageControllerBase<SearchPage>
                 model.Hits = result.Hits;
                 model.NumberOfHits = result.Total;
                 model.ContentTypeFacet = result.ContentTypeFacet;
-                model.LanguageFacet = result.LanguageFacet;
             }
         }
         catch (Exception ex)
