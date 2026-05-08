@@ -183,6 +183,7 @@
           <meta>
             <allLocales>all locales</allLocales>
             <allSites>all sites</allSites>
+            <docInline>inline (registered in code)</docInline>
             <docNotFound>File not found in the host project.</docNotFound>
             <graphqlDoc>GraphQL document</graphqlDoc>
             <locales>Locales declared</locales>
@@ -191,13 +192,39 @@
             <searchedFields>Searched fields</searchedFields>
             <sites>Sites</sites>
           </meta>
+          <overview>
+            <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
+            <graphqlInlineNote>Registered inline — admin reflects the same query string the runtime executes.</graphqlInlineNote>
+            <graphqlPathNote>Loaded from the host project.</graphqlPathNote>
+            <graphqlTitle>GraphQL query</graphqlTitle>
+          </overview>
           <pinned>
+            <addFirst>Add your first pin</addFirst>
+            <addRow>Add pin</addRow>
+            <colPhrase>Phrase</colPhrase>
+            <colPriority>Priority</colPriority>
+            <colTarget>Target</colTarget>
+            <colType>Type</colType>
+            <discardAll>Discard changes</discardAll>
             <empty>No pinned items for this phrase yet.</empty>
+            <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
+            <globalFilter>Search pins by phrase, target, or type…</globalFilter>
             <keyLabel>Pinned key</keyLabel>
             <organicTitle>Organic results (no pins applied)</organicTitle>
+            <previewFailed>Preview failed</previewFailed>
+            <saveAll>Save all changes</saveAll>
+            <serpEmpty>No matches.</serpEmpty>
+            <serpEmptyHelp>No content matched this phrase. Try a different term, or pin a target above.</serpEmptyHelp>
+            <serpPinnedBadge>Pinned</serpPinnedBadge>
+            <serpPinnedTooltip>This result is locked to the top by a pin in this profile.</serpPinnedTooltip>
+            <serpPlaceholder>Search the live index…</serpPlaceholder>
+            <serpScoreTooltip>Graph relevance score</serpScoreTooltip>
+            <serpShowJson>inspect</serpShowJson>
+            <serpUntitled>(untitled)</serpUntitled>
             <sharedSite>Shared across sites</sharedSite>
             <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
             <tryTitle>Live preview</tryTitle>
+            <unsaved>unsaved</unsaved>
           </pinned>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>

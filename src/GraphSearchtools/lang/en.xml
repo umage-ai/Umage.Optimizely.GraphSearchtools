@@ -19,13 +19,9 @@
               <Health>Run Optimizely Graph health probes — gateway, credentials, query endpoint, index population.</Health>
               <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
-              <DecaySandbox>Visualize Gaussian decay and factor modifier curves; emit GraphQL fragments.</DecaySandbox>
               <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
-              <CustomDataSources>Inspect non-CMS data sources registered with Optimizely Graph and trigger a full resync per source.</CustomDataSources>
-              <RequestLogs>View recent Optimizely Graph queries with timing, ranking and result count; replay one in Search Console.</RequestLogs>
               <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
-              <IndexInspector>Inspect Optimizely Graph index population per content type, missing fields, and reindex deltas.</IndexInspector>
               <SearchLogs>View Search Logs analytics — top phrases, zero-result phrases, low-CTR phrases, recent raw events.</SearchLogs>
               <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
               <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
@@ -44,12 +40,8 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
-        <decaySandbox>Decay &amp; Factor Sandbox</decaySandbox>
         <webhooks>Webhooks</webhooks>
-        <customDataSources>Custom Data Sources</customDataSources>
-        <requestLogs>Request Logs</requestLogs>
         <semanticTuner>Semantic Weight Tuner</semanticTuner>
-        <indexInspector>Index Inspector</indexInspector>
         <searchLogs>Search Logs</searchLogs>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
@@ -130,27 +122,6 @@
           <locale_label>Locale</locale_label>
           <limit>Limit</limit>
         </autocomplete>
-        <decaySandbox>
-          <title>Decay &amp; Factor Sandbox</title>
-          <description>Visualize Gaussian / linear / exp decay and factor-modifier curves before pasting them into a Graph query. Pure preview — no live Graph calls.</description>
-          <decay>
-            <title>Decay</title>
-            <field>Field</field>
-            <function>Function</function>
-            <origin>Origin</origin>
-            <scale>Scale</scale>
-            <offset>Offset</offset>
-            <decay>Decay at scale</decay>
-          </decay>
-          <factor>
-            <title>Factor</title>
-            <modifier>Modifier</modifier>
-            <factor>Factor</factor>
-            <missing>Missing value</missing>
-          </factor>
-          <copy>Copy</copy>
-          <copied>Copied</copied>
-        </decaySandbox>
         <webhooks>
           <title>Webhooks</title>
           <description>Manage Optimizely Graph webhooks. Graph fires these on content changes; subscribers run downstream sync, cache invalidation, or notifications.</description>
@@ -180,48 +151,6 @@
           <delete_failed>Could not delete webhook.</delete_failed>
           <load_failed>Could not load webhooks.</load_failed>
         </webhooks>
-        <customDataSources>
-          <title>Custom Data Sources</title>
-          <description>Inspect non-CMS data sources registered with Optimizely Graph — CMS connectors, PIM feeds, custom pipelines. Trigger a full resync when an upstream source has drifted.</description>
-          <col_name>Name</col_name>
-          <col_type>Type</col_type>
-          <col_items>Items</col_items>
-          <col_lastSynced>Last synced</col_lastSynced>
-          <col_status>Status</col_status>
-          <col_actions></col_actions>
-          <sync>Sync now</sync>
-          <sync_confirm>Trigger a full resync of '%1'? Graph will re-pull every item from this source.</sync_confirm>
-          <sync_started>Sync started for '%1'.</sync_started>
-          <status_healthy>Healthy</status_healthy>
-          <status_syncing>Syncing</status_syncing>
-          <status_stale>Stale</status_stale>
-          <status_failed>Failed</status_failed>
-          <status_unknown>Unknown</status_unknown>
-          <empty>No custom data sources registered. Sources are registered out-of-band by their own pipelines.</empty>
-          <load_failed>Could not load data sources.</load_failed>
-          <sync_failed>Could not trigger sync.</sync_failed>
-        </customDataSources>
-        <requestLogs>
-          <title>Request Logs</title>
-          <description>Recent Optimizely Graph queries with timing, ranking, and result count. Click a row to inspect the full GraphQL document and copy it for replay in Search Console.</description>
-          <col_when>When</col_when>
-          <col_op>Op</col_op>
-          <col_status>Status</col_status>
-          <col_duration>Duration</col_duration>
-          <col_hits>Hits</col_hits>
-          <col_ranking>Ranking</col_ranking>
-          <col_caller>Caller</col_caller>
-          <filter_window_1h>Last 1h</filter_window_1h>
-          <filter_window_24h>Last 24h</filter_window_24h>
-          <filter_window_7d>Last 7d</filter_window_7d>
-          <filter_window_all>All</filter_window_all>
-          <filter_only_errors>Only errors</filter_only_errors>
-          <filter_search_op_placeholder>Search by operation name…</filter_search_op_placeholder>
-          <copy_query>Copy query</copy_query>
-          <copied>Copied</copied>
-          <empty>No request logs in this window.</empty>
-          <load_failed>Could not load request logs.</load_failed>
-        </requestLogs>
         <semanticTuner>
           <title>Semantic Weight Tuner</title>
           <description>Tier the Optimizely Graph ranking mode and semantic weight by query token count — e.g. "1–2 tokens lean RELEVANCE, 3+ tokens go SEMANTIC w=0.3". Saved policy persists in DDS and is also emitted as an appsettings.json snippet you can paste into the host config for cold-start fallback.</description>
@@ -247,24 +176,6 @@
           <ranking_boostonly>Boost only</ranking_boostonly>
           <ranking_doc>Doc</ranking_doc>
         </semanticTuner>
-        <indexInspector>
-          <title>Index Inspector</title>
-          <description>Inspect Optimizely Graph index population per content type, surface items missing the basic editorial fields (Name / Title), and spot recent reindex deltas. Read-only — refresh re-runs the inspection.</description>
-          <refresh>Refresh</refresh>
-          <total_items>Total items</total_items>
-          <content_types>Content types</content_types>
-          <missing_name>Missing Name</missing_name>
-          <missing_title>Missing Title</missing_title>
-          <captured_at>Captured</captured_at>
-          <col_type>Content type</col_type>
-          <col_count>Items</col_count>
-          <col_missing_name>Missing Name</col_missing_name>
-          <col_missing_teaser>Missing Teaser</col_missing_teaser>
-          <col_missing_body>Missing MainBody</col_missing_body>
-          <status_warn>Items missing Name — fix in CMS so they're searchable.</status_warn>
-          <empty>No content types in the index. Configure SearchableContentTypes or check the Health page.</empty>
-          <load_failed>Could not load index snapshot.</load_failed>
-        </indexInspector>
         <searchLogs>
           <title>Search Logs</title>
           <description>Top queries, zero-result phrases, low-CTR head queries, and a live tail of recent search events. The synonym-mining and pinned-tuning surface — every row links into the tool that fixes it.</description>
@@ -369,6 +280,7 @@
           <meta>
             <allLocales>all locales</allLocales>
             <allSites>all sites</allSites>
+            <docInline>inline (registered in code)</docInline>
             <docNotFound>File not found in the host project.</docNotFound>
             <graphqlDoc>GraphQL document</graphqlDoc>
             <locales>Locales declared</locales>
@@ -377,13 +289,39 @@
             <searchedFields>Searched fields</searchedFields>
             <sites>Sites</sites>
           </meta>
+          <overview>
+            <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
+            <graphqlInlineNote>Registered inline — admin reflects the same query string the runtime executes.</graphqlInlineNote>
+            <graphqlPathNote>Loaded from the host project.</graphqlPathNote>
+            <graphqlTitle>GraphQL query</graphqlTitle>
+          </overview>
           <pinned>
+            <addFirst>Add your first pin</addFirst>
+            <addRow>Add pin</addRow>
+            <colPhrase>Phrase</colPhrase>
+            <colPriority>Priority</colPriority>
+            <colTarget>Target</colTarget>
+            <colType>Type</colType>
+            <discardAll>Discard changes</discardAll>
             <empty>No pinned items for this phrase yet.</empty>
+            <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
+            <globalFilter>Search pins by phrase, target, or type…</globalFilter>
             <keyLabel>Pinned key</keyLabel>
             <organicTitle>Organic results (no pins applied)</organicTitle>
+            <previewFailed>Preview failed</previewFailed>
+            <saveAll>Save all changes</saveAll>
+            <serpEmpty>No matches.</serpEmpty>
+            <serpEmptyHelp>No content matched this phrase. Try a different term, or pin a target above.</serpEmptyHelp>
+            <serpPinnedBadge>Pinned</serpPinnedBadge>
+            <serpPinnedTooltip>This result is locked to the top by a pin in this profile.</serpPinnedTooltip>
+            <serpPlaceholder>Search the live index…</serpPlaceholder>
+            <serpScoreTooltip>Graph relevance score</serpScoreTooltip>
+            <serpShowJson>inspect</serpShowJson>
+            <serpUntitled>(untitled)</serpUntitled>
             <sharedSite>Shared across sites</sharedSite>
             <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
             <tryTitle>Live preview</tryTitle>
+            <unsaved>unsaved</unsaved>
           </pinned>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>

@@ -647,15 +647,27 @@
         var profileKey = opts.profileKey;
         if (!profileKey) return null;
 
-        var rowsTbody = document.getElementById('gst-pin-rows');
-        var organicTbody = document.getElementById('gst-pin-organic-rows');
-        var phrasesEl = document.getElementById('gst-pin-phrases');
+        // Phase 6 redesign — flat, sortable, filterable grid with content-by-name
+        // typeahead and in-place editing. The phrase-tabs grouping was dropped
+        // because it forced the user to switch contexts to see all pins; phrase
+        // is now just a sortable column, and a global filter narrows everything.
+
+        var rowsTbody = document.getElementById('gst-pinedit-rows');
+        var emptyEl = document.getElementById('gst-pinedit-empty');
         var siteSel = document.getElementById('gst-pin-site');
         var localeSel = document.getElementById('gst-pin-locale');
         var keylineEl = document.getElementById('gst-pin-keyline-value');
         var alertEl = document.getElementById('gst-pin-tab-alert');
-        var addBtn = document.getElementById('gst-pin-add');
-        var titleEl = document.getElementById('gst-pin-board-title');
+        var addBtn = document.getElementById('gst-pin-add'); // legacy header button (unused but kept tolerant)
+        var addBtn2 = document.getElementById('gst-pinedit-add');
+        var addEmpty = document.getElementById('gst-pinedit-empty-add');
+        var globalFilter = document.getElementById('gst-pinedit-global');
+        var countEl = document.getElementById('gst-pinedit-count');
+        var drawer = document.getElementById('gst-pinedit-drawer');
+        var drawerCount = document.getElementById('gst-pinedit-dirty-count');
+        var saveAllBtn = document.getElementById('gst-pinedit-save-all');
+        var discardBtn = document.getElementById('gst-pinedit-discard');
+        var sortBtns = document.querySelectorAll('.gst-pinedit__sortbtn');
 
         if (!rowsTbody) return null;
 
@@ -666,7 +678,10 @@
             pinnedKey: null,
             isGeneric: !!opts.isGeneric,
             rows: [],
-            activePhrase: null
+            // Persistent UI state across renders
+            sort: { field: 'priority', dir: 'asc' },
+            global: '',
+            activeTypeahead: null
         };
 
         function setAlert(message, isError) {
@@ -683,130 +698,355 @@
             keylineEl.textContent = resolved;
         }
 
-        function uniquePhrases(rows) {
+        // Resolve content names for any rows whose targetKey looks GUID-ish.
+        // Keeps the grid free of GUIDs once the round-trip lands.
+        function resolveNames() {
             var seen = {};
-            var ordered = [];
-            rows.forEach(function (r) {
-                var key = (r.phrases || '').trim();
-                if (!key) return;
-                if (!seen[key]) { seen[key] = 0; ordered.push(key); }
-                seen[key]++;
+            var guids = [];
+            state.rows.forEach(function (r) {
+                var k = (r.targetKey || '').trim();
+                if (!k) return;
+                if (r.contentName) return; // already resolved server-side
+                if (!seen[k.toLowerCase()]) { seen[k.toLowerCase()] = true; guids.push(k); }
             });
-            return ordered.map(function (p) { return { phrase: p, count: seen[p] }; });
+            if (!guids.length) return Promise.resolve();
+            return ajax(BASE + '/ContentLookupApi/Resolve', { method: 'POST', body: guids })
+                .then(function (resolved) {
+                    var lookup = {};
+                    (resolved || []).forEach(function (h) { lookup[(h.contentGuid || '').toLowerCase()] = h; });
+                    state.rows.forEach(function (r) {
+                        var hit = lookup[(r.targetKey || '').toLowerCase()];
+                        if (hit) {
+                            r.contentName = hit.name;
+                            r.contentType = hit.contentType;
+                            r.language = r.language || hit.language;
+                        }
+                    });
+                })
+                .catch(function () { /* lookup is best-effort */ });
         }
 
-        function renderPhrases() {
-            if (!phrasesEl) return;
-            phrasesEl.innerHTML = '';
-            var phrases = uniquePhrases(state.rows);
-            if (state.activePhrase == null && phrases.length > 0) {
-                state.activePhrase = phrases[0].phrase;
-            }
-            phrases.forEach(function (p) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'gst-pin-phrase' + (p.phrase === state.activePhrase ? ' active' : '');
-                btn.innerHTML = escHtml(p.phrase) + ' <span class="gst-pin-phrase__count">' + p.count + '</span>';
-                btn.addEventListener('click', function () {
-                    state.activePhrase = p.phrase;
-                    renderPhrases();
-                    renderRows();
+        function getDisplayedRows() {
+            var rows = state.rows.slice();
+            var g = (state.global || '').toLowerCase();
+            if (g) {
+                rows = rows.filter(function (r) {
+                    return [r.phrases, r.contentName, r.targetKey, r.contentType, r.language]
+                        .some(function (v) { return (v || '').toLowerCase().indexOf(g) !== -1; });
                 });
-                phrasesEl.appendChild(btn);
+            }
+            var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
+            rows.sort(function (a, b) {
+                var av = a[f], bv = b[f];
+                if (f === 'priority' || f === 'rank') {
+                    av = av == null ? Number.POSITIVE_INFINITY : Number(av);
+                    bv = bv == null ? Number.POSITIVE_INFINITY : Number(bv);
+                    return (av - bv) * d;
+                }
+                av = (av || '').toString().toLowerCase();
+                bv = (bv || '').toString().toLowerCase();
+                return av.localeCompare(bv) * d;
+            });
+            return rows;
+        }
+
+        function dirtyCount() {
+            var n = 0;
+            state.rows.forEach(function (r) { if (r._dirty) n++; });
+            return n;
+        }
+
+        function refreshChrome() {
+            // Sort carets reflect the active column.
+            sortBtns.forEach(function (btn) {
+                var th = btn.parentElement;
+                var field = th.getAttribute('data-sort');
+                th.classList.remove('is-asc', 'is-desc');
+                if (field === state.sort.field) th.classList.add(state.sort.dir === 'desc' ? 'is-desc' : 'is-asc');
             });
 
-            // "+ new phrase" affordance
-            var addPhrase = document.createElement('button');
-            addPhrase.type = 'button';
-            addPhrase.className = 'gst-pin-phrase gst-pin-phrase--add';
-            addPhrase.textContent = '+ ' + s('pinned.detail.newPhrase', 'new phrase');
-            addPhrase.addEventListener('click', function () { addNewRow(/* promptForPhrase */ true); });
-            phrasesEl.appendChild(addPhrase);
+            var n = dirtyCount();
+            if (drawer) {
+                drawer.hidden = n === 0;
+                if (drawerCount) drawerCount.textContent = String(n);
+            }
+            if (countEl) countEl.textContent = state.rows.length === 0
+                ? '0'
+                : (getDisplayedRows().length + ' / ' + state.rows.length);
         }
 
         function renderRows() {
+            closeTypeahead();
             rowsTbody.innerHTML = '';
-            if (titleEl) {
-                if (state.activePhrase) {
-                    titleEl.innerHTML = 'Pinned for <code class="gst-mono">"' + escHtml(state.activePhrase) + '"</code>';
-                } else if (state.rows.length === 0) {
-                    titleEl.textContent = s('profiles.detail.pinned.empty', 'No pinned items for this phrase yet.');
-                }
+            var rows = getDisplayedRows();
+
+            if (state.rows.length === 0) {
+                if (emptyEl) emptyEl.hidden = false;
+                refreshChrome();
+                return;
             }
+            if (emptyEl) emptyEl.hidden = true;
 
-            var rows = state.rows.filter(function (r) {
-                return !state.activePhrase || (r.phrases || '').trim() === state.activePhrase;
-            });
-
-            if (rows.length === 0 && !state.rows.length) {
+            if (rows.length === 0) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="3" class="gst-muted" style="padding: var(--gst-space-md)">'
-                    + escHtml(s('profiles.detail.pinned.empty', 'No pinned items for this phrase yet.')) + '</td>';
+                tr.className = 'gst-pinedit__norows';
+                tr.innerHTML = '<td colspan="6">'
+                    + escHtml(s('profiles.detail.pinned.noMatches', 'No pins match the current filters.'))
+                    + '</td>';
                 rowsTbody.appendChild(tr);
+                refreshChrome();
                 return;
             }
 
-            rows.forEach(function (row, i) {
-                rowsTbody.appendChild(buildRow(row, i + 1));
-            });
+            rows.forEach(function (row, i) { rowsTbody.appendChild(buildRow(row, i + 1)); });
+            refreshChrome();
+        }
+
+        function typeChipClass(contentType) {
+            var ct = (contentType || '').toLowerCase();
+            if (ct.indexOf('product') !== -1) return 'gst-pinedit__chip is-product';
+            if (ct.indexOf('article') !== -1 || ct.indexOf('news') !== -1) return 'gst-pinedit__chip is-editorial';
+            if (ct.indexOf('page') !== -1) return 'gst-pinedit__chip is-page';
+            return 'gst-pinedit__chip is-other';
         }
 
         function buildRow(row, rank) {
             var tr = document.createElement('tr');
-            tr.className = 'gst-pin-row is-pinned' + (row._dirty ? ' is-dirty' : '') + (row._isNew ? ' is-new' : '');
+            tr.className = 'gst-pinedit__row'
+                + (row._dirty ? ' is-dirty' : '')
+                + (row._isNew ? ' is-new' : '');
 
+            // # — display rank (post-sort), tabular-num.
             var rankCell = document.createElement('td');
-            rankCell.innerHTML = '<span class="gst-pin-row__rank">' + rank + '</span>';
+            rankCell.className = 'gst-pinedit__cell gst-pinedit__cell--rank';
+            rankCell.textContent = String(rank).padStart(2, '0');
             tr.appendChild(rankCell);
 
-            // Content cell — phrase input + targetKey input. Kept simple in v1;
-            // the richer content picker (Components.openContentPicker) ships in
-            // a later iteration so the editor stays small.
-            var contentCell = document.createElement('td');
-            contentCell.className = 'gst-pin-content-cell';
+            // Phrase — in-place text input with a hint icon for multi-phrase.
+            var phraseCell = document.createElement('td');
+            phraseCell.className = 'gst-pinedit__cell gst-pinedit__cell--phrase';
             var phraseInput = document.createElement('input');
             phraseInput.type = 'text';
-            phraseInput.className = 'gst-cell-input';
+            phraseInput.className = 'gst-pinedit__input';
             phraseInput.placeholder = s('pinned.detail.phrasePlaceholder', 'Phrase');
             phraseInput.value = row.phrases || '';
             phraseInput.addEventListener('input', function () {
                 row.phrases = phraseInput.value;
                 markDirty(row, tr);
             });
-            var targetInput = document.createElement('input');
-            targetInput.type = 'text';
-            targetInput.className = 'gst-cell-input';
-            targetInput.placeholder = s('pinned.detail.targetPlaceholder', 'Content GUID');
-            targetInput.value = row.targetKey || '';
-            targetInput.style.marginTop = '4px';
-            targetInput.addEventListener('input', function () {
-                row.targetKey = targetInput.value;
+            phraseCell.appendChild(phraseInput);
+            tr.appendChild(phraseCell);
+
+            // Target — name pill + click-to-edit typeahead. New rows skip
+            // the pill and start in input mode.
+            var targetCell = document.createElement('td');
+            targetCell.className = 'gst-pinedit__cell gst-pinedit__cell--target';
+            buildTargetCell(row, tr, targetCell);
+            tr.appendChild(targetCell);
+
+            // Type chip — read-only echo of the resolved contentType.
+            var typeCell = document.createElement('td');
+            typeCell.className = 'gst-pinedit__cell gst-pinedit__cell--type';
+            if (row.contentType) {
+                var chip = document.createElement('span');
+                chip.className = typeChipClass(row.contentType);
+                chip.textContent = row.contentType;
+                typeCell.appendChild(chip);
+            } else if (!row._isNew) {
+                var dim = document.createElement('span');
+                dim.className = 'gst-pinedit__chip is-other';
+                dim.textContent = s('profiles.detail.pinned.unresolved', 'unresolved');
+                typeCell.appendChild(dim);
+            }
+            tr.appendChild(typeCell);
+
+            // Priority — narrow numeric input. Tabular numerals.
+            var priCell = document.createElement('td');
+            priCell.className = 'gst-pinedit__cell gst-pinedit__cell--priority';
+            var priInput = document.createElement('input');
+            priInput.type = 'number';
+            priInput.className = 'gst-pinedit__input gst-pinedit__input--num';
+            priInput.value = row.priority != null ? row.priority : 1000;
+            priInput.step = 100;
+            priInput.addEventListener('input', function () {
+                var v = parseFloat(priInput.value);
+                row.priority = isNaN(v) ? null : v;
                 markDirty(row, tr);
             });
-            contentCell.appendChild(phraseInput);
-            contentCell.appendChild(targetInput);
-            tr.appendChild(contentCell);
+            priCell.appendChild(priInput);
+            tr.appendChild(priCell);
 
-            // Actions
+            // Actions — Save + Delete with status-aware coloring.
             var actCell = document.createElement('td');
-            actCell.className = 'gst-pin-actions';
-            actCell.appendChild(buildBtn('save', row, tr, function () { saveRow(row, tr); }));
-            actCell.appendChild(buildBtn('delete', row, tr, function () { deleteRow(row); }));
+            actCell.className = 'gst-pinedit__cell gst-pinedit__cell--actions';
+            actCell.appendChild(buildActionBtn('save', row, tr, function () { saveRow(row, tr); }));
+            actCell.appendChild(buildActionBtn('delete', row, tr, function () { deleteRow(row); }));
             tr.appendChild(actCell);
 
             return tr;
         }
 
-        function buildBtn(kind, row, tr, onClick) {
+        function buildTargetCell(row, tr, cell) {
+            cell.innerHTML = '';
+            cell.style.position = 'relative';
+            var hasName = !!(row.contentName && !row._isNew);
+
+            var pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = 'gst-pinedit__target' + (row.targetKey ? '' : ' is-empty');
+            pill.title = row.targetKey || '';
+            if (hasName) {
+                pill.innerHTML = '<span class="gst-pinedit__target__name"></span>'
+                    + '<span class="gst-pinedit__target__edit" aria-hidden="true">↪</span>';
+                pill.querySelector('.gst-pinedit__target__name').textContent = row.contentName;
+            } else {
+                pill.innerHTML = '<span class="gst-pinedit__target__name gst-pinedit__target__name--placeholder"></span>';
+                pill.querySelector('.gst-pinedit__target__name').textContent =
+                    row.targetKey || s('profiles.detail.pinned.targetPlaceholder', 'Search content by name…');
+            }
+
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'gst-pinedit__input gst-pinedit__input--target';
+            input.placeholder = s('profiles.detail.pinned.targetPlaceholder', 'Search content by name…');
+            input.autocomplete = 'off';
+            input.value = row.contentName || row.targetKey || '';
+            input.hidden = hasName; // hide while pill is shown
+
+            var dropdown = document.createElement('div');
+            dropdown.className = 'gst-pinedit__typeahead';
+
+            function openInput() {
+                pill.hidden = true;
+                input.hidden = false;
+                input.focus();
+                input.select();
+            }
+            function showPill() {
+                input.hidden = true;
+                pill.hidden = false;
+                if (row.contentName) {
+                    pill.classList.remove('is-empty');
+                    pill.querySelector('.gst-pinedit__target__name').textContent = row.contentName;
+                    pill.querySelector('.gst-pinedit__target__name').classList.remove('gst-pinedit__target__name--placeholder');
+                    if (!pill.querySelector('.gst-pinedit__target__edit')) {
+                        var arrow = document.createElement('span');
+                        arrow.className = 'gst-pinedit__target__edit';
+                        arrow.setAttribute('aria-hidden', 'true');
+                        arrow.textContent = '↪';
+                        pill.appendChild(arrow);
+                    }
+                }
+            }
+
+            pill.addEventListener('click', openInput);
+
+            var debounce = null;
+            input.addEventListener('input', function () {
+                clearTimeout(debounce);
+                debounce = setTimeout(function () { searchTypeahead(input.value.trim(), dropdown, row, input, tr, cell); }, 280);
+            });
+            input.addEventListener('focus', function () {
+                if (dropdown.children.length > 0) {
+                    dropdown.style.display = 'block';
+                    setActiveTypeahead(dropdown);
+                }
+            });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeTypeahead();
+                    if (row.contentName && !row._isNew) showPill();
+                }
+            });
+            input.addEventListener('blur', function () {
+                // Defer so dropdown clicks fire first.
+                setTimeout(function () {
+                    if (dropdown.style.display !== 'block') {
+                        if (row.contentName && !row._isNew) showPill();
+                    }
+                }, 200);
+            });
+
+            cell.appendChild(pill);
+            cell.appendChild(input);
+            cell.appendChild(dropdown);
+        }
+
+        function setActiveTypeahead(dd) {
+            if (state.activeTypeahead && state.activeTypeahead !== dd) state.activeTypeahead.style.display = 'none';
+            state.activeTypeahead = dd;
+        }
+        function closeTypeahead() {
+            if (state.activeTypeahead) { state.activeTypeahead.style.display = 'none'; state.activeTypeahead = null; }
+        }
+
+        function searchTypeahead(query, dropdown, row, input, tr, cell) {
+            if (!query || query.length < 2) { dropdown.style.display = 'none'; return; }
+            var locale = state.locale ? '&locale=' + encodeURIComponent(state.locale) : '';
+            ajax(BASE + '/ContentLookupApi/Search?q=' + encodeURIComponent(query) + locale)
+                .then(function (results) {
+                    dropdown.innerHTML = '';
+                    results = results || [];
+                    if (!results.length) {
+                        var none = document.createElement('div');
+                        none.className = 'gst-pinedit__typeahead__none';
+                        none.textContent = s('profiles.detail.pinned.noTypeaheadResults', 'No matches.');
+                        dropdown.appendChild(none);
+                        dropdown.style.display = 'block';
+                        setActiveTypeahead(dropdown);
+                        return;
+                    }
+                    results.forEach(function (hit) {
+                        var item = document.createElement('div');
+                        item.className = 'gst-pinedit__typeahead__hit';
+                        var name = document.createElement('span');
+                        name.className = 'gst-pinedit__typeahead__name';
+                        name.textContent = hit.name;
+                        var meta = document.createElement('span');
+                        meta.className = 'gst-pinedit__typeahead__meta';
+                        meta.textContent = (hit.contentType || '') + (hit.language ? ' · ' + hit.language : '');
+                        item.appendChild(name);
+                        item.appendChild(meta);
+                        item.addEventListener('mousedown', function (e) {
+                            // mousedown so it fires before the input's blur.
+                            e.preventDefault();
+                            row.targetKey = hit.contentGuid;
+                            row.contentName = hit.name;
+                            row.contentType = hit.contentType;
+                            row.language = hit.language || row.language;
+                            input.value = hit.name;
+                            closeTypeahead();
+                            markDirty(row, tr);
+                            // Re-render this cell to swap input → pill.
+                            buildTargetCell(row, tr, cell);
+                            // Update the type chip cell beside it.
+                            var typeCell = tr.querySelector('.gst-pinedit__cell--type');
+                            if (typeCell) {
+                                typeCell.innerHTML = '';
+                                var chip = document.createElement('span');
+                                chip.className = typeChipClass(row.contentType);
+                                chip.textContent = row.contentType || '';
+                                typeCell.appendChild(chip);
+                            }
+                        });
+                        dropdown.appendChild(item);
+                    });
+                    dropdown.style.display = 'block';
+                    setActiveTypeahead(dropdown);
+                })
+                .catch(function () { dropdown.style.display = 'none'; });
+        }
+
+        function buildActionBtn(kind, row, tr, onClick) {
             var btn = document.createElement('button');
             btn.type = 'button';
             if (kind === 'save') {
-                btn.className = 'gst-pin-save-btn' + (row._dirty ? ' is-dirty' : '');
-                btn.innerHTML = '&#x2714;';
+                btn.className = 'gst-pinedit__action gst-pinedit__action--save' + (row._dirty ? ' is-dirty' : '');
+                btn.innerHTML = '<span aria-hidden="true">✓</span>';
                 btn.title = STRINGS.action_save || 'Save';
             } else {
-                btn.className = 'gst-pin-delete-btn';
-                btn.innerHTML = '&#x2716;';
+                btn.className = 'gst-pinedit__action gst-pinedit__action--delete';
+                btn.innerHTML = '<span aria-hidden="true">×</span>';
                 btn.title = STRINGS.action_delete || 'Delete';
             }
             btn.addEventListener('click', onClick);
@@ -816,8 +1056,30 @@
         function markDirty(row, tr) {
             row._dirty = true;
             tr.classList.add('is-dirty');
-            var saveBtn = tr.querySelector('.gst-pin-save-btn');
+            var saveBtn = tr.querySelector('.gst-pinedit__action--save');
             if (saveBtn) saveBtn.classList.add('is-dirty');
+            refreshChrome();
+        }
+
+        // Construct a blank, dirty, unsaved row scoped to the current
+        // (collection, locale). Used both by the explicit "+ Add pin" action
+        // and as the auto-seed when a (site, locale) has no pins yet — so the
+        // editor opens ready-to-fill instead of showing an empty placeholder.
+        function makeBlankRow() {
+            return {
+                id: null,
+                collectionId: state.collectionId,
+                collectionKey: state.pinnedKey,
+                phrases: '',
+                targetKey: '',
+                contentName: '',
+                contentType: '',
+                language: state.locale || null,
+                priority: 1000,
+                isActive: true,
+                _dirty: true,
+                _isNew: true
+            };
         }
 
         function loadRows() {
@@ -831,61 +1093,85 @@
                 state.pinnedKey = resp.pinnedKey || null;
                 state.isGeneric = !!resp.isGeneric;
                 state.rows = (resp.rows || []).map(function (r) { return Object.assign({}, r); });
-                state.activePhrase = null;
                 refreshKeyline();
-                renderPhrases();
+                return resolveNames();
+            }).then(function () {
+                if (state.rows.length === 0) {
+                    state.rows.push(makeBlankRow());
+                }
                 renderRows();
             }).catch(function (err) {
                 setAlert(err.message, true);
             });
         }
 
-        function saveRow(row, tr) {
-            if (!row.phrases || !row.phrases.trim() || !row.targetKey || !row.targetKey.trim()) {
-                setAlert(STRINGS.error_phrase_and_content_required || 'Phrase and content are required.', true);
-                return;
-            }
-            var payload = {
-                phrases: row.phrases.trim(),
-                targetKey: row.targetKey.trim(),
+        function buildPayload(row) {
+            return {
+                phrases: (row.phrases || '').trim(),
+                targetKey: (row.targetKey || '').trim(),
                 language: state.locale || null,
-                priority: row.priority || 1000,
+                priority: row.priority != null ? row.priority : 1000,
                 isActive: row.isActive !== false
             };
-            // We need a collectionId to write items into. Generic profiles may not
-            // have one yet; the server-side resolution is the authority on this
-            // — for v1 we surface the error rather than auto-creating from JS.
-            if (!state.collectionId) {
-                setAlert(s('profiles.detail.pinned.noCollection',
-                    'No pinned collection exists yet for this site/locale. Create one server-side first.'), true);
-                return;
+        }
+
+        // Lazy-create the underlying Graph collection on first save. The
+        // pinned key is resolved server-side from the profile's formula and
+        // returned as resp.pinnedKey by /api/profiles/{key}/pinned, so we can
+        // call CreateCollection without asking the marketer to do anything
+        // out-of-band. Caches the resolved id back on state so subsequent
+        // saves in the same session don't re-create.
+        function ensureCollection() {
+            if (state.collectionId) return Promise.resolve(state.collectionId);
+            if (!state.pinnedKey) {
+                return Promise.reject(new Error(s('profiles.detail.pinned.noKey',
+                    'No pinned key resolved for this profile yet — pick a site / locale first.')));
             }
-            var qs = '&profileKey=' + encodeURIComponent(profileKey)
-                + '&site=' + encodeURIComponent(state.site || '')
-                + '&locale=' + encodeURIComponent(state.locale || '');
-            var url, method;
-            if (row._isNew) {
-                url = BASE + '/PinnedApi/CreateItem?collectionId=' + encodeURIComponent(state.collectionId) + qs;
-                method = 'POST';
-            } else {
-                url = BASE + '/PinnedApi/UpdateItem?collectionId=' + encodeURIComponent(state.collectionId)
-                    + '&id=' + encodeURIComponent(row.id) + qs;
-                method = 'PUT';
+            return ajax(BASE + '/PinnedApi/CreateCollection', {
+                method: 'POST',
+                body: { title: state.pinnedKey, key: state.pinnedKey, isActive: true }
+            }).then(function (col) {
+                state.collectionId = col && col.id;
+                if (!state.collectionId) {
+                    throw new Error(s('profiles.detail.pinned.collectionCreateFailed',
+                        'Failed to create pinned collection.'));
+                }
+                return state.collectionId;
+            });
+        }
+
+        function saveRow(row, tr) {
+            var payload = buildPayload(row);
+            if (!payload.phrases || !payload.targetKey) {
+                setAlert(STRINGS.error_phrase_and_content_required || 'Phrase and content are required.', true);
+                return Promise.reject(new Error('validation'));
             }
-            ajax(url, { method: method, body: payload }).then(function (result) {
-                if (row._isNew && result && result.id) { row.id = result.id; row._isNew = false; }
-                row._dirty = false;
-                setAlert(STRINGS[row._isNew ? 'created' : 'updated']
-                    || (row._isNew ? 'Pinned item created.' : 'Pinned item updated.'));
-                renderPhrases();
-                renderRows();
-            }).catch(function (err) { setAlert(err.message, true); });
+            return ensureCollection().then(function (collectionId) {
+                var qs = '&profileKey=' + encodeURIComponent(profileKey)
+                    + '&site=' + encodeURIComponent(state.site || '')
+                    + '&locale=' + encodeURIComponent(state.locale || '');
+                var url, method, wasNew = !!row._isNew;
+                if (wasNew) {
+                    url = BASE + '/PinnedApi/CreateItem?collectionId=' + encodeURIComponent(collectionId) + qs;
+                    method = 'POST';
+                } else {
+                    url = BASE + '/PinnedApi/UpdateItem?collectionId=' + encodeURIComponent(collectionId)
+                        + '&id=' + encodeURIComponent(row.id) + qs;
+                    method = 'PUT';
+                }
+                return ajax(url, { method: method, body: payload }).then(function (result) {
+                    if (wasNew && result && result.id) { row.id = result.id; row._isNew = false; }
+                    row._dirty = false;
+                    setAlert(STRINGS[wasNew ? 'created' : 'updated']
+                        || (wasNew ? 'Pinned item created.' : 'Pinned item updated.'));
+                    renderRows();
+                });
+            }).catch(function (err) { setAlert(err.message, true); throw err; });
         }
 
         function deleteRow(row) {
             if (row._isNew) {
                 state.rows = state.rows.filter(function (r) { return r !== row; });
-                renderPhrases();
                 renderRows();
                 return;
             }
@@ -899,82 +1185,282 @@
             ajax(BASE + '/PinnedApi/DeleteItem' + qs, { method: 'DELETE' }).then(function () {
                 state.rows = state.rows.filter(function (r) { return r !== row; });
                 setAlert(STRINGS.deleted || 'Pinned item deleted.');
-                renderPhrases();
                 renderRows();
             }).catch(function (err) { setAlert(err.message, true); });
         }
 
-        function addNewRow(promptForPhrase) {
-            var phrase = state.activePhrase || '';
-            if (promptForPhrase) {
-                phrase = window.prompt(s('pinned.detail.promptPhrase', 'New phrase')) || '';
-                phrase = phrase.trim();
-                if (!phrase) return;
-                state.activePhrase = phrase;
-            }
-            var row = {
-                id: null,
-                collectionId: state.collectionId,
-                collectionKey: state.pinnedKey,
-                phrases: phrase,
-                targetKey: '',
-                language: state.locale || null,
-                priority: 1000,
-                isActive: true,
-                _dirty: true,
-                _isNew: true
-            };
-            state.rows.push(row);
-            renderPhrases();
+        function addNewRow() {
+            state.rows.push(makeBlankRow());
             renderRows();
+            // Focus the new row's phrase input.
+            var rows = rowsTbody.querySelectorAll('tr.gst-pinedit__row');
+            var last = rows[rows.length - 1];
+            if (last) {
+                last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                var input = last.querySelector('.gst-pinedit__input');
+                if (input && input.focus) input.focus();
+            }
         }
 
-        // --- Try-it side panel (minimal). Calls SavedQueriesApi/Run with the
-        //     profile's locale; the with-pins column reflects the pinned items
-        //     above (locally — we don't yet resolve content names). ---
+        function saveAll() {
+            var dirty = state.rows.filter(function (r) { return r._dirty; });
+            if (!dirty.length) return;
+            // Sequential to keep error messages legible.
+            var p = Promise.resolve();
+            dirty.forEach(function (r) {
+                p = p.then(function () { return saveRow(r, /* tr */ null).catch(function () { /* keep going */ }); });
+            });
+        }
+
+        function discardAll() {
+            // New rows drop; existing dirty rows reload from server.
+            state.rows = state.rows.filter(function (r) { return !r._isNew; });
+            state.rows.forEach(function (r) { delete r._dirty; });
+            loadRows();
+        }
+
+        // --- Live preview. SERP-style result list rendered from the
+        //     registered profile's GraphQL document. The server projects each
+        //     item via a heuristic field chain (Name/Title, Url/RelativePath,
+        //     _fulltext/Excerpt) and ships the raw JSON alongside so the
+        //     "{ }" toggle on each card can inspect everything the query
+        //     returns, not just the rendered fields. ---
         function wireTryIt() {
             if (!opts.hasGraphQLDoc) return;
             var qInput = document.getElementById('gst-pin-tryit-q');
-            var aOl = document.getElementById('gst-pin-tryit-a');
-            var bOl = document.getElementById('gst-pin-tryit-b');
+            var resultsEl = document.getElementById('gst-pin-tryit-results');
             var stats = document.getElementById('gst-pin-tryit-stats');
-            if (!qInput || !aOl || !bOl) return;
+            if (!qInput || !resultsEl) return;
 
             var debounce = null;
+            var lastQuery = '';
             qInput.addEventListener('input', function () {
                 clearTimeout(debounce);
-                debounce = setTimeout(run, 350);
+                debounce = setTimeout(run, 320);
             });
+
+            function clearStats() {
+                if (!stats) return;
+                stats.textContent = '';
+                stats.classList.remove('gst-serp__stats--err');
+            }
+            function setStats(text, isError) {
+                if (!stats) return;
+                stats.textContent = text;
+                stats.classList.toggle('gst-serp__stats--err', !!isError);
+            }
 
             function run() {
                 var q = qInput.value.trim();
-                if (q.length < 2) { aOl.innerHTML = ''; bOl.innerHTML = ''; if (stats) stats.textContent = ''; return; }
-                ajax(BASE + '/SavedQueriesApi/Run', {
-                    method: 'POST',
-                    body: { query: q, locale: state.locale || null, ranking: 'RELEVANCE', limit: 10 }
-                }).then(function (result) {
+                if (q.length < 2) {
+                    resultsEl.innerHTML = '';
+                    clearStats();
+                    return;
+                }
+                lastQuery = q;
+                resultsEl.classList.add('is-loading');
+                var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
+                    + '/preview?phrase=' + encodeURIComponent(q)
+                    + '&locale=' + encodeURIComponent(state.locale || '');
+                ajax(url).then(function (result) {
+                    if (qInput.value.trim() !== lastQuery) return; // stale
+                    resultsEl.classList.remove('is-loading');
                     var hits = (result && result.hits) || [];
-                    aOl.innerHTML = hits.map(function (h) {
-                        return '<li>' + escHtml(h.name || h.contentGuid) + '</li>';
-                    }).join('') || '<li class="gst-muted">—</li>';
-
-                    // With-pins column: pinned items first (those whose phrases include q),
-                    // then the organic hits filtered to remove dupes.
-                    var pinHits = state.rows.filter(function (r) {
-                        return r.phrases && r.phrases.toLowerCase().indexOf(q.toLowerCase()) !== -1;
-                    });
-                    var pinnedKeys = {};
-                    pinHits.forEach(function (p) { pinnedKeys[(p.targetKey || '').toLowerCase()] = true; });
-                    var organic = hits.filter(function (h) { return !pinnedKeys[(h.contentGuid || '').toLowerCase()]; });
-                    bOl.innerHTML =
-                        pinHits.map(function (p) { return '<li class="is-pin">' + escHtml(p.targetKey) + '</li>'; }).join('')
-                        + organic.map(function (h) { return '<li>' + escHtml(h.name || h.contentGuid) + '</li>'; }).join('');
-
-                    if (stats) {
-                        stats.textContent = (result.durationMs || 0) + ' ms · ' + hits.length + ' results';
-                    }
-                }).catch(function () { /* swallow — preview is non-fatal */ });
+                    var total = (result && result.totalCount) || 0;
+                    var ms = (result && result.durationMs) || 0;
+                    setStats(formatStats(hits.length, total, ms));
+                    renderResults(hits, q);
+                }).catch(function (err) {
+                    if (qInput.value.trim() !== lastQuery) return;
+                    resultsEl.classList.remove('is-loading');
+                    resultsEl.innerHTML = '';
+                    setStats((err && err.message) || s('profiles.detail.pinned.previewFailed', 'preview failed'), true);
+                });
             }
+
+            function formatStats(shown, total, ms) {
+                // "12 of 47 hits · 142 ms"  /  "0 hits · 142 ms"
+                if (!total && !shown) return s('profiles.detail.pinned.serpEmpty', 'No matches.') + ' · ' + ms + ' ms';
+                if (!total || total === shown) return shown + ' hits · ' + ms + ' ms';
+                return shown + ' of ' + total + ' hits · ' + ms + ' ms';
+            }
+
+            function renderResults(hits, phrase) {
+                resultsEl.innerHTML = '';
+                if (!hits.length) {
+                    var empty = document.createElement('li');
+                    empty.className = 'gst-serp__empty';
+                    empty.textContent = s('profiles.detail.pinned.serpEmptyHelp',
+                        'No content matched this phrase. Try a different term, or pin a target above.');
+                    resultsEl.appendChild(empty);
+                    return;
+                }
+                // Pin status is decided server-side (ProfilesService.RunPreviewAsync
+                // intersects the collection's item targetKeys with the hit GUIDs);
+                // the JS just reads the boolean. Falls back to false when the
+                // registered query doesn't project ContentLink.GuidValue.
+                hits.forEach(function (hit, idx) {
+                    resultsEl.appendChild(buildResultCard(hit, phrase, idx, !!hit.pinned));
+                });
+            }
+
+            function buildResultCard(hit, phrase, idx, isPinned) {
+                var li = document.createElement('li');
+                li.className = 'gst-serp__hit' + (isPinned ? ' is-pinned' : '');
+                li.style.setProperty('--gst-serp-stagger', (idx * 28) + 'ms');
+
+                if (isPinned) {
+                    var ribbon = document.createElement('span');
+                    ribbon.className = 'gst-serp__pin-ribbon';
+                    ribbon.setAttribute('aria-hidden', 'true');
+                    ribbon.innerHTML = '<svg viewBox="0 0 12 12" width="11" height="11">'
+                        + '<path d="M6 1.5 L7.4 4.4 L10.5 4.7 L8.2 6.8 L8.9 9.9 L6 8.4 L3.1 9.9 L3.8 6.8 L1.5 4.7 L4.6 4.4 Z" fill="currentColor"/>'
+                        + '</svg>';
+                    li.appendChild(ribbon);
+                }
+
+                // — Header row: title (left) + score badge (right) —
+                var header = document.createElement('div');
+                header.className = 'gst-serp__hit-head';
+
+                var title = document.createElement('a');
+                title.className = 'gst-serp__title';
+                title.href = hit.url || '#';
+                if (!hit.url) title.classList.add('is-disabled');
+                title.target = hit.url ? '_blank' : '_self';
+                title.rel = 'noopener noreferrer';
+                title.appendChild(highlightFragment(hit.name || s('profiles.detail.pinned.serpUntitled', '(untitled)'), phrase));
+                header.appendChild(title);
+
+                if (hit.score) {
+                    var score = document.createElement('span');
+                    score.className = 'gst-serp__score';
+                    score.title = s('profiles.detail.pinned.serpScoreTooltip', 'Graph relevance score');
+                    score.textContent = formatScore(hit.score);
+                    header.appendChild(score);
+                }
+                li.appendChild(header);
+
+                // — URL row —
+                if (hit.url) {
+                    var urlLine = document.createElement('div');
+                    urlLine.className = 'gst-serp__url';
+                    var glyph = document.createElement('span');
+                    glyph.className = 'gst-serp__url-glyph';
+                    glyph.textContent = '›';
+                    urlLine.appendChild(glyph);
+                    urlLine.appendChild(document.createTextNode(' ' + hit.url));
+                    li.appendChild(urlLine);
+                }
+
+                // — Snippet —
+                if (hit.fullTextSnippet) {
+                    var snippet = document.createElement('p');
+                    snippet.className = 'gst-serp__snippet';
+                    snippet.appendChild(highlightFragment(hit.fullTextSnippet, phrase));
+                    li.appendChild(snippet);
+                }
+
+                // — Meta row: pinned chip (if applicable) + type chip + language + JSON toggle —
+                var meta = document.createElement('div');
+                meta.className = 'gst-serp__meta';
+
+                if (isPinned) {
+                    var pinChip = document.createElement('span');
+                    pinChip.className = 'gst-serp__chip gst-serp__chip--pinned';
+                    pinChip.textContent = s('profiles.detail.pinned.serpPinnedBadge', 'Pinned');
+                    pinChip.title = s('profiles.detail.pinned.serpPinnedTooltip',
+                        'This result is locked to the top by a pin in this profile.');
+                    meta.appendChild(pinChip);
+                }
+
+                if (hit.contentType) {
+                    var chip = document.createElement('span');
+                    chip.className = 'gst-serp__chip';
+                    chip.textContent = hit.contentType;
+                    meta.appendChild(chip);
+                }
+                if (hit.language) {
+                    var lang = document.createElement('span');
+                    lang.className = 'gst-serp__lang';
+                    lang.textContent = hit.language;
+                    meta.appendChild(lang);
+                }
+
+                if (hit.raw) {
+                    var jsonBtn = document.createElement('button');
+                    jsonBtn.type = 'button';
+                    jsonBtn.className = 'gst-serp__json-toggle';
+                    jsonBtn.setAttribute('aria-expanded', 'false');
+                    jsonBtn.innerHTML = '<span class="gst-serp__json-toggle__brace">{ }</span>'
+                        + '<span class="gst-serp__json-toggle__label">'
+                        + escHtml(s('profiles.detail.pinned.serpShowJson', 'inspect'))
+                        + '</span>';
+                    meta.appendChild(jsonBtn);
+
+                    var jsonPanel = document.createElement('pre');
+                    jsonPanel.className = 'gst-serp__json';
+                    jsonPanel.hidden = true;
+                    jsonPanel.textContent = hit.raw;
+
+                    jsonBtn.addEventListener('click', function () {
+                        var open = jsonPanel.hidden;
+                        jsonPanel.hidden = !open;
+                        jsonBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                        jsonBtn.classList.toggle('is-open', open);
+                    });
+
+                    li.appendChild(meta);
+                    li.appendChild(jsonPanel);
+                } else {
+                    li.appendChild(meta);
+                }
+
+                return li;
+            }
+
+            function formatScore(score) {
+                // Keep it short — Graph scores often have many decimals.
+                if (score >= 100) return Math.round(score).toString();
+                if (score >= 10) return score.toFixed(1);
+                return score.toFixed(2);
+            }
+
+            // Splits text on case-insensitive matches of `phrase` (or its
+            // whitespace-tokenized parts) and wraps matches in <mark>. Returns
+            // a DocumentFragment so callers can append directly.
+            function highlightFragment(text, phrase) {
+                var frag = document.createDocumentFragment();
+                if (!text) return frag;
+                if (!phrase || phrase.length < 2) {
+                    frag.appendChild(document.createTextNode(text));
+                    return frag;
+                }
+                var tokens = phrase.split(/\s+/).filter(function (t) { return t.length >= 2; });
+                if (!tokens.length) {
+                    frag.appendChild(document.createTextNode(text));
+                    return frag;
+                }
+                var pattern = new RegExp('(' + tokens.map(escapeRegex).join('|') + ')', 'gi');
+                var lastIdx = 0;
+                text.replace(pattern, function (match, _g1, offset) {
+                    if (offset > lastIdx) {
+                        frag.appendChild(document.createTextNode(text.slice(lastIdx, offset)));
+                    }
+                    var mark = document.createElement('mark');
+                    mark.className = 'gst-serp__mark';
+                    mark.textContent = match;
+                    frag.appendChild(mark);
+                    lastIdx = offset + match.length;
+                    return match;
+                });
+                if (lastIdx < text.length) {
+                    frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+                }
+                return frag;
+            }
+
+            function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
         }
 
         // --- Wire pickers ---
@@ -990,9 +1476,46 @@
                 loadRows();
             });
         }
-        if (addBtn) {
-            addBtn.addEventListener('click', function () { addNewRow(true); });
+
+        // Top + empty-state add buttons → addNewRow. The legacy gst-pin-add
+        // button is still tolerated so older custom layouts don't break.
+        [addBtn, addBtn2, addEmpty].forEach(function (b) {
+            if (b) b.addEventListener('click', addNewRow);
+        });
+
+        // Global filter — debounce input → re-render.
+        if (globalFilter) {
+            var gd = null;
+            globalFilter.addEventListener('input', function () {
+                clearTimeout(gd);
+                gd = setTimeout(function () { state.global = globalFilter.value; renderRows(); }, 120);
+            });
         }
+
+        // Sort headers.
+        sortBtns.forEach(function (btn) {
+            var th = btn.parentElement;
+            var field = th.getAttribute('data-sort');
+            btn.addEventListener('click', function () {
+                if (state.sort.field === field) {
+                    state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    state.sort.field = field;
+                    state.sort.dir = field === 'priority' || field === 'rank' ? 'asc' : 'asc';
+                }
+                renderRows();
+            });
+        });
+
+        if (saveAllBtn) saveAllBtn.addEventListener('click', saveAll);
+        if (discardBtn) discardBtn.addEventListener('click', discardAll);
+
+        // Click anywhere outside a target cell → close typeahead.
+        document.addEventListener('click', function (e) {
+            if (state.activeTypeahead && !e.target.closest('.gst-pinedit__cell--target')) {
+                closeTypeahead();
+            }
+        });
 
         refreshKeyline();
         loadRows();
