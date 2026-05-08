@@ -10,13 +10,10 @@ using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.ContentSearchabilityAudit;
-using UmageAI.Optimizely.GraphSearchTools.Tools.CustomDataSources;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
-using UmageAI.Optimizely.GraphSearchTools.Tools.IndexInspector;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 using UmageAI.Optimizely.GraphSearchTools.Tools.RelevancyLab;
-using UmageAI.Optimizely.GraphSearchTools.Tools.RequestLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner;
@@ -75,8 +72,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<HealthScanService>();
         services.AddHttpClient<QueryRunnerService>();
         services.AddScoped<WebhooksService>();
-        services.AddScoped<CustomDataSourcesService>();
-        services.AddScoped<RequestLogsService>();
 
         // Phase 3: Semantic Weight Tuner — DDS-backed policy editor. Singleton
         // because the underlying DynamicDataStoreFactory is process-global and
@@ -94,11 +89,6 @@ public static class ServiceCollectionExtensions
         // Wave 5 tools (Search Logs UI, Pinned Result Coverage, Synonym
         // Coverage) read from this service; TelemetryApiController writes.
         services.AddSingleton<SearchLogService>();
-
-        // Phase 4 Wave 5: Index Inspector — per-content-type index population
-        // + missing-fields surface. Read-only; reuses the shared
-        // IGraphAdminClient HttpClient.
-        services.AddScoped<IndexInspectorService>();
 
         // Phase 4 Wave 5: Search Logs UI — top phrases, zero-result phrases,
         // low-CTR phrases, raw events. Thin wrapper around SearchLogService

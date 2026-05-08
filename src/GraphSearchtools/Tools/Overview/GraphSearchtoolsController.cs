@@ -67,14 +67,6 @@ public class GraphSearchtoolsController : Controller
     }
 
     [HttpGet]
-    public IActionResult DecaySandbox()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.DecaySandbox), GraphSearchtoolsPermissions.DecaySandbox))
-            return Forbid();
-        return View("/Views/DecaySandbox/Index.cshtml");
-    }
-
-    [HttpGet]
     public IActionResult Webhooks()
     {
         if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Webhooks), GraphSearchtoolsPermissions.Webhooks))
@@ -85,8 +77,8 @@ public class GraphSearchtoolsController : Controller
     /// <summary>
     /// Phase 3 — Semantic Weight Tuner. The dedicated
     /// <c>SemanticTunerController</c> hosts the canonical menu URL; this
-    /// action preserves the per-tool action pattern shared with DecaySandbox /
-    /// Webhooks so direct links to
+    /// action preserves the per-tool action pattern shared with Webhooks so
+    /// direct links to
     /// <c>/cms/graphsearchtools/GraphSearchtools/SemanticTuner</c> resolve too.
     /// </summary>
     [HttpGet]
@@ -95,22 +87,6 @@ public class GraphSearchtoolsController : Controller
         if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SemanticTuner), GraphSearchtoolsPermissions.SemanticTuner))
             return Forbid();
         return View("/Views/SemanticTuner/Index.cshtml");
-    }
-
-    [HttpGet]
-    public IActionResult CustomDataSources()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.CustomDataSources), GraphSearchtoolsPermissions.CustomDataSources))
-            return Forbid();
-        return View("/Views/CustomDataSources/Index.cshtml");
-    }
-
-    [HttpGet]
-    public IActionResult RequestLogs()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.RequestLogs), GraphSearchtoolsPermissions.RequestLogs))
-            return Forbid();
-        return View("/Views/RequestLogs/Index.cshtml");
     }
 
     /// <summary>
@@ -124,18 +100,6 @@ public class GraphSearchtoolsController : Controller
         if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SearchLogs), GraphSearchtoolsPermissions.SearchLogs))
             return Forbid();
         return View("/Views/SearchLogs/Index.cshtml");
-    }
-
-    /// <summary>
-    /// Phase 4 Wave 5 — Index Inspector. Per-content-type index population +
-    /// missing editorial fields surface, refreshed on demand.
-    /// </summary>
-    [HttpGet]
-    public IActionResult IndexInspector()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.IndexInspector), GraphSearchtoolsPermissions.IndexInspector))
-            return Forbid();
-        return View("/Views/IndexInspector/Index.cshtml");
     }
 
     /// <summary>

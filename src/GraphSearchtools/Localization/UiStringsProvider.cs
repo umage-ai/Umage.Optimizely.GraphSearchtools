@@ -17,32 +17,10 @@ public class UiStringsProvider(LocalizationService loc)
     private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
 
     /// <summary>
-    /// Lookup for Decay &amp; Factor Sandbox strings under
-    /// /graphsearchtools/tools/decaySandbox/*. The tool has no /ui/* keys of its
-    /// own (it's purely client-side and the page-level strings live with the
-    /// rest of the per-tool tree), so we surface them here for the JS.
-    /// </summary>
-    private string D(string key) => loc.GetString($"/graphsearchtools/tools/decaySandbox/{key}");
-
-    /// <summary>
     /// Lookup for Webhooks strings under /graphsearchtools/tools/webhooks/*.
     /// Webhooks JS reads inline confirm/empty/save messages from this section.
     /// </summary>
     private string W(string key) => loc.GetString($"/graphsearchtools/tools/webhooks/{key}");
-
-    /// <summary>
-    /// Lookup for Custom Data Sources strings under
-    /// /graphsearchtools/tools/customDataSources/*. The page JS reads
-    /// status-badge labels and inline confirm/error messages from this section.
-    /// </summary>
-    private string C(string key) => loc.GetString($"/graphsearchtools/tools/customDataSources/{key}");
-
-    /// <summary>
-    /// Lookup for Request Logs strings under /graphsearchtools/tools/requestLogs/*.
-    /// The Request Logs JS reads the empty-state copy, the copy-query button
-    /// label, and the load-failed message from this section.
-    /// </summary>
-    private string R(string key) => loc.GetString($"/graphsearchtools/tools/requestLogs/{key}");
 
     /// <summary>
     /// Lookup for Semantic Weight Tuner strings under
@@ -50,14 +28,6 @@ public class UiStringsProvider(LocalizationService loc)
     /// labels and toast messages route through this section.
     /// </summary>
     private string ST(string key) => loc.GetString($"/graphsearchtools/tools/semanticTuner/{key}");
-
-    /// <summary>
-    /// Lookup for Index Inspector strings under
-    /// /graphsearchtools/tools/indexInspector/*. The Index Inspector JS reads
-    /// the warn-badge tooltip, empty-state copy and load-failed message from
-    /// this section.
-    /// </summary>
-    private string II(string key) => loc.GetString($"/graphsearchtools/tools/indexInspector/{key}");
 
     /// <summary>
     /// Lookup for Search Logs strings under /graphsearchtools/tools/searchLogs/*.
@@ -255,11 +225,6 @@ public class UiStringsProvider(LocalizationService loc)
                 }
             }
         },
-        decaySandbox = new
-        {
-            copy = D("copy"),
-            copied = D("copied")
-        },
         webhooks = new
         {
             empty = W("empty"),
@@ -270,27 +235,6 @@ public class UiStringsProvider(LocalizationService loc)
             save_failed = W("save_failed"),
             delete_failed = W("delete_failed"),
             load_failed = W("load_failed")
-        },
-        customDataSources = new
-        {
-            sync = C("sync"),
-            sync_confirm = C("sync_confirm"),
-            sync_started = C("sync_started"),
-            status_healthy = C("status_healthy"),
-            status_syncing = C("status_syncing"),
-            status_stale = C("status_stale"),
-            status_failed = C("status_failed"),
-            status_unknown = C("status_unknown"),
-            empty = C("empty"),
-            load_failed = C("load_failed"),
-            sync_failed = C("sync_failed")
-        },
-        requestLogs = new
-        {
-            empty = R("empty"),
-            copy_query = R("copy_query"),
-            copied = R("copied"),
-            load_failed = R("load_failed")
         },
         semanticTuner = new
         {
@@ -315,23 +259,6 @@ public class UiStringsProvider(LocalizationService loc)
             ranking_semantic = ST("ranking_semantic"),
             ranking_boostonly = ST("ranking_boostonly"),
             ranking_doc = ST("ranking_doc")
-        },
-        indexInspector = new
-        {
-            refresh = II("refresh"),
-            total_items = II("total_items"),
-            content_types = II("content_types"),
-            missing_name = II("missing_name"),
-            missing_title = II("missing_title"),
-            captured_at = II("captured_at"),
-            col_type = II("col_type"),
-            col_count = II("col_count"),
-            col_missing_name = II("col_missing_name"),
-            col_missing_teaser = II("col_missing_teaser"),
-            col_missing_body = II("col_missing_body"),
-            status_warn = II("status_warn"),
-            empty = II("empty"),
-            load_failed = II("load_failed")
         },
         searchLogs = new
         {
