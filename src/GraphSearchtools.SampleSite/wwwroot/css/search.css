@@ -1,0 +1,457 @@
+/* Faceted site search — Google results look, Alloy palette.
+   Vanilla CSS, no build step. */
+
+.search-page {
+    padding: 1.5rem 0 4rem;
+    font-family: 'Lato', sans-serif;
+    color: #212529;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+.search-page__header {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1.25rem;
+}
+
+.search-page__header h1 {
+    margin: 0 0 0.85rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.4rem;
+    color: #212529;
+}
+
+.search-page__form {
+    display: flex;
+    gap: 0.5rem;
+    max-width: 640px;
+}
+
+.search-page__form input[type="text"] {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border: 1px solid #dfe1e5;
+    border-radius: 24px;
+    font-size: 0.96rem;
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.06);
+    transition: box-shadow 120ms, border-color 120ms;
+}
+
+.search-page__form input[type="text"]:hover,
+.search-page__form input[type="text"]:focus {
+    border-color: #1cb898;
+    box-shadow: 0 1px 6px rgba(28, 184, 152, 0.18);
+    outline: none;
+}
+
+.search-page__form button {
+    border-radius: 24px;
+    padding-left: 1.6rem;
+    padding-right: 1.6rem;
+    background: #1cb898;
+    border-color: #1cb898;
+}
+
+.search-page__form button:hover {
+    background: #158c73;
+    border-color: #158c73;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+
+.search-page__layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .search-page__layout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* ── Facet panel ─────────────────────────────────────────────────────── */
+
+.search-page__facets {
+    font-size: 0.9rem;
+    color: #4d5156;
+}
+
+.facet-actions {
+    margin-bottom: 1rem;
+}
+
+.facet-clear {
+    font-size: 0.82rem;
+    color: #1cb898;
+    text-decoration: none;
+}
+
+.facet-clear:hover {
+    color: #158c73;
+    text-decoration: underline;
+}
+
+.facet {
+    margin-bottom: 1.5rem;
+}
+
+.facet__title {
+    margin: 0 0 0.4rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5f6368;
+}
+
+.facet__empty {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #80868b;
+}
+
+.facet__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.facet__row {
+    margin: 0;
+    padding: 0;
+}
+
+.facet__label {
+    display: grid;
+    grid-template-columns: 14px 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.32rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.92rem;
+    color: #202124;
+    text-decoration: none;
+}
+
+a.facet__label:hover {
+    background: #f1f3f4;
+    text-decoration: none;
+}
+
+.facet__row.is-selected .facet__label {
+    color: #0f7d68;
+    font-weight: 600;
+}
+
+.facet__check {
+    width: 14px;
+    color: #1cb898;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.facet__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.facet__count {
+    font-variant-numeric: tabular-nums;
+    color: #70757a;
+    font-size: 0.82rem;
+}
+
+/* §4 disabled state — visible, non-interactive, count dimmed. */
+.facet__row.is-disabled .facet__label {
+    color: #bdc1c6;
+    cursor: default;
+}
+
+.facet__count--zero {
+    color: #dadce0;
+}
+
+/* ── Results column ──────────────────────────────────────────────────── */
+
+.search-page__summary {
+    margin: 0 0 1.5rem;
+    font-size: 0.82rem;
+    color: #70757a;
+}
+
+.search-page__summary strong {
+    color: #202124;
+    font-weight: 600;
+}
+
+.search-page__empty {
+    color: #5f6368;
+    font-style: italic;
+}
+
+.search-hits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 640px;
+}
+
+.search-hit {
+    margin: 0 0 1.7rem;
+    padding: 0;
+}
+
+.search-hit__path {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 0.3rem;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    color: #5f6368;
+    text-decoration: none;
+}
+
+.search-hit__path:hover {
+    color: #1cb898;
+    text-decoration: underline;
+}
+
+.search-hit__title {
+    display: inline-block;
+    margin: 0.1rem 0 0.25rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.18rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #1cb898;
+    text-decoration: none;
+}
+
+.search-hit__title:hover {
+    text-decoration: underline;
+    color: #158c73;
+}
+
+.search-hit__title:visited {
+    color: #0f7d68;
+}
+
+.search-hit__excerpt {
+    margin: 0;
+    color: #4d5156;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.search-hit__excerpt b {
+    font-weight: 700;
+    color: #202124;
+}
+
+.search-hit__type-tag {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 10px;
+    background: #e6f7f2;
+    color: #0f7d68;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    vertical-align: middle;
+    letter-spacing: 0.02em;
+}
+
+/* ── Notices ─────────────────────────────────────────────────────────── */
+
+.search-page .alert {
+    max-width: 640px;
+}
+
+/* ── Autocomplete dropdown ───────────────────────────────────────────── */
+
+.gst-suggest-shell {
+    position: relative;
+    flex: 1;
+    display: flex;
+}
+
+.gst-suggest-shell > input {
+    width: 100%;
+}
+
+.gst-suggest {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #fff;
+    border: 1px solid #dfe1e5;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(32, 33, 36, 0.12);
+    overflow: hidden;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.92rem;
+    color: #202124;
+}
+
+.gst-suggest__item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    line-height: 1.35;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.gst-suggest__item:last-child {
+    border-bottom: none;
+}
+
+.gst-suggest__item.is-active,
+.gst-suggest__item:hover {
+    background: #f1f3f4;
+}
+
+.gst-suggest__item b {
+    font-weight: 700;
+    color: #1cb898;
+}
+
+/* ── Featured products grid (StartPage) ──────────────────────────────── */
+
+.featured-products {
+    margin: 3rem 0 2.5rem;
+    font-family: 'Lato', sans-serif;
+    color: #212529;
+}
+
+.featured-products__header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.featured-products__title {
+    margin: 0 0 0.35rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.featured-products__subtitle {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #5f6368;
+}
+
+.featured-products__subtitle em {
+    font-style: normal;
+    font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    color: #1cb898;
+}
+
+.featured-products__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.featured-product {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.25rem 1.35rem 1.1rem;
+    transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.featured-product:hover {
+    transform: translateY(-2px);
+    border-color: #1cb898;
+    box-shadow: 0 6px 18px rgba(28, 184, 152, 0.14);
+}
+
+.featured-product__title {
+    margin: 0 0 0.45rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.featured-product__title a {
+    color: #1cb898;
+    text-decoration: none;
+}
+
+.featured-product__title a:hover {
+    color: #158c73;
+    text-decoration: underline;
+}
+
+.featured-product__teaser {
+    margin: 0 0 0.85rem;
+    font-size: 0.92rem;
+    color: #4d5156;
+    line-height: 1.5;
+}
+
+.featured-product__usps {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    font-size: 0.85rem;
+    color: #5f6368;
+}
+
+.featured-product__usps li {
+    position: relative;
+    padding-left: 1.05rem;
+    margin: 0.2rem 0;
+}
+
+.featured-product__usps li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #1cb898;
+    font-weight: 700;
+}
+
+.featured-product__cta {
+    margin-top: auto;
+    align-self: flex-start;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: #1cb898;
+    text-decoration: none;
+}
+
+.featured-product__cta:hover {
+    color: #158c73;
+    text-decoration: underline;
+}
+
+/* In the header navbar the input is shorter — keep the dropdown inside
+   the form's flex shell so it tracks the input width even when the
+   navbar's flex layout shrinks/grows on resize. */
+.header-search .gst-suggest-shell {
+    flex: 1;
+}
+
+.header-search .gst-suggest {
+    font-size: 0.88rem;
+}
