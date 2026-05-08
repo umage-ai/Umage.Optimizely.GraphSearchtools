@@ -658,8 +658,7 @@
         var localeSel = document.getElementById('gst-pin-locale');
         var keylineEl = document.getElementById('gst-pin-keyline-value');
         var alertEl = document.getElementById('gst-pin-tab-alert');
-        var addBtn = document.getElementById('gst-pin-add'); // legacy header button (unused but kept tolerant)
-        var addBtn2 = document.getElementById('gst-pinedit-add');
+        var addBtn = document.getElementById('gst-pinedit-add');
         var addEmpty = document.getElementById('gst-pinedit-empty-add');
         var globalFilter = document.getElementById('gst-pinedit-global');
         var countEl = document.getElementById('gst-pinedit-count');
@@ -1477,9 +1476,7 @@
             });
         }
 
-        // Top + empty-state add buttons → addNewRow. The legacy gst-pin-add
-        // button is still tolerated so older custom layouts don't break.
-        [addBtn, addBtn2, addEmpty].forEach(function (b) {
+        [addBtn, addEmpty].forEach(function (b) {
             if (b) b.addEventListener('click', addNewRow);
         });
 
