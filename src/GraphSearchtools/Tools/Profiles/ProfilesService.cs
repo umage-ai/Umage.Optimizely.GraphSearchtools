@@ -250,6 +250,16 @@ public sealed class ProfilesService
     // the rest of the query run.
     private static readonly Regex UsePinnedRegex = new(@"\busePinned\s*:\s*\{[^{}]*\}", RegexOptions.Compiled);
 
+    // Strips a Language: { Name: { eq: "$locale" } } clause (with optional
+    // trailing comma) from a query's `_and` list. Used when the preview API
+    // is called without a locale — the registered query carries `$locale` so
+    // the storefront's per-branch scoping shows up in the admin's
+    // representative document, but the preview shouldn't 400 when no picker
+    // value is supplied.
+    private static readonly Regex LocalePlaceholderClauseRegex = new(
+        @"\{\s*Language\s*:\s*\{\s*Name\s*:\s*\{\s*eq\s*:\s*""\$locale""\s*\}\s*\}\s*\}\s*,?",
+        RegexOptions.Compiled);
+
     // Detects opt-in to Graph's synonym pool — the `synonyms: ONE|TWO` argument
     // inside an `_fulltext` clause. Without it, Graph silently bypasses the
     // synonym index even when rules are stored under the matching language. We
@@ -277,6 +287,21 @@ public sealed class ProfilesService
         if (string.IsNullOrWhiteSpace(phrase)) return new RunnerResult(0, 0, template, Array.Empty<RunnerHit>());
 
         var query = template.Replace("\"$phrase\"", JsonSerializer.Serialize(phrase));
+
+        // Substitute the locale placeholder. The Alloy storefront emits a
+        // `Language: { Name: { eq: "$locale" } }` clause so the registered
+        // query reflects the per-branch scoping the SERP applies; the picker
+        // on the Profile detail drives this same value at preview time.
+        // Empty / missing locale → strip the entire clause so Graph doesn't
+        // receive a literal "$locale" or filter on the empty string.
+        if (!string.IsNullOrEmpty(locale))
+        {
+            query = query.Replace("\"$locale\"", JsonSerializer.Serialize(locale));
+        }
+        else
+        {
+            query = LocalePlaceholderClauseRegex.Replace(query, string.Empty);
+        }
 
         // Resolve the pinned collection id for this profile + locale, if any.
         // Missing or empty → strip the usePinned directive so Graph doesn't
