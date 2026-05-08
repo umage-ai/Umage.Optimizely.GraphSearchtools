@@ -79,7 +79,9 @@ public class UiStringsProvider(LocalizationService loc)
             open = S("shared/open"),
             all = S("shared/all"),
             prev = S("shared/prev"),
-            next = S("shared/next")
+            next = S("shared/next"),
+            copy = S("shared/copy"),
+            copied = S("shared/copied")
         },
         components = new
         {

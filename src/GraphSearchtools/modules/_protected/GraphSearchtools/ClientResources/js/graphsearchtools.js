@@ -287,6 +287,74 @@ const GST = {
     },
 
     /**
+     * Copy text to the clipboard. Prefers the async Clipboard API, falls back
+     * to a hidden textarea + execCommand('copy') for older browsers and the
+     * EPiServer admin shell which sometimes doesn't expose `navigator.clipboard`
+     * over plain HTTP. Returns a Promise.
+     */
+    copyText: function(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function(resolve, reject) {
+            try {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                ta.setAttribute('readonly', '');
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                resolve();
+            } catch (e) { reject(e); }
+        });
+    },
+
+    /**
+     * Build a small "copy" button styled as `gst-copybtn`. Accepts either a
+     * static string of `text` or a `getValue()` thunk so the button always
+     * captures the current contents of a live-updated panel.
+     *
+     * Reads localized labels from `window.GST_STRINGS.shared.copy` /
+     * `shared.copied` with English fallbacks, so callers don't have to thread
+     * loc strings through.
+     */
+    copyButton: function(opts) {
+        opts = opts || {};
+        var label = opts.label || GST.s('shared.copy', 'Copy');
+        var copied = opts.copiedLabel || GST.s('shared.copied', 'Copied');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gst-copybtn' + (opts.className ? ' ' + opts.className : '');
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+        btn.innerHTML =
+            '<svg class="gst-copybtn__icon" viewBox="0 0 14 14" width="12" height="12" aria-hidden="true">'
+              + '<rect x="3.5" y="3.5" width="7" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/>'
+              + '<path d="M5.5 1.5h5a1 1 0 0 1 1 1v6" fill="none" stroke="currentColor" stroke-width="1.2"/>'
+            + '</svg>'
+            + '<span class="gst-copybtn__label">' + GST.escHtml(label) + '</span>';
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var text = typeof opts.getValue === 'function'
+                ? opts.getValue()
+                : (opts.text || '');
+            if (!text) return;
+            GST.copyText(text).then(function() {
+                btn.classList.add('is-copied');
+                btn.querySelector('.gst-copybtn__label').textContent = copied;
+                setTimeout(function() {
+                    btn.classList.remove('is-copied');
+                    btn.querySelector('.gst-copybtn__label').textContent = label;
+                }, 1200);
+            }).catch(function() { /* clipboard denied — keep label as-is */ });
+        });
+        return btn;
+    },
+
+    /**
      * Open the help drawer for the given tool key.
      * Reads the page h1 for the title and GST_STRINGS.help.{toolKey} for the body.
      */
@@ -418,6 +486,13 @@ const GST = {
         return el;
     },
 };
+
+// Expose GST on window so other tool scripts (pinned.js, profiles.js, etc.)
+// can reach the shared helpers via `window.GST.*`. Top-level `const` doesn't
+// attach to window in a classic script context — without this assignment
+// helpers like GST.s and GST.copyButton are only reachable via the lexical
+// `GST` identifier, which trips up runtime feature-detect guards.
+window.GST = GST;
 
 // Event delegation: open help drawer for any [data-gst-help] button.
 document.addEventListener('click', function(e) {
