@@ -1231,6 +1231,23 @@
             var stats = document.getElementById('gst-pin-tryit-stats');
             if (!qInput || !resultsEl) return;
 
+            // Synonym hint cache. We fetch the active language's synonym blob
+            // (from /SynonymsApi/Get) the first time the user previews a query
+            // in that language, then parse and reuse. The chip strip shown
+            // above the results lists rules whose source side appears in the
+            // query — it's a heuristic match, not proof Graph applied them,
+            // so the label intentionally says "Matching synonym rules".
+            var synRulesByLang = {};
+            var synFetching = {};
+
+            window.addEventListener('gst:synonyms-changed', function (e) {
+                var lang = (e && e.detail && e.detail.lang) || '';
+                delete synRulesByLang[lang];
+                if (lang === (state.locale || '') && qInput.value.trim().length >= 2) {
+                    refreshSynStripFor(qInput.value.trim());
+                }
+            });
+
             var debounce = null;
             var lastQuery = '';
             qInput.addEventListener('input', function () {
@@ -1254,6 +1271,7 @@
                 if (q.length < 2) {
                     resultsEl.innerHTML = '';
                     clearStats();
+                    renderSynStrip([]);
                     return;
                 }
                 lastQuery = q;
@@ -1274,6 +1292,147 @@
                     resultsEl.classList.remove('is-loading');
                     resultsEl.innerHTML = '';
                     setStats((err && err.message) || s('profiles.detail.pinned.previewFailed', 'preview failed'), true);
+                });
+                refreshSynStripFor(q);
+            }
+
+            // ── Synonym chip strip ──────────────────────────────────────
+            function refreshSynStripFor(q) {
+                var lang = state.locale || '';
+                fetchSynonymsForLang(lang).then(function (rules) {
+                    if (qInput.value.trim() !== q) return; // stale
+                    renderSynStrip(matchRules(q, rules));
+                });
+            }
+
+            function ensureSynStripEl() {
+                var el = document.getElementById('gst-pin-tryit-syn');
+                if (el) return el;
+                el = document.createElement('div');
+                el.id = 'gst-pin-tryit-syn';
+                el.className = 'gst-serp__syn';
+                el.hidden = true;
+                resultsEl.parentNode.insertBefore(el, resultsEl);
+                return el;
+            }
+
+            function fetchSynonymsForLang(lang) {
+                if (synRulesByLang[lang] !== undefined) return Promise.resolve(synRulesByLang[lang]);
+                if (synFetching[lang]) return synFetching[lang];
+                var qs = lang
+                    ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=one'
+                    : '?slot=one';
+                var p = fetch((window.GST_BASE_URL || '') + '/SynonymsApi/Get' + qs, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                }).then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (result) {
+                    var content = result ? result.content : '';
+                    // The API sometimes round-trips the body as a JSON-encoded
+                    // string; unwrap so we can split on real newlines.
+                    if (content && content.charAt(0) === '"' && content.charAt(content.length - 1) === '"') {
+                        try { content = JSON.parse(content); } catch (_) { /* leave as-is */ }
+                    }
+                    var rules = parseSynonymRules(content || '');
+                    synRulesByLang[lang] = rules;
+                    delete synFetching[lang];
+                    return rules;
+                }).catch(function () {
+                    synRulesByLang[lang] = [];
+                    delete synFetching[lang];
+                    return [];
+                });
+                synFetching[lang] = p;
+                return p;
+            }
+
+            function parseSynonymRules(content) {
+                return content.split(/\r?\n/).map(function (line) {
+                    var raw = line.trim();
+                    if (!raw) return null;
+                    if (raw.indexOf('=>') !== -1) {
+                        var parts = raw.split('=>');
+                        var lhs = parts[0].split(',').map(trimLower).filter(Boolean);
+                        var rhs = parts.slice(1).join('=>').split(',').map(trimLower).filter(Boolean);
+                        if (!lhs.length || !rhs.length) return null;
+                        return { type: 'replacement', lhs: lhs, rhs: rhs };
+                    }
+                    if (raw.indexOf(',') !== -1) {
+                        var terms = raw.split(',').map(trimLower).filter(Boolean);
+                        if (terms.length < 2) return null;
+                        return { type: 'equivalent', terms: terms };
+                    }
+                    return null;
+                }).filter(Boolean);
+            }
+
+            function trimLower(t) { return t.trim().toLowerCase(); }
+
+            // Whole-word match against a space-padded haystack. Multi-word
+            // terms work because we just look for the term flanked by spaces.
+            function wholeWord(haystackPadded, term) {
+                if (!term) return false;
+                return haystackPadded.indexOf(' ' + term + ' ') !== -1;
+            }
+
+            function matchRules(query, rules) {
+                var hay = ' ' + query.toLowerCase() + ' ';
+                var matches = [];
+                rules.forEach(function (r) {
+                    if (r.type === 'replacement') {
+                        for (var i = 0; i < r.lhs.length; i++) {
+                            if (wholeWord(hay, r.lhs[i])) {
+                                matches.push({ type: 'replacement', match: r.lhs[i], expansion: r.rhs });
+                                return;
+                            }
+                        }
+                    } else if (r.type === 'equivalent') {
+                        for (var j = 0; j < r.terms.length; j++) {
+                            if (wholeWord(hay, r.terms[j])) {
+                                var others = r.terms.filter(function (t, k) { return k !== j; });
+                                matches.push({ type: 'equivalent', match: r.terms[j], expansion: others });
+                                return;
+                            }
+                        }
+                    }
+                });
+                return matches;
+            }
+
+            function renderSynStrip(matches) {
+                var el = ensureSynStripEl();
+                el.innerHTML = '';
+                if (!matches || !matches.length) {
+                    el.hidden = true;
+                    return;
+                }
+                el.hidden = false;
+                var label = document.createElement('span');
+                label.className = 'gst-serp__syn-label';
+                label.textContent = s('profiles.detail.pinned.synonymMatchedLabel', 'Matching synonym rules:');
+                el.appendChild(label);
+                matches.forEach(function (m) {
+                    var chip = document.createElement('span');
+                    chip.className = 'gst-serp__syn-chip is-' + m.type;
+                    chip.title = m.type === 'replacement'
+                        ? s('profiles.detail.pinned.synonymReplacementTip',
+                            'Replacement rule — Graph would substitute this expansion.')
+                        : s('profiles.detail.pinned.synonymEquivalentTip',
+                            'Equivalent rule — Graph would also match these alternates.');
+                    var src = document.createElement('strong');
+                    src.className = 'gst-serp__syn-src';
+                    src.textContent = m.match;
+                    chip.appendChild(src);
+                    var op = document.createElement('span');
+                    op.className = 'gst-serp__syn-op';
+                    op.textContent = m.type === 'replacement' ? '→' : '↔';
+                    chip.appendChild(op);
+                    var exp = document.createElement('span');
+                    exp.className = 'gst-serp__syn-exp';
+                    exp.textContent = m.expansion.join(', ');
+                    chip.appendChild(exp);
+                    el.appendChild(chip);
                 });
             }
 

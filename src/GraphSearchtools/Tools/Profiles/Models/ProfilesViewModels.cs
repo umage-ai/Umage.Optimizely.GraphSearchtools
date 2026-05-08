@@ -192,4 +192,21 @@ public sealed class ProfileDetailViewModel
     /// label the source so admins know the query lives in code.
     /// </summary>
     public bool GraphQLDocIsInline { get; set; }
+
+    /// <summary>
+    /// True when the registered GraphQL document references Graph's
+    /// <c>usePinned</c> directive — i.e. pinned-results edits saved via this
+    /// profile will actually surface in the storefront SERP. False means the
+    /// pinned editor is informational only and the storefront query needs to
+    /// be updated before edits take effect.
+    /// </summary>
+    public bool QueryAppliesPinned { get; set; }
+
+    /// <summary>
+    /// True when the registered GraphQL document opts in to synonym
+    /// substitution by passing <c>synonyms: ONE</c> (or <c>TWO</c>) inside
+    /// <c>_fulltext</c>. False means rules saved via the synonyms editor will
+    /// be stored in Graph but not applied at storefront query time.
+    /// </summary>
+    public bool QueryAppliesSynonyms { get; set; }
 }
