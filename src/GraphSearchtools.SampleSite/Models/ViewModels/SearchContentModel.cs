@@ -20,7 +20,12 @@ public class SearchContentModel : PageViewModel<SearchPage>
 
     public FacetGroup ContentTypeFacet { get; set; } = new();
 
-    public FacetGroup LanguageFacet { get; set; } = new();
+    /// <summary>
+    /// Language branch that scoped this search — set from
+    /// <c>PageContext.LanguageID</c>. Rendered as a small label on the SERP
+    /// so visitors know they're seeing only the active branch's content.
+    /// </summary>
+    public string ActiveLocale { get; set; }
 
     /// <summary>
     /// Runtime error the search service surfaced, e.g. a Graph 401 from a

@@ -14,16 +14,16 @@ namespace UmageAI.Optimizely.GraphSearchTools.SampleSite.Services;
 /// facet's own — so checkbox counts are stable across a click and the panel
 /// renders disabled-not-hidden values.
 ///
-/// Two facets:
+/// One user-facing facet:
 ///   • <c>ContentType</c> — top-level (page types). The Alloy index also
 ///     contains blocks / images / media; we always filter results to the
 ///     <c>Page</c> branch and enumerate from a static page-type list.
-///   • <c>Language.Name</c> — cross-cutting locale facet (en, sv, …).
 ///
-/// Note: <c>MetaKeywords</c> looked like the obvious cross-cutting tag facet
-/// but it's not indexed for facet aggregation on Alloy's <c>Content</c> root,
-/// so the demo uses <c>Language.Name</c> instead. Adding a <c>[Searchable]</c>
-/// tag field to <c>SitePageData</c> would re-open that route.
+/// Locale is no longer a user-toggleable facet — it's pinned to the active
+/// language branch served by Alloy's page route (<c>PageContext.LanguageID</c>),
+/// so visitors only ever see content in the language they're browsing in.
+/// The same locale also drives the pinned-collection lookup
+/// (<c>alloy-{locale}</c>) so admin-curated pins land on the correct branch.
 /// </summary>
 public sealed class AlloySearchService
 {
@@ -79,42 +79,39 @@ public sealed class AlloySearchService
         var endpoint = $"{creds.GatewayAddress.TrimEnd('/')}/content/v2?auth={creds.SingleKey}";
 
         var selectedTypes = NormaliseSelection(request.SelectedContentTypes, KnownContentTypes);
-        var selectedLanguages = NormaliseSelection(request.SelectedLanguages);
         var phrase = string.IsNullOrWhiteSpace(request.Query) ? null : request.Query.Trim();
         var limit = Math.Clamp(request.Limit, 1, 50);
+        // Active language branch served by the SearchPage route. Lower-cased
+        // because the alloy-search profile registers locales as "en"/"sv" and
+        // the pinned-collection key formula ("alloy-{locale}") is built around
+        // that casing. Empty when the controller couldn't resolve a culture —
+        // we then skip the language clause and let Graph return everything.
+        var locale = string.IsNullOrWhiteSpace(request.Locale) ? null : request.Locale.Trim().ToLowerInvariant();
 
-        // Resolve the pinned-results collection id for this locale before
-        // building the hits query. The alloy-search profile's pinned-key
-        // formula is "alloy-{locale}"; the demo only carries one locale ("en"),
-        // so we hard-code it here. A real multi-locale site would derive
-        // this from request context (CurrentLanguage / route values).
-        var pinnedCollectionId = phrase != null
-            ? await GetPinnedCollectionIdAsync("alloy-en", cancellationToken)
+        // Resolve the pinned-results collection id for the active locale. The
+        // alloy-search profile's pinned-key formula is "alloy-{locale}", so we
+        // can derive the lookup key directly from the request culture and
+        // marketers' edits land on the matching branch automatically. No
+        // active locale (e.g. an unrouted call) → no pinning.
+        var pinnedCollectionId = phrase != null && locale != null
+            ? await GetPinnedCollectionIdAsync($"alloy-{locale}", cancellationToken)
             : null;
 
         // Per §6 — every facet renders from two distinct sources:
         //   • Enumeration source (what rows exist in this section at all)
         //   • Count source (this facet's count given current filters minus its own)
-        // ContentType has a static enumeration (KnownContentTypes); the Language
-        // facet enumerates from a global Language facet over the catalog (no
-        // search phrase, no other filters). The "global" enumeration gets us
-        // the canonical list of values so the panel never jitters as users
-        // toggle filters.
-        var hitsTask = ExecuteAsync(endpoint, BuildHitsQuery(phrase, selectedTypes, selectedLanguages, limit, pinnedCollectionId), cancellationToken);
-        var contentTypeCountTask = ExecuteAsync(endpoint, BuildFacetCountQuery(phrase, omitContentType: true, omitLanguage: false, selectedTypes, selectedLanguages, FacetField.ContentType), cancellationToken);
-        var languageCountTask = ExecuteAsync(endpoint, BuildFacetCountQuery(phrase, omitContentType: false, omitLanguage: true, selectedTypes, selectedLanguages, FacetField.Language), cancellationToken);
-        var languageEnumTask = ExecuteAsync(endpoint, BuildLanguageEnumerationQuery(), cancellationToken);
+        // ContentType has a static enumeration (KnownContentTypes). Language
+        // is no longer a facet — the active locale is applied as a hard filter
+        // on every query, so there's nothing for the user to toggle.
+        var hitsTask = ExecuteAsync(endpoint, BuildHitsQuery(phrase, selectedTypes, locale, limit, pinnedCollectionId), cancellationToken);
+        var contentTypeCountTask = ExecuteAsync(endpoint, BuildFacetCountQuery(phrase, omitContentType: true, selectedTypes, locale, FacetField.ContentType), cancellationToken);
 
-        await Task.WhenAll(hitsTask, contentTypeCountTask, languageCountTask, languageEnumTask);
+        await Task.WhenAll(hitsTask, contentTypeCountTask);
 
         using var hitsBody = hitsTask.Result;
         using var typeCountBody = contentTypeCountTask.Result;
-        using var languageCountBody = languageCountTask.Result;
-        using var languageEnumBody = languageEnumTask.Result;
 
         var typeCounts = ParseFacetCounts(typeCountBody, "ContentType");
-        var languageCounts = ParseLanguageFacetCounts(languageCountBody);
-        var languageEnumeration = ParseLanguageFacetCounts(languageEnumBody);
 
         var hits = ParseHits(hitsBody, phrase);
         var total = ParseTotal(hitsBody);
@@ -126,28 +123,12 @@ public sealed class AlloySearchService
             selected: selectedTypes,
             includeUnknownSelections: false);
 
-        var languageFacet = BuildFacetGroup(
-            field: "lang",
-            enumeration: languageEnumeration.Keys
-                // Drop the empty-string bucket — Graph returns it for
-                // language-less content (blocks, media). The hits query
-                // already filters to Page so no end-user clicks it,
-                // but we still need it gone from the panel.
-                .Where(k => !string.IsNullOrEmpty(k))
-                .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
-                .ToList(),
-            counts: languageCounts,
-            selected: selectedLanguages,
-            // §4: a selected value with 0 hits in the current context must
-            // still render so the user can un-click it.
-            includeUnknownSelections: true);
-
         return new AlloySearchResult
         {
             Total = total,
             Hits = hits,
             ContentTypeFacet = typeFacet,
-            LanguageFacet = languageFacet
+            ActiveLocale = locale
         };
     }
 
@@ -218,28 +199,39 @@ public sealed class AlloySearchService
 
     /// <summary>
     /// Representative form of the hits query — uses placeholder substitutions
-    /// for the dynamic parts (<c>$phrase</c>, <c>$pinnedCollectionId</c>) so
-    /// the registered profile's admin view reflects every code path the
-    /// storefront actually runs, including the <c>usePinned</c> directive that
-    /// applies pinned-results edits to the SERP.
+    /// for the dynamic parts (<c>$phrase</c>, <c>$locale</c>,
+    /// <c>$pinnedCollectionId</c>) so the registered profile's admin view
+    /// reflects every code path the storefront actually runs, including the
+    /// <c>usePinned</c> directive that applies pinned-results edits to the
+    /// SERP and the per-locale language filter that scopes the SERP to the
+    /// branch currently being browsed.
     /// </summary>
     public static string SampleHitsQueryDocument
-        => BuildHitsQuery(phrase: "$phrase", Array.Empty<string>(), Array.Empty<string>(), limit: 20, pinnedCollectionId: "$pinnedCollectionId");
+        => BuildHitsQuery(phrase: "$phrase", Array.Empty<string>(), locale: "$locale", limit: 20, pinnedCollectionId: "$pinnedCollectionId");
 
-    // Builds the items query: filter by phrase + every active facet selection
-    // (cross-cutting Language AND top-level ContentType). Always restricts to
-    // pages so blocks/images don't show up as hits. When pinnedCollectionId
-    // is provided alongside a phrase, emits Graph's `usePinned` argument so
-    // editor-curated pins surface above organic results.
+    // Builds the items query: filter by phrase + active locale + ContentType
+    // facet selections. Always restricts to pages so blocks/images don't show
+    // up as hits. When pinnedCollectionId is provided alongside a phrase,
+    // emits Graph's `usePinned` argument so editor-curated pins surface above
+    // organic results.
     internal static string BuildHitsQuery(
         string? phrase,
         IReadOnlyList<string> types,
-        IReadOnlyList<string> languages,
+        string? locale,
         int limit,
         string? pinnedCollectionId = null)
     {
-        var clauses = BuildClauses(phrase, types, languages, includeContentType: true, includeLanguage: true);
-        var orderBy = string.IsNullOrEmpty(phrase) ? "orderBy: { StartPublish: DESC }" : "orderBy: { _ranking: SEMANTIC }";
+        var clauses = BuildClauses(phrase, types, locale, includeContentType: true, includeLocale: true);
+        // SEMANTIC ranking has no real "no match" floor — gibberish like
+        // "asdfasdf" still nearest-neighbours into the corpus and returns
+        // semantic-only hits with _score ≈ 1.0–1.2. Empirically (probe runs
+        // against this tenant's Alloy demo corpus) lexical hits land at
+        // _score ≥ 38, so _minimumScore: 2 cleanly cuts the noise band
+        // without losing any real match. Tune higher (5–20) for noisier
+        // corpora; lower if you want semantic-only matches to surface.
+        var orderBy = string.IsNullOrEmpty(phrase)
+            ? "orderBy: { StartPublish: DESC }"
+            : "orderBy: { _ranking: SEMANTIC, _minimumScore: 2 }";
         // usePinned only makes sense when there's a phrase to match against.
         var pinned = !string.IsNullOrEmpty(phrase) && !string.IsNullOrEmpty(pinnedCollectionId)
             ? $"usePinned: {{ phrase: {EscapeString(phrase)}, collectionId: {EscapeString(pinnedCollectionId)} }}"
@@ -296,29 +288,27 @@ public sealed class AlloySearchService
         return _pinnedCollectionIds.TryGetValue(pinnedKey, out var resolved) ? resolved : null;
     }
 
-    // Per-facet count query (§5/§6). We pass `omitContentType` / `omitLanguage`
-    // to remove that facet's selections from the where clause; the remaining
-    // clauses still apply, so the count is "what the user would see if they
-    // clicked this value" — stable across a toggle of the same facet.
+    // Per-facet count query (§5/§6). We pass `omitContentType` to remove that
+    // facet's selections from the where clause while keeping the locale clause
+    // applied — the count is "what the user would see if they clicked this
+    // value", stable across a toggle of the same facet.
     private static string BuildFacetCountQuery(
         string? phrase,
         bool omitContentType,
-        bool omitLanguage,
         IReadOnlyList<string> types,
-        IReadOnlyList<string> languages,
+        string? locale,
         FacetField include)
     {
         var clauses = BuildClauses(
             phrase,
             types,
-            languages,
+            locale,
             includeContentType: !omitContentType,
-            includeLanguage: !omitLanguage);
+            includeLocale: true);
 
         var facetBlock = include switch
         {
             FacetField.ContentType => "ContentType(limit: 100, orderType: COUNT, orderBy: DESC) { name count }",
-            FacetField.Language => "Language { Name(limit: 50, orderType: COUNT, orderBy: DESC) { name count } }",
             _ => string.Empty
         };
 
@@ -336,21 +326,6 @@ public sealed class AlloySearchService
 }}";
     }
 
-    // Global enumeration source for Language — no phrase, no filters except
-    // the always-applied Page restriction. Defines the canonical row set so
-    // values never disappear/reappear as users toggle filters (§4 / §6).
-    private static string BuildLanguageEnumerationQuery()
-    {
-        return @"
-{
-  Content(where: { ContentType: { eq: ""Page"" } } limit: 0) {
-    facets {
-      Language { Name(limit: 50, orderType: COUNT, orderBy: DESC) { name count } }
-    }
-  }
-}";
-    }
-
     // Builds the WHERE clause as a `_and: [ ... ]` body — joined by the caller
     // with the always-applied `ContentType: { eq: "Page" }` restriction.
     // Returns `{}` (empty object) when no clauses apply, which keeps the
@@ -358,22 +333,33 @@ public sealed class AlloySearchService
     private static string BuildClauses(
         string? phrase,
         IReadOnlyList<string> types,
-        IReadOnlyList<string> languages,
+        string? locale,
         bool includeContentType,
-        bool includeLanguage)
+        bool includeLocale)
     {
         var inner = new List<string>();
         if (!string.IsNullOrEmpty(phrase))
         {
-            inner.Add($"{{ _fulltext: {{ match: {EscapeString(phrase)} }} }}");
+            // synonyms: ONE is required for Graph to apply the synonym pool
+            // saved under synonym_slot=one (the addon's Synonyms editor writes
+            // there). Without this argument, _fulltext silently skips the
+            // synonym index — so editor-side rules like "sdfgsdfg => alloy"
+            // wouldn't fire at the storefront. ONE matches the slot the
+            // addon's UI defaults to; switch to TWO if you maintain a
+            // staging slot and activate it via the Graph admin API.
+            inner.Add($"{{ _fulltext: {{ match: {EscapeString(phrase)}, synonyms: ONE }} }}");
         }
         if (includeContentType && types.Count > 0)
         {
             inner.Add($"{{ ContentType: {{ in: [{string.Join(", ", types.Select(EscapeString))}] }} }}");
         }
-        if (includeLanguage && languages.Count > 0)
+        if (includeLocale && !string.IsNullOrEmpty(locale))
         {
-            inner.Add($"{{ Language: {{ Name: {{ in: [{string.Join(", ", languages.Select(EscapeString))}] }} }} }}");
+            // eq: rather than in: — locale is single-valued (page route serves
+            // one branch at a time). Using eq makes the placeholder in the
+            // sample query (`$locale`) substitute cleanly without dragging in
+            // list syntax.
+            inner.Add($"{{ Language: {{ Name: {{ eq: {EscapeString(locale)} }} }} }}");
         }
         return inner.Count == 0 ? "{}" : $"{{ _and: [{string.Join(", ", inner)}] }}";
     }
@@ -524,25 +510,6 @@ public sealed class AlloySearchService
         return result;
     }
 
-    // Language facets nest under `Language { Name { name count } }`.
-    private static Dictionary<string, int> ParseLanguageFacetCounts(JsonDocument doc)
-    {
-        var result = new Dictionary<string, int>(StringComparer.Ordinal);
-        if (!TryGetContentBlock(doc, out var content)) return result;
-        if (!content.TryGetProperty("facets", out var facets) || facets.ValueKind != JsonValueKind.Object) return result;
-        if (!facets.TryGetProperty("Language", out var language) || language.ValueKind != JsonValueKind.Object) return result;
-        if (!language.TryGetProperty("Name", out var nameArr) || nameArr.ValueKind != JsonValueKind.Array) return result;
-
-        foreach (var entry in nameArr.EnumerateArray())
-        {
-            var name = GetString(entry, "name");
-            if (name == null) continue;
-            var count = entry.TryGetProperty("count", out var c) && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var n) ? n : 0;
-            result[name] = count;
-        }
-        return result;
-    }
-
     private static FacetGroup BuildFacetGroup(string field, IReadOnlyList<string> enumeration, IReadOnlyDictionary<string, int> counts, IReadOnlyList<string> selected, bool includeUnknownSelections)
     {
         var selectedSet = new HashSet<string>(selected, StringComparer.Ordinal);
@@ -646,14 +613,22 @@ public sealed class AlloySearchService
         return fallback;
     }
 
-    private enum FacetField { ContentType, Language }
+    private enum FacetField { ContentType }
 }
 
 public sealed class AlloySearchRequest
 {
     public string? Query { get; init; }
     public IReadOnlyList<string> SelectedContentTypes { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> SelectedLanguages { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Active language branch served by the SearchPage route — Optimizely
+    /// passes this through <c>PageContext.LanguageID</c>. The service uses it
+    /// to filter results to the matching branch and to resolve the pinned
+    /// collection (<c>alloy-{locale}</c>). Null/empty falls back to no
+    /// language clause and no pinning.
+    /// </summary>
+    public string? Locale { get; init; }
     public int Limit { get; init; } = 20;
 }
 
@@ -662,7 +637,13 @@ public sealed class AlloySearchResult
     public int Total { get; init; }
     public IReadOnlyList<AlloySearchHit> Hits { get; init; } = Array.Empty<AlloySearchHit>();
     public FacetGroup ContentTypeFacet { get; init; } = new();
-    public FacetGroup LanguageFacet { get; init; } = new();
+
+    /// <summary>
+    /// Locale that scoped this query — surfaces in the view so the SERP can
+    /// show a small "results in <em>en</em>" label without re-deriving it.
+    /// </summary>
+    public string? ActiveLocale { get; init; }
+
     public bool Configured { get; init; } = true;
 
     public static AlloySearchResult NotConfigured() => new() { Configured = false };

@@ -20,10 +20,9 @@
             pairs.Add(new("q", Model.SearchedQuery));
         }
 
-        // Iterate every facet group on the page so toggling one preserves the
-        // selection state of the other (cross-facet AND from §2).
+        // Only ContentType is user-toggleable now; locale comes from the
+        // page route (PageContext.LanguageID), not the querystring.
         AppendFacet(pairs, "type", Model.ContentTypeFacet, facetParam == "type" ? value.Name : null, facetParam == "type" && value.Selected);
-        AppendFacet(pairs, "lang", Model.LanguageFacet, facetParam == "lang" ? value.Name : null, facetParam == "lang" && value.Selected);
 
         if (pairs.Count == 0) return pageUrl;
         var sb = new System.Text.StringBuilder(pageUrl);
@@ -110,7 +109,7 @@
         return new Microsoft.AspNetCore.Html.HtmlString(highlighted);
     }
 
-    var hasSelection = Model.ContentTypeFacet.SelectedCount + Model.LanguageFacet.SelectedCount > 0;
+    var hasSelection = Model.ContentTypeFacet.SelectedCount > 0;
     var clearAllUrl = !string.IsNullOrEmpty(Model.SearchedQuery)
         ? pageUrl + "?q=" + System.Net.WebUtility.UrlEncode(Model.SearchedQuery)
         : pageUrl;
@@ -127,10 +126,6 @@
             @foreach (var v in Model.ContentTypeFacet.Values.Where(x => x.Selected))
             {
                 <input type="hidden" name="type" value="@v.Name" />
-            }
-            @foreach (var v in Model.LanguageFacet.Values.Where(x => x.Selected))
-            {
-                <input type="hidden" name="lang" value="@v.Name" />
             }
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
@@ -197,40 +192,20 @@
                     }
                 </section>
 
-                <section class="facet">
-                    <h2 class="facet__title">Language</h2>
-                    @if (!Model.LanguageFacet.Values.Any())
-                    {
-                        <p class="facet__empty">No localised content found.</p>
-                    }
-                    else
-                    {
-                        <ul class="facet__list">
-                            @foreach (var v in Model.LanguageFacet.Values)
-                            {
-                                var disabled = v.Count == 0 && !v.Selected;
-                                <li class="facet__row @(v.Selected ? "is-selected" : null) @(disabled ? "is-disabled" : null)">
-                                    @if (disabled)
-                                    {
-                                        <span class="facet__label">
-                                            <span class="facet__check" aria-hidden="true"></span>
-                                            <span class="facet__name">@LanguageLabel(v.Name)</span>
-                                            <span class="facet__count facet__count--zero">0</span>
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <a class="facet__label" href="@ToggleUrl("lang", v)" rel="nofollow">
-                                            <span class="facet__check" aria-hidden="true">@(v.Selected ? "✓" : "")</span>
-                                            <span class="facet__name">@LanguageLabel(v.Name)</span>
-                                            <span class="facet__count">@v.Count</span>
-                                        </a>
-                                    }
-                                </li>
-                            }
-                        </ul>
-                    }
-                </section>
+                @* Locale is no longer a user-selectable facet — the page is
+                   served per language branch and the SERP scopes itself to
+                   that branch. We surface the active locale as a static label
+                   so visitors know which content set they're looking at. *@
+                @if (!string.IsNullOrEmpty(Model.ActiveLocale))
+                {
+                    <section class="facet facet--locale">
+                        <h2 class="facet__title">Language</h2>
+                        <p class="facet__locale-active">
+                            Showing results in <strong>@LanguageLabel(Model.ActiveLocale)</strong>.
+                            Switch the site language to search a different branch.
+                        </p>
+                    </section>
+                }
             </aside>
 
             <section class="search-page__results">
@@ -261,7 +236,7 @@
                         }
                     </ol>
                 }
-                else if (!string.IsNullOrEmpty(Model.SearchedQuery) || Model.ContentTypeFacet.SelectedCount + Model.LanguageFacet.SelectedCount > 0)
+                else if (!string.IsNullOrEmpty(Model.SearchedQuery) || Model.ContentTypeFacet.SelectedCount > 0)
                 {
                     <p class="search-page__empty">No matching content. Try fewer filters or a different phrase.</p>
                 }
