@@ -110,7 +110,11 @@
                     <div>
                         <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/graphqlDoc")</dt>
                         <dd>
-                            @if (string.IsNullOrEmpty(Model.GraphQLDocPath))
+                            @if (Model.GraphQLDocIsInline)
+                            {
+                                <span class="gst-mono">@Loc.GetString("/graphsearchtools/profiles/detail/meta/docInline")</span>
+                            }
+                            else if (string.IsNullOrEmpty(Model.GraphQLDocPath))
                             {
                                 <span class="gst-muted">—</span>
                             }
@@ -154,7 +158,25 @@
 
             <div class="gst-tab-pane" data-pane="overview">
                 <div class="gst-card__body">
-                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/comingSoon")</p>
+                    <h3 style="margin-top: 0">@Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlTitle")</h3>
+                    @if (string.IsNullOrEmpty(Model.GraphQLDocContent))
+                    {
+                        <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlEmpty")</p>
+                    }
+                    else
+                    {
+                        <p class="gst-muted" style="font-size: var(--gst-text-sm)">
+                            @if (Model.GraphQLDocIsInline)
+                            {
+                                @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlInlineNote")
+                            }
+                            else
+                            {
+                                @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlPathNote")
+                            }
+                        </p>
+                        <pre class="gst-mono" style="background: var(--gst-color-surface-2, #f5f5f5); padding: var(--gst-space-md); border-radius: 4px; overflow-x: auto; white-space: pre; font-size: var(--gst-text-sm)"><code>@Model.GraphQLDocContent</code></pre>
+                    }
                 </div>
             </div>
 
@@ -227,30 +249,91 @@
                 </div>
 
                 <div class="gst-pin-with-tryit" style="padding: 0 var(--gst-space-lg) var(--gst-space-lg)">
-                    @* Pin board: phrases at top, pinned items below, organic results under a divider *@
-                    <div>
-                        <div class="gst-card" style="margin: 0">
-                            <div class="gst-pin-phrases" id="gst-pin-phrases"></div>
-
-                            <div class="gst-pin-board__head">
-                                <h3 id="gst-pin-board-title">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/empty")</h3>
+                    @* Phase 6 redesign — flat sortable / filterable grid, in-place
+                       editing, content-by-name typeahead. The phrase-tabs grouping
+                       was removed in favour of a single grid where Phrase is just
+                       another column; the toolbar carries a global filter and a
+                       count chip. The "Save all" drawer surfaces only when there
+                       are unsaved rows. *@
+                    <div class="gst-pinedit">
+                        <div class="gst-pinedit__cmdbar">
+                            <div class="gst-pinedit__searchbox">
+                                <svg class="gst-pinedit__searchglyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                                    <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                                    <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                </svg>
+                                <input type="text" id="gst-pinedit-global"
+                                       class="gst-pinedit__searchinput"
+                                       placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/globalFilter")"
+                                       autocomplete="off" />
                             </div>
+                            <span class="gst-pinedit__count" id="gst-pinedit-count" aria-live="polite">0</span>
+                            <span class="gst-pinedit__sep" aria-hidden="true"></span>
+                            <button type="button" id="gst-pinedit-add" class="gst-pinedit__addbtn">
+                                <span class="gst-pinedit__addbtn__plus">＋</span>
+                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/addRow")</span>
+                            </button>
+                        </div>
 
-                            <table class="gst-table gst-pin-table">
+                        <div class="gst-pinedit__grid-wrap">
+                            <table class="gst-pinedit__grid" role="grid">
                                 <thead>
-                                    <tr>
-                                        <th class="col-rank">#</th>
-                                        <th>@Loc.GetString("/graphsearchtools/tools/pinned/col_content")</th>
-                                        <th class="col-actions"></th>
+                                    <tr class="gst-pinedit__head-sort">
+                                        <th class="gst-pinedit__col gst-pinedit__col--rank" data-sort="rank">
+                                            <button type="button" class="gst-pinedit__sortbtn">
+                                                <span>#</span><span class="gst-pinedit__caret"></span>
+                                            </button>
+                                        </th>
+                                        <th class="gst-pinedit__col gst-pinedit__col--phrase" data-sort="phrases">
+                                            <button type="button" class="gst-pinedit__sortbtn">
+                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPhrase")</span>
+                                                <span class="gst-pinedit__caret"></span>
+                                            </button>
+                                        </th>
+                                        <th class="gst-pinedit__col gst-pinedit__col--target" data-sort="contentName">
+                                            <button type="button" class="gst-pinedit__sortbtn">
+                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colTarget")</span>
+                                                <span class="gst-pinedit__caret"></span>
+                                            </button>
+                                        </th>
+                                        <th class="gst-pinedit__col gst-pinedit__col--type" data-sort="contentType">
+                                            <button type="button" class="gst-pinedit__sortbtn">
+                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colType")</span>
+                                                <span class="gst-pinedit__caret"></span>
+                                            </button>
+                                        </th>
+                                        <th class="gst-pinedit__col gst-pinedit__col--priority" data-sort="priority">
+                                            <button type="button" class="gst-pinedit__sortbtn">
+                                                <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPriority")</span>
+                                                <span class="gst-pinedit__caret"></span>
+                                            </button>
+                                        </th>
+                                        <th class="gst-pinedit__col gst-pinedit__col--actions" aria-hidden="true"></th>
                                     </tr>
                                 </thead>
-                                <tbody id="gst-pin-rows"></tbody>
-                                <tbody id="gst-pin-organic-rows">
-                                    <tr class="gst-pin-divider" hidden>
-                                        <td colspan="3">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/organicTitle")</td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="gst-pinedit-rows"></tbody>
                             </table>
+                            <div id="gst-pinedit-empty" class="gst-pinedit__empty" hidden>
+                                <p>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/emptyHeadline")</p>
+                                <button type="button" class="gst-pinedit__empty-add" id="gst-pinedit-empty-add">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/addFirst")
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="gst-pinedit-drawer" class="gst-pinedit__drawer" hidden>
+                            <span class="gst-pinedit__drawer__count">
+                                <strong id="gst-pinedit-dirty-count">0</strong>
+                                @Loc.GetString("/graphsearchtools/profiles/detail/pinned/unsaved")
+                            </span>
+                            <div class="gst-pinedit__drawer__actions">
+                                <button type="button" class="gst-pinedit__drawer__btn" id="gst-pinedit-discard">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/discardAll")
+                                </button>
+                                <button type="button" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary" id="gst-pinedit-save-all">
+                                    @Loc.GetString("/graphsearchtools/profiles/detail/pinned/saveAll")
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -260,7 +343,7 @@
                             <span class="gst-card__title">@Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryTitle")</span>
                         </div>
                         <div class="gst-card__body">
-                            @if (string.IsNullOrEmpty(Model.GraphQLDocPath))
+                            @if (!Model.GraphQLDocExists)
                             {
                                 <p class="gst-muted" style="font-size: var(--gst-text-sm)">
                                     @Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryDisabled")
@@ -268,24 +351,18 @@
                             }
                             else
                             {
-                                <div id="gst-pin-tryit">
-                                    <div class="gst-tryit__input">
-                                        <span>Q</span>
-                                        <input id="gst-pin-tryit-q" type="text" placeholder="Try a phrase…" />
-                                    </div>
-                                    <div class="gst-tryit__compare">
-                                        <div class="gst-tryit__col a">
-                                            <h4>Without pins</h4>
-                                            <ol id="gst-pin-tryit-a"></ol>
-                                        </div>
-                                        <div class="gst-tryit__col b">
-                                            <h4>With pins</h4>
-                                            <ol id="gst-pin-tryit-b"></ol>
-                                        </div>
-                                    </div>
-                                    <div class="gst-tryit__footer">
-                                        <span id="gst-pin-tryit-stats"></span>
-                                    </div>
+                                <div id="gst-pin-tryit" class="gst-serp">
+                                    <label class="gst-serp__input" for="gst-pin-tryit-q">
+                                        <svg class="gst-serp__glyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                                            <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                                            <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                                        </svg>
+                                        <input id="gst-pin-tryit-q" type="text"
+                                               placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/serpPlaceholder")"
+                                               autocomplete="off" />
+                                    </label>
+                                    <div id="gst-pin-tryit-stats" class="gst-serp__stats" aria-live="polite"></div>
+                                    <ul id="gst-pin-tryit-results" class="gst-serp__results"></ul>
                                 </div>
                             }
                         </div>
