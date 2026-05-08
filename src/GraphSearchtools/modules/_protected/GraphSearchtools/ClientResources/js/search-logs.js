@@ -180,11 +180,12 @@
         var html = '';
         for (var i = 0; i < rows.length; i++) {
             var r = rows[i];
-            // Deep-link to Profiles index. We don't know which profile the
-            // editor wants to tune, so we land them on the index where the
-            // profileKey is one click away — same pattern as Synonyms above.
+            // Deep-link to the per-profile detail page when we have a key,
+            // otherwise drop the editor on the index. The detail surface is
+            // served as `?key=...` on the index URL so the CMS shell can
+            // resolve the section's product-id from the registered menu URL.
             var profUrl = '/EPiServer/cms/graphsearchtools/profiles' +
-                (r.profileKey ? ('?profile=' + encodeURIComponent(r.profileKey)) : '');
+                (r.profileKey ? ('?key=' + encodeURIComponent(r.profileKey)) : '');
             html += '<tr>' +
                 '<td><code>' + escHtml(r.phrase) + '</code></td>' +
                 '<td class="num" title="CTR ' + escHtml(fmtPct(r.ctr)) + '">' + escHtml(r.hits) + '</td>' +

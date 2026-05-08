@@ -25,22 +25,33 @@ public class ProfilesController : Controller
         _accessChecker = accessChecker;
     }
 
+    /// <summary>
+    /// Renders the profiles index when called without <paramref name="key"/>,
+    /// otherwise renders the profile detail page for that key.
+    /// </summary>
+    /// <remarks>
+    /// Both surfaces are served from the same controller URL on purpose. The
+    /// CMS 12 platform shell maps URL → product-id (e.g. <c>global_cms</c>)
+    /// from the set of registered menu URLs; a deep URL like
+    /// <c>/profiles/alloy-search</c> doesn't match any menu item, so the shell
+    /// falls back to <c>data-epi-product-id=""</c>, which 400s the
+    /// <c>/EPiServer/CMS/stores/notification</c> XHR and leaves the sidebar
+    /// stuck on the loading dots. Keeping the key as a query parameter
+    /// preserves the menu's <c>/profiles</c> URL match.
+    /// </remarks>
     [HttpGet("")]
-    public IActionResult Index()
+    public IActionResult Index([FromQuery] string? key = null)
     {
         if (!HasAccess()) return Forbid();
+
+        if (!string.IsNullOrEmpty(key))
+        {
+            var model = _service.BuildDetailViewModel(key);
+            if (model == null) return NotFound();
+            return View("/Views/Profiles/Detail.cshtml", model);
+        }
+
         return View("/Views/Profiles/Index.cshtml");
-    }
-
-    [HttpGet("{key}")]
-    public IActionResult Detail(string key)
-    {
-        if (!HasAccess()) return Forbid();
-
-        var model = _service.BuildDetailViewModel(key);
-        if (model == null) return NotFound();
-
-        return View("/Views/Profiles/Detail.cshtml", model);
     }
 
     private bool HasAccess()
