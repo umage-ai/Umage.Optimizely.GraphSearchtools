@@ -26,15 +26,13 @@
                     <ul class="navbar-nav">
                         @Html.MenuList(SiteDefinition.Current.StartPage, ItemTemplate)
                     </ul>
+                    @{ using (Html.BeginForm(null, null, Html.ViewContext.IsInEditMode() ? FormMethod.Post : FormMethod.Get, new { @action = Model.Layout.SearchActionUrl, @class = "header-search d-flex ms-auto" }))
+                    {
+                        <input type="text" class="form-control form-control-sm me-2" name="q" id="SearchKeywords" placeholder="@Html.Translate("/mainnavigation/search")" data-autocomplete-search />
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" id="SearchButton">@Html.Translate("/mainnavigation/search")</button>
+                    } }
                 </div>
             </div>
         </nav>
     </div>
 </header>
-
-@*@{ using (Html.BeginForm(null, null, Html.ViewContext.IsInEditMode() ? FormMethod.Post : FormMethod.Get, new { @action = Model.Layout.SearchActionUrl }))
-    {
-        <input type="text" class="search-query" name="q" id="SearchKeywords" placeholder="@Html.Translate("/mainnavigation/search")" />
-        <input type="submit" class="searchButton" id="SearchButton" value="" />
-    }
-}*@
