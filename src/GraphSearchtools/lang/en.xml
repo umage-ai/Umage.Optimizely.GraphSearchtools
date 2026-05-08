@@ -401,6 +401,8 @@
           <all>All</all>
           <prev>Previous</prev>
           <next>Next</next>
+          <copy>Copy</copy>
+          <copied>Copied</copied>
         </shared>
         <components>
           <picker_title>Select content</picker_title>

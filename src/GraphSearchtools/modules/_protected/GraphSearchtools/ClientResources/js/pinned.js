@@ -1397,20 +1397,34 @@
                         + '</span>';
                     meta.appendChild(jsonBtn);
 
+                    // Wrapper hosts the <pre> plus a copy button anchored
+                    // top-right. The wrapper carries the hidden state so the
+                    // button hides with the panel.
+                    var jsonWrap = document.createElement('div');
+                    jsonWrap.className = 'gst-codeblock gst-serp__json-wrap';
+                    jsonWrap.hidden = true;
+
                     var jsonPanel = document.createElement('pre');
                     jsonPanel.className = 'gst-serp__json';
-                    jsonPanel.hidden = true;
                     jsonPanel.textContent = hit.raw;
+                    jsonWrap.appendChild(jsonPanel);
+
+                    if (window.GST && typeof window.GST.copyButton === 'function') {
+                        jsonWrap.appendChild(window.GST.copyButton({
+                            getValue: function () { return hit.raw; },
+                            className: 'gst-copybtn--overlay'
+                        }));
+                    }
 
                     jsonBtn.addEventListener('click', function () {
-                        var open = jsonPanel.hidden;
-                        jsonPanel.hidden = !open;
+                        var open = jsonWrap.hidden;
+                        jsonWrap.hidden = !open;
                         jsonBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
                         jsonBtn.classList.toggle('is-open', open);
                     });
 
                     li.appendChild(meta);
-                    li.appendChild(jsonPanel);
+                    li.appendChild(jsonWrap);
                 } else {
                     li.appendChild(meta);
                 }

@@ -3444,3 +3444,105 @@ td.bpe-editing select {
     from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
     to   { opacity: 1; max-height: 320px; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Shared code-block + copy button.
+
+   Any container marked `.gst-codeblock` is a positioning context for an
+   overlay copy button (`.gst-copybtn--overlay`) anchored top-right. The
+   button shows on hover/focus to keep code samples readable but is
+   always reachable via keyboard tab order.
+   ───────────────────────────────────────────────────────────────────── */
+
+.gst-codeblock {
+    position: relative;
+    min-width: 0;
+}
+.gst-codeblock[hidden] { display: none; }
+.gst-codeblock > pre {
+    /* Reserve top-right room so long unbroken JSON values don't slide
+       directly under the copy button on first paint. */
+    padding-right: 96px;
+}
+
+.gst-copybtn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-surface);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease, transform 120ms ease;
+}
+.gst-copybtn:hover {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+    background: var(--gst-primary-light);
+}
+.gst-copybtn:active { transform: translateY(1px); }
+.gst-copybtn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.18);
+}
+.gst-copybtn.is-copied {
+    color: var(--gst-success);
+    border-color: var(--gst-success);
+    background: var(--gst-success-light);
+}
+.gst-copybtn__icon { flex-shrink: 0; }
+.gst-copybtn__label { line-height: 1; }
+
+/* Overlay variant — pinned to the top-right of a `.gst-codeblock`. Works
+   over both light <pre> blocks (GraphQL doc) and dark inspectors (SERP
+   JSON) by inverting the surface tint when the parent is dark. */
+.gst-copybtn--overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    opacity: 0.85;
+}
+.gst-codeblock:hover .gst-copybtn--overlay,
+.gst-copybtn--overlay:focus-visible { opacity: 1; }
+
+/* When the parent code block has a dark surface (SERP JSON inspector),
+   flip the button to a translucent dark chrome so it reads against the
+   dark background. */
+.gst-serp__json-wrap .gst-copybtn--overlay {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #e8e8e8;
+}
+.gst-serp__json-wrap .gst-copybtn--overlay:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: #fff;
+}
+.gst-serp__json-wrap .gst-copybtn--overlay.is-copied {
+    color: #a6e6a6;
+    border-color: rgba(166, 230, 166, 0.5);
+    background: rgba(46, 125, 50, 0.18);
+}
+
+/* gst-serp__json-wrap inherits the JSON inspector's open/close animation
+   that previously lived on the <pre> directly. */
+.gst-serp__json-wrap {
+    margin: 8px 0 0;
+    animation: gst-serp-json-open 180ms ease both;
+}
+.gst-serp__json-wrap[hidden] { display: none; }
+.gst-serp__json-wrap > .gst-serp__json {
+    /* The wrapper now owns the animation + margin; let the inner <pre>
+       render flat so the layered button looks consistent. */
+    margin: 0;
+    animation: none;
+    padding-right: 96px;
+}
