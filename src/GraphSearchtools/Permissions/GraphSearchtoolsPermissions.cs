@@ -30,10 +30,6 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Profiles { get; } =
         new("GraphSearchtools", "Profiles");
 
-    // Phase 3 — client-side ranking-curve preview tool.
-    public static PermissionType DecaySandbox { get; } =
-        new("GraphSearchtools", "DecaySandbox");
-
     // Phase 3 — token-count-tiered Semantic Weight Tuner policy editor.
     public static PermissionType SemanticTuner { get; } =
         new("GraphSearchtools", "SemanticTuner");
@@ -41,14 +37,6 @@ public static class GraphSearchtoolsPermissions
     // Phase 3 — Optimizely Graph webhook administration (list, create, delete).
     public static PermissionType Webhooks { get; } =
         new("GraphSearchtools", "Webhooks");
-
-    // Phase 3 — recent Graph queries (timing + ranking + replay).
-    public static PermissionType RequestLogs { get; } =
-        new("GraphSearchtools", "RequestLogs");
-
-    // Phase 3 — non-CMS data sources (list, trigger resync).
-    public static PermissionType CustomDataSources { get; } =
-        new("GraphSearchtools", "CustomDataSources");
 
     // Phase 4 foundation — push search-log telemetry from host search surfaces
     // into the GraphSearchtools log table (consumed by Phase 4 Wave 5 tools).
@@ -65,11 +53,6 @@ public static class GraphSearchtoolsPermissions
     // phrases that look like missing synonyms.
     public static PermissionType SynonymCoverage { get; } =
         new("GraphSearchtools", "SynonymCoverage");
-
-    // Phase 4 Wave 5 — Index Inspector. Per-content-type index population,
-    // missing-field surface (Name / Title), and a captured-at freshness stamp.
-    public static PermissionType IndexInspector { get; } =
-        new("GraphSearchtools", "IndexInspector");
 
     // Phase 4 Wave 5 — Pinned Result Coverage audit. Read-only audit that
     // joins Graph pinned data with CMS content state and the search-log table

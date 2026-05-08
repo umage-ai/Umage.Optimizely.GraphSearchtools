@@ -59,34 +59,6 @@ public interface IGraphAdminClient
     Task<IReadOnlyList<WebhookResult>> GetWebhooksAsync(CancellationToken cancellationToken);
     Task<WebhookResult> CreateWebhookAsync(WebhookPayload payload, CancellationToken cancellationToken);
     Task DeleteWebhookAsync(string id, CancellationToken cancellationToken);
-
-    // ── Request Logs (Phase 3) ───────────────────────────────────────────
-    // Recent Graph queries with timing + status. Read-only; the tool surfaces
-    // the entries in a click-to-replay log view. The service layer clamps
-    // <paramref name="take"/> to [1, 1000] so a wild caller can't pin the
-    // gateway with a malformed paging parameter.
-    Task<IReadOnlyList<RequestLogEntryResult>> GetRequestLogsAsync(int take, CancellationToken cancellationToken);
-
-    // ── Custom Data Sources (Phase 3) ────────────────────────────────────
-    // Non-CMS sources push into the Graph index out-of-band (CMS, Commerce,
-    // PIM connectors, custom scripts). The admin tool surfaces a read-only
-    // list and lets ops trigger a full resync per source. v1 has no
-    // create/delete — registration happens in the source's own pipeline.
-    Task<IReadOnlyList<DataSourceResult>> GetDataSourcesAsync(CancellationToken cancellationToken);
-    Task TriggerDataSourceSyncAsync(string sourceName, CancellationToken cancellationToken);
-
-    // ── Index Inspector (Phase 4) ────────────────────────────────────────
-    // Snapshot of how the Graph index is populated per content type, plus a
-    // best-effort count of items missing the basic editorial fields
-    // (Name / Title). Read-only — the inspector tool surfaces the result in a
-    // table; refresh is the only supported action.
-    //
-    // <paramref name="searchableContentTypes"/> is the per-host
-    // <c>GraphSearchtoolsOptions.SearchableContentTypes</c> allow-list. The
-    // implementation prefers a single <c>Content { types { name count } }</c>
-    // round-trip when the schema exposes it; when it doesn't, it falls back
-    // to one query per supplied type and aggregates the counts.
-    Task<IndexInspectionResult> InspectIndexAsync(IReadOnlyList<string> searchableContentTypes, CancellationToken cancellationToken);
 }
 
 public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);

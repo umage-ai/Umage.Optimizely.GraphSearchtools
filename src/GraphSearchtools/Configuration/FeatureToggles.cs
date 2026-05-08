@@ -13,11 +13,8 @@ public class FeatureToggles
     public bool Health { get; set; } = true;
     public bool Autocomplete { get; set; } = true;
     public bool Profiles { get; set; } = true;
-    public bool DecaySandbox { get; set; } = true;
     public bool SemanticTuner { get; set; } = true;
     public bool Webhooks { get; set; } = true;
-    public bool CustomDataSources { get; set; } = true;
-    public bool RequestLogs { get; set; } = true;
 
     /// <summary>
     /// Phase 4 foundation — gates the telemetry ingest endpoints
@@ -42,13 +39,6 @@ public class FeatureToggles
     /// that look like missing synonyms. Read-only.
     /// </summary>
     public bool SynonymCoverage { get; set; } = true;
-
-    /// <summary>
-    /// Phase 4 Wave 5 — Index Inspector. Per-content-type index population,
-    /// missing editorial fields (Name / Title), and a captured-at freshness
-    /// stamp. Read-only — refresh re-runs the inspection.
-    /// </summary>
-    public bool IndexInspector { get; set; } = true;
 
     /// <summary>
     /// Phase 4 Wave 5 — Pinned Result Coverage audit. Read-only audit that
