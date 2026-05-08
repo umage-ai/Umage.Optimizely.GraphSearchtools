@@ -105,6 +105,33 @@ public sealed class QueryRunnerService
             };
         }
 
+        return await SendAsync(queryDocument, variables, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a fully-formed GraphQL document to Graph as-is. Used by callers
+    /// that already produced an executable query (e.g. the Profiles preview,
+    /// which substitutes placeholders into the registered profile's document)
+    /// and don't want the runner's <c>SavedQueries.DefaultQuery</c> /
+    /// built-in template fallbacks.
+    /// </summary>
+    public Task<RunnerResult> RunRawAsync(string queryDocument, IDictionary<string, object?>? variables, CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
+        if (!creds.IsQueryConfigured)
+        {
+            throw new InvalidOperationException("Optimizely Content Graph query settings (GatewayAddress, SingleKey) are not configured.");
+        }
+        if (string.IsNullOrWhiteSpace(queryDocument))
+        {
+            return Task.FromResult(new RunnerResult(0, 0, string.Empty, Array.Empty<RunnerHit>()));
+        }
+        return SendAsync(queryDocument, variables ?? new Dictionary<string, object?>(StringComparer.Ordinal), cancellationToken);
+    }
+
+    private async Task<RunnerResult> SendAsync(string queryDocument, IDictionary<string, object?> variables, CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
         var graphqlRequest = new { query = queryDocument, variables };
         var json = JsonSerializer.Serialize(graphqlRequest, _serializerOptions);
         var endpoint = $"{creds.GatewayAddress.TrimEnd('/')}/content/v2?auth={creds.SingleKey}";
@@ -178,13 +205,16 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
             foreach (var item in items.EnumerateArray())
             {
                 hits.Add(new RunnerHit(
-                    Name: GetString(item, "Name", "name") ?? string.Empty,
+                    Name: GetString(item, "Name", "name", "Title", "title") ?? string.Empty,
                     ContentType: GetFirstContentType(item) ?? "Content",
                     Language: GetNestedString(item, "Language", "Name") ?? string.Empty,
                     ContentId: GetNestedInt(item, "ContentLink", "Id"),
                     ContentGuid: GetNestedString(item, "ContentLink", "GuidValue") ?? string.Empty,
                     Score: GetDouble(item, "_score", "score"),
-                    FullTextSnippet: TrimSnippet(GetString(item, "_fulltext", "GetExcerpt", "Excerpt", "Description", "Url"))));
+                    FullTextSnippet: TrimSnippet(GetString(item, "_fulltext", "GetExcerpt", "Excerpt", "Description")),
+                    Url: GetString(item, "Url", "url", "RelativePath", "relativePath", "Path", "path", "Slug", "slug"),
+                    Raw: PrettyJson(item),
+                    Pinned: false));
             }
         }
 
@@ -287,5 +317,19 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
         if (string.IsNullOrWhiteSpace(snippet)) return snippet;
         const int maxLength = 240;
         return snippet.Length <= maxLength ? snippet : snippet[..maxLength] + "…";
+    }
+
+    private static readonly JsonSerializerOptions PrettyOptions = new() { WriteIndented = true };
+
+    /// <summary>
+    /// Returns a pretty-printed copy of the source <see cref="JsonElement"/>,
+    /// or null if serialization fails. Used to feed the SERP preview's
+    /// "show JSON" detail toggle so editors can inspect every field the
+    /// registered profile projects, not just the heuristic-selected ones.
+    /// </summary>
+    private static string? PrettyJson(JsonElement element)
+    {
+        try { return JsonSerializer.Serialize(element, PrettyOptions); }
+        catch { return null; }
     }
 }

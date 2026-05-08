@@ -22,6 +22,7 @@ public sealed class SearchProfileBuilder
     private double _semanticWeight = 0.2;
     private GraphRanking _ranking = GraphRanking.Relevance;
     private string? _graphQLDocumentPath;
+    private string? _graphQLDocumentContent;
     private Dictionary<string, object?> _defaultVariables = new(StringComparer.Ordinal);
 
     public SearchProfileBuilder(string key)
@@ -128,6 +129,18 @@ public sealed class SearchProfileBuilder
     }
 
     /// <summary>
+    /// Registers the GraphQL document by value. Use this when the production
+    /// query is built in code (string interpolation, fluent builder, etc.) so
+    /// the admin sees the exact query the runtime executes — no static
+    /// <c>.graphql</c> file to drift from the live code.
+    /// </summary>
+    public SearchProfileBuilder GraphQLDocumentInline(string content)
+    {
+        _graphQLDocumentContent = string.IsNullOrWhiteSpace(content) ? null : content;
+        return this;
+    }
+
+    /// <summary>
     /// Convenience overload: reflect over an anonymous object's properties and
     /// add each as a default variable. Lets callers write
     /// <c>.Variables(new { limit = 20, contentType = "Article" })</c>.
@@ -184,6 +197,7 @@ public sealed class SearchProfileBuilder
             SemanticWeight = _semanticWeight,
             Ranking = _ranking,
             GraphQLDocumentPath = _graphQLDocumentPath,
+            GraphQLDocumentContent = _graphQLDocumentContent,
             DefaultVariables = new Dictionary<string, object?>(_defaultVariables, StringComparer.Ordinal)
         };
     }

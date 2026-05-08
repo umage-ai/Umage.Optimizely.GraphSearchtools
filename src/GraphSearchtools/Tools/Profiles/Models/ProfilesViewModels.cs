@@ -177,4 +177,19 @@ public sealed class ProfileDetailViewModel
     public double SemanticWeight { get; set; }
     public string? GraphQLDocPath { get; set; }
     public bool GraphQLDocExists { get; set; }
+
+    /// <summary>
+    /// The GraphQL document body, when available — either inline content
+    /// supplied via <see cref="SearchProfileBuilder.GraphQLDocumentInline"/> or
+    /// the file at <see cref="GraphQLDocPath"/>. Null when neither source
+    /// resolves.
+    /// </summary>
+    public string? GraphQLDocContent { get; set; }
+
+    /// <summary>
+    /// True when the document was registered inline (via
+    /// <c>GraphQLDocumentInline</c>) rather than read from disk. Lets the view
+    /// label the source so admins know the query lives in code.
+    /// </summary>
+    public bool GraphQLDocIsInline { get; set; }
 }

@@ -116,6 +116,7 @@ public sealed class SearchProfileRegistry : ISearchProfileRegistry
             SemanticWeight = 0.2,
             Ranking = GraphRanking.Relevance,
             GraphQLDocumentPath = null,
+            GraphQLDocumentContent = null,
             DefaultVariables = new Dictionary<string, object?>()
         };
     }
