@@ -269,32 +269,59 @@
     }
 
     /** ---------------- DETAIL ---------------- */
+    /*
+     * The detail page is a 50/50 workspace: the live preview lives on the
+     * left and persists across right-side panel switches; the right side has
+     * a three-way segmented switcher (Pinned / Synonyms / Details). The
+     * pinned editor mounts up-front so the SERP preview's pin overlay reflects
+     * the same data the user is editing without having to flip panels.
+     */
     function detail(opts) {
         opts = opts || {};
         var key = opts.profileKey || '';
         var pinnedMounted = false;
+        var synonymsMounted = false;
+        var auditLoaded = false;
 
-        // Tab switching — local, mirrors the prototype's idiom.
-        document.querySelectorAll('.gst-prof-tabs .gst-tab').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var tab = btn.dataset.tab;
-                document.querySelectorAll('.gst-prof-tabs .gst-tab').forEach(function(x) {
-                    x.classList.toggle('active', x === btn);
-                });
-                document.querySelectorAll('.gst-tab-pane').forEach(function(pane) {
-                    pane.hidden = pane.dataset.pane !== tab;
-                });
-                if (tab === 'audit')  loadAudit(key);
-                if (tab === 'pinned') mountPinned();
-            });
+        // Mount the pinned editor immediately — it owns the site/locale state
+        // shared with the preview and we want the preview's pinned-row
+        // intersection to be live from first paint.
+        mountPinned();
+
+        // Inject copy buttons into any code blocks marked [data-gst-copy].
+        // The Razor markup wraps the GraphQL doc <pre> in such a block; this
+        // keeps the wireup co-located with the panel that owns the code so
+        // we don't have to reach back into Razor for the button DOM.
+        document.querySelectorAll('[data-gst-copy]').forEach(function(block) {
+            if (block.querySelector('.gst-copybtn')) return;
+            if (!window.GST || typeof window.GST.copyButton !== 'function') return;
+            block.appendChild(window.GST.copyButton({
+                getValue: function() {
+                    var pre = block.querySelector('pre, code, textarea');
+                    return pre ? pre.textContent : '';
+                },
+                className: 'gst-copybtn--overlay'
+            }));
         });
 
-        // Eagerly mount Pinned if it's the active tab on first paint, so the
-        // editor isn't empty when the user lands on the page.
-        var activeTab = document.querySelector('.gst-prof-tabs .gst-tab.active');
-        if (activeTab && activeTab.dataset.tab === 'pinned') {
-            mountPinned();
-        }
+        // Panel switching.
+        var switcherBtns = document.querySelectorAll('.gst-prof-switcher__btn');
+        switcherBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = btn.dataset.panel;
+                switcherBtns.forEach(function(x) {
+                    var on = x === btn;
+                    x.classList.toggle('is-active', on);
+                    x.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                document.querySelectorAll('.gst-prof-panel').forEach(function(p) {
+                    p.hidden = p.dataset.panel !== target;
+                    p.classList.toggle('is-active', p.dataset.panel === target);
+                });
+                if (target === 'synonyms') mountSynonyms();
+                if (target === 'details')  loadAudit(key);
+            });
+        });
 
         function mountPinned() {
             if (pinnedMounted) return;
@@ -310,6 +337,256 @@
                 hasGraphQLDoc: !!opts.hasGraphQLDoc
             });
         }
+
+        function mountSynonyms() {
+            if (synonymsMounted) return;
+            synonymsMounted = true;
+            mountSynonymsPanel({
+                locales: opts.locales || []
+            });
+        }
+    }
+
+    /** ---------------- SYNONYMS PANEL ---------------- */
+    /*
+     * Inline synonyms editor scoped to the profile detail page. Synonyms in
+     * Optimizely Graph are global per language (one blob keyed by
+     * languageRouting), so this panel always edits the global pool — it just
+     * narrows the locale picker to the languages this profile cares about.
+     */
+    function mountSynonymsPanel(opts) {
+        opts = opts || {};
+        var BASE = window.GST_BASE_URL || '';
+        var SLOT = 'one';
+
+        // Local ajax helper — GST.fetchJson is GET-only, and synonyms uses
+        // PUT/DELETE with JSON bodies. Mirrors the pattern in synonyms.js.
+        function ajax(url, init) {
+            init = init || {};
+            var headers = { 'X-Requested-With': 'XMLHttpRequest' };
+            if (init.body) headers['Content-Type'] = 'application/json';
+            return fetch(url, {
+                method: init.method || 'GET',
+                headers: headers,
+                credentials: 'same-origin',
+                body: init.body ? JSON.stringify(init.body) : undefined
+            }).then(function(resp) {
+                if (!resp.ok) {
+                    return resp.text().then(function(t) {
+                        var msg = s('synonyms.request_failed', 'Request failed');
+                        try {
+                            var parsed = t ? JSON.parse(t) : null;
+                            if (parsed && parsed.message) msg = parsed.message;
+                        } catch (_) { /* not JSON */ }
+                        throw new Error(msg + ' (' + resp.status + ')');
+                    });
+                }
+                if (resp.status === 204) return null;
+                return resp.json();
+            });
+        }
+
+        var langSel  = document.getElementById('gst-prof-syn-lang');
+        var rowsHost = document.getElementById('gst-prof-syn-rows');
+        var emptyEl  = document.getElementById('gst-prof-syn-empty');
+        var alertEl  = document.getElementById('gst-prof-syn-alert');
+        var addBtn   = document.getElementById('gst-prof-syn-add');
+        var saveBtn  = document.getElementById('gst-prof-syn-save');
+        var discardBtn = document.getElementById('gst-prof-syn-discard');
+
+        if (!rowsHost || !saveBtn) return;
+
+        var state = {
+            lang: langSel ? langSel.value : '',
+            rows: [],
+            dirty: false,
+            loaded: false
+        };
+
+        function setAlert(msg, isError) {
+            if (!alertEl) return;
+            if (!msg) { alertEl.hidden = true; alertEl.textContent = ''; alertEl.classList.remove('gst-alert--danger'); return; }
+            alertEl.hidden = false;
+            alertEl.textContent = msg;
+            alertEl.classList.toggle('gst-alert--danger', !!isError);
+        }
+
+        function refreshChrome() {
+            var visibleRows = state.rows.filter(function(r) { return r.isNew || (r.rule && r.rule.trim()); });
+            if (emptyEl) emptyEl.hidden = visibleRows.length > 0;
+            saveBtn.disabled = !state.dirty;
+            if (discardBtn) discardBtn.hidden = !state.dirty;
+        }
+
+        function renderRows() {
+            rowsHost.innerHTML = '';
+            state.rows.forEach(function(row) { rowsHost.appendChild(buildRow(row)); });
+            refreshChrome();
+        }
+
+        function classifyRule(rule) {
+            // "a => b" → replacement; "a, b, c" → equivalent; otherwise none.
+            if (!rule) return '';
+            if (rule.indexOf('=>') !== -1) return 'replacement';
+            if (rule.indexOf(',')  !== -1) return 'equivalent';
+            return 'other';
+        }
+
+        function buildRow(row) {
+            var li = document.createElement('li');
+            li.className = 'gst-prof-syn__row'
+                + (row.dirty ? ' is-dirty' : '')
+                + (row.isNew ? ' is-new' : '');
+
+            var kind = classifyRule(row.rule);
+            var kindChip = document.createElement('span');
+            kindChip.className = 'gst-prof-syn__kind is-' + (kind || 'other');
+            kindChip.textContent = kind === 'replacement' ? '→'
+                                : kind === 'equivalent'  ? '='
+                                : '·';
+            kindChip.title = kind || '';
+            li.appendChild(kindChip);
+
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'gst-prof-syn__input';
+            input.value = row.rule || '';
+            input.placeholder = s('synonyms.rule_placeholder', 'H2O => water  or  laptop, computer, pc');
+            input.addEventListener('input', function() {
+                row.rule = input.value;
+                row.dirty = true;
+                state.dirty = true;
+                li.classList.add('is-dirty');
+                kindChip.className = 'gst-prof-syn__kind is-' + classifyRule(row.rule);
+                kindChip.textContent = classifyRule(row.rule) === 'replacement' ? '→'
+                                    : classifyRule(row.rule) === 'equivalent'  ? '='
+                                    : '·';
+                refreshChrome();
+            });
+            li.appendChild(input);
+
+            var del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'gst-prof-syn__delbtn';
+            del.title = s('synonyms.action_remove', 'Remove');
+            del.innerHTML = '<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">'
+                + '<path d="M3 3 L9 9 M9 3 L3 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+            del.addEventListener('click', function() {
+                state.rows = state.rows.filter(function(r) { return r !== row; });
+                state.dirty = true;
+                renderRows();
+            });
+            li.appendChild(del);
+
+            return li;
+        }
+
+        function loadForLang(lang) {
+            setAlert(null);
+            var qs = lang
+                ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=' + encodeURIComponent(SLOT)
+                : '?slot=' + encodeURIComponent(SLOT);
+            return ajax(BASE + '/SynonymsApi/Get' + qs)
+                .then(function(result) {
+                    state.rows = [];
+                    state.dirty = false;
+                    state.lang = lang;
+                    var content = result ? result.content : '';
+                    if (content) {
+                        // Server may double-quote-string the body; unwrap it.
+                        if (content.charAt(0) === '"' && content.charAt(content.length - 1) === '"') {
+                            try { content = JSON.parse(content); } catch (_) { /* leave as-is */ }
+                        }
+                        content.split(/\r?\n/).forEach(function(line) {
+                            var rule = line.trim();
+                            if (!rule) return;
+                            state.rows.push({ rule: rule, dirty: false, isNew: false });
+                        });
+                    }
+                    renderRows();
+                })
+                .catch(function() {
+                    // 404 / no rules is fine — render empty.
+                    state.rows = [];
+                    state.dirty = false;
+                    state.lang = lang;
+                    renderRows();
+                });
+        }
+
+        function addRule() {
+            state.rows.push({ rule: '', dirty: true, isNew: true });
+            state.dirty = true;
+            renderRows();
+            // Focus the new row.
+            var inputs = rowsHost.querySelectorAll('.gst-prof-syn__input');
+            var last = inputs[inputs.length - 1];
+            if (last && last.focus) last.focus();
+        }
+
+        function save() {
+            var rules = state.rows
+                .map(function(r) { return (r.rule || '').trim(); })
+                .filter(function(r) { return r; });
+            var content = rules.join('\n');
+            var promise;
+            if (content) {
+                promise = ajax(BASE + '/SynonymsApi/Update', {
+                    method: 'PUT',
+                    body: {
+                        content: content,
+                        languageRouting: state.lang || null,
+                        sourceRouting: null,
+                        slot: SLOT
+                    }
+                });
+            } else {
+                var qs = state.lang
+                    ? '?languageRouting=' + encodeURIComponent(state.lang) + '&slot=' + encodeURIComponent(SLOT)
+                    : '?slot=' + encodeURIComponent(SLOT);
+                promise = ajax(BASE + '/SynonymsApi/Delete' + qs, { method: 'DELETE' });
+            }
+            promise.then(function() {
+                state.dirty = false;
+                state.rows = state.rows.filter(function(r) { return (r.rule || '').trim(); });
+                state.rows.forEach(function(r) { r.dirty = false; r.isNew = false; });
+                renderRows();
+                setAlert(s('synonyms.saved', 'Synonyms saved.'));
+            }).catch(function(err) {
+                setAlert((err && err.message) || s('synonyms.request_failed', 'Failed to save synonyms.'), true);
+            });
+        }
+
+        function discard() {
+            loadForLang(state.lang);
+        }
+
+        if (langSel) {
+            langSel.addEventListener('change', function() {
+                if (state.dirty) {
+                    var keep = confirm(s('synonyms.confirm_unsaved',
+                        'You have unsaved synonym changes. Press OK to save, or Cancel to discard.'));
+                    var p = keep ? Promise.resolve(save()) : Promise.resolve();
+                    p.then(function() { loadForLang(langSel.value); });
+                    return;
+                }
+                loadForLang(langSel.value);
+            });
+        }
+        if (addBtn)     addBtn.addEventListener('click', addRule);
+        if (saveBtn)    saveBtn.addEventListener('click', save);
+        if (discardBtn) discardBtn.addEventListener('click', discard);
+
+        // Pre-pick the first profile-scoped locale if the global blob is empty
+        // and the profile only has one applicable language — reduces the steps
+        // to "edit synonyms for this profile" by one click.
+        if ((!langSel || langSel.value === '') && opts.locales && opts.locales.length === 1) {
+            if (langSel) langSel.value = opts.locales[0];
+            state.lang = opts.locales[0];
+        }
+
+        loadForLang(state.lang);
+        refreshChrome();
     }
 
     var _auditLoaded = false;
