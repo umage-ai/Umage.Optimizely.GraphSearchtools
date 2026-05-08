@@ -3773,21 +3773,44 @@ td.bpe-editing select {
     border-color: var(--gst-primary);
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.14);
 }
+/* Inside an interactive chip the value renders alongside the label. The
+   actual <select> sits transparently above this span so clicks anywhere
+   on the pill open the dropdown — see .gst-prof-chip__select below. */
+.gst-prof-chip--input .gst-prof-chip__value { font-weight: 500; }
 .gst-prof-chip__select {
+    /* Stretched across the entire chip so the click target is the whole
+       pill, not just the option text. The native select's hit area
+       otherwise collapses to its content width, leaving the label,
+       caret zone, and padding feeling dead.
+
+       color: transparent hides the trigger's value text — the visible
+       .gst-prof-chip__value beneath the select renders it instead, kept
+       in sync by the picker change handlers. The dropdown popup uses
+       its own option text, which the <option> rule below restores. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
     appearance: none;
     -webkit-appearance: none;
-    background: transparent;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    color: var(--gst-text);
     font: inherit;
-    font-weight: 500;
+    /* Stop iOS from zooming the viewport when the select is focused. */
+    font-size: 16px;
     cursor: pointer;
     outline: none;
-    /* The custom caret sits to the right; clip whatever the browser
-       wants to render natively. */
-    padding-right: 0;
+}
+.gst-prof-chip__select option {
+    /* Re-assert readable text/background for the dropdown popup; some
+       Chromium builds inherit the trigger's transparent color into the
+       option list and would otherwise render an invisible menu. */
+    color: var(--gst-text);
+    background: var(--gst-bg);
+    font-weight: 500;
 }
 .gst-prof-chip__caret {
     position: absolute;
@@ -3796,6 +3819,14 @@ td.bpe-editing select {
     transform: translateY(-50%);
     color: var(--gst-text-muted);
     pointer-events: none;
+    /* Sit above the transparent <select> so the glyph is visible — but
+       pointer-events:none lets the click pass through to the select. */
+    z-index: 1;
+    transition: transform 120ms ease;
+}
+.gst-prof-chip--input:focus-within .gst-prof-chip__caret {
+    transform: translateY(-50%) rotate(180deg);
+    color: var(--gst-primary);
 }
 .gst-prof-chip--static {
     background: var(--gst-bg);

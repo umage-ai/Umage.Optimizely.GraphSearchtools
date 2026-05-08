@@ -566,15 +566,27 @@
             loadForLang(state.lang);
         }
 
+        // The chip's visible value sits in a span beneath a transparent
+        // overlay <select> — see graphsearchtools.css `.gst-prof-chip__select`.
+        // Mirror the selected option's label into that span on every change
+        // so the pill text matches what the dropdown is actually pointing at.
+        function syncLangDisplay() {
+            var disp = document.getElementById('gst-prof-syn-lang-display');
+            if (!disp || !langSel) return;
+            var opt = langSel.options[langSel.selectedIndex];
+            disp.textContent = opt ? opt.text.trim() : (langSel.value || '');
+        }
+
         if (langSel) {
             langSel.addEventListener('change', function() {
                 if (state.dirty) {
                     var keep = confirm(s('synonyms.confirm_unsaved',
                         'You have unsaved synonym changes. Press OK to save, or Cancel to discard.'));
                     var p = keep ? Promise.resolve(save()) : Promise.resolve();
-                    p.then(function() { loadForLang(langSel.value); });
+                    p.then(function() { syncLangDisplay(); loadForLang(langSel.value); });
                     return;
                 }
+                syncLangDisplay();
                 loadForLang(langSel.value);
             });
         }
@@ -589,6 +601,7 @@
             if (langSel) langSel.value = opts.locales[0];
             state.lang = opts.locales[0];
         }
+        syncLangDisplay();
 
         loadForLang(state.lang);
         refreshChrome();

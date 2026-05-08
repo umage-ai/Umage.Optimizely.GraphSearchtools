@@ -61,19 +61,28 @@
                 <div class="gst-prof-preview__pickers" role="group"
                      aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/scopeLabel")">
 
+                    @* The interactive chips render the visible label + value
+                       in normal flow and overlay a transparent <select> on
+                       top so the entire pill is the click target — clicking
+                       the label, caret, or padding all open the dropdown.
+                       Without the overlay, the native select's hit area is
+                       just its content text and the surrounding pill feels
+                       dead. The label's `for` attribute also points to the
+                       select for label-click focus + screen-reader linkage. *@
                     @if (siteSelectable)
                     {
                         <label class="gst-prof-chip gst-prof-chip--input" for="gst-pin-site">
                             <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <span class="gst-prof-chip__value" id="gst-pin-site-display">@Model.Sites[0]</span>
+                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
+                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
+                            </svg>
                             <select id="gst-pin-site" class="gst-prof-chip__select">
                                 @foreach (var site in Model.Sites)
                                 {
                                     <option value="@site">@site</option>
                                 }
                             </select>
-                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
-                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
-                            </svg>
                         </label>
                     }
                     else
@@ -93,15 +102,16 @@
                     {
                         <label class="gst-prof-chip gst-prof-chip--input" for="gst-pin-locale">
                             <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <span class="gst-prof-chip__value" id="gst-pin-locale-display">@Model.Locales[0]</span>
+                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
+                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
+                            </svg>
                             <select id="gst-pin-locale" class="gst-prof-chip__select">
                                 @foreach (var loc in Model.Locales)
                                 {
                                     <option value="@loc">@loc</option>
                                 }
                             </select>
-                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
-                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
-                            </svg>
                         </label>
                     }
                     else
@@ -383,6 +393,12 @@
                             <span class="gst-prof-chip__label">
                                 @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/language")
                             </span>
+                            <span class="gst-prof-chip__value" id="gst-prof-syn-lang-display">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/global")
+                            </span>
+                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
+                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
+                            </svg>
                             <select id="gst-prof-syn-lang" class="gst-prof-chip__select">
                                 <option value="">
                                     @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/global")
@@ -392,9 +408,6 @@
                                     <option value="@loc">@loc</option>
                                 }
                             </select>
-                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
-                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
-                            </svg>
                         </label>
                     }
                 </header>

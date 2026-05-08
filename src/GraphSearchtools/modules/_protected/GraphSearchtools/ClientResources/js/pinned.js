@@ -1081,8 +1081,19 @@
             };
         }
 
+        // True only for the very first load after mount. We auto-seed a blank
+        // row in that case so the editor opens ready-to-fill rather than with
+        // a "no pins" placeholder. Subsequent loads (triggered by a site /
+        // locale switch) show the empty-state placeholder instead — silently
+        // injecting a dirty unsaved row when the user just wanted to inspect
+        // a different branch is surprising and produces phantom "1 unsaved"
+        // drawer state.
+        var firstLoad = true;
+
         function loadRows() {
             setAlert(null);
+            var seed = firstLoad;
+            firstLoad = false;
             var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
                 + '/pinned?site=' + encodeURIComponent(state.site || '')
                 + '&locale=' + encodeURIComponent(state.locale || '');
@@ -1095,7 +1106,7 @@
                 refreshKeyline();
                 return resolveNames();
             }).then(function () {
-                if (state.rows.length === 0) {
+                if (seed && state.rows.length === 0) {
                     state.rows.push(makeBlankRow());
                 }
                 renderRows();
@@ -1254,6 +1265,16 @@
                 clearTimeout(debounce);
                 debounce = setTimeout(run, 320);
             });
+
+            // Expose run() on the editor scope so the locale picker can
+            // re-execute the preview after a switch — otherwise the user
+            // would have to retype the same phrase to see the new branch's
+            // results. lastQuery is reset so the staleness guard inside run()
+            // doesn't reject the re-issued call.
+            state.rerunTryIt = function () {
+                lastQuery = '';
+                run();
+            };
 
             function clearStats() {
                 if (!stats) return;
@@ -1635,17 +1656,48 @@
             function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
         }
 
+        // Mirror the select's selected option into the visible value span
+        // sitting beneath the transparent overlay select. The chip's pill
+        // shape is the click target (the <select> covers it); the visible
+        // text comes from this span, so we have to push every change here.
+        function syncChipDisplay(selectEl, displayId) {
+            if (!selectEl) return;
+            var disp = document.getElementById(displayId);
+            if (!disp) return;
+            var opt = selectEl.options[selectEl.selectedIndex];
+            disp.textContent = opt ? opt.text : selectEl.value;
+        }
+
         // --- Wire pickers ---
+        // Initial sync — Razor pre-renders the first option's label, but
+        // an option further down the list could have been pre-selected
+        // (e.g. via persisted state); cover that case before any change.
+        syncChipDisplay(siteSel, 'gst-pin-site-display');
+        syncChipDisplay(localeSel, 'gst-pin-locale-display');
+
         if (siteSel && !siteSel.disabled) {
             siteSel.addEventListener('change', function () {
                 state.site = siteSel.value;
+                syncChipDisplay(siteSel, 'gst-pin-site-display');
                 loadRows();
             });
         }
         if (localeSel && !localeSel.disabled) {
             localeSel.addEventListener('change', function () {
                 state.locale = localeSel.value;
+                syncChipDisplay(localeSel, 'gst-pin-locale-display');
+                refreshKeyline();
                 loadRows();
+                // Locale changed — the live preview's input listener only fires
+                // on typing, so without a kick the SERP would still reflect the
+                // previous branch. The pinned-key formula and Graph language
+                // filter both depend on locale, so re-run if the user already
+                // has a phrase in the box.
+                var strip = document.getElementById('gst-pin-tryit-syn');
+                if (strip) { strip.hidden = true; strip.innerHTML = ''; }
+                if (typeof state.rerunTryIt === 'function') {
+                    state.rerunTryIt();
+                }
             });
         }
 
