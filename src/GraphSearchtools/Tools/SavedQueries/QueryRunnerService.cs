@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
@@ -47,7 +48,15 @@ public sealed class QueryRunnerService
         _serializerOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            // Optimizely Graph caches GraphQL requests by raw JSON bytes, not
+            // by parsed-string equivalence. With the default encoder, inner
+            // double-quotes in the query field serialize as `"` — Graph
+            // then evaluates that as a distinct (and, with usePinned, empty)
+            // query from the same logical document with `\"` escapes. Switch
+            // to the relaxed encoder so we emit `\"` and Graph routes the
+            // query through its normal cache.
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
     }
 
