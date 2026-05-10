@@ -326,10 +326,34 @@
           <tabs>
             <audit>Audit log</audit>
             <details>Details</details>
+            <insights>Insights</insights>
             <overview>Overview</overview>
             <pinned>Pinned</pinned>
             <synonyms>Synonyms</synonyms>
           </tabs>
+          <insights>
+            <windowLabel>Time window</windowLabel>
+            <topTitle>Top phrases</topTitle>
+            <topHint>What people are searching for</topHint>
+            <zeroTitle>Zero-result phrases</zeroTitle>
+            <zeroHint>Synonym-mining candidates</zeroHint>
+            <lowCtrTitle>Low-CTR phrases</lowCtrTitle>
+            <lowCtrHint>Pin-candidate phrases</lowCtrHint>
+            <countSuffix>in window</countSuffix>
+            <empty>No traffic in this window yet.</empty>
+            <emptyZero>No zero-result phrases — every search found something.</emptyZero>
+            <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
+            <loadFailed>Failed to load insights.</loadFailed>
+            <ctaPreview>Preview</ctaPreview>
+            <ctaPin>Draft pin</ctaPin>
+            <ctaSynonym>Draft synonym</ctaSynonym>
+            <ctaDrafted>✓ Drafted</ctaDrafted>
+            <draftedPin>Drafted in Pinned tab — fill in a target.</draftedPin>
+            <draftedSynonym>Drafted in Synonyms tab — finish the rule.</draftedSynonym>
+            <ctrLabel>CTR</ctrLabel>
+            <hitsLabel>hits</hitsLabel>
+            <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
+          </insights>
           <workspace>
             <consoleLabel>Profile tools</consoleLabel>
             <livePreviewEyebrow>Try-it</livePreviewEyebrow>

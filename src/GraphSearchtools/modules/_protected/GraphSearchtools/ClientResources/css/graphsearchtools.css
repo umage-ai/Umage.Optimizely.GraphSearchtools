@@ -4254,6 +4254,451 @@ td.bpe-editing select {
     font-family: var(--gst-font-mono);
 }
 
+/* ── Insights panel ──────────────────────────────────────────── */
+/*
+   Three vertically-stacked lanes of phrase signal scoped to the active
+   profile: top phrases, zero-result phrases, low-CTR phrases. Each lane
+   is anchored by a 2px colored rule on the left (--gst-primary / warning
+   / danger) so the eye lands on severity before reading. Phrase rows are
+   click-targets that drop the phrase into the live preview on the left;
+   hover reveals secondary CTAs to seed a draft pin or synonym row.
+
+   Visual contract:
+     - The mini-bar (.gst-prof-ins-row__bar) is the second-glance metric.
+       Width is set per-row via `--w` (0–100 percent of the lane's max).
+     - Counts use tabular-nums so the column visually aligns even at the
+       end of a string of varying lengths.
+     - CTAs are tertiary; they fade in on row hover so they don't compete
+       with the phrase typography in the resting state.
+*/
+
+.gst-prof-ins {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-md);
+}
+
+/* ── Window pills + refresh ──────────────────────────────────── */
+.gst-prof-ins__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--gst-space-sm);
+    padding: 6px 8px;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border-light);
+    border-radius: var(--gst-radius);
+}
+.gst-prof-ins__bar-spacer { flex: 1; }
+.gst-prof-ins__windows {
+    display: inline-flex;
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.gst-prof-ins__pill {
+    appearance: none;
+    background: var(--gst-surface);
+    border: 0;
+    border-right: 1px solid var(--gst-border);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    padding: 4px 12px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 120ms ease, color 120ms ease;
+}
+.gst-prof-ins__pill:last-child { border-right: 0; }
+.gst-prof-ins__pill:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-prof-ins__pill.is-active {
+    background: var(--gst-primary);
+    color: #fff;
+    cursor: default;
+}
+.gst-prof-ins__pill.is-active:hover { background: var(--gst-primary); }
+.gst-prof-ins__refresh {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text-secondary);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 140ms ease, border-color 140ms ease, transform 200ms ease;
+}
+.gst-prof-ins__refresh:hover {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+}
+.gst-prof-ins__refresh.is-spinning svg {
+    animation: gst-prof-ins-spin 800ms linear infinite;
+}
+@keyframes gst-prof-ins-spin {
+    from { transform: rotate(0); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Lanes ───────────────────────────────────────────────────── */
+.gst-prof-ins__lanes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-md);
+}
+.gst-prof-ins-lane {
+    /* Each lane carries an accent color in --lane-accent, applied to the
+       left rule inside the head and to the bar fills inside its rows. */
+    --lane-accent: var(--gst-primary);
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border-light);
+    border-radius: var(--gst-radius);
+    overflow: hidden;
+}
+.gst-prof-ins-lane--top    { --lane-accent: var(--gst-primary); }
+.gst-prof-ins-lane--zero   { --lane-accent: var(--gst-danger); }
+.gst-prof-ins-lane--lowctr { --lane-accent: var(--gst-warning); }
+
+.gst-prof-ins-lane__head {
+    display: grid;
+    grid-template-columns: 2px max-content 1fr max-content;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px var(--gst-space-md) 10px 0;
+    border-bottom: 1px solid var(--gst-border-light);
+    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 220%);
+}
+.gst-prof-ins-lane__rule {
+    align-self: stretch;
+    width: 2px;
+    background: var(--lane-accent);
+    margin-right: 2px;
+}
+.gst-prof-ins-lane__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gst-text);
+}
+.gst-prof-ins-lane__hint {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    letter-spacing: 0.01em;
+    /* Hint text gets a subtle separator dot before it. */
+}
+.gst-prof-ins-lane__hint::before {
+    content: '·';
+    margin: 0 8px 0 0;
+    color: var(--gst-border);
+}
+.gst-prof-ins-lane__count {
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gst-text-secondary);
+    letter-spacing: 0.04em;
+}
+.gst-prof-ins-lane__count::after {
+    content: ' · ' attr(data-window);
+    color: var(--gst-text-muted);
+    font-weight: 500;
+    margin-left: 2px;
+}
+.gst-prof-ins-lane__count[data-window=""]::after { content: ''; }
+
+.gst-prof-ins-lane__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Phrase row ──────────────────────────────────────────────── */
+/* Grid: phrase | bar | count | locale | actions
+   The bar is the second-glance signal and its width animates in
+   on first paint via --w. */
+.gst-prof-ins-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 84px max-content max-content max-content;
+    align-items: center;
+    gap: 14px;
+    padding: 9px var(--gst-space-md) 9px 14px;
+    border-top: 1px solid var(--gst-border-light);
+    cursor: pointer;
+    position: relative;
+    transition: background 120ms ease;
+}
+.gst-prof-ins-row:first-child { border-top: 0; }
+.gst-prof-ins-row:hover {
+    background: var(--gst-surface-hover);
+}
+.gst-prof-ins-row.is-active {
+    background: color-mix(in srgb, var(--lane-accent) 8%, var(--gst-surface));
+}
+.gst-prof-ins-row.is-active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--lane-accent);
+}
+
+.gst-prof-ins-row__phrase {
+    font-size: 13px;
+    color: var(--gst-text);
+    font-weight: 500;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 120ms ease;
+}
+.gst-prof-ins-row:hover .gst-prof-ins-row__phrase { color: var(--lane-accent); }
+
+/* Bar — fills via the row's --w (0–100). Empty bars (zero-result lanes)
+   render as a row of 4 small severity dots instead. */
+.gst-prof-ins-row__bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gst-border-light);
+    position: relative;
+    overflow: hidden;
+}
+.gst-prof-ins-row__bar::after {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: var(--w, 0%);
+    background: var(--lane-accent);
+    border-radius: inherit;
+    /* Subtle entrance animation — first paint feels alive without being
+       distracting on subsequent re-renders. */
+    transform-origin: left;
+    animation: gst-prof-ins-bar 360ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes gst-prof-ins-bar {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+/* Zero-result lane swaps the bar for a small "miss" indicator —
+   four little ticks the eye can count, instead of a 0%-width bar. */
+.gst-prof-ins-lane--zero .gst-prof-ins-row__bar {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: auto;
+}
+.gst-prof-ins-lane--zero .gst-prof-ins-row__bar::after { display: none; }
+.gst-prof-ins-row__miss {
+    width: 6px; height: 6px;
+    border-radius: 1px;
+    background: var(--lane-accent);
+    opacity: 0.85;
+}
+/* Low-CTR lane swaps the bar for a CTR percentage chip instead — the
+   absolute number reads better than a proportional bar at the bottom of
+   the scale. The bar element still occupies its grid cell so columns
+   stay aligned across lanes. */
+.gst-prof-ins-lane--lowctr .gst-prof-ins-row__bar {
+    background: transparent;
+    height: auto;
+    text-align: center;
+}
+.gst-prof-ins-lane--lowctr .gst-prof-ins-row__bar::after { display: none; }
+.gst-prof-ins-row__ctr {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--lane-accent);
+    letter-spacing: 0.02em;
+}
+.gst-prof-ins-row__ctr-num { font-size: 12px; }
+
+.gst-prof-ins-row__count {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--gst-text-secondary);
+    text-align: right;
+    min-width: 32px;
+}
+.gst-prof-ins-row__count strong {
+    color: var(--gst-text);
+    font-weight: 600;
+}
+.gst-prof-ins-row__count small {
+    font-size: 10px;
+    color: var(--gst-text-muted);
+    margin-left: 4px;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+}
+
+.gst-prof-ins-row__locale {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--gst-text-secondary);
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border-light);
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.gst-prof-ins-row__locale[hidden] { display: none; }
+
+/* CTA cluster — invisible until row hover (or focus-within). Keeps the
+   resting state clean so the eye reads the typography first. */
+.gst-prof-ins-row__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transform: translateX(4px);
+    transition: opacity 140ms ease, transform 160ms ease;
+    pointer-events: none;
+}
+.gst-prof-ins-row:hover .gst-prof-ins-row__actions,
+.gst-prof-ins-row:focus-within .gst-prof-ins-row__actions {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.gst-prof-ins-row__cta {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.gst-prof-ins-row__cta:hover {
+    background: var(--gst-surface);
+    border-color: var(--gst-border);
+    color: var(--gst-text);
+}
+.gst-prof-ins-row__cta--primary {
+    color: var(--lane-accent);
+}
+.gst-prof-ins-row__cta--primary:hover {
+    background: color-mix(in srgb, var(--lane-accent) 12%, var(--gst-surface));
+    border-color: color-mix(in srgb, var(--lane-accent) 35%, transparent);
+    color: var(--lane-accent);
+}
+/* Post-click confirmation: not a button anymore, a state badge. */
+.gst-prof-ins-row__cta--drafted,
+.gst-prof-ins-row__cta--drafted:hover {
+    background: color-mix(in srgb, var(--lane-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--lane-accent) 30%, transparent);
+    color: var(--lane-accent);
+    cursor: default;
+    opacity: .85;
+}
+
+/* ── Empty / loading / error states ──────────────────────────── */
+.gst-prof-ins-lane__empty,
+.gst-prof-ins-lane__loading,
+.gst-prof-ins-lane__error {
+    margin: 0;
+    padding: 16px var(--gst-space-md) 18px;
+    font-size: 12px;
+    color: var(--gst-text-muted);
+    text-align: center;
+    line-height: 1.5;
+}
+.gst-prof-ins-lane__error { color: var(--gst-danger); }
+.gst-prof-ins-lane__loading {
+    /* Three skeleton bars stacked vertically — gives a sense of "phrases
+       are coming" without committing to any specific row count. */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    padding: 14px var(--gst-space-md) 16px;
+}
+.gst-prof-ins-lane__loading::before,
+.gst-prof-ins-lane__loading::after,
+.gst-prof-ins-lane__loading > span {
+    content: '';
+    height: 12px;
+    border-radius: 3px;
+    background: linear-gradient(90deg,
+        var(--gst-border-light) 0%,
+        var(--gst-surface-hover) 50%,
+        var(--gst-border-light) 100%);
+    background-size: 200% 100%;
+    animation: gst-prof-ins-shimmer 1100ms ease-in-out infinite;
+}
+.gst-prof-ins-lane__loading::before { width: 78%; }
+.gst-prof-ins-lane__loading > span  { width: 62%; }
+.gst-prof-ins-lane__loading::after  { width: 44%; }
+@keyframes gst-prof-ins-shimmer {
+    from { background-position: 100% 0; }
+    to   { background-position: -100% 0; }
+}
+
+/* Footnote sits below the lanes and explains where the data comes from. */
+.gst-prof-ins__footnote {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--gst-text-muted);
+    padding: 0 4px;
+}
+
+/* Toast-style flash that confirms a draft was seeded into another tab.
+   Lives on top of the panel for ~2.5s, then fades out — keeps users in
+   the Insights flow rather than yanking them away on every CTA click. */
+.gst-prof-ins__flash {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translate(-50%, 8px);
+    background: var(--gst-text);
+    color: var(--gst-surface);
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    box-shadow: var(--gst-shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 5;
+}
+.gst-prof-ins__flash.is-shown {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+.gst-prof-ins__flash-cta {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-left: 8px;
+    pointer-events: auto;
+}
+
+.gst-prof-panel[data-panel="insights"] {
+    position: relative; /* anchor for .gst-prof-ins__flash */
+}
+
 /* ── Details panel ───────────────────────────────────────────── */
 .gst-prof-details__section + .gst-prof-details__section {
     margin-top: var(--gst-space-lg);

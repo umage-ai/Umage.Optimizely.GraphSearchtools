@@ -198,6 +198,20 @@
                 <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/synonyms")</span>
             </button>
             <button type="button" class="gst-prof-switcher__btn"
+                    role="tab" aria-selected="false" data-panel="insights" id="gst-prof-tab-insights">
+                <span class="gst-prof-switcher__icon" aria-hidden="true">
+                    @* Spark / signal glyph — 3 ascending bars with a hairline
+                       baseline. Mirrors the lane stacking inside the panel. *@
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+                        <line x1="2.5" y1="13" x2="13.5" y2="13"/>
+                        <rect x="3" y="9" width="2" height="3.4" rx="0.4" fill="currentColor" stroke="none"/>
+                        <rect x="7" y="6" width="2" height="6.4" rx="0.4" fill="currentColor" stroke="none"/>
+                        <rect x="11" y="3" width="2" height="9.4" rx="0.4" fill="currentColor" stroke="none"/>
+                    </svg>
+                </span>
+                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/insights")</span>
+            </button>
+            <button type="button" class="gst-prof-switcher__btn"
                     role="tab" aria-selected="false" data-panel="details" id="gst-prof-tab-details">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
@@ -473,6 +487,93 @@
             }
         </article>
 
+        @* Insights panel — three lanes of phrase-level signal scoped to this
+           profile (top / zero-result / low-CTR). Each row is a click target
+           that drops the phrase into the live preview on the left; the
+           hover-revealed CTAs seed a draft pin or synonym row in the matching
+           tab. The window pill is the single source of truth — switching it
+           re-fetches all three lanes from /SearchLogsApi. *@
+        <article class="gst-prof-panel" data-panel="insights" hidden
+                 role="tabpanel" aria-labelledby="gst-prof-tab-insights">
+            <div id="gst-prof-ins" class="gst-prof-ins">
+
+                <header class="gst-prof-ins__bar">
+                    <div class="gst-prof-ins__windows" role="group"
+                         aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/insights/windowLabel")">
+                        <button type="button" class="gst-prof-ins__pill" data-window="1h">1h</button>
+                        <button type="button" class="gst-prof-ins__pill is-active" data-window="24h">24h</button>
+                        <button type="button" class="gst-prof-ins__pill" data-window="7d">7d</button>
+                        <button type="button" class="gst-prof-ins__pill" data-window="30d">30d</button>
+                    </div>
+                    <span class="gst-prof-ins__bar-spacer"></span>
+                    <button type="button" id="gst-prof-ins-refresh" class="gst-prof-ins__refresh"
+                            title="@Loc.GetString("/graphsearchtools/ui/shared/refresh")"
+                            aria-label="@Loc.GetString("/graphsearchtools/ui/shared/refresh")">
+                        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 4.5 V8 H9.5"/>
+                            <path d="M3 11.5 V8 H6.5"/>
+                            <path d="M11.7 6.2 a 5 5 0 0 0 -8.7 1.6 M4.3 9.8 a 5 5 0 0 0 8.7 -1.6"/>
+                        </svg>
+                    </button>
+                </header>
+
+                <div id="gst-prof-ins-alert" class="gst-alert" hidden></div>
+
+                <div class="gst-prof-ins__lanes">
+
+                    @* TOP — most-asked phrases. The phrase you should know about. *@
+                    <section class="gst-prof-ins-lane gst-prof-ins-lane--top" data-lane="top">
+                        <header class="gst-prof-ins-lane__head">
+                            <span class="gst-prof-ins-lane__rule" aria-hidden="true"></span>
+                            <h3 class="gst-prof-ins-lane__title">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/topTitle")
+                            </h3>
+                            <span class="gst-prof-ins-lane__hint">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/topHint")
+                            </span>
+                            <span class="gst-prof-ins-lane__count" id="gst-prof-ins-top-count">—</span>
+                        </header>
+                        <ol class="gst-prof-ins-lane__list" id="gst-prof-ins-top"></ol>
+                    </section>
+
+                    @* ZERO-RESULTS — synonym mining. Anchored CTA: + synonym. *@
+                    <section class="gst-prof-ins-lane gst-prof-ins-lane--zero" data-lane="zero">
+                        <header class="gst-prof-ins-lane__head">
+                            <span class="gst-prof-ins-lane__rule" aria-hidden="true"></span>
+                            <h3 class="gst-prof-ins-lane__title">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/zeroTitle")
+                            </h3>
+                            <span class="gst-prof-ins-lane__hint">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/zeroHint")
+                            </span>
+                            <span class="gst-prof-ins-lane__count" id="gst-prof-ins-zero-count">—</span>
+                        </header>
+                        <ol class="gst-prof-ins-lane__list" id="gst-prof-ins-zero"></ol>
+                    </section>
+
+                    @* LOW-CTR — pin candidates. Anchored CTA: + pin. *@
+                    <section class="gst-prof-ins-lane gst-prof-ins-lane--lowctr" data-lane="lowctr">
+                        <header class="gst-prof-ins-lane__head">
+                            <span class="gst-prof-ins-lane__rule" aria-hidden="true"></span>
+                            <h3 class="gst-prof-ins-lane__title">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/lowCtrTitle")
+                            </h3>
+                            <span class="gst-prof-ins-lane__hint">
+                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/lowCtrHint")
+                            </span>
+                            <span class="gst-prof-ins-lane__count" id="gst-prof-ins-lowctr-count">—</span>
+                        </header>
+                        <ol class="gst-prof-ins-lane__list" id="gst-prof-ins-lowctr"></ol>
+                    </section>
+
+                </div>
+
+                <p class="gst-prof-ins__footnote">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/insights/footnote")
+                </p>
+            </div>
+        </article>
+
         @* Details panel — profile metadata + GraphQL doc + audit log *@
         <article class="gst-prof-panel" data-panel="details" hidden
                  role="tabpanel" aria-labelledby="gst-prof-tab-details">
@@ -637,7 +738,9 @@
                     locales: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Locales)),
                     isGeneric: @(Model.IsGeneric ? "true" : "false"),
                     isSiteShared: @(Model.IsSiteShared ? "true" : "false"),
-                    hasGraphQLDoc: @(Model.GraphQLDocExists ? "true" : "false")
+                    hasGraphQLDoc: @(Model.GraphQLDocExists ? "true" : "false"),
+                    queryAppliesPinned: @(Model.QueryAppliesPinned ? "true" : "false"),
+                    queryAppliesSynonyms: @(Model.QueryAppliesSynonyms ? "true" : "false")
                 });
             }
         })();

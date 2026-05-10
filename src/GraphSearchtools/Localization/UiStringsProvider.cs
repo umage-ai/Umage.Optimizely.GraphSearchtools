@@ -227,6 +227,25 @@ public class UiStringsProvider(LocalizationService loc)
                         subject = P("detail/audit/col/subject"),
                         locale = P("detail/audit/col/locale")
                     }
+                },
+                insights = new
+                {
+                    topTitle = P("detail/insights/topTitle"),
+                    zeroTitle = P("detail/insights/zeroTitle"),
+                    lowCtrTitle = P("detail/insights/lowCtrTitle"),
+                    countSuffix = P("detail/insights/countSuffix"),
+                    empty = P("detail/insights/empty"),
+                    emptyZero = P("detail/insights/emptyZero"),
+                    emptyLowCtr = P("detail/insights/emptyLowCtr"),
+                    loadFailed = P("detail/insights/loadFailed"),
+                    ctaPreview = P("detail/insights/ctaPreview"),
+                    ctaPin = P("detail/insights/ctaPin"),
+                    ctaSynonym = P("detail/insights/ctaSynonym"),
+                    ctaDrafted = P("detail/insights/ctaDrafted"),
+                    draftedPin = P("detail/insights/draftedPin"),
+                    draftedSynonym = P("detail/insights/draftedSynonym"),
+                    ctrLabel = P("detail/insights/ctrLabel"),
+                    hitsLabel = P("detail/insights/hitsLabel")
                 }
             }
         },
