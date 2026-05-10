@@ -211,7 +211,7 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
                     ContentId: GetNestedInt(item, "ContentLink", "Id"),
                     ContentGuid: GetNestedString(item, "ContentLink", "GuidValue") ?? string.Empty,
                     Score: GetDouble(item, "_score", "score"),
-                    FullTextSnippet: TrimSnippet(GetString(item, "_fulltext", "GetExcerpt", "Excerpt", "Description")),
+                    FullTextSnippet: TrimSnippet(GetSnippetText(item)),
                     Url: GetString(item, "Url", "url", "RelativePath", "relativePath", "Path", "path", "Slug", "slug"),
                     Raw: PrettyJson(item),
                     Pinned: false));
@@ -275,6 +275,48 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
             }
         }
         return null;
+    }
+
+    // Extract a snippet for the result card. Prefers a `_fulltext` array entry
+    // that carries native highlight markers ('' / '') so the card
+    // surfaces the actual matched span, not a leading paragraph that may not
+    // mention the query at all. Falls through to scalar `_fulltext` /
+    // `GetExcerpt` / `Excerpt` / `Description` shapes for non-Alloy queries
+    // that don't enable highlight or use a different field name.
+    private static string? GetSnippetText(JsonElement item)
+    {
+        if (item.TryGetProperty("_fulltext", out var ft))
+        {
+            if (ft.ValueKind == JsonValueKind.String)
+            {
+                var s = ft.GetString();
+                if (!string.IsNullOrEmpty(s)) return StripHtml(s);
+            }
+            else if (ft.ValueKind == JsonValueKind.Array)
+            {
+                string? firstNonEmpty = null;
+                foreach (var entry in ft.EnumerateArray())
+                {
+                    if (entry.ValueKind != JsonValueKind.String) continue;
+                    var s = entry.GetString();
+                    if (string.IsNullOrWhiteSpace(s)) continue;
+                    firstNonEmpty ??= s;
+                    if (s.IndexOf('\u0001') >= 0) return StripHtml(s);
+                }
+                if (firstNonEmpty != null) return StripHtml(firstNonEmpty);
+            }
+        }
+        return GetString(item, "GetExcerpt", "Excerpt", "Description");
+    }
+
+    private static string StripHtml(string s)
+    {
+        // Rich text fields land here as <p>…</p>. Strip tags + decode entities
+        // + collapse whitespace so the snippet renders flat. Markers (
+        // / ) survive both passes since they're not HTML.
+        var stripped = System.Text.RegularExpressions.Regex.Replace(s, "<[^>]+>", " ");
+        var decoded = System.Net.WebUtility.HtmlDecode(stripped);
+        return System.Text.RegularExpressions.Regex.Replace(decoded, @"\s+", " ").Trim();
     }
 
     private static string? GetNestedString(JsonElement el, string a, string b)
