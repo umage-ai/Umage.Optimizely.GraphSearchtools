@@ -306,7 +306,6 @@
             <empty>No pinned items for this phrase yet.</empty>
             <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
             <globalFilter>Search pins by phrase, target, or type…</globalFilter>
-            <keyLabel>Pinned key</keyLabel>
             <organicTitle>Organic results (no pins applied)</organicTitle>
             <previewFailed>Preview failed</previewFailed>
             <saveAll>Save all changes</saveAll>
@@ -341,14 +340,19 @@
             <switcherLabel>Profile tools</switcherLabel>
           </workspace>
           <synonyms>
-            <addRule>Add rule</addRule>
-            <discard>Discard</discard>
-            <empty>No synonym rules for this language yet.</empty>
-            <global>Global</global>
-            <globalNote>Synonyms are stored globally per language — edits here affect every profile that searches in this language.</globalNote>
+            <addFirst>Add your first rule</addFirst>
+            <addRow>Add rule</addRow>
+            <colScope>Scope</colScope>
+            <discard>Discard changes</discard>
+            <emptyHeadline>No synonym rules yet — add one to expand or substitute terms at query time.</emptyHeadline>
+            <globalNote>Showing every rule that applies when previewing in this language: the per-language blob (editable here) plus the global blob, which is shared across languages and managed in the Synonyms tool.</globalNote>
+            <globalRowTip>Global rule — applies in every language. Manage in the Synonyms tool.</globalRowTip>
             <helpSummary>Rule format</helpSummary>
-            <language>Language</language>
-            <save>Save synonyms</save>
+            <noMatches>No rules match the current filter.</noMatches>
+            <save>Save all changes</save>
+            <scopeGlobal>global</scopeGlobal>
+            <scopeGlobalTip>Stored in the global synonym blob — applies to every language.</scopeGlobalTip>
+            <scopeLangTip>Stored in this language's synonym blob.</scopeLangTip>
             <title>Synonym rules</title>
           </synonyms>
           <details>
@@ -441,6 +445,8 @@
           <next>Next</next>
           <copy>Copy</copy>
           <copied>Copied</copied>
+          <pagerLabel>Pagination</pagerLabel>
+          <pagerStatus>Page %1 of %2</pagerStatus>
         </shared>
         <components>
           <picker_title>Select content</picker_title>
@@ -477,6 +483,7 @@
           <saved>Synonyms saved.</saved>
           <confirm_unsaved>You have unsaved synonym changes. Press OK to save, or Cancel to discard.</confirm_unsaved>
           <filter_placeholder>Filter rules...</filter_placeholder>
+          <placeholder_hint>Type a new synonym rule…</placeholder_hint>
           <add>Add</add>
           <col_rule>Rule</col_rule>
           <save>Save changes</save>

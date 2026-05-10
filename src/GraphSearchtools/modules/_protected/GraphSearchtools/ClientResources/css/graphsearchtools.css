@@ -2673,10 +2673,15 @@ td.bpe-editing select {
 .gst-card__subtitle { color: var(--gst-text-muted); font-size: 12px; margin: 4px 0 0; }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Phase 6 — Pinned editor redesign (gst-pinedit-*)
-   Flat sortable / filterable data grid with content-by-name typeahead
-   and in-place editing. Replaces the phrase-tabs + per-phrase board UI
-   that lived under .gst-pin-board__head / .gst-pin-phrases.
+   Editable data grid (gst-pinedit-*)
+   Originally built for the Pinned editor; now reused by the Profile
+   detail Synonyms panel and intended as the shared shape for any
+   admin-grade list-edit surface in this addon. The class prefix is
+   historical — when you see `gst-pinedit__cmdbar`, `__grid`, `__row`,
+   `__cell`, `__drawer`, `__action`, `__count`, `__addbtn`, `__searchbox`,
+   `__sortbtn`, etc. on non-pinned markup, treat them as the shared
+   editor-grid library. Pin-specific styling stays under
+   `gst-pinedit__target*` and `gst-pinedit__typeahead*`.
    ───────────────────────────────────────────────────────────────────── */
 
 .gst-pinedit {
@@ -2782,6 +2787,12 @@ td.bpe-editing select {
     width: 100%;
     border-collapse: collapse;
     font-size: var(--gst-text-sm);
+    /* Pair `table-layout: fixed` with the explicit `<colgroup>` in the
+       Razor view — fixed layout uses the col widths as authoritative for
+       both thead and tbody, so the row cells line up with the headers
+       regardless of cell content size (auto layout was collapsing the
+       priority column because its content is small). */
+    table-layout: fixed;
 }
 .gst-pinedit__grid thead {
     position: sticky;
@@ -2831,47 +2842,37 @@ td.bpe-editing select {
 .gst-pinedit__col.is-asc .gst-pinedit__caret { opacity: 1; transform: rotate(180deg); }
 .gst-pinedit__col.is-desc .gst-pinedit__caret { opacity: 1; }
 
-/* Column widths — let phrase + target take most of the room */
-.gst-pinedit__col--rank     { width: 56px;  min-width: 56px; }
-.gst-pinedit__col--phrase   { width: 28%; }
-.gst-pinedit__col--target   { width: 36%; }
-.gst-pinedit__col--type     { width: 130px; }
-.gst-pinedit__col--priority { width: 96px;  text-align: right; }
-.gst-pinedit__col--actions  { width: 76px; }
+/* Column widths come from the <colgroup> in the Razor view. */
 
 /* Rows */
 .gst-pinedit__row {
     border-bottom: 1px solid var(--gst-border-light);
     transition: background-color 120ms ease;
-    position: relative;
+    /* DO NOT add `position: relative` here — Chromium responds by injecting
+       an anonymous layout slot for any pseudo-element, which shifts the
+       body cells one column to the right and collapses the last one. The
+       dirty/new "rail" lives on the first cell's left border instead so we
+       don't need a positioned containing block on the row. */
 }
 .gst-pinedit__row:hover { background: var(--gst-surface-hover); }
 .gst-pinedit__row.is-dirty { background: var(--gst-warning-light); }
-.gst-pinedit__row.is-dirty::before,
-.gst-pinedit__row.is-new::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--gst-warning);
+.gst-pinedit__row.is-new   { background: var(--gst-success-light); }
+/* Status rail — the first cell of a dirty/new row carries a 3px inset
+   shadow on its left edge. Targets `:first-child` rather than a column
+   modifier so the rail works for any consumer of the grid (pinned,
+   synonyms, future tools) without each one having to opt in. */
+.gst-pinedit__row.is-dirty > .gst-pinedit__cell:first-child {
+    box-shadow: inset 3px 0 0 0 var(--gst-warning);
 }
-.gst-pinedit__row.is-new::before { background: var(--gst-success); }
-.gst-pinedit__row.is-new { background: var(--gst-success-light); }
+.gst-pinedit__row.is-new > .gst-pinedit__cell:first-child {
+    box-shadow: inset 3px 0 0 0 var(--gst-success);
+}
 
 .gst-pinedit__cell {
     padding: 6px 12px;
     vertical-align: middle;
 }
-.gst-pinedit__cell--rank {
-    font-family: var(--gst-font-mono);
-    font-variant-numeric: tabular-nums;
-    color: var(--gst-text-muted);
-    font-size: 11px;
-    text-align: center;
-    letter-spacing: 0.02em;
-}
-.gst-pinedit__cell--priority { text-align: right; }
-.gst-pinedit__cell--actions  { text-align: right; white-space: nowrap; }
+.gst-pinedit__cell--actions { text-align: right; white-space: nowrap; }
 
 /* Inline inputs — visually flat until hovered/focused */
 .gst-pinedit__input {
@@ -2893,14 +2894,6 @@ td.bpe-editing select {
     background: var(--gst-surface);
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.10);
 }
-.gst-pinedit__input--num {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    -moz-appearance: textfield;
-}
-.gst-pinedit__input--num::-webkit-outer-spin-button,
-.gst-pinedit__input--num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
 /* Target pill — name display with edit affordance */
 .gst-pinedit__target {
     display: inline-flex;
@@ -2917,6 +2910,11 @@ td.bpe-editing select {
     cursor: pointer;
     transition: border-color 120ms ease, background-color 120ms ease;
 }
+/* `display: inline-flex` above beats the UA default for [hidden]; re-assert
+   so `pill.hidden = true` actually hides the button. Without this, new /
+   unresolved rows render the pill placeholder *and* the typeahead input
+   side by side. */
+.gst-pinedit__target[hidden] { display: none; }
 .gst-pinedit__target:hover {
     border-color: var(--gst-primary);
     background: var(--gst-primary-light);
@@ -3128,14 +3126,49 @@ td.bpe-editing select {
     border-color: var(--gst-primary-hover);
 }
 
-/* Responsive — tighten low-priority columns first */
-@media (max-width: 980px) {
-    .gst-pinedit__col--priority,
-    .gst-pinedit__cell--priority { display: none; }
+/* ─────────────────────────────────────────────────────────────────────
+   Pager — shared by Pinned grid and Synonym list (Profile detail).
+   Compact prev / status / next strip; only renders when total > page size.
+   ───────────────────────────────────────────────────────────────────── */
+.gst-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--gst-border-light);
+    background: var(--gst-surface);
+    font-size: var(--gst-text-sm);
 }
-@media (max-width: 760px) {
-    .gst-pinedit__col--type,
-    .gst-pinedit__cell--type { display: none; }
+.gst-pager[hidden] { display: none; }
+.gst-pager__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    padding: 4px 10px;
+    border-radius: var(--gst-radius);
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.gst-pager__btn:hover:not(:disabled) {
+    border-color: var(--gst-primary);
+    color: var(--gst-primary);
+}
+.gst-pager__btn:disabled {
+    color: var(--gst-text-muted);
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+.gst-pager__status {
+    color: var(--gst-text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 96px;
+    text-align: center;
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -3192,6 +3225,24 @@ td.bpe-editing select {
     min-width: 0;
 }
 .gst-serp__input input::placeholder { color: var(--gst-text-muted); font-style: italic; }
+
+/* Loading spinner — sits at the trailing edge of the input pill, opposite
+   the magnifier glyph, only while the preview fetch is in flight. */
+.gst-serp__spinner {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(21, 101, 192, 0.18);
+    border-top-color: var(--gst-primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: gst-serp-spin 0.7s linear infinite;
+}
+.gst-serp__input.is-loading .gst-serp__spinner { display: block; }
+@keyframes gst-serp-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .gst-serp__spinner { animation-duration: 1.6s; }
+}
 
 /* Stats line */
 .gst-serp__stats {
@@ -3587,6 +3638,36 @@ td.bpe-editing select {
     background: rgba(46, 125, 50, 0.18);
 }
 
+/* ─── GraphQL syntax highlight ───────────────────────────────────────
+   Token palette mirrors GraphiQL's light theme (CodeMirror tokens) so
+   the doc panels read the same as the IDE the editors will open in
+   parallel. Tokens are emitted by GST.gqlHighlight and applied at first
+   paint via GST.applyGqlHighlight to any [data-lang="graphql"] block.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* CMS Shell's base stylesheet decorates <span>/<code> children with
+   per-line border + text-decoration rules that paint as horizontal
+   "line bars" running across our highlighted code panels. Reset both
+   on the panel itself and every span inside it so our highlight reads
+   as flat coloured tokens, not striped lines. */
+[data-lang="graphql"],
+[data-lang="graphql"] * {
+    border: 0 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    background: transparent !important;
+}
+[data-lang="graphql"] .gst-gql-kw    { color: hsl(320, 95%, 43%); }   /* query / mutation / fragment / on */
+[data-lang="graphql"] .gst-gql-atom  { color: hsl(188, 100%, 36%); }  /* enum values, true/false/null */
+[data-lang="graphql"] .gst-gql-num   { color: hsl(158, 60%, 42%); }   /* numeric literals */
+[data-lang="graphql"] .gst-gql-str   { color: hsl(36, 100%, 41%); }   /* string + block string literals */
+[data-lang="graphql"] .gst-gql-var   { color: hsl(242, 51%, 61%); }   /* $variable */
+[data-lang="graphql"] .gst-gql-arg   { color: hsl(188, 100%, 36%); }  /* argument names (followed by :) */
+[data-lang="graphql"] .gst-gql-field { color: hsl(208, 100%, 46%); }  /* field names in selection sets */
+[data-lang="graphql"] .gst-gql-dir   { color: hsl(320, 95%, 43%); }   /* @directive references */
+[data-lang="graphql"] .gst-gql-cm    { color: hsla(219, 28%, 32%, 0.6); font-style: italic; }
+[data-lang="graphql"] .gst-gql-punct { color: hsla(219, 28%, 32%, 0.85); }
+
 /* gst-serp__json-wrap inherits the JSON inspector's open/close animation
    that previously lived on the <pre> directly. */
 .gst-serp__json-wrap {
@@ -3737,46 +3818,58 @@ td.bpe-editing select {
 .gst-prof-preview__pickers {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
 }
 .gst-prof-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px 4px 8px;
+    gap: 8px;
+    padding: 5px 12px;
     border-radius: 999px;
     border: 1px solid var(--gst-border);
     background: var(--gst-surface);
     font-size: 12px;
     color: var(--gst-text);
-    line-height: 1.3;
-    transition: border-color 120ms ease, box-shadow 120ms ease;
+    line-height: 1.4;
+    /* accent-color tints the dropdown highlight so the popup's selected
+       row picks up the brand colour instead of the OS default blue. */
+    accent-color: var(--gst-primary);
 }
 .gst-prof-chip__label {
     font-size: 10px;
     color: var(--gst-text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     font-weight: 600;
 }
 .gst-prof-chip__value {
     color: var(--gst-text);
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.005em;
 }
 .gst-prof-chip--input {
     cursor: pointer;
     position: relative;
-    padding-right: 24px;
+    padding-right: 26px;
+    box-shadow: 0 1px 0 rgba(15, 20, 28, 0.02);
+    transition: border-color 160ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 160ms cubic-bezier(.2,.8,.2,1),
+                background-color 160ms ease;
 }
-.gst-prof-chip--input:hover { border-color: var(--gst-text-muted); }
+.gst-prof-chip--input:hover {
+    border-color: var(--gst-text-muted);
+    background: var(--gst-surface-hover);
+}
 .gst-prof-chip--input:focus-within {
     border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.14);
+    background: var(--gst-surface);
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.16),
+                0 1px 2px rgba(15, 20, 28, 0.04);
 }
 /* Inside an interactive chip the value renders alongside the label. The
    actual <select> sits transparently above this span so clicks anywhere
    on the pill open the dropdown — see .gst-prof-chip__select below. */
-.gst-prof-chip--input .gst-prof-chip__value { font-weight: 500; }
+.gst-prof-chip--input .gst-prof-chip__value { font-weight: 600; }
 .gst-prof-chip__select {
     /* Stretched across the entire chip so the click target is the whole
        pill, not just the option text. The native select's hit area
@@ -3807,14 +3900,25 @@ td.bpe-editing select {
 .gst-prof-chip__select option {
     /* Re-assert readable text/background for the dropdown popup; some
        Chromium builds inherit the trigger's transparent color into the
-       option list and would otherwise render an invisible menu. */
+       option list and would otherwise render an invisible menu.
+       Padding gives the popup rows breathing room (Firefox renders this
+       fully; Chromium honours the typography even where padding is
+       capped) so the option list feels less cramped under the pill. */
     color: var(--gst-text);
-    background: var(--gst-bg);
+    background: var(--gst-surface);
+    font-family: var(--gst-font);
+    font-size: 13px;
     font-weight: 500;
+    padding: 6px 14px;
+}
+.gst-prof-chip__select option:checked {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary-hover);
+    font-weight: 600;
 }
 .gst-prof-chip__caret {
     position: absolute;
-    right: 9px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--gst-text-muted);
@@ -3822,8 +3926,10 @@ td.bpe-editing select {
     /* Sit above the transparent <select> so the glyph is visible — but
        pointer-events:none lets the click pass through to the select. */
     z-index: 1;
-    transition: transform 120ms ease;
+    transition: transform 200ms cubic-bezier(.34, 1.56, .64, 1),
+                color 160ms ease;
 }
+.gst-prof-chip--input:hover .gst-prof-chip__caret { color: var(--gst-text); }
 .gst-prof-chip--input:focus-within .gst-prof-chip__caret {
     transform: translateY(-50%) rotate(180deg);
     color: var(--gst-primary);
@@ -3844,38 +3950,6 @@ td.bpe-editing select {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-}
-
-/* ── Pinned-key keyline ──────────────────────────────────────── */
-.gst-prof-preview__keyline {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border: 1px dashed var(--gst-border);
-    border-radius: var(--gst-radius);
-    background: rgba(255, 255, 255, 0.6);
-    font-size: 11px;
-}
-.gst-prof-preview__keyline-label {
-    font-size: 10px;
-    color: var(--gst-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 600;
-}
-.gst-prof-preview__keyline-value {
-    font-family: var(--gst-font-mono);
-    font-size: 12px;
-    color: var(--gst-primary);
-    font-weight: 600;
-    letter-spacing: 0;
-}
-.gst-prof-preview__keyline-warn {
-    margin-left: auto;
-    color: var(--gst-warning);
-    font-size: 13px;
-    cursor: help;
 }
 
 /* ── SERP body ───────────────────────────────────────────────── */
@@ -4061,52 +4135,23 @@ td.bpe-editing select {
 }
 
 /* ── Synonyms panel ──────────────────────────────────────────── */
-.gst-prof-syn {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-.gst-prof-syn__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-.gst-prof-syn__heading { display: flex; flex-direction: column; gap: 4px; }
-.gst-prof-syn__title {
-    font-size: var(--gst-text-base);
-    font-weight: 600;
-    margin: 0;
-}
+/* Synonyms panel — body lives inside the shared `.gst-pinedit` editor
+   shell (same shape as the Pinned grid). The styles below cover the
+   bits that are specific to synonyms: the explanatory note, the kind
+   chip + scope badge inside grid cells, and the read-only row variant
+   for global rules viewed from a language-scoped panel. */
 .gst-prof-syn__note {
     font-size: 11px;
     color: var(--gst-text-muted);
     margin: 0;
-    max-width: 38em;
+    padding: 8px 14px 0;
+    max-width: 60em;
     line-height: 1.5;
 }
-.gst-prof-syn__rows {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.gst-prof-syn__row {
-    display: grid;
-    grid-template-columns: 28px 1fr 28px;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-radius: var(--gst-radius-sm);
-    transition: background-color 140ms ease;
-}
-.gst-prof-syn__row:hover { background: var(--gst-surface-hover); }
-.gst-prof-syn__row.is-dirty { background: var(--gst-warning-light); }
-.gst-prof-syn__row.is-new   { background: var(--gst-success-light); }
 
+/* Kind chip lives inside a grid cell — center it horizontally so it
+   reads as a column glyph rather than a left-floated badge. */
+.gst-prof-syn__kind-cell { text-align: center; }
 .gst-prof-syn__kind {
     display: inline-flex;
     align-items: center;
@@ -4132,68 +4177,45 @@ td.bpe-editing select {
     border-color: rgba(46, 125, 50, 0.25);
 }
 
-.gst-prof-syn__input {
-    width: 100%;
-    border: 1px solid transparent;
-    border-radius: var(--gst-radius-sm);
-    background: transparent;
-    padding: 6px 8px;
-    font: inherit;
-    font-size: var(--gst-text-sm);
-    color: var(--gst-text);
-    transition: background-color 120ms ease, border-color 120ms ease;
-}
-.gst-prof-syn__input:hover { background: var(--gst-surface); border-color: var(--gst-border-light); }
-.gst-prof-syn__input:focus {
-    outline: none;
-    background: var(--gst-surface);
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
-}
-.gst-prof-syn__delbtn {
-    appearance: none;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--gst-radius-sm);
-    width: 24px;
-    height: 24px;
+/* Scope badge — small lang/global pill, mirrors the type chip pattern
+   used elsewhere in the addon. */
+.gst-prof-syn__scope {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    color: var(--gst-text-muted);
-    cursor: pointer;
-    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    color: var(--gst-text-secondary);
+    background: var(--gst-surface-active);
+    border: 1px solid var(--gst-border-light);
+    user-select: none;
 }
-.gst-prof-syn__delbtn:hover {
-    color: var(--gst-danger);
-    background: var(--gst-danger-light);
-    border-color: rgba(198, 40, 40, 0.18);
-}
-
-.gst-prof-syn__empty {
-    padding: 24px 12px;
-    text-align: center;
-    color: var(--gst-text-muted);
-    font-size: var(--gst-text-sm);
-    font-style: italic;
-    border: 1px dashed var(--gst-border-light);
-    border-radius: var(--gst-radius);
+.gst-prof-syn__scope.is-global {
+    color: var(--gst-warning);
+    background: var(--gst-warning-light);
+    border-color: rgba(217, 119, 6, 0.22);
 }
 
-.gst-prof-syn__foot {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--gst-border-light);
+/* Read-only rows (global rules viewed from a language-scoped panel) —
+   slightly muted text + cursor to telegraph "view only". The leftmost
+   cell still shows the dirty/new rail when applicable; readonly rows
+   never become dirty so there's no conflict. */
+.gst-pinedit__row.is-readonly .gst-pinedit__input {
+    color: var(--gst-text-secondary);
+    cursor: default;
 }
-.gst-prof-syn__addbtn { padding: 6px 12px; }
-.gst-prof-syn__foot-spacer { flex: 1; }
+.gst-pinedit__row.is-readonly .gst-pinedit__input:hover {
+    background: transparent;
+    border-color: transparent;
+}
 
 .gst-prof-syn__help {
     margin-top: 4px;
     border-top: 1px dashed var(--gst-border-light);
-    padding-top: 10px;
+    padding: 10px 14px 0;
 }
 .gst-prof-syn__help summary {
     cursor: pointer;

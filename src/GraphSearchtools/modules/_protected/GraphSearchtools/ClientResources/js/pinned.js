@@ -584,7 +584,6 @@
  *     locales:  ['en', 'da'],
  *     isGeneric: false,
  *     isSiteShared: false,
- *     pinnedKeyFormula: 'site-{locale}',
  *     hasGraphQLDoc: true,
  *   });
  */
@@ -631,17 +630,6 @@
         });
     }
 
-    /**
-     * Resolves the Pinned key locally for display. Mirrors the server-side
-     * SearchProfile.PinnedKeyForLocale formula passed in via pinnedKeyFormula —
-     * the JS doesn't know about locales/sites until the user picks one.
-     */
-    function resolveKey(formula, locale) {
-        if (!formula) return null;
-        if (formula.indexOf('{locale}') === -1) return formula;
-        return formula.replace('{locale}', locale || '');
-    }
-
     function editor(opts) {
         opts = opts || {};
         var profileKey = opts.profileKey;
@@ -656,7 +644,6 @@
         var emptyEl = document.getElementById('gst-pinedit-empty');
         var siteSel = document.getElementById('gst-pin-site');
         var localeSel = document.getElementById('gst-pin-locale');
-        var keylineEl = document.getElementById('gst-pin-keyline-value');
         var alertEl = document.getElementById('gst-pin-tab-alert');
         var addBtn = document.getElementById('gst-pinedit-add');
         var addEmpty = document.getElementById('gst-pinedit-empty-add');
@@ -667,8 +654,14 @@
         var saveAllBtn = document.getElementById('gst-pinedit-save-all');
         var discardBtn = document.getElementById('gst-pinedit-discard');
         var sortBtns = document.querySelectorAll('.gst-pinedit__sortbtn');
+        var pagerEl = document.getElementById('gst-pinedit-pager');
+        var pagerStatusEl = document.getElementById('gst-pinedit-pager-status');
+        var prevBtn = document.getElementById('gst-pinedit-prev');
+        var nextBtn = document.getElementById('gst-pinedit-next');
 
         if (!rowsTbody) return null;
+
+        var PAGE_SIZE = 20;
 
         var state = {
             site: siteSel && !siteSel.disabled ? siteSel.value : '',
@@ -678,8 +671,9 @@
             isGeneric: !!opts.isGeneric,
             rows: [],
             // Persistent UI state across renders
-            sort: { field: 'priority', dir: 'asc' },
+            sort: { field: 'phrases', dir: 'asc' },
             global: '',
+            page: 1,
             activeTypeahead: null
         };
 
@@ -689,12 +683,6 @@
             alertEl.hidden = false;
             alertEl.textContent = message;
             alertEl.classList.toggle('gst-alert--danger', !!isError);
-        }
-
-        function refreshKeyline() {
-            if (!keylineEl) return;
-            var resolved = resolveKey(opts.pinnedKeyFormula, state.locale) || '—';
-            keylineEl.textContent = resolved;
         }
 
         // Resolve content names for any rows whose targetKey looks GUID-ish.
@@ -736,14 +724,8 @@
             }
             var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
             rows.sort(function (a, b) {
-                var av = a[f], bv = b[f];
-                if (f === 'priority' || f === 'rank') {
-                    av = av == null ? Number.POSITIVE_INFINITY : Number(av);
-                    bv = bv == null ? Number.POSITIVE_INFINITY : Number(bv);
-                    return (av - bv) * d;
-                }
-                av = (av || '').toString().toLowerCase();
-                bv = (bv || '').toString().toLowerCase();
+                var av = (a[f] || '').toString().toLowerCase();
+                var bv = (b[f] || '').toString().toLowerCase();
                 return av.localeCompare(bv) * d;
             });
             return rows;
@@ -755,71 +737,79 @@
             return n;
         }
 
-        function refreshChrome() {
-            // Sort carets reflect the active column.
-            sortBtns.forEach(function (btn) {
-                var th = btn.parentElement;
-                var field = th.getAttribute('data-sort');
-                th.classList.remove('is-asc', 'is-desc');
-                if (field === state.sort.field) th.classList.add(state.sort.dir === 'desc' ? 'is-desc' : 'is-asc');
-            });
+        function pageCountFor(total) {
+            return GST.editGrid.pageCount(total, PAGE_SIZE);
+        }
 
+        function clampPage(total) {
+            var pc = pageCountFor(total);
+            if (state.page > pc) state.page = pc;
+            if (state.page < 1) state.page = 1;
+        }
+
+        function refreshChrome(total) {
+            GST.editGrid.refreshSortCarets(sortBtns, state.sort);
             var n = dirtyCount();
             if (drawer) {
                 drawer.hidden = n === 0;
                 if (drawerCount) drawerCount.textContent = String(n);
             }
-            if (countEl) countEl.textContent = state.rows.length === 0
-                ? '0'
-                : (getDisplayedRows().length + ' / ' + state.rows.length);
+            if (countEl) {
+                if (state.rows.length === 0) {
+                    countEl.textContent = '0';
+                } else {
+                    var displayedTotal = (typeof total === 'number') ? total : getDisplayedRows().length;
+                    countEl.textContent = displayedTotal === state.rows.length
+                        ? String(state.rows.length)
+                        : displayedTotal + ' / ' + state.rows.length;
+                }
+            }
         }
 
         function renderRows() {
             closeTypeahead();
             rowsTbody.innerHTML = '';
-            var rows = getDisplayedRows();
 
             if (state.rows.length === 0) {
                 if (emptyEl) emptyEl.hidden = false;
-                refreshChrome();
+                if (pagerEl) pagerEl.hidden = true;
+                refreshChrome(0);
                 return;
             }
             if (emptyEl) emptyEl.hidden = true;
 
-            if (rows.length === 0) {
+            var rows = getDisplayedRows();
+            var total = rows.length;
+            clampPage(total);
+
+            if (total === 0) {
                 var tr = document.createElement('tr');
                 tr.className = 'gst-pinedit__norows';
-                tr.innerHTML = '<td colspan="6">'
+                tr.innerHTML = '<td colspan="3">'
                     + escHtml(s('profiles.detail.pinned.noMatches', 'No pins match the current filters.'))
                     + '</td>';
                 rowsTbody.appendChild(tr);
-                refreshChrome();
+                if (pagerEl) pagerEl.hidden = true;
+                refreshChrome(0);
                 return;
             }
 
-            rows.forEach(function (row, i) { rowsTbody.appendChild(buildRow(row, i + 1)); });
-            refreshChrome();
+            var start = (state.page - 1) * PAGE_SIZE;
+            var pageRows = rows.slice(start, start + PAGE_SIZE);
+            pageRows.forEach(function (row) { rowsTbody.appendChild(buildRow(row)); });
+            GST.editGrid.renderPager({
+                pagerEl: pagerEl, statusEl: pagerStatusEl,
+                prevBtn: prevBtn, nextBtn: nextBtn,
+                page: state.page, total: total, pageSize: PAGE_SIZE
+            });
+            refreshChrome(total);
         }
 
-        function typeChipClass(contentType) {
-            var ct = (contentType || '').toLowerCase();
-            if (ct.indexOf('product') !== -1) return 'gst-pinedit__chip is-product';
-            if (ct.indexOf('article') !== -1 || ct.indexOf('news') !== -1) return 'gst-pinedit__chip is-editorial';
-            if (ct.indexOf('page') !== -1) return 'gst-pinedit__chip is-page';
-            return 'gst-pinedit__chip is-other';
-        }
-
-        function buildRow(row, rank) {
+        function buildRow(row) {
             var tr = document.createElement('tr');
             tr.className = 'gst-pinedit__row'
                 + (row._dirty ? ' is-dirty' : '')
                 + (row._isNew ? ' is-new' : '');
-
-            // # — display rank (post-sort), tabular-num.
-            var rankCell = document.createElement('td');
-            rankCell.className = 'gst-pinedit__cell gst-pinedit__cell--rank';
-            rankCell.textContent = String(rank).padStart(2, '0');
-            tr.appendChild(rankCell);
 
             // Phrase — in-place text input with a hint icon for multi-phrase.
             var phraseCell = document.createElement('td');
@@ -842,38 +832,6 @@
             targetCell.className = 'gst-pinedit__cell gst-pinedit__cell--target';
             buildTargetCell(row, tr, targetCell);
             tr.appendChild(targetCell);
-
-            // Type chip — read-only echo of the resolved contentType.
-            var typeCell = document.createElement('td');
-            typeCell.className = 'gst-pinedit__cell gst-pinedit__cell--type';
-            if (row.contentType) {
-                var chip = document.createElement('span');
-                chip.className = typeChipClass(row.contentType);
-                chip.textContent = row.contentType;
-                typeCell.appendChild(chip);
-            } else if (!row._isNew) {
-                var dim = document.createElement('span');
-                dim.className = 'gst-pinedit__chip is-other';
-                dim.textContent = s('profiles.detail.pinned.unresolved', 'unresolved');
-                typeCell.appendChild(dim);
-            }
-            tr.appendChild(typeCell);
-
-            // Priority — narrow numeric input. Tabular numerals.
-            var priCell = document.createElement('td');
-            priCell.className = 'gst-pinedit__cell gst-pinedit__cell--priority';
-            var priInput = document.createElement('input');
-            priInput.type = 'number';
-            priInput.className = 'gst-pinedit__input gst-pinedit__input--num';
-            priInput.value = row.priority != null ? row.priority : 1000;
-            priInput.step = 100;
-            priInput.addEventListener('input', function () {
-                var v = parseFloat(priInput.value);
-                row.priority = isNaN(v) ? null : v;
-                markDirty(row, tr);
-            });
-            priCell.appendChild(priInput);
-            tr.appendChild(priCell);
 
             // Actions — Save + Delete with status-aware coloring.
             var actCell = document.createElement('td');
@@ -903,6 +861,12 @@
                 pill.querySelector('.gst-pinedit__target__name').textContent =
                     row.targetKey || s('profiles.detail.pinned.targetPlaceholder', 'Search content by name…');
             }
+
+            // Pill is a "click to re-pick" affordance — only meaningful when
+            // a target is already resolved. New rows / unresolved rows go
+            // straight to input mode so we don't render two competing
+            // "Search content by name…" placeholders side by side.
+            pill.hidden = !hasName;
 
             var input = document.createElement('input');
             input.type = 'text';
@@ -1018,15 +982,6 @@
                             markDirty(row, tr);
                             // Re-render this cell to swap input → pill.
                             buildTargetCell(row, tr, cell);
-                            // Update the type chip cell beside it.
-                            var typeCell = tr.querySelector('.gst-pinedit__cell--type');
-                            if (typeCell) {
-                                typeCell.innerHTML = '';
-                                var chip = document.createElement('span');
-                                chip.className = typeChipClass(row.contentType);
-                                chip.textContent = row.contentType || '';
-                                typeCell.appendChild(chip);
-                            }
                         });
                         dropdown.appendChild(item);
                     });
@@ -1081,19 +1036,11 @@
             };
         }
 
-        // True only for the very first load after mount. We auto-seed a blank
-        // row in that case so the editor opens ready-to-fill rather than with
-        // a "no pins" placeholder. Subsequent loads (triggered by a site /
-        // locale switch) show the empty-state placeholder instead — silently
-        // injecting a dirty unsaved row when the user just wanted to inspect
-        // a different branch is surprising and produces phantom "1 unsaved"
-        // drawer state.
-        var firstLoad = true;
-
         function loadRows() {
             setAlert(null);
-            var seed = firstLoad;
-            firstLoad = false;
+            // Switching site / locale gives a different rowset entirely; the
+            // previous page index is meaningless in the new context.
+            state.page = 1;
             var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
                 + '/pinned?site=' + encodeURIComponent(state.site || '')
                 + '&locale=' + encodeURIComponent(state.locale || '');
@@ -1103,12 +1050,8 @@
                 state.pinnedKey = resp.pinnedKey || null;
                 state.isGeneric = !!resp.isGeneric;
                 state.rows = (resp.rows || []).map(function (r) { return Object.assign({}, r); });
-                refreshKeyline();
                 return resolveNames();
             }).then(function () {
-                if (seed && state.rows.length === 0) {
-                    state.rows.push(makeBlankRow());
-                }
                 renderRows();
             }).catch(function (err) {
                 setAlert(err.message, true);
@@ -1165,6 +1108,19 @@
                     url = BASE + '/PinnedApi/CreateItem?collectionId=' + encodeURIComponent(collectionId) + qs;
                     method = 'POST';
                 } else {
+                    // Defensive: a 400 from the controller means the URL went
+                    // out with an empty id. That can only happen if the row
+                    // was reloaded into the grid without an id (server bug)
+                    // or _isNew was cleared without setRowId firing — surface
+                    // a useful message rather than the opaque 400.
+                    if (!row.id) {
+                        setAlert('Cannot update — pinned item id missing. Reload the page to refresh.', true);
+                        return Promise.reject(new Error('missing-id'));
+                    }
+                    if (!collectionId) {
+                        setAlert('Cannot update — collection id missing. Reload the page to refresh.', true);
+                        return Promise.reject(new Error('missing-collection'));
+                    }
                     url = BASE + '/PinnedApi/UpdateItem?collectionId=' + encodeURIComponent(collectionId)
                         + '&id=' + encodeURIComponent(row.id) + qs;
                     method = 'PUT';
@@ -1201,6 +1157,10 @@
 
         function addNewRow() {
             state.rows.push(makeBlankRow());
+            // The new row appended at the end of state.rows lands on the last
+            // page after sort. Jump there so the user sees what they just added
+            // instead of a stale earlier page.
+            state.page = pageCountFor(getDisplayedRows().length);
             renderRows();
             // Focus the new row's phrase input.
             var rows = rowsTbody.querySelectorAll('tr.gst-pinedit__row');
@@ -1242,19 +1202,25 @@
             var stats = document.getElementById('gst-pin-tryit-stats');
             if (!qInput || !resultsEl) return;
 
-            // Synonym hint cache. We fetch the active language's synonym blob
-            // (from /SynonymsApi/Get) the first time the user previews a query
-            // in that language, then parse and reuse. The chip strip shown
-            // above the results lists rules whose source side appears in the
-            // query — it's a heuristic match, not proof Graph applied them,
-            // so the label intentionally says "Matching synonym rules".
+            // Synonym hint cache. We fetch the active language's synonym
+            // rules — the language-specific blob AND the global blob, since
+            // both apply at query time — the first time the user previews a
+            // query in that language, then parse and reuse. The chip strip
+            // shown above the results lists rules whose source side appears
+            // in the query — a heuristic match, not proof Graph applied
+            // them, so the label intentionally says "Matching synonym rules".
             var synRulesByLang = {};
             var synFetching = {};
 
             window.addEventListener('gst:synonyms-changed', function (e) {
                 var lang = (e && e.detail && e.detail.lang) || '';
-                delete synRulesByLang[lang];
-                if (lang === (state.locale || '') && qInput.value.trim().length >= 2) {
+                if (!lang) {
+                    // Global change — affects every language we've cached.
+                    synRulesByLang = {};
+                } else {
+                    delete synRulesByLang[lang];
+                }
+                if (qInput.value.trim().length >= 2) {
                     refreshSynStripFor(qInput.value.trim());
                 }
             });
@@ -1287,22 +1253,32 @@
                 stats.classList.toggle('gst-serp__stats--err', !!isError);
             }
 
+            // .gst-serp__input wraps the magnifier glyph + input + spinner.
+            // Toggling is-loading on it shows the spinner; mirroring it on
+            // the results list dims the prior hits while the new ones load.
+            var inputWrap = qInput.parentNode;
+            function setLoading(on) {
+                resultsEl.classList.toggle('is-loading', on);
+                if (inputWrap) inputWrap.classList.toggle('is-loading', on);
+            }
+
             function run() {
                 var q = qInput.value.trim();
                 if (q.length < 2) {
                     resultsEl.innerHTML = '';
                     clearStats();
                     renderSynStrip([]);
+                    setLoading(false);
                     return;
                 }
                 lastQuery = q;
-                resultsEl.classList.add('is-loading');
+                setLoading(true);
                 var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
                     + '/preview?phrase=' + encodeURIComponent(q)
                     + '&locale=' + encodeURIComponent(state.locale || '');
                 ajax(url).then(function (result) {
                     if (qInput.value.trim() !== lastQuery) return; // stale
-                    resultsEl.classList.remove('is-loading');
+                    setLoading(false);
                     var hits = (result && result.hits) || [];
                     var total = (result && result.totalCount) || 0;
                     var ms = (result && result.durationMs) || 0;
@@ -1310,7 +1286,7 @@
                     renderResults(hits, q);
                 }).catch(function (err) {
                     if (qInput.value.trim() !== lastQuery) return;
-                    resultsEl.classList.remove('is-loading');
+                    setLoading(false);
                     resultsEl.innerHTML = '';
                     setStats((err && err.message) || s('profiles.detail.pinned.previewFailed', 'preview failed'), true);
                 });
@@ -1337,25 +1313,35 @@
                 return el;
             }
 
-            function fetchSynonymsForLang(lang) {
-                if (synRulesByLang[lang] !== undefined) return Promise.resolve(synRulesByLang[lang]);
-                if (synFetching[lang]) return synFetching[lang];
+            function fetchScopeContent(lang) {
                 var qs = lang
                     ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=one'
                     : '?slot=one';
-                var p = fetch((window.GST_BASE_URL || '') + '/SynonymsApi/Get' + qs, {
+                return fetch((window.GST_BASE_URL || '') + '/SynonymsApi/Get' + qs, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     credentials: 'same-origin'
                 }).then(function (r) {
                     return r.ok ? r.json() : null;
                 }).then(function (result) {
                     var content = result ? result.content : '';
-                    // The API sometimes round-trips the body as a JSON-encoded
-                    // string; unwrap so we can split on real newlines.
                     if (content && content.charAt(0) === '"' && content.charAt(content.length - 1) === '"') {
                         try { content = JSON.parse(content); } catch (_) { /* leave as-is */ }
                     }
-                    var rules = parseSynonymRules(content || '');
+                    return content || '';
+                }).catch(function () { return ''; });
+            }
+
+            // Returns the merged rule set Graph would apply when querying
+            // in `lang`: language-specific blob + global blob. Cached per
+            // lang and invalidated by `gst:synonyms-changed`.
+            function fetchSynonymsForLang(lang) {
+                if (synRulesByLang[lang] !== undefined) return Promise.resolve(synRulesByLang[lang]);
+                if (synFetching[lang]) return synFetching[lang];
+                var langPromise = lang ? fetchScopeContent(lang) : Promise.resolve('');
+                var globalPromise = fetchScopeContent('');
+                var p = Promise.all([langPromise, globalPromise]).then(function (parts) {
+                    var merged = [parts[0], parts[1]].filter(Boolean).join('\n');
+                    var rules = parseSynonymRules(merged);
                     synRulesByLang[lang] = rules;
                     delete synFetching[lang];
                     return rules;
@@ -1533,10 +1519,15 @@
                 }
 
                 // — Snippet —
+                // Server-side: AlloySearchService asks Graph to wrap matched
+                // tokens (lexical AND synonym-expanded) with SOH/STX markers
+                // and picks the first _fulltext entry that carries them. So
+                // for a `floop => alloy` synonym, the snippet bolds "alloy"
+                // (the actual matched token), not the typed "floop".
                 if (hit.fullTextSnippet) {
                     var snippet = document.createElement('p');
                     snippet.className = 'gst-serp__snippet';
-                    snippet.appendChild(highlightFragment(hit.fullTextSnippet, phrase));
+                    snippet.appendChild(markedFragment(hit.fullTextSnippet));
                     li.appendChild(snippet);
                 }
 
@@ -1654,6 +1645,40 @@
             }
 
             function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+            // Render a snippet that arrived with Graph's native highlight
+            // markers (SOH = U+0001 start, STX = U+0002 end). Splits on the
+            // markers, text-nodes the surrounding spans, wraps matched spans
+            // in <mark>. Unlike highlightFragment, this trusts Graph's own
+            // tokenizer so synonym-expanded matches highlight correctly.
+            function markedFragment(text) {
+                var frag = document.createDocumentFragment();
+                if (!text) return frag;
+                var i = 0;
+                while (i < text.length) {
+                    var open = text.indexOf('\u0001', i);
+                    if (open < 0) {
+                        frag.appendChild(document.createTextNode(text.slice(i)));
+                        break;
+                    }
+                    if (open > i) {
+                        frag.appendChild(document.createTextNode(text.slice(i, open)));
+                    }
+                    var close = text.indexOf('\u0002', open + 1);
+                    if (close < 0) {
+                        // Stray opener — render the rest as plain text rather
+                        // than dropping it.
+                        frag.appendChild(document.createTextNode(text.slice(open + 1)));
+                        break;
+                    }
+                    var mark = document.createElement('mark');
+                    mark.className = 'gst-serp__mark';
+                    mark.textContent = text.slice(open + 1, close);
+                    frag.appendChild(mark);
+                    i = close + 1;
+                }
+                return frag;
+            }
         }
 
         // Mirror the select's selected option into the visible value span
@@ -1686,13 +1711,11 @@
             localeSel.addEventListener('change', function () {
                 state.locale = localeSel.value;
                 syncChipDisplay(localeSel, 'gst-pin-locale-display');
-                refreshKeyline();
                 loadRows();
                 // Locale changed — the live preview's input listener only fires
                 // on typing, so without a kick the SERP would still reflect the
-                // previous branch. The pinned-key formula and Graph language
-                // filter both depend on locale, so re-run if the user already
-                // has a phrase in the box.
+                // previous branch. The Graph language filter depends on locale,
+                // so re-run if the user already has a phrase in the box.
                 var strip = document.getElementById('gst-pin-tryit-syn');
                 if (strip) { strip.hidden = true; strip.innerHTML = ''; }
                 if (typeof state.rerunTryIt === 'function') {
@@ -1710,23 +1733,28 @@
             var gd = null;
             globalFilter.addEventListener('input', function () {
                 clearTimeout(gd);
-                gd = setTimeout(function () { state.global = globalFilter.value; renderRows(); }, 120);
+                gd = setTimeout(function () {
+                    state.global = globalFilter.value;
+                    // Filter narrows the result set; staying on a page that no
+                    // longer exists in the narrowed view is jarring. Reset.
+                    state.page = 1;
+                    renderRows();
+                }, 120);
             });
         }
 
-        // Sort headers.
-        sortBtns.forEach(function (btn) {
-            var th = btn.parentElement;
-            var field = th.getAttribute('data-sort');
-            btn.addEventListener('click', function () {
-                if (state.sort.field === field) {
-                    state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
-                } else {
-                    state.sort.field = field;
-                    state.sort.dir = field === 'priority' || field === 'rank' ? 'asc' : 'asc';
-                }
-                renderRows();
-            });
+        GST.editGrid.wireSortHeaders(sortBtns, state.sort, function () {
+            state.page = 1;
+            renderRows();
+        });
+
+        GST.editGrid.wirePager({
+            prevBtn: prevBtn, nextBtn: nextBtn,
+            pageSize: PAGE_SIZE,
+            getPage: function () { return state.page; },
+            setPage: function (p) { state.page = p; },
+            getTotal: function () { return getDisplayedRows().length; },
+            onChange: renderRows
         });
 
         if (saveAllBtn) saveAllBtn.addEventListener('click', saveAll);
@@ -1739,7 +1767,6 @@
             }
         });
 
-        refreshKeyline();
         loadRows();
         wireTryIt();
 

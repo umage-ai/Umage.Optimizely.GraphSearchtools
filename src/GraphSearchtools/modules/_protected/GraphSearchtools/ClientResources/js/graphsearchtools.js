@@ -485,6 +485,169 @@ const GST = {
 
         return el;
     },
+
+    /**
+     * Tokenise GraphQL source and return HTML with span-wrapped tokens whose
+     * classes mirror GraphiQL's CodeMirror token mode (cm-keyword, cm-property,
+     * cm-attribute, etc.). The tokeniser is regex-based and intentionally
+     * forgiving — it produces the right colour for the common shapes we
+     * surface in code panels (registered query docs, directive snippets) and
+     * degrades to plain text for anything it can't classify, so partial
+     * matches never garble the output.
+     *
+     * Used by `applyGqlHighlight()` to colour any `<code data-lang="graphql">`
+     * block on the page; safe to call directly with raw source strings if a
+     * caller needs the highlighted HTML for some other surface.
+     */
+    gqlHighlight: function(code) {
+        var TOKEN_RE = new RegExp([
+            '(#[^\\n]*)',                                      // 1: # comment
+            '(\\/\\*[\\s\\S]*?\\*\\/)',                        // 2: /* block */ (used in our snippets)
+            '("""[\\s\\S]*?"""|"(?:\\\\.|[^"\\\\])*")',         // 3: string / block string
+            '(\\$[A-Za-z_][\\w]*)',                            // 4: $variable
+            '(-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)',          // 5: number
+            '\\b(query|mutation|subscription|fragment|on|directive|schema|scalar|type|input|interface|union|enum|implements|extend|repeatable)\\b', // 6: keyword
+            '\\b(true|false|null)\\b',                         // 7: atom (bool/null)
+            '\\b([A-Z][A-Z0-9_]+)\\b',                         // 8: ENUM_LIKE atom
+            '([A-Za-z_][\\w]*)(?=\\s*:)',                      // 9: argument/property name (lookahead colon)
+            '([A-Za-z_][\\w]*)',                               // 10: ident → field name
+            '(@[A-Za-z_][\\w]*)',                              // 11: directive ref
+            '([{}()\\[\\]:,!=])'                               // 12: punctuation
+        ].join('|'), 'g');
+        var out = '';
+        var lastIndex = 0;
+        var src = String(code == null ? '' : code);
+        var m;
+        while ((m = TOKEN_RE.exec(src)) !== null) {
+            if (m.index > lastIndex) out += GST.escHtml(src.slice(lastIndex, m.index));
+            var cls;
+            if (m[1] !== undefined || m[2] !== undefined) cls = 'cm';
+            else if (m[3] !== undefined) cls = 'str';
+            else if (m[4] !== undefined) cls = 'var';
+            else if (m[5] !== undefined) cls = 'num';
+            else if (m[6] !== undefined) cls = 'kw';
+            else if (m[7] !== undefined || m[8] !== undefined) cls = 'atom';
+            else if (m[9] !== undefined) cls = 'arg';
+            else if (m[10] !== undefined) cls = 'field';
+            else if (m[11] !== undefined) cls = 'dir';
+            else if (m[12] !== undefined) cls = 'punct';
+            out += '<span class="gst-gql-' + cls + '">' + GST.escHtml(m[0]) + '</span>';
+            lastIndex = m.index + m[0].length;
+        }
+        if (lastIndex < src.length) out += GST.escHtml(src.slice(lastIndex));
+        return out;
+    },
+
+    /**
+     * Walk the document for any `<code data-lang="graphql">` (or `<pre data-lang>`)
+     * and replace its contents with highlighted HTML. Idempotent — already-
+     * highlighted blocks are skipped via a `data-gst-highlighted` flag so
+     * re-running on dynamic mounts can't double-encode.
+     */
+    applyGqlHighlight: function(root) {
+        var scope = root || document;
+        var blocks = scope.querySelectorAll('[data-lang="graphql"]');
+        for (var i = 0; i < blocks.length; i++) {
+            var b = blocks[i];
+            if (b.dataset.gstHighlighted === '1') continue;
+            // Operate on textContent so we don't depend on whether the source
+            // was already HTML-escaped by Razor or contains literal entities.
+            var src = b.textContent;
+            b.innerHTML = GST.gqlHighlight(src);
+            b.dataset.gstHighlighted = '1';
+        }
+    },
+};
+
+/**
+ * Shared editor-grid helpers. The Pinned editor and the profile-detail
+ * Synonyms panel both render the same `gst-pinedit__*` table-grid shape
+ * (filter + count chip + sortable headers + paged body + dirty drawer),
+ * so the boilerplate around paging, sort header wiring, and the unsaved
+ * drawer is factored out here. Call sites still own the data shape and
+ * the per-row builder — these helpers are pure layout glue.
+ */
+GST.editGrid = {
+    /**
+     * Compute pageCount given a total count and page size; floors at 1 so
+     * an empty list still has "Page 1 of 1" for status clarity.
+     */
+    pageCount: function (total, pageSize) {
+        return Math.max(1, Math.ceil((total || 0) / pageSize));
+    },
+
+    /**
+     * Render the prev/status/next strip into the supplied DOM nodes. Hides
+     * the entire pager when total ≤ pageSize — the chrome is noise when
+     * everything fits on one page.
+     */
+    renderPager: function (opts) {
+        var pagerEl = opts.pagerEl, statusEl = opts.statusEl;
+        var prevBtn = opts.prevBtn, nextBtn = opts.nextBtn;
+        if (!pagerEl) return;
+        if (opts.total <= opts.pageSize) { pagerEl.hidden = true; return; }
+        var pc = GST.editGrid.pageCount(opts.total, opts.pageSize);
+        pagerEl.hidden = false;
+        if (statusEl) {
+            var tpl = GST.s('shared.pagerStatus', 'Page %1 of %2');
+            statusEl.textContent = tpl.replace('%1', opts.page).replace('%2', pc);
+        }
+        if (prevBtn) prevBtn.disabled = opts.page <= 1;
+        if (nextBtn) nextBtn.disabled = opts.page >= pc;
+    },
+
+    /**
+     * Wire prev/next buttons. `getTotal` is a callback so the helper can
+     * recompute on click without forcing the caller to keep a stale total.
+     */
+    wirePager: function (opts) {
+        var prevBtn = opts.prevBtn, nextBtn = opts.nextBtn;
+        if (prevBtn) prevBtn.addEventListener('click', function () {
+            if (opts.getPage() > 1) { opts.setPage(opts.getPage() - 1); opts.onChange(); }
+        });
+        if (nextBtn) nextBtn.addEventListener('click', function () {
+            var pc = GST.editGrid.pageCount(opts.getTotal(), opts.pageSize);
+            if (opts.getPage() < pc) { opts.setPage(opts.getPage() + 1); opts.onChange(); }
+        });
+    },
+
+    /**
+     * Wire a NodeList of `.gst-pinedit__sortbtn` buttons. Each button's
+     * parent `<th>` carries `data-sort="<field>"`; clicking toggles
+     * direction or switches the active field. The helper updates the
+     * `is-asc` / `is-desc` classes on the column headers and calls
+     * `onChange()` to let the caller re-render.
+     */
+    wireSortHeaders: function (sortBtns, sortState, onChange) {
+        sortBtns.forEach(function (btn) {
+            var th = btn.parentElement;
+            var field = th.getAttribute('data-sort');
+            btn.addEventListener('click', function () {
+                if (sortState.field === field) {
+                    sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortState.field = field;
+                    sortState.dir = 'asc';
+                }
+                onChange();
+            });
+        });
+    },
+
+    /**
+     * Push the active sort indicator to the column headers. Call inside
+     * any render function that may have changed `state.sort`.
+     */
+    refreshSortCarets: function (sortBtns, sortState) {
+        sortBtns.forEach(function (btn) {
+            var th = btn.parentElement;
+            var field = th.getAttribute('data-sort');
+            th.classList.remove('is-asc', 'is-desc');
+            if (field === sortState.field) {
+                th.classList.add(sortState.dir === 'desc' ? 'is-desc' : 'is-asc');
+            }
+        });
+    }
 };
 
 // Expose GST on window so other tool scripts (pinned.js, profiles.js, etc.)
@@ -499,6 +662,14 @@ document.addEventListener('click', function(e) {
     var btn = e.target.closest('[data-gst-help]');
     if (btn) GST.openHelp(btn.getAttribute('data-gst-help'));
 });
+
+// Auto-highlight any GraphQL code panel on first paint. Tools that mount
+// code blocks dynamically can call GST.applyGqlHighlight(root) themselves.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { GST.applyGqlHighlight(); });
+} else {
+    GST.applyGqlHighlight();
+}
 
 // Dojo's BorderContainer calculates a narrower applicationContainer on initial load
 // due to a brief layout artifact. Watch for the wrong width and correct it.

@@ -81,7 +81,9 @@ public class UiStringsProvider(LocalizationService loc)
             prev = S("shared/prev"),
             next = S("shared/next"),
             copy = S("shared/copy"),
-            copied = S("shared/copied")
+            copied = S("shared/copied"),
+            pagerLabel = S("shared/pagerLabel"),
+            pagerStatus = S("shared/pagerStatus")
         },
         components = new
         {
@@ -122,6 +124,7 @@ public class UiStringsProvider(LocalizationService loc)
             saved = S("synonyms/saved"),
             confirm_unsaved = S("synonyms/confirm_unsaved"),
             filter_placeholder = S("synonyms/filter_placeholder"),
+            placeholder_hint = S("synonyms/placeholder_hint"),
             add = S("synonyms/add"),
             col_rule = S("synonyms/col_rule"),
             save = S("synonyms/save"),

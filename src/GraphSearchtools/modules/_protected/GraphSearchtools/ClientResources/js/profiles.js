@@ -333,7 +333,6 @@
                 locales: opts.locales || [],
                 isGeneric: !!opts.isGeneric,
                 isSiteShared: !!opts.isSiteShared,
-                pinnedKeyFormula: opts.pinnedKeyFormula || null,
                 hasGraphQLDoc: !!opts.hasGraphQLDoc
             });
         }
@@ -386,21 +385,51 @@
             });
         }
 
-        var langSel  = document.getElementById('gst-prof-syn-lang');
+        // The synonyms panel piggy-backs on the live preview's locale chip
+        // (`gst-pin-locale`) instead of carrying its own language picker —
+        // there's only ever one "active" locale on the detail page, and
+        // duplicating the picker invited the question "are these in sync?".
+        // When the chip is in static mode (single-locale or generic profile)
+        // the value is still meaningful: the locale code, or "" for global.
+        var langSel  = document.getElementById('gst-pin-locale');
         var rowsHost = document.getElementById('gst-prof-syn-rows');
         var emptyEl  = document.getElementById('gst-prof-syn-empty');
-        var alertEl  = document.getElementById('gst-prof-syn-alert');
         var addBtn   = document.getElementById('gst-prof-syn-add');
+        var addEmpty = document.getElementById('gst-prof-syn-empty-add');
+        var alertEl  = document.getElementById('gst-prof-syn-alert');
         var saveBtn  = document.getElementById('gst-prof-syn-save');
         var discardBtn = document.getElementById('gst-prof-syn-discard');
+        var filterInput = document.getElementById('gst-prof-syn-filter');
+        var countEl  = document.getElementById('gst-prof-syn-count');
+        var pagerEl  = document.getElementById('gst-prof-syn-pager');
+        var pagerStatusEl = document.getElementById('gst-prof-syn-pager-status');
+        var prevBtn  = document.getElementById('gst-prof-syn-prev');
+        var nextBtn  = document.getElementById('gst-prof-syn-next');
+        var drawerEl = document.getElementById('gst-prof-syn-drawer');
+        var drawerCount = document.getElementById('gst-prof-syn-dirty-count');
+        var sortBtns = document.querySelectorAll('#gst-prof-syn .gst-pinedit__sortbtn');
 
         if (!rowsHost || !saveBtn) return;
 
+        var PAGE_SIZE = 20;
+
+        // Each row carries `scope`: 'lang' (the active locale's blob) or
+        // 'global' (the no-language blob). Both apply at query time for
+        // this locale, so we render them in one merged list. Lang-scoped
+        // rows are editable inline; global rows are read-only here (manage
+        // them in the dedicated Synonyms tool) so two profiles don't
+        // accidentally race on the same global blob.
+        //
+        // `snapshots` keeps the joined-rules content of each scope as it
+        // was loaded; save() compares the current per-scope content against
+        // the snapshot and writes only the scopes that actually changed.
         var state = {
             lang: langSel ? langSel.value : '',
             rows: [],
-            dirty: false,
-            loaded: false
+            filter: '',
+            page: 1,
+            sort: { field: 'rule', dir: 'asc' },
+            snapshots: { lang: '', global: '' }
         };
 
         function setAlert(msg, isError) {
@@ -411,17 +440,97 @@
             alertEl.classList.toggle('gst-alert--danger', !!isError);
         }
 
-        function refreshChrome() {
-            var visibleRows = state.rows.filter(function(r) { return r.isNew || (r.rule && r.rule.trim()); });
-            if (emptyEl) emptyEl.hidden = visibleRows.length > 0;
-            saveBtn.disabled = !state.dirty;
-            if (discardBtn) discardBtn.hidden = !state.dirty;
+        function dirtyCount() {
+            var n = 0;
+            state.rows.forEach(function(r) { if (r._dirty || r._isNew) n++; });
+            return n;
+        }
+
+        function isDirty() { return dirtyCount() > 0; }
+
+        function getDisplayedRows() {
+            var rows = state.rows.slice();
+            var q = state.filter;
+            if (q) {
+                rows = rows.filter(function(r) {
+                    return (r.rule || '').toLowerCase().indexOf(q) !== -1;
+                });
+            }
+            var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
+            rows.sort(function(a, b) {
+                var av = (a[f] || '').toString().toLowerCase();
+                var bv = (b[f] || '').toString().toLowerCase();
+                return av.localeCompare(bv) * d;
+            });
+            return rows;
+        }
+
+        function pageCountFor(total) {
+            return GST.editGrid.pageCount(total, PAGE_SIZE);
+        }
+
+        function clampPage(total) {
+            var pc = pageCountFor(total);
+            if (state.page > pc) state.page = pc;
+            if (state.page < 1) state.page = 1;
+        }
+
+        function refreshChrome(displayedTotal) {
+            GST.editGrid.refreshSortCarets(sortBtns, state.sort);
+            var n = dirtyCount();
+            if (drawerEl) {
+                drawerEl.hidden = n === 0;
+                if (drawerCount) drawerCount.textContent = String(n);
+            }
+            if (countEl) {
+                if (state.rows.length === 0) {
+                    countEl.textContent = '0';
+                } else {
+                    var shown = (typeof displayedTotal === 'number') ? displayedTotal : getDisplayedRows().length;
+                    countEl.textContent = shown === state.rows.length
+                        ? String(state.rows.length)
+                        : shown + ' / ' + state.rows.length;
+                }
+            }
         }
 
         function renderRows() {
             rowsHost.innerHTML = '';
-            state.rows.forEach(function(row) { rowsHost.appendChild(buildRow(row)); });
-            refreshChrome();
+
+            if (state.rows.length === 0) {
+                if (emptyEl) emptyEl.hidden = false;
+                if (pagerEl) pagerEl.hidden = true;
+                refreshChrome(0);
+                return;
+            }
+            if (emptyEl) emptyEl.hidden = true;
+
+            var rows = getDisplayedRows();
+            var total = rows.length;
+            clampPage(total);
+
+            if (total === 0) {
+                var tr = document.createElement('tr');
+                tr.className = 'gst-pinedit__norows';
+                tr.innerHTML = '<td colspan="4">'
+                    + escHtml(s('profiles.detail.synonyms.noMatches', 'No rules match the current filter.'))
+                    + '</td>';
+                rowsHost.appendChild(tr);
+                if (pagerEl) pagerEl.hidden = true;
+                refreshChrome(0);
+                return;
+            }
+
+            var start = (state.page - 1) * PAGE_SIZE;
+            rows.slice(start, start + PAGE_SIZE).forEach(function(row) {
+                rowsHost.appendChild(buildRow(row));
+            });
+            GST.editGrid.renderPager({
+                pagerEl: pagerEl, statusEl: pagerStatusEl,
+                prevBtn: prevBtn, nextBtn: nextBtn,
+                page: state.page, total: total, pageSize: PAGE_SIZE
+            });
+            refreshChrome(total);
         }
 
         function classifyRule(rule) {
@@ -432,131 +541,238 @@
             return 'other';
         }
 
-        function buildRow(row) {
-            var li = document.createElement('li');
-            li.className = 'gst-prof-syn__row'
-                + (row.dirty ? ' is-dirty' : '')
-                + (row.isNew ? ' is-new' : '');
-
-            var kind = classifyRule(row.rule);
-            var kindChip = document.createElement('span');
-            kindChip.className = 'gst-prof-syn__kind is-' + (kind || 'other');
-            kindChip.textContent = kind === 'replacement' ? '→'
-                                : kind === 'equivalent'  ? '='
-                                : '·';
-            kindChip.title = kind || '';
-            li.appendChild(kindChip);
-
-            var input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'gst-prof-syn__input';
-            input.value = row.rule || '';
-            input.placeholder = s('synonyms.rule_placeholder', 'H2O => water  or  laptop, computer, pc');
-            input.addEventListener('input', function() {
-                row.rule = input.value;
-                row.dirty = true;
-                state.dirty = true;
-                li.classList.add('is-dirty');
-                kindChip.className = 'gst-prof-syn__kind is-' + classifyRule(row.rule);
-                kindChip.textContent = classifyRule(row.rule) === 'replacement' ? '→'
-                                    : classifyRule(row.rule) === 'equivalent'  ? '='
-                                    : '·';
-                refreshChrome();
-            });
-            li.appendChild(input);
-
-            var del = document.createElement('button');
-            del.type = 'button';
-            del.className = 'gst-prof-syn__delbtn';
-            del.title = s('synonyms.action_remove', 'Remove');
-            del.innerHTML = '<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">'
-                + '<path d="M3 3 L9 9 M9 3 L3 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
-            del.addEventListener('click', function() {
-                state.rows = state.rows.filter(function(r) { return r !== row; });
-                state.dirty = true;
-                renderRows();
-            });
-            li.appendChild(del);
-
-            return li;
+        function setKindChip(chip, rule) {
+            var kind = classifyRule(rule);
+            chip.className = 'gst-prof-syn__kind is-' + (kind || 'other');
+            chip.textContent = kind === 'replacement' ? '→'
+                            : kind === 'equivalent'  ? '='
+                            : '·';
+            chip.title = kind || '';
         }
 
-        function loadForLang(lang) {
-            setAlert(null);
+        function defaultScope() {
+            // Editing target: the active locale's blob if a locale is active,
+            // else the global blob (which matches what the panel is showing).
+            return state.lang ? 'lang' : 'global';
+        }
+
+        function scopeLabel(scope) {
+            if (scope === 'global') return s('profiles.detail.synonyms.scopeGlobal', 'global');
+            return state.lang || '';
+        }
+
+        function markDirty(row, tr) {
+            row._dirty = true;
+            tr.classList.add('is-dirty');
+            refreshChrome();
+        }
+
+        function buildRow(row) {
+            // Global rows are read-only here — managed in the dedicated
+            // Synonyms tool to avoid two profiles racing on the same blob.
+            var isGlobalReadOnly = row.scope === 'global' && !!state.lang;
+            var tr = document.createElement('tr');
+            tr.className = 'gst-pinedit__row'
+                + (row._dirty ? ' is-dirty' : '')
+                + (row._isNew ? ' is-new' : '')
+                + (isGlobalReadOnly ? ' is-readonly' : '');
+
+            // Kind cell — small replacement / equivalent indicator chip.
+            var kindCell = document.createElement('td');
+            kindCell.className = 'gst-pinedit__cell gst-prof-syn__kind-cell';
+            var kindChip = document.createElement('span');
+            setKindChip(kindChip, row.rule);
+            kindCell.appendChild(kindChip);
+            tr.appendChild(kindCell);
+
+            // Rule cell — in-place text input.
+            var ruleCell = document.createElement('td');
+            ruleCell.className = 'gst-pinedit__cell';
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'gst-pinedit__input';
+            input.value = row.rule || '';
+            input.placeholder = s('synonyms.rule_placeholder', 'H2O => water  or  laptop, computer, pc');
+            if (isGlobalReadOnly) {
+                input.readOnly = true;
+                input.title = s('profiles.detail.synonyms.globalRowTip',
+                    'Global rule — applies in every language. Manage in the Synonyms tool.');
+            }
+            input.addEventListener('input', function() {
+                if (isGlobalReadOnly) return;
+                row.rule = input.value;
+                setKindChip(kindChip, row.rule);
+                markDirty(row, tr);
+            });
+            ruleCell.appendChild(input);
+            tr.appendChild(ruleCell);
+
+            // Scope cell — lang/global pill.
+            var scopeCell = document.createElement('td');
+            scopeCell.className = 'gst-pinedit__cell';
+            var scopeChip = document.createElement('span');
+            scopeChip.className = 'gst-prof-syn__scope is-' + row.scope;
+            scopeChip.textContent = scopeLabel(row.scope);
+            scopeChip.title = row.scope === 'global'
+                ? s('profiles.detail.synonyms.scopeGlobalTip',
+                    'Stored in the global synonym blob — applies to every language.')
+                : s('profiles.detail.synonyms.scopeLangTip',
+                    "Stored in this language's synonym blob.");
+            scopeCell.appendChild(scopeChip);
+            tr.appendChild(scopeCell);
+
+            // Actions cell — delete only (synonyms saves the whole blob,
+            // so per-row Save would be misleading; the drawer handles it).
+            var actCell = document.createElement('td');
+            actCell.className = 'gst-pinedit__cell gst-pinedit__cell--actions';
+            if (!isGlobalReadOnly) {
+                var del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'gst-pinedit__action gst-pinedit__action--delete';
+                del.innerHTML = '<span aria-hidden="true">×</span>';
+                del.title = s('synonyms.action_remove', 'Remove');
+                del.addEventListener('click', function() {
+                    state.rows = state.rows.filter(function(r) { return r !== row; });
+                    renderRows();
+                });
+                actCell.appendChild(del);
+            }
+            tr.appendChild(actCell);
+
+            return tr;
+        }
+
+        function addNewRow() {
+            state.rows.unshift({
+                rule: '', scope: defaultScope(),
+                _dirty: true, _isNew: true
+            });
+            // Reset to first page so the just-added row is visible regardless
+            // of where it lands in the alphabetical sort (an empty rule sorts
+            // to the very top under ascending order).
+            state.page = 1;
+            renderRows();
+            // Focus the new row's input.
+            var first = rowsHost.querySelector('tr.gst-pinedit__row.is-new .gst-pinedit__input');
+            if (first && first.focus) first.focus();
+        }
+
+        // Returns a normalized "rule\nrule\n…" string, dropping empties.
+        // Used both for snapshot capture and dirty-scope detection.
+        function normalize(content) {
+            if (!content) return '';
+            if (content.charAt(0) === '"' && content.charAt(content.length - 1) === '"') {
+                try { content = JSON.parse(content); } catch (_) { /* leave as-is */ }
+            }
+            return content.split(/\r?\n/)
+                .map(function(line) { return line.trim(); })
+                .filter(function(line) { return line.length > 0; })
+                .join('\n');
+        }
+
+        function fetchScope(lang) {
             var qs = lang
                 ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=' + encodeURIComponent(SLOT)
                 : '?slot=' + encodeURIComponent(SLOT);
             return ajax(BASE + '/SynonymsApi/Get' + qs)
-                .then(function(result) {
-                    state.rows = [];
-                    state.dirty = false;
+                .then(function(result) { return result ? result.content : ''; })
+                .catch(function() { return ''; }); // 404 / no rules is fine
+        }
+
+        function loadForLang(lang) {
+            setAlert(null);
+            // Fetch both the language-specific blob and the global blob in
+            // parallel. Both apply at query time for this locale, so we render
+            // them in one merged list. When `lang` is empty, we skip the
+            // duplicate fetch — the panel becomes the global editor.
+            var fetchLang = lang ? fetchScope(lang) : Promise.resolve('');
+            var fetchGlobal = fetchScope('');
+            return Promise.all([fetchLang, fetchGlobal])
+                .then(function(results) {
+                    var langContent = normalize(results[0]);
+                    var globalContent = normalize(results[1]);
                     state.lang = lang;
-                    var content = result ? result.content : '';
-                    if (content) {
-                        // Server may double-quote-string the body; unwrap it.
-                        if (content.charAt(0) === '"' && content.charAt(content.length - 1) === '"') {
-                            try { content = JSON.parse(content); } catch (_) { /* leave as-is */ }
-                        }
-                        content.split(/\r?\n/).forEach(function(line) {
-                            var rule = line.trim();
-                            if (!rule) return;
-                            state.rows.push({ rule: rule, dirty: false, isNew: false });
+                    state.page = 1;
+                    state.snapshots = { lang: langContent, global: globalContent };
+                    state.rows = [];
+                    if (lang && langContent) {
+                        langContent.split('\n').forEach(function(rule) {
+                            state.rows.push({ rule: rule, scope: 'lang' });
+                        });
+                    }
+                    if (globalContent) {
+                        globalContent.split('\n').forEach(function(rule) {
+                            state.rows.push({ rule: rule, scope: 'global' });
                         });
                     }
                     renderRows();
-                })
-                .catch(function() {
-                    // 404 / no rules is fine — render empty.
-                    state.rows = [];
-                    state.dirty = false;
-                    state.lang = lang;
-                    renderRows();
                 });
         }
 
-        function addRule() {
-            state.rows.push({ rule: '', dirty: true, isNew: true });
-            state.dirty = true;
-            renderRows();
-            // Focus the new row.
-            var inputs = rowsHost.querySelectorAll('.gst-prof-syn__input');
-            var last = inputs[inputs.length - 1];
-            if (last && last.focus) last.focus();
+        function joinedScopeContent(scope) {
+            return state.rows
+                .filter(function(r) { return r.scope === scope; })
+                .map(function(r) { return (r.rule || '').trim(); })
+                .filter(function(r) { return r.length > 0; })
+                .join('\n');
+        }
+
+        function writeScope(scope, content) {
+            // Empty content means delete the blob entirely. Note that we
+            // never delete the global blob from this panel — global rows are
+            // read-only when a locale is active, so the only way to reach
+            // empty global from here is when the panel itself IS the global
+            // editor (state.lang === '').
+            var lang = scope === 'lang' ? state.lang : null;
+            if (content) {
+                return ajax(BASE + '/SynonymsApi/Update', {
+                    method: 'PUT',
+                    body: { content: content, languageRouting: lang, sourceRouting: null, slot: SLOT }
+                });
+            }
+            var qs = lang
+                ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=' + encodeURIComponent(SLOT)
+                : '?slot=' + encodeURIComponent(SLOT);
+            return ajax(BASE + '/SynonymsApi/Delete' + qs, { method: 'DELETE' });
         }
 
         function save() {
-            var rules = state.rows
-                .map(function(r) { return (r.rule || '').trim(); })
-                .filter(function(r) { return r; });
-            var content = rules.join('\n');
-            var promise;
-            if (content) {
-                promise = ajax(BASE + '/SynonymsApi/Update', {
-                    method: 'PUT',
-                    body: {
-                        content: content,
-                        languageRouting: state.lang || null,
-                        sourceRouting: null,
-                        slot: SLOT
-                    }
-                });
-            } else {
-                var qs = state.lang
-                    ? '?languageRouting=' + encodeURIComponent(state.lang) + '&slot=' + encodeURIComponent(SLOT)
-                    : '?slot=' + encodeURIComponent(SLOT);
-                promise = ajax(BASE + '/SynonymsApi/Delete' + qs, { method: 'DELETE' });
+            // Diff per scope against the snapshot taken at load. Only write
+            // scopes that actually changed — global is usually untouched
+            // because it's read-only when a locale is active.
+            var scopesToWrite = [];
+            if (state.lang) {
+                var newLang = joinedScopeContent('lang');
+                if (newLang !== state.snapshots.lang) {
+                    scopesToWrite.push({ scope: 'lang', content: newLang, lang: state.lang });
+                }
             }
-            promise.then(function() {
-                state.dirty = false;
+            var newGlobal = joinedScopeContent('global');
+            if (newGlobal !== state.snapshots.global) {
+                scopesToWrite.push({ scope: 'global', content: newGlobal, lang: '' });
+            }
+            if (!scopesToWrite.length) {
+                state.rows.forEach(function(r) { delete r._dirty; delete r._isNew; });
+                renderRows();
+                return;
+            }
+            Promise.all(scopesToWrite.map(function(w) {
+                return writeScope(w.scope, w.content);
+            })).then(function() {
+                scopesToWrite.forEach(function(w) {
+                    state.snapshots[w.scope] = w.content;
+                });
                 state.rows = state.rows.filter(function(r) { return (r.rule || '').trim(); });
-                state.rows.forEach(function(r) { r.dirty = false; r.isNew = false; });
+                state.rows.forEach(function(r) { delete r._dirty; delete r._isNew; });
                 renderRows();
                 setAlert(s('synonyms.saved', 'Synonyms saved.'));
-                // Tell the live preview to drop its cached rules for this lang
-                // so the next preview reflects the edit.
-                window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
-                    detail: { lang: state.lang || '' }
-                }));
+                // Tell the live preview to drop its cached rules for each
+                // scope we wrote so the next preview reflects the edit.
+                scopesToWrite.forEach(function(w) {
+                    window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
+                        detail: { lang: w.lang }
+                    }));
+                });
             }).catch(function(err) {
                 setAlert((err && err.message) || s('synonyms.request_failed', 'Failed to save synonyms.'), true);
             });
@@ -566,45 +782,55 @@
             loadForLang(state.lang);
         }
 
-        // The chip's visible value sits in a span beneath a transparent
-        // overlay <select> — see graphsearchtools.css `.gst-prof-chip__select`.
-        // Mirror the selected option's label into that span on every change
-        // so the pill text matches what the dropdown is actually pointing at.
-        function syncLangDisplay() {
-            var disp = document.getElementById('gst-prof-syn-lang-display');
-            if (!disp || !langSel) return;
-            var opt = langSel.options[langSel.selectedIndex];
-            disp.textContent = opt ? opt.text.trim() : (langSel.value || '');
-        }
-
+        // Track the live preview's locale. pinned.js installs its own
+        // change handler on the same select; both fire and stay in sync.
         if (langSel) {
             langSel.addEventListener('change', function() {
-                if (state.dirty) {
+                if (langSel.value === state.lang) return;
+                if (isDirty()) {
                     var keep = confirm(s('synonyms.confirm_unsaved',
                         'You have unsaved synonym changes. Press OK to save, or Cancel to discard.'));
                     var p = keep ? Promise.resolve(save()) : Promise.resolve();
-                    p.then(function() { syncLangDisplay(); loadForLang(langSel.value); });
+                    p.then(function() { loadForLang(langSel.value); });
                     return;
                 }
-                syncLangDisplay();
                 loadForLang(langSel.value);
             });
         }
-        if (addBtn)     addBtn.addEventListener('click', addRule);
         if (saveBtn)    saveBtn.addEventListener('click', save);
         if (discardBtn) discardBtn.addEventListener('click', discard);
 
-        // Pre-pick the first profile-scoped locale if the global blob is empty
-        // and the profile only has one applicable language — reduces the steps
-        // to "edit synonyms for this profile" by one click.
-        if ((!langSel || langSel.value === '') && opts.locales && opts.locales.length === 1) {
-            if (langSel) langSel.value = opts.locales[0];
-            state.lang = opts.locales[0];
+        [addBtn, addEmpty].forEach(function(b) {
+            if (b) b.addEventListener('click', addNewRow);
+        });
+
+        if (filterInput) {
+            var filterDebounce = null;
+            filterInput.addEventListener('input', function() {
+                clearTimeout(filterDebounce);
+                filterDebounce = setTimeout(function() {
+                    state.filter = (filterInput.value || '').toLowerCase().trim();
+                    state.page = 1;
+                    renderRows();
+                }, 80);
+            });
         }
-        syncLangDisplay();
+
+        GST.editGrid.wireSortHeaders(sortBtns, state.sort, function() {
+            state.page = 1;
+            renderRows();
+        });
+
+        GST.editGrid.wirePager({
+            prevBtn: prevBtn, nextBtn: nextBtn,
+            pageSize: PAGE_SIZE,
+            getPage: function() { return state.page; },
+            setPage: function(p) { state.page = p; },
+            getTotal: function() { return getDisplayedRows().length; },
+            onChange: renderRows
+        });
 
         loadForLang(state.lang);
-        refreshChrome();
     }
 
     var _auditLoaded = false;
