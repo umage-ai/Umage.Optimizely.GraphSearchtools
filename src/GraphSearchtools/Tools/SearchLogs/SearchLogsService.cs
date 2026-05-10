@@ -37,38 +37,45 @@ public sealed class SearchLogsService
 
     /// <summary>
     /// Top phrases by hit count in the window. Returns most-frequent first.
+    /// When <paramref name="profileKey"/> is supplied, only sessions that ran
+    /// against that profile are counted — the Profiles detail page passes the
+    /// active profile key here.
     /// </summary>
-    public IReadOnlyList<SearchLogPhraseRow> TopPhrases(DateTime? since, int? take)
+    public IReadOnlyList<SearchLogPhraseRow> TopPhrases(DateTime? since, int? take, string? profileKey = null)
     {
         var (sinceUtc, clampedTake) = Normalise(since, take);
-        return _logs.TopPhrases(sinceUtc, clampedTake)
-            .Select(ToPhraseRow)
-            .ToList();
+        var rows = string.IsNullOrEmpty(profileKey)
+            ? _logs.TopPhrases(sinceUtc, clampedTake)
+            : _logs.TopPhrasesForProfile(sinceUtc, clampedTake, profileKey);
+        return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>
     /// Phrases whose sessions all returned zero hits. Most-frequent first;
-    /// these are the strongest synonym-mining candidates.
+    /// these are the strongest synonym-mining candidates. Profile-scoped when
+    /// <paramref name="profileKey"/> is supplied.
     /// </summary>
-    public IReadOnlyList<SearchLogPhraseRow> ZeroResultPhrases(DateTime? since, int? take)
+    public IReadOnlyList<SearchLogPhraseRow> ZeroResultPhrases(DateTime? since, int? take, string? profileKey = null)
     {
         var (sinceUtc, clampedTake) = Normalise(since, take);
-        return _logs.ZeroResultPhrases(sinceUtc, clampedTake)
-            .Select(ToPhraseRow)
-            .ToList();
+        var rows = string.IsNullOrEmpty(profileKey)
+            ? _logs.ZeroResultPhrases(sinceUtc, clampedTake)
+            : _logs.ZeroResultPhrasesForProfile(sinceUtc, clampedTake, profileKey);
+        return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>
     /// Phrases with the lowest click-through rate in the window. The underlying
-    /// service excludes phrases with fewer than 5 sessions to keep the list
-    /// actionable.
+    /// service excludes phrases with fewer than 5 sessions (3 in profile-scoped
+    /// mode) to keep the list actionable.
     /// </summary>
-    public IReadOnlyList<SearchLogPhraseRow> LowCtrPhrases(DateTime? since, int? take)
+    public IReadOnlyList<SearchLogPhraseRow> LowCtrPhrases(DateTime? since, int? take, string? profileKey = null)
     {
         var (sinceUtc, clampedTake) = Normalise(since, take);
-        return _logs.LowCtrPhrases(sinceUtc, clampedTake)
-            .Select(ToPhraseRow)
-            .ToList();
+        var rows = string.IsNullOrEmpty(profileKey)
+            ? _logs.LowCtrPhrases(sinceUtc, clampedTake)
+            : _logs.LowCtrPhrasesForProfile(sinceUtc, clampedTake, profileKey);
+        return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>

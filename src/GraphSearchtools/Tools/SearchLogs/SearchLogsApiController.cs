@@ -43,12 +43,12 @@ public class SearchLogsApiController : Controller
     /// by hit count, most-frequent first.
     /// </summary>
     [HttpGet]
-    public IActionResult Top([FromQuery] DateTime? since, [FromQuery] int? take)
+    public IActionResult Top([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(_service.TopPhrases(since, take));
+            return Ok(_service.TopPhrases(since, take, profileKey));
         }
         catch (Exception ex)
         {
@@ -61,12 +61,12 @@ public class SearchLogsApiController : Controller
     /// whose sessions returned zero hits. The synonym-mining list.
     /// </summary>
     [HttpGet]
-    public IActionResult ZeroResults([FromQuery] DateTime? since, [FromQuery] int? take)
+    public IActionResult ZeroResults([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(_service.ZeroResultPhrases(since, take));
+            return Ok(_service.ZeroResultPhrases(since, take, profileKey));
         }
         catch (Exception ex)
         {
@@ -81,12 +81,12 @@ public class SearchLogsApiController : Controller
     /// foundation service to keep the surface actionable.
     /// </summary>
     [HttpGet]
-    public IActionResult LowCtr([FromQuery] DateTime? since, [FromQuery] int? take)
+    public IActionResult LowCtr([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(_service.LowCtrPhrases(since, take));
+            return Ok(_service.LowCtrPhrases(since, take, profileKey));
         }
         catch (Exception ex)
         {

@@ -177,6 +177,56 @@ public class SearchLogService
             .ToList();
     }
 
+    /// <summary>
+    /// Top phrases by hit count in the window, restricted to a single profile.
+    /// Drives the per-profile insights surface on the Profiles detail page,
+    /// which only wants to see phrases that landed against this profile's
+    /// registered query.
+    /// </summary>
+    public virtual IEnumerable<SearchLogAggregateRow> TopPhrasesForProfile(DateTime sinceUtc, int take, string profileKey)
+    {
+        if (string.IsNullOrEmpty(profileKey)) return Array.Empty<SearchLogAggregateRow>();
+        var rows = LoadWindow(sinceUtc).Where(e => e.ProfileKey == profileKey);
+        return Aggregate(rows)
+            .OrderByDescending(r => r.Hits)
+            .Take(Math.Clamp(take, 1, 500))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Profile-scoped variant of <see cref="ZeroResultPhrases"/>. Same lower
+    /// thresholds — every zero-result phrase shows up regardless of session
+    /// count, since each one is a synonym-mining candidate.
+    /// </summary>
+    public virtual IEnumerable<SearchLogAggregateRow> ZeroResultPhrasesForProfile(DateTime sinceUtc, int take, string profileKey)
+    {
+        if (string.IsNullOrEmpty(profileKey)) return Array.Empty<SearchLogAggregateRow>();
+        var rows = LoadWindow(sinceUtc).Where(e => e.ProfileKey == profileKey && e.ResultCount == 0);
+        return Aggregate(rows)
+            .OrderByDescending(r => r.Hits)
+            .Take(Math.Clamp(take, 1, 500))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Profile-scoped variant of <see cref="LowCtrPhrases"/>. Min-session
+    /// threshold drops to 3 here because per-profile windows have less volume
+    /// than the global one, and a 5-session floor would empty the list for
+    /// quieter profiles.
+    /// </summary>
+    public virtual IEnumerable<SearchLogAggregateRow> LowCtrPhrasesForProfile(DateTime sinceUtc, int take, string profileKey)
+    {
+        if (string.IsNullOrEmpty(profileKey)) return Array.Empty<SearchLogAggregateRow>();
+        const int minSessions = 3;
+        var rows = LoadWindow(sinceUtc).Where(e => e.ProfileKey == profileKey);
+        return Aggregate(rows)
+            .Where(r => r.Hits >= minSessions)
+            .OrderBy(r => r.Ctr)
+            .ThenByDescending(r => r.Hits)
+            .Take(Math.Clamp(take, 1, 500))
+            .ToList();
+    }
+
     /// <summary>Load all rows in the window — single DDS query for all aggregations.</summary>
     private List<SearchLogEntry> LoadWindow(DateTime sinceUtc)
     {
