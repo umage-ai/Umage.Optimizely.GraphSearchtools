@@ -2703,6 +2703,28 @@ td.bpe-editing select {
     border-bottom: 1px solid var(--gst-border);
     background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
 }
+/* Standalone Synonyms tool — locale picker that selects the editable scope.
+   Profile-detail surface piggybacks on the live preview's locale chip and
+   doesn't render this. */
+.gst-syn-page__lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--gst-text-muted);
+}
+.gst-syn-page__lang-label {
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.gst-syn-page__lang-select {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    background: var(--gst-bg);
+    color: var(--gst-text);
+}
 .gst-pinedit__searchbox {
     position: relative;
     /* Take the whole first row when space is tight — flex-basis 240px is the

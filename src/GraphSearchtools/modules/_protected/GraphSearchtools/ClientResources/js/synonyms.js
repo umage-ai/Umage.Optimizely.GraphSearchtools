@@ -1,56 +1,27 @@
 /**
- * Graph Search Tools — Synonyms editor.
+ * Graph Search Tools — standalone Synonyms tool bootstrap.
  *
- * One synonym blob per language plus a "Global" blob (no language). The list
- * format is one rule per line; replacement vs equivalent semantics are
- * encoded in the rule text by Optimizely Graph itself.
+ * The grid widget itself lives in synonyms-grid.js (shared with the
+ * Profile-detail Synonyms tab). This file just wires the standalone
+ * surface's language picker (one blob at a time, no merge with global)
+ * and populates the picker options from /SitesApi/Locales.
  */
 (function () {
     'use strict';
 
     var BASE = window.GST_BASE_URL || '';
     var STRINGS = (window.GST_STRINGS && window.GST_STRINGS.synonyms) || {};
-    var SYN_SLOT = 'one';
-    var SYN_SOURCE = '';
 
     var alertBox = document.getElementById('gst-alert');
-    var synGrid = document.getElementById('syn-grid');
-    var synFilter = document.getElementById('syn-filter');
-    var synLanguageFilter = document.getElementById('syn-language-filter');
-    var saveButton = document.getElementById('syn-save');
-    var addButton = document.getElementById('syn-add');
+    var langSelect = document.getElementById('syn-language-filter');
 
-    var graphLocales = [];
-    var rows = [];
-    var dirty = false;
-    var currentLang = '';
-
-    function ajax(url, opts) {
-        opts = opts || {};
-        var headers = { 'X-Requested-With': 'XMLHttpRequest' };
-        if (opts.body) headers['Content-Type'] = 'application/json';
-        return fetch(url, {
-            method: opts.method || 'GET',
-            headers: headers,
-            credentials: 'same-origin',
-            body: opts.body ? JSON.stringify(opts.body) : undefined
-        }).then(function (resp) {
-            if (!resp.ok) {
-                return resp.text().then(function (t) {
-                    var msg = STRINGS.request_failed || 'Request failed';
-                    try {
-                        var parsed = t ? JSON.parse(t) : null;
-                        if (parsed && parsed.message) msg = parsed.message;
-                    } catch (_) { /* not JSON */ }
-                    throw new Error(msg + ' (' + resp.status + ')');
-                });
-            }
-            if (resp.status === 204) return null;
-            return resp.json();
-        });
+    function s(path, fallback) {
+        if (window.GST && typeof window.GST.s === 'function') return window.GST.s(path, fallback);
+        return fallback;
     }
 
     function setAlert(message, isError) {
+        if (!alertBox) return;
         if (!message) {
             alertBox.hidden = true;
             alertBox.textContent = '';
@@ -62,183 +33,61 @@
         alertBox.classList.toggle('gst-alert--danger', !!isError);
     }
 
-    function updateSaveButton() {
-        saveButton.disabled = !dirty;
-    }
-
-    function renderLanguageFilter() {
-        synLanguageFilter.innerHTML = '';
+    function renderLanguageOptions(locales) {
+        langSelect.innerHTML = '';
         var optGlobal = document.createElement('option');
         optGlobal.value = '';
         optGlobal.textContent = STRINGS.global || 'Global';
-        synLanguageFilter.appendChild(optGlobal);
-        graphLocales.forEach(function (code) {
+        langSelect.appendChild(optGlobal);
+        (locales || []).forEach(function (code) {
             var opt = document.createElement('option');
             opt.value = code;
             opt.textContent = code;
-            synLanguageFilter.appendChild(opt);
+            langSelect.appendChild(opt);
         });
     }
 
-    function loadSitesAndInitial() {
-        // Locale slots in Graph synonyms are routed by Graph's own locale codes,
-        // so the picker pulls from /SitesApi/Locales (schema introspection)
-        // rather than the host CMS site list — that way it stays accurate when
-        // the two have drifted.
-        ajax(BASE + '/SitesApi/Locales')
-            .then(function (s) {
-                graphLocales = s || [];
-                renderLanguageFilter();
-                return loadForLanguage('');
-            })
-            .catch(function (err) { setAlert(err.message, true); });
-    }
-
-    function loadForLanguage(lang) {
-        rows = [];
-        var qs = lang
-            ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=' + encodeURIComponent(SYN_SLOT)
-            : '?slot=' + encodeURIComponent(SYN_SLOT);
-        return ajax(BASE + '/SynonymsApi/Get' + qs)
-            .then(function (result) {
-                var content = result ? result.content : '';
-                if (content) {
-                    if (content.charAt(0) === '"' && content.charAt(content.length - 1) === '"') {
-                        try { content = JSON.parse(content); } catch (_) { /* leave as-is */ }
-                    }
-                    content.split(/\r?\n/).forEach(function (line) {
-                        var rule = line.trim();
-                        if (!rule) return;
-                        rows.push({ rule: rule, dirty: false, isNew: false });
-                    });
-                }
-            })
-            .catch(function () { /* no synonyms is fine */ })
-            .then(function () {
-                currentLang = lang;
-                dirty = false;
-                updateSaveButton();
-                renderGrid();
-            });
-    }
-
-    function getFilteredRows() {
-        var text = synFilter.value.trim().toLowerCase();
-        var filtered = rows;
-        if (text) filtered = filtered.filter(function (r) { return r.rule.toLowerCase().indexOf(text) !== -1; });
-        return filtered.filter(function (r) { return r.isNew || (r.rule && r.rule.trim().length > 0); });
-    }
-
-    function renderGrid() {
-        synGrid.innerHTML = '';
-        var filtered = getFilteredRows();
-        filtered.forEach(function (row) { synGrid.appendChild(buildRow(row)); });
-    }
-
-    function buildRow(row) {
-        var tr = document.createElement('tr');
-        tr.className = 'gst-syn-row' + (row.dirty ? ' is-dirty' : '') + (row.isNew ? ' is-new' : '');
-
-        var ruleCell = document.createElement('td');
-        var input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'gst-cell-input';
-        input.value = row.rule;
-        input.placeholder = STRINGS.rule_placeholder || 'H2O => water  or  laptop, computer, pc';
-        input.addEventListener('input', function () {
-            row.rule = input.value;
-            row.dirty = true;
-            dirty = true;
-            tr.classList.add('is-dirty');
-            updateSaveButton();
+    function mountGrid() {
+        return GST.synonymsGrid.mount({
+            slot: 'one',
+            mergeWithGlobal: false,
+            getLang: function () { return langSelect.value; },
+            onLangChange: function (handler) {
+                langSelect.addEventListener('change', function () { handler(langSelect.value); });
+            },
+            dom: {
+                rowsHost: '#gst-syn-rows',
+                emptyEl: '#gst-syn-empty',
+                addBtn: '#gst-syn-add',
+                addEmpty: '#gst-syn-empty-add',
+                alertEl: '#gst-syn-alert',
+                saveBtn: '#gst-syn-save',
+                discardBtn: '#gst-syn-discard',
+                filterInput: '#gst-syn-filter',
+                countEl: '#gst-syn-count',
+                pagerEl: '#gst-syn-pager',
+                pagerStatusEl: '#gst-syn-pager-status',
+                prevBtn: '#gst-syn-prev',
+                nextBtn: '#gst-syn-next',
+                drawerEl: '#gst-syn-drawer',
+                drawerCount: '#gst-syn-dirty-count',
+                sortBtns: document.querySelectorAll('#gst-syn .gst-pinedit__sortbtn')
+            }
         });
-        ruleCell.appendChild(input);
-        tr.appendChild(ruleCell);
-
-        var actCell = document.createElement('td');
-        actCell.className = 'gst-syn-actions';
-        var del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'gst-pin-delete-btn';
-        del.innerHTML = '&#x2716;';
-        del.title = STRINGS.action_remove || 'Remove';
-        del.addEventListener('click', function () {
-            rows = rows.filter(function (r) { return r !== row; });
-            dirty = true;
-            updateSaveButton();
-            renderGrid();
-        });
-        actCell.appendChild(del);
-        tr.appendChild(actCell);
-        return tr;
     }
 
-    function addRow() {
-        rows.push({ rule: '', dirty: true, isNew: true });
-        dirty = true;
-        updateSaveButton();
-        renderGrid();
-        var trs = synGrid.querySelectorAll('tr');
-        var last = trs[trs.length - 1];
-        if (last) {
-            last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            var input = last.querySelector('.gst-cell-input');
-            if (input && input.focus) input.focus();
-        }
-    }
-
-    function save() {
-        var rules = rows.map(function (r) { return r.rule.trim(); }).filter(function (r) { return r; });
-        var content = rules.join('\n');
-        var lang = currentLang;
-        var promise;
-        if (content) {
-            promise = ajax(BASE + '/SynonymsApi/Update', {
-                method: 'PUT',
-                body: {
-                    content: content,
-                    languageRouting: lang || null,
-                    sourceRouting: SYN_SOURCE || null,
-                    slot: SYN_SLOT
-                }
-            });
-        } else {
-            var qs = lang
-                ? '?languageRouting=' + encodeURIComponent(lang) + '&slot=' + encodeURIComponent(SYN_SLOT)
-                : '?slot=' + encodeURIComponent(SYN_SLOT);
-            promise = ajax(BASE + '/SynonymsApi/Delete' + qs, { method: 'DELETE' });
-        }
-        promise.then(function () {
-            dirty = false;
-            rows = rows.filter(function (r) { return r.rule.trim(); });
-            rows.forEach(function (r) { r.dirty = false; r.isNew = false; });
-            updateSaveButton();
-            renderGrid();
-            setAlert(STRINGS.saved || 'Synonyms saved.');
-        }).catch(function (err) { setAlert(err.message, true); });
-    }
-
-    function handleLanguageChange() {
-        var newLang = synLanguageFilter.value;
-        if (newLang === currentLang) return;
-        if (dirty) {
-            var saveFirst = confirm(STRINGS.confirm_unsaved || 'You have unsaved synonym changes. Press OK to save, or Cancel to discard.');
-            var promise = saveFirst ? new Promise(function (resolve) { save(); resolve(); }) : Promise.resolve();
-            promise.then(function () { loadForLanguage(newLang); });
-            return;
-        }
-        loadForLanguage(newLang);
-    }
-
-    addButton.addEventListener('click', addRow);
-    saveButton.addEventListener('click', save);
-    synFilter.addEventListener('input', renderGrid);
-    synLanguageFilter.addEventListener('change', handleLanguageChange);
-
-    window.addEventListener('beforeunload', function (e) {
-        if (dirty) e.preventDefault();
-    });
-
-    updateSaveButton();
-    loadSitesAndInitial();
+    // Pull locale options from Graph's schema introspection rather than the
+    // host CMS site list — synonym slots in Graph are routed by Graph's own
+    // locale codes, so the picker stays accurate when the two have drifted.
+    fetch(BASE + '/SitesApi/Locales', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .catch(function () { return []; })
+        .then(function (locales) {
+            renderLanguageOptions(locales);
+            mountGrid();
+        })
+        .catch(function (err) { setAlert((err && err.message) || s('synonyms.request_failed', 'Failed to load locales.'), true); });
 })();
