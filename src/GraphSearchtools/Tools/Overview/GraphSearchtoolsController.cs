@@ -90,19 +90,6 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Phase 4 Wave 5 — Search Logs UI. Read-only analytics surface over the
-    /// search-log DDS table: top phrases, zero-result phrases, low-CTR
-    /// phrases, and a recent-events live tail.
-    /// </summary>
-    [HttpGet]
-    public IActionResult SearchLogs()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SearchLogs), GraphSearchtoolsPermissions.SearchLogs))
-            return Forbid();
-        return View("/Views/SearchLogs/Index.cshtml");
-    }
-
-    /// <summary>
     /// Phase 4 Wave 5 — Synonym Coverage. Read-only analyzer that joins the
     /// saved synonym blobs with the search-log table to surface unused
     /// entries (prune candidates) and zero-result phrases that look like

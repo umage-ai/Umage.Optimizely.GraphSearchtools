@@ -106,7 +106,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // tool feeds off: top phrases, zero-result phrases, low-CTR phrases,
         // recent raw events.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search Logs"), BaseMenuPath + "/searchlogs",
-            GetResourcePath("GraphSearchtools/SearchLogs"))
+            GetResourcePath("SearchLogs/Index"))
         {
             SortIndex = 510,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchLogs))
