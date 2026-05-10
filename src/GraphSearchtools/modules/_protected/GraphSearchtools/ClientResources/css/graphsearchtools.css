@@ -4237,7 +4237,7 @@ td.bpe-editing select {
 .gst-prof-syn__help {
     margin-top: 4px;
     border-top: 1px dashed var(--gst-border-light);
-    padding: 10px 14px 0;
+    padding: 10px 14px 12px;
 }
 .gst-prof-syn__help summary {
     cursor: pointer;
