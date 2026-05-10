@@ -164,8 +164,12 @@ public class PinnedApiController : Controller
     [HttpPut]
     [RequireAjax]
     public async Task<IActionResult> UpdateItem(
-        string collectionId,
-        string id,
+        // [FromQuery] is explicit because the convention route is
+        // `{controller}/{action}/{id?}` — without it, the model binder reads
+        // `id` from the empty route token and never falls through to the
+        // query string, producing a 400 "id required" even when ?id=… is set.
+        [FromQuery] string collectionId,
+        [FromQuery] string id,
         [FromBody] PinnedItemPayload payload,
         [FromQuery] string? profileKey,
         [FromQuery] string? site,
@@ -197,8 +201,9 @@ public class PinnedApiController : Controller
     [HttpDelete]
     [RequireAjax]
     public async Task<IActionResult> DeleteItem(
-        string collectionId,
-        string id,
+        // See UpdateItem: [FromQuery] needed to bypass the route's `{id?}` token.
+        [FromQuery] string collectionId,
+        [FromQuery] string id,
         [FromQuery] string? profileKey,
         [FromQuery] string? site,
         [FromQuery] string? locale,
