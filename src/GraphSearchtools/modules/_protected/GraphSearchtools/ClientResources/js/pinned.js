@@ -1294,12 +1294,46 @@
             }
 
             // ── Synonym chip strip ──────────────────────────────────────
+            // Latest synonym matches for the active query — read by
+            // renderResults() so the empty state can name the synonym target
+            // ("no content matched 'asdfg' or its synonym 'track'") instead
+            // of leaving the user wondering whether the rule even fired.
+            var lastSynMatches = [];
+
             function refreshSynStripFor(q) {
                 var lang = state.locale || '';
                 fetchSynonymsForLang(lang).then(function (rules) {
                     if (qInput.value.trim() !== q) return; // stale
-                    renderSynStrip(matchRules(q, rules));
+                    var matches = matchRules(q, rules);
+                    lastSynMatches = matches;
+                    renderSynStrip(matches);
+                    // If results already rendered as empty, refresh the empty
+                    // copy now that the chips arrived (the syn fetch and the
+                    // hits fetch race; either can resolve first).
+                    var emptyEl = resultsEl.querySelector('.gst-serp__empty');
+                    if (emptyEl) emptyEl.textContent = emptyMessageFor(q);
                 });
+            }
+
+            function emptyMessageFor(phrase) {
+                // Pull replacement targets out of the latest match set —
+                // equivalent rules don't have a "target" word the same way.
+                var targets = [];
+                lastSynMatches.forEach(function (m) {
+                    if (m.type === 'replacement' && m.expansion && m.expansion.length) {
+                        m.expansion.forEach(function (t) {
+                            if (targets.indexOf(t) === -1) targets.push(t);
+                        });
+                    }
+                });
+                if (!targets.length) {
+                    return s('profiles.detail.pinned.serpEmptyHelp',
+                        'No content matched this phrase. Try a different term, or pin a target above.');
+                }
+                var targetList = targets.map(function (t) { return '"' + t + '"'; }).join(', ');
+                var tmpl = s('profiles.detail.pinned.serpEmptyHelpSyn',
+                    'No content matched "{phrase}" or its synonym {target}. Synonym changes can take a few seconds to propagate; try a different target term if "{target}" isn\'t in your indexed content.');
+                return tmpl.replace(/\{phrase\}/g, phrase).replace(/\{target\}/g, targetList);
             }
 
             function ensureSynStripEl() {
@@ -1455,8 +1489,7 @@
                 if (!hits.length) {
                     var empty = document.createElement('li');
                     empty.className = 'gst-serp__empty';
-                    empty.textContent = s('profiles.detail.pinned.serpEmptyHelp',
-                        'No content matched this phrase. Try a different term, or pin a target above.');
+                    empty.textContent = emptyMessageFor(phrase);
                     resultsEl.appendChild(empty);
                     return;
                 }
@@ -1771,7 +1804,43 @@
         wireTryIt();
 
         return {
-            reload: loadRows
+            reload: loadRows,
+
+            /**
+             * Seed a new draft pin row pre-filled with `phrase` and focus the
+             * target cell — used by the Insights tab "draft pin" CTA so the
+             * editor opens ready for the marketer to pick a target. Returns
+             * true on success; false if the editor is in unwired/disabled state.
+             */
+            draftPhrase: function (phrase) {
+                if (!phrase) return false;
+                state.rows.push({
+                    id: null,
+                    collectionId: state.collectionId,
+                    collectionKey: state.pinnedKey,
+                    phrases: phrase,
+                    targetKey: '',
+                    contentName: '',
+                    contentType: '',
+                    language: state.locale || null,
+                    priority: 1000,
+                    isActive: true,
+                    _dirty: true,
+                    _isNew: true
+                });
+                state.page = pageCountFor(getDisplayedRows().length);
+                renderRows();
+                // Focus the target cell so the marketer's next click picks
+                // a content target rather than re-typing the phrase.
+                var rows = rowsTbody.querySelectorAll('tr.gst-pinedit__row');
+                var last = rows[rows.length - 1];
+                if (last) {
+                    last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    var targetInput = last.querySelector('.gst-pinedit__cell--target input, .gst-pinedit__cell--target .gst-pinedit__input');
+                    if (targetInput && targetInput.focus) targetInput.focus();
+                }
+                return true;
+            }
         };
     }
 
