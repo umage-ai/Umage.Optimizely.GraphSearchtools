@@ -290,8 +290,11 @@
 
         // Mount the pinned editor immediately — it owns the site/locale state
         // shared with the preview and we want the preview's pinned-row
-        // intersection to be live from first paint.
+        // intersection to be live from first paint. The Insights tab is the
+        // default-visible panel and also needs to mount eagerly so its lanes
+        // populate on first paint without waiting for a user click.
         mountPinned();
+        mountInsights();
 
         // Inject copy buttons into any code blocks marked [data-gst-copy].
         // The Razor markup wraps the GraphQL doc <pre> in such a block; this
