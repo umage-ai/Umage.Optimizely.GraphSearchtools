@@ -223,19 +223,42 @@ public sealed class AlloySearchService
     {
         var clauses = BuildClauses(phrase, types, locale, includeContentType: true, includeLocale: true);
         // SEMANTIC ranking has no real "no match" floor — gibberish like
-        // "asdfasdf" still nearest-neighbours into the corpus and returns
-        // semantic-only hits with _score ≈ 1.0–1.2. Empirically (probe runs
-        // against this tenant's Alloy demo corpus) lexical hits land at
-        // _score ≥ 38, so _minimumScore: 2 cleanly cuts the noise band
-        // without losing any real match. Tune higher (5–20) for noisier
-        // corpora; lower if you want semantic-only matches to surface.
+        // "asdfasdf" or "burp" still nearest-neighbours into the corpus and
+        // returns semantic-only hits with _score ≈ 1.0–2.1 against this
+        // tenant's Alloy demo corpus.
+        //
+        // The trick is that Graph applies a score discount to synonym-
+        // replacement hits (`a => b`) — a query that synonym-expands to
+        // "alloy" lands in roughly the 4.5–8 band even though a direct
+        // "alloy" search lexically scores 30–888. Earlier we tried floor 10
+        // to be safe and silently killed every replacement rule. Floor 2.5
+        // is the empirically-tuned sweet spot: probe runs (`burp`,
+        // `burp burp`, `asdfasdf` vs `floop` synonym vs direct `alloy`)
+        // showed it cuts every noise variant to zero while keeping all 26
+        // strong synonym hits. Drop down to ~2 if you want a softer floor;
+        // bump higher only if you've sampled scores against representative
+        // queries and confirmed the synonym band sits clear.
         var orderBy = string.IsNullOrEmpty(phrase)
             ? "orderBy: { StartPublish: DESC }"
-            : "orderBy: { _ranking: SEMANTIC, _minimumScore: 2 }";
+            : "orderBy: { _ranking: SEMANTIC, _minimumScore: 2.5 }";
         // usePinned only makes sense when there's a phrase to match against.
         var pinned = !string.IsNullOrEmpty(phrase) && !string.IsNullOrEmpty(pinnedCollectionId)
             ? $"usePinned: {{ phrase: {EscapeString(phrase)}, collectionId: {EscapeString(pinnedCollectionId)} }}"
             : string.Empty;
+
+        // Native highlight on _fulltext — Graph wraps every matched token
+        // (lexical AND synonym-expanded) with the start/end markers so the
+        // snippet logic can locate the actual matched span without rerunning
+        // the match heuristics client-side. We use SOH () / STX
+        // () as markers because they:
+        //   • don't appear in real content (all corpora are text)
+        //   • survive JSON transit and HTML stripping unchanged
+        //   • render invisible if a downstream renderer forgets to convert
+        //     them, instead of leaking a visible "[GHL]" sentinel.
+        // Renderers replace them with <b>/<mark> at the very end.
+        var fulltextField = string.IsNullOrEmpty(phrase)
+            ? "_fulltext"
+            : "_fulltext(highlight: { enabled: true, startToken: \"\\u0001\", endToken: \"\\u0002\" })";
 
         return $@"
 {{
@@ -252,7 +275,7 @@ public sealed class AlloySearchService
       RelativePath
       Language {{ Name }}
       ContentLink {{ GuidValue }}
-      _fulltext
+      {fulltextField}
     }}
   }}
 }}";
@@ -347,7 +370,27 @@ public sealed class AlloySearchService
             // wouldn't fire at the storefront. ONE matches the slot the
             // addon's UI defaults to; switch to TWO if you maintain a
             // staging slot and activate it via the Graph admin API.
-            inner.Add($"{{ _fulltext: {{ match: {EscapeString(phrase)}, synonyms: ONE }} }}");
+            //
+            // Title boost: pages whose Name (page title) matches the phrase
+            // get a 5× score contribution on top of the base _fulltext match.
+            // Wrapping both in _or keeps the membership rule the same — the
+            // doc still has to match _fulltext somewhere — while raising
+            // title hits above body-only hits in the ranking. Tune the boost
+            // factor up (e.g. 8–10) if titles are being out-ranked by body
+            // content; down toward 2–3 if exact-title matches feel sticky.
+            //
+            // synonyms: ONE on BOTH arms — without it, the title boost only
+            // fires when the user types the literal title word, so editorial
+            // synonyms (`floop => alloy`) get the _fulltext synonym discount
+            // but no title elevation, and synonym hits sink below direct
+            // lexical hits. Probing showed top floop hits jumping from ~8
+            // (no Name-arm synonyms) to 200+ when the Name arm also expands
+            // synonyms — same content, properly elevated.
+            inner.Add(
+                "{ _or: ["
+                + $"{{ _fulltext: {{ match: {EscapeString(phrase)}, synonyms: ONE }} }}, "
+                + $"{{ Name: {{ match: {EscapeString(phrase)}, boost: 5, synonyms: ONE }} }}"
+                + "] }");
         }
         if (includeContentType && types.Count > 0)
         {
@@ -413,44 +456,31 @@ public sealed class AlloySearchService
                 Url = GetString(item, "RelativePath") ?? "#",
                 Excerpt = BuildExcerpt(GetFulltextSnippet(item), phrase),
                 ContentType = GetLeafContentType(item) ?? "Content",
-                Language = GetNestedString(item, "Language", "Name") ?? string.Empty
+                Language = GetNestedString(item, "Language", "Name") ?? string.Empty,
+                ContentLink = GetNestedString(item, "ContentLink", "GuidValue") ?? string.Empty
             });
         }
         return hits;
     }
 
-    // Google-style snippet — window around the first matching token. Falls
-    // back to the leading snippet when nothing matches (e.g. semantic search
-    // surfaced a result by meaning, not literal substring).
-    private static string BuildExcerpt(string? body, string? phrase)
+    // Google-style snippet — window around the first highlight marker
+    // injected by Graph ( …match… ). Markers stay in the
+    // returned string; renderers replace them with <b>/<mark> at emission.
+    // Falls back to the leading text when no markers are present (e.g.
+    // semantic-only hit where the corpus didn't lexically match).
+    private const char HighlightStartMarker = '\u0001';
+    private const char HighlightEndMarker = '\u0002';
+
+    private static string BuildExcerpt(string? body, string? _phrase)
     {
         if (string.IsNullOrWhiteSpace(body)) return string.Empty;
         const int windowChars = 220;
         const int leadChars = 60;
 
-        if (string.IsNullOrWhiteSpace(phrase))
-        {
-            return Trim(body, windowChars);
-        }
+        var firstMarker = body.IndexOf(HighlightStartMarker);
+        if (firstMarker < 0) return Trim(body, windowChars);
 
-        var tokens = phrase
-            .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
-            .Where(t => t.Length > 2)
-            .ToArray();
-
-        var firstMatch = -1;
-        foreach (var token in tokens)
-        {
-            var idx = body.IndexOf(token, StringComparison.OrdinalIgnoreCase);
-            if (idx >= 0 && (firstMatch < 0 || idx < firstMatch))
-            {
-                firstMatch = idx;
-            }
-        }
-
-        if (firstMatch < 0) return Trim(body, windowChars);
-
-        var start = Math.Max(0, firstMatch - leadChars);
+        var start = Math.Max(0, firstMarker - leadChars);
         // Walk forward to a word boundary so we don't slice mid-word.
         while (start > 0 && start < body.Length && !char.IsWhiteSpace(body[start - 1])) start++;
         var snippet = body[start..];
@@ -469,25 +499,35 @@ public sealed class AlloySearchService
     }
 
     // _fulltext is a string[] — every searchable text fragment that
-    // contributed to the index. Concatenate, strip HTML markup so the snippet
-    // renders cleanly, and let the caller trim to a Google-sized excerpt.
+    // contributed to the index. With native highlight enabled, only the
+    // entries that actually matched the query carry / markers.
+    // Pick the first marker-bearing entry so the snippet is meaningful;
+    // fall back to the first non-empty entry for the no-marker case.
     private static string? GetFulltextSnippet(JsonElement item)
     {
         if (!item.TryGetProperty("_fulltext", out var ft)) return null;
-        var raw = ft.ValueKind switch
+        string? chosen = null;
+        if (ft.ValueKind == JsonValueKind.String)
         {
-            JsonValueKind.String => ft.GetString() ?? string.Empty,
-            JsonValueKind.Array => string.Join(" ",
-                ft.EnumerateArray()
-                    .Where(e => e.ValueKind == JsonValueKind.String)
-                    .Select(e => e.GetString())
-                    .Where(s => !string.IsNullOrWhiteSpace(s))),
-            _ => string.Empty
-        };
-        if (string.IsNullOrWhiteSpace(raw)) return null;
+            chosen = ft.GetString();
+        }
+        else if (ft.ValueKind == JsonValueKind.Array)
+        {
+            string? firstNonEmpty = null;
+            foreach (var entry in ft.EnumerateArray())
+            {
+                if (entry.ValueKind != JsonValueKind.String) continue;
+                var s = entry.GetString();
+                if (string.IsNullOrWhiteSpace(s)) continue;
+                firstNonEmpty ??= s;
+                if (s.IndexOf(HighlightStartMarker) >= 0) { chosen = s; break; }
+            }
+            chosen ??= firstNonEmpty;
+        }
+        if (string.IsNullOrWhiteSpace(chosen)) return null;
         // Strip HTML tags (rich text fields land here as <p>…</p>) and
-        // collapse runs of whitespace.
-        var stripped = System.Text.RegularExpressions.Regex.Replace(raw, "<[^>]+>", " ");
+        // collapse runs of whitespace. Markers (/) survive both.
+        var stripped = System.Text.RegularExpressions.Regex.Replace(chosen, "<[^>]+>", " ");
         var decoded = System.Net.WebUtility.HtmlDecode(stripped);
         var collapsed = System.Text.RegularExpressions.Regex.Replace(decoded, @"\s+", " ").Trim();
         return string.IsNullOrEmpty(collapsed) ? null : collapsed;
@@ -656,6 +696,14 @@ public sealed class AlloySearchHit
     public string Excerpt { get; init; } = string.Empty;
     public string ContentType { get; init; } = string.Empty;
     public string Language { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Content GUID for the hit, surfaced from <c>ContentLink.GuidValue</c>
+    /// in the Graph projection. Used by the SERP click beacon to attribute
+    /// click-through telemetry to a specific content item, so the Search Logs
+    /// CTR rollup can compare clicks against impressions per phrase.
+    /// </summary>
+    public string ContentLink { get; init; } = string.Empty;
 }
 
 public sealed class FacetGroup

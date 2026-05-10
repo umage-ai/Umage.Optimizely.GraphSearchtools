@@ -73,10 +73,14 @@
         _ => raw.ToUpperInvariant()
     };
 
-    // Bold the query term inside the excerpt — Google's snippet treatment.
-    // HTML-encodes everything first, then injects <b> around literal matches
-    // (case-insensitive, whole-word-ish boundaries). The output is safe to
-    // emit via Html.Raw.
+    // Bold the matched terms inside the excerpt — Google's snippet treatment.
+    // The excerpt arrives pre-marked by Graph's native highlight ( …
+    //  around every match, including synonym expansions); we just
+    // HTML-encode the surrounding text and replace the markers with <b>.
+    // That way the bold lands on the *actual* matched token, not the typed
+    // phrase — so a `floop => alloy` synonym bolds "alloy" in the snippet.
+    // The output is safe to emit via Html.Raw because markers are control
+    // chars that can't appear in source content.
     Microsoft.AspNetCore.Html.IHtmlContent HighlightExcerpt(string excerpt, string query)
     {
         if (string.IsNullOrWhiteSpace(excerpt))
@@ -84,29 +88,8 @@
             return new Microsoft.AspNetCore.Html.HtmlString(string.Empty);
         }
         var encoded = System.Net.WebUtility.HtmlEncode(excerpt);
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return new Microsoft.AspNetCore.Html.HtmlString(encoded);
-        }
-        // Highlight each whitespace-delimited query token longer than 2
-        // characters. Short tokens ("a", "to") get skipped to avoid bolding
-        // every "the" in the paragraph.
-        var tokens = query.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
-            .Where(t => t.Length > 2)
-            .Select(t => System.Text.RegularExpressions.Regex.Escape(System.Net.WebUtility.HtmlEncode(t)))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        if (tokens.Length == 0)
-        {
-            return new Microsoft.AspNetCore.Html.HtmlString(encoded);
-        }
-        var pattern = string.Join("|", tokens);
-        var highlighted = System.Text.RegularExpressions.Regex.Replace(
-            encoded,
-            pattern,
-            m => $"<b>{m.Value}</b>",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
-        return new Microsoft.AspNetCore.Html.HtmlString(highlighted);
+        var rendered = encoded.Replace("\u0001", "<b>").Replace("\u0002", "</b>");
+        return new Microsoft.AspNetCore.Html.HtmlString(rendered);
     }
 
     var hasSelection = Model.ContentTypeFacet.SelectedCount > 0;
