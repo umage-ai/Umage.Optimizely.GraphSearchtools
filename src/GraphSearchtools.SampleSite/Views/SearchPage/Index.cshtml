@@ -205,10 +205,22 @@
 
                 @if (Model.Hits.Any())
                 {
+                    @* The data-* attributes on each result <li> feed the
+                       click beacon (see <script> below). A visitor click on
+                       any anchor inside fires sendBeacon('/search/click')
+                       with phrase + 1-based rank + content GUID, which the
+                       SearchClickController records as a SearchLogEntry with
+                       TopResultRank set so the Search Logs CTR rollup can
+                       attribute clicks to the originating phrase. *@
                     <ol class="search-hits">
+                        @{ var rank = 0; }
                         @foreach (var hit in Model.Hits)
                         {
-                            <li class="search-hit">
+                            rank++;
+                            <li class="search-hit"
+                                data-search-hit
+                                data-search-rank="@rank"
+                                data-search-content-id="@hit.ContentLink">
                                 <a class="search-hit__title" href="@hit.Url">@hit.Title<span class="search-hit__type-tag">@ContentTypeLabel(hit.ContentType)</span></a>
                                 @if (!string.IsNullOrWhiteSpace(hit.Excerpt))
                                 {
@@ -218,6 +230,48 @@
                             </li>
                         }
                     </ol>
+                    @* Click beacon. Single delegated handler on the results
+                       container — works for both anchors per row, survives
+                       middle-click/cmd-click (event still fires before the
+                       new tab opens), and uses sendBeacon so the request
+                       isn't cancelled by the navigation that follows. *@
+                    <script>
+                        (function () {
+                            var hits = document.querySelector('.search-hits');
+                            if (!hits) return;
+                            var phrase = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SearchedQuery ?? string.Empty));
+                            var locale = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActiveLocale ?? string.Empty));
+                            if (!phrase) return; // no telemetry without a phrase
+                            hits.addEventListener('click', function (ev) {
+                                var li = ev.target.closest('li.search-hit[data-search-hit]');
+                                if (!li) return;
+                                var rank = parseInt(li.getAttribute('data-search-rank'), 10);
+                                if (isNaN(rank) || rank < 1) return;
+                                var payload = {
+                                    phrase: phrase,
+                                    locale: locale,
+                                    rank: rank,
+                                    contentId: li.getAttribute('data-search-content-id') || ''
+                                };
+                                var body = JSON.stringify(payload);
+                                // sendBeacon survives the navigation that the
+                                // anchor click is about to start; fetch with
+                                // keepalive is the fallback for browsers that
+                                // don't ship sendBeacon (rare today).
+                                if (navigator.sendBeacon) {
+                                    var blob = new Blob([body], { type: 'application/json' });
+                                    navigator.sendBeacon('/search/click', blob);
+                                } else {
+                                    fetch('/search/click', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: body,
+                                        keepalive: true
+                                    }).catch(function () { /* never block the navigation */ });
+                                }
+                            });
+                        })();
+                    </script>
                 }
                 else if (!string.IsNullOrEmpty(Model.SearchedQuery) || Model.ContentTypeFacet.SelectedCount > 0)
                 {
