@@ -88,24 +88,19 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SearchProfileEditService>();
         services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.ProfilesService>();
 
-        // Phase 4 foundation: search-log DDS table + ingest endpoint. Phase 4
-        // Wave 5 tools (Search Logs UI, Pinned Result Coverage, Synonym
-        // Coverage) read from this service; TelemetryApiController writes.
-        services.AddSingleton<SearchLogService>();
-
         // Phase 4 Wave 5: Search Logs UI — top phrases, zero-result phrases,
-        // low-CTR phrases, raw events. Thin wrapper around SearchLogService
+        // low-CTR phrases, raw events. Thin wrapper around ITelemetryReader
         // that defaults the time window and clamps `take`.
         services.AddScoped<SearchLogsService>();
 
         // Phase 4 Wave 5: Synonym Coverage — joins SynonymsService blobs with
-        // SearchLogService phrase aggregates. Read-only analyzer; the single
+        // ITelemetryReader phrase aggregates. Read-only analyzer; the single
         // GET endpoint serves a SynonymCoverageResult for the page to render.
         services.AddScoped<SynonymCoverageService>();
 
         // Phase 4 Wave 5 §6: Pinned Result Coverage audit. Read-only — joins
         // Graph pinned data, IContentLoader content state, ISearchProfileRegistry
-        // (collection → profile mapping) and SearchLogService 7-day window.
+        // (collection → profile mapping) and ITelemetryReader 7-day window.
         services.AddScoped<PinnedCoverageService>();
 
         // Phase 4 Wave 5 §6: Content Searchability Audit. On-demand local CMS
@@ -153,11 +148,10 @@ public static class ServiceCollectionExtensions
     /// client SDK disables itself after one such response.
     /// </summary>
     /// <remarks>
-    /// This affects only the new aggregate-first telemetry pipeline introduced
-    /// by the v0.5 design. The legacy <c>SearchLogService</c> ingest path
-    /// (Phase 4 foundation) continues to write to its own DDS table independent
-    /// of this switch — coexistence is intentional during the dual-running
-    /// migration window described in <c>docs/search-telemetry-design.md</c> §8.
+    /// Only one telemetry pipeline is wired by default; this swaps it for an
+    /// adapter that talks to whatever backend the customer already runs. Hosts
+    /// that share an instance with multiple tenants can use this to centralise
+    /// telemetry storage instead of accumulating DDS rows per node.
     /// </remarks>
     public static IGraphSearchtoolsBuilder UseExternalTelemetryReader<TReader>(this IGraphSearchtoolsBuilder builder)
         where TReader : class, ITelemetryReader

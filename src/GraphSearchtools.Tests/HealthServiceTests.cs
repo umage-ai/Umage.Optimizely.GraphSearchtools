@@ -52,8 +52,11 @@ public class HealthServiceTests
             "Gateway", "Admin credentials", "Single key", "Index population");
 
         // All probes hit something so each carries a non-negative latency.
+        // Stopwatch.ElapsedMilliseconds rounds to whole ms, so an all-stub
+        // sweep can legitimately read 0 on a fast machine — assert non-
+        // negative rather than strictly positive.
         result.Probes.Should().OnlyContain(p => p.ElapsedMs >= 0);
-        result.ElapsedMs.Should().BeGreaterThan(0);
+        result.ElapsedMs.Should().BeGreaterOrEqualTo(0);
 
         result.Probes[0].Status.Should().Be(HealthStatus.Green);   // Gateway reachable
         result.Probes[1].Status.Should().Be(HealthStatus.Green);   // Admin OK

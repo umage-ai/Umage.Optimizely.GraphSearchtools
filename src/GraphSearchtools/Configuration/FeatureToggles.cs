@@ -17,18 +17,16 @@ public class FeatureToggles
     public bool Webhooks { get; set; } = true;
 
     /// <summary>
-    /// Phase 4 foundation — gates the telemetry ingest endpoints
-    /// (<c>POST /TelemetryApi/SearchLog</c>, <c>POST /TelemetryApi/SearchLogBatch</c>).
-    /// Phase 4 Wave 5 analytics tools (Search Logs UI, Pinned Result Coverage,
-    /// Synonym Coverage) consume the data this captures.
+    /// Gates the public ingest beacon (<c>POST /api/telemetry/searchlog</c>).
+    /// When false the endpoint returns 404 and zero events reach the sink —
+    /// the analytics UIs render their empty state without further wiring.
     /// </summary>
     public bool Telemetry { get; set; } = true;
 
     /// <summary>
-    /// Phase 4 Wave 5 — Search Logs UI. Read-only surface over the
-    /// <see cref="UmageAI.Optimizely.GraphSearchTools.Services.SearchLogService"/>
-    /// table: top phrases, zero-result phrases, low-CTR phrases, and a
-    /// recent-events live tail. Synonym-mining starts here.
+    /// Search Logs UI. Read-only surface over <c>ITelemetryReader</c>: top
+    /// phrases, zero-result phrases, low-CTR phrases, and a forensic-ring
+    /// recent-events tail. Synonym-mining starts here.
     /// </summary>
     public bool SearchLogs { get; set; } = true;
 

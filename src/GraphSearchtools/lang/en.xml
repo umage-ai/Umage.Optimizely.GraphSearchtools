@@ -192,9 +192,9 @@
           <col_locale>Locale</col_locale>
           <col_profile>Profile</col_profile>
           <col_when>When</col_when>
-          <col_top_result>Top click</col_top_result>
-          <col_duration>Duration</col_duration>
+          <col_detail>Detail</col_detail>
           <col_status>Status</col_status>
+          <status_search>search</status_search>
           <add_as_synonym>→ add as synonym?</add_as_synonym>
           <tune_pinned>→ tune pinned?</tune_pinned>
           <empty_title>No telemetry yet</empty_title>

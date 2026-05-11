@@ -19,46 +19,52 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 /// behind <see cref="PinnedCoverageResult"/>. Cost is one
 /// <see cref="IGraphAdminClient.GetCollectionsAsync"/> call plus one
 /// <see cref="IGraphAdminClient.GetItemsAsync"/> call per collection, plus one
-/// <see cref="SearchLogService.ListSince"/> read. Tenants with hundreds of
-/// collections will see a multi-second latency; the UI hides it behind a
-/// "Run audit" button.
+/// <see cref="ITelemetryReader.TopPhrasesAsync"/> read sized to the collection
+/// count. Tenants with hundreds of collections will see a multi-second
+/// latency; the UI hides it behind a "Run audit" button.
 /// </remarks>
 public sealed class PinnedCoverageService
 {
     /// <summary>
-    /// Window the CTR / no-activity heuristics span. Matches
-    /// <c>SearchLogService</c>'s phase-4 window default — keeping these
-    /// aligned means a phrase that's "no activity" here is also missing from
-    /// the Search Logs UI's "top phrases" view.
+    /// Window the CTR / no-activity heuristics span. Matches the Search Logs
+    /// UI's default — keeping them aligned means a phrase flagged here as
+    /// "no activity" is also absent from the top-phrases view.
     /// </summary>
     public static readonly TimeSpan ActivityWindow = TimeSpan.FromDays(7);
 
     /// <summary>
-    /// Sessions cutoff for low-CTR detection. Mirrors <c>SearchLogService</c>'s
-    /// <c>LowCtrPhrases</c> floor — fewer than 5 hits is too noisy to act on.
+    /// Hits cutoff for low-CTR detection. Fewer than 5 hits is too noisy to
+    /// act on; the audit suppresses the issue rather than guess.
     /// </summary>
     public const int MinSessionsForCtr = 5;
 
-    /// <summary>CTR threshold under which a pin is flagged "LowCtr". Encoded as a constant so the audit policy is one place to tweak.</summary>
+    /// <summary>CTR threshold under which a pinned phrase is flagged "LowCtr". Encoded as a constant so the audit policy is one place to tweak.</summary>
     public const double LowCtrThreshold = 0.05;
+
+    /// <summary>
+    /// Cap on the phrase aggregate pull. Big enough to cover every pinned
+    /// phrase a typical site declares; the head-only nature of TopPhrasesAsync
+    /// is fine here because we only join against pin phrases anyway.
+    /// </summary>
+    private const int PhraseAggregatePullSize = 5000;
 
     private readonly IGraphAdminClient _graphClient;
     private readonly IContentLoader _contentLoader;
     private readonly ISearchProfileRegistry _registry;
-    private readonly SearchLogService _logs;
+    private readonly ITelemetryReader _reader;
     private readonly ILogger<PinnedCoverageService> _logger;
 
     public PinnedCoverageService(
         IGraphAdminClient graphClient,
         IContentLoader contentLoader,
         ISearchProfileRegistry registry,
-        SearchLogService logs,
+        ITelemetryReader reader,
         ILogger<PinnedCoverageService> logger)
     {
         _graphClient = graphClient;
         _contentLoader = contentLoader;
         _registry = registry;
-        _logs = logs;
+        _reader = reader;
         _logger = logger;
     }
 
@@ -94,12 +100,23 @@ public sealed class PinnedCoverageService
         }
 
         var profileLookup = BuildProfileLookup();
-        var logWindow = _logs.ListSince(now - ActivityWindow, take: 50000).ToList();
 
-        // Pre-aggregate the log window by phrase + target so the per-item
-        // CTR loop runs in O(items) rather than O(items * logs).
-        var phraseTargetIndex = IndexLogsByPhraseAndTarget(logWindow);
-        var phraseIndex = IndexLogsByPhrase(logWindow);
+        // Per-phrase aggregates over the activity window. The aggregate-first
+        // ingest doesn't carry the click target id, so we lose the legacy
+        // "did this *pin* earn the click?" attribution. Instead the audit
+        // checks whether the pinned phrase earns clicks at all — if a query
+        // for "warranty" gets zero engagement no matter what's pinned, the
+        // pin's effort is wasted.
+        var phraseAggregates = await _reader.TopPhrasesAsync(
+            new TelemetryQuery(now - ActivityWindow, now, PhraseAggregatePullSize),
+            cancellationToken);
+        var phraseIndex = phraseAggregates
+            .GroupBy(p => NormalizePhrase(p.Phrase), StringComparer.Ordinal)
+            .ToDictionary(
+                g => g.Key,
+                g => new PhraseStats(g.Sum(p => p.Hits), WeightedCtr(g)),
+                StringComparer.Ordinal);
+        var totalLoggedHits = phraseAggregates.Sum(p => p.Hits);
 
         var issues = new List<PinnedIssue>();
         foreach (var (col, item) in pairs)
@@ -159,8 +176,9 @@ public sealed class PinnedCoverageService
             // when at least one log row exists overall — on a tenant with no
             // ingestion path wired up, every pin would otherwise be flagged
             // and the audit would be useless.
-            var phraseHits = phraseIndex.TryGetValue(NormalizePhrase(item.Phrases), out var pHits) ? pHits : 0;
-            if (logWindow.Count > 0 && phraseHits == 0)
+            var stats = phraseIndex.TryGetValue(NormalizePhrase(item.Phrases), out var s) ? s : null;
+            var phraseHits = stats?.Hits ?? 0;
+            if (totalLoggedHits > 0 && phraseHits == 0)
             {
                 issues.Add(new PinnedIssue
                 {
@@ -175,28 +193,24 @@ public sealed class PinnedCoverageService
                 continue;
             }
 
-            // Issue: pin shown but not earning clicks. CTR is computed against
-            // the SearchLogEntry rows whose phrase matches AND whose
-            // TopResultId equals the pin's TargetKey — i.e. the visitor
-            // clicked the pinned result, not just any result.
-            var key = (NormalizePhrase(item.Phrases), item.TargetKey ?? string.Empty);
-            if (phraseHits >= MinSessionsForCtr
-                && phraseTargetIndex.TryGetValue(key, out var tally))
+            // Issue: phrase has hits but doesn't earn clicks. The aggregate-
+            // first ingest doesn't carry per-target click attribution, so this
+            // is now a phrase-level CTR check rather than a per-pin one. The
+            // semantic shift: before, "LowCtr" meant the *pin* didn't earn
+            // the click; now it means users aren't engaging with this phrase
+            // *at all* — pinning effort here is wasted regardless of target.
+            if (stats != null && phraseHits >= MinSessionsForCtr && stats.Ctr < LowCtrThreshold)
             {
-                var ctr = phraseHits == 0 ? 0d : (double)tally.Clicks / phraseHits;
-                if (ctr < LowCtrThreshold)
+                issues.Add(new PinnedIssue
                 {
-                    issues.Add(new PinnedIssue
-                    {
-                        Kind = "LowCtr",
-                        CollectionKey = col.Key,
-                        ProfileKey = profileKey,
-                        Phrase = item.Phrases,
-                        TargetId = item.TargetKey ?? string.Empty,
-                        TargetName = targetState.Name,
-                        Detail = $"{tally.Clicks} / {phraseHits} sessions clicked through (CTR {ctr:P1})."
-                    });
-                }
+                    Kind = "LowCtr",
+                    CollectionKey = col.Key,
+                    ProfileKey = profileKey,
+                    Phrase = item.Phrases,
+                    TargetId = item.TargetKey ?? string.Empty,
+                    TargetName = targetState.Name,
+                    Detail = $"Phrase has {phraseHits} hits but only {stats.Ctr:P1} CTR — users aren't engaging."
+                });
             }
         }
 
@@ -295,42 +309,25 @@ public sealed class PinnedCoverageService
     }
 
     /// <summary>
-    /// Build a phrase + target → (clicks) lookup. "Click" matches
-    /// <see cref="SearchLogService.CtrRankCutoff"/> — a session whose
-    /// <c>TopResultRank</c> is in <c>[1, cutoff]</c>. Restricting by
-    /// <c>TopResultId == TargetKey</c> ensures we attribute the click to the
-    /// pin, not to any organic result.
+    /// Hits-weighted CTR across the per-(profile, locale) aggregates a single
+    /// normalized phrase produces. Reader returns one row per (phrase, profile,
+    /// locale) tuple, each with its own per-row CTR; collapsing them naively
+    /// (mean of CTRs) over-weights low-traffic rows. Weight by hits instead so
+    /// the audit reflects the true engagement rate the phrase earns.
     /// </summary>
-    private static Dictionary<(string Phrase, string TargetId), (int Clicks, int Hits)> IndexLogsByPhraseAndTarget(IEnumerable<SearchLogEntry> rows)
+    private static double WeightedCtr(IEnumerable<PhraseAggregate> rowsForPhrase)
     {
-        var map = new Dictionary<(string, string), (int Clicks, int Hits)>();
-        foreach (var entry in rows)
+        var clicks = 0d;
+        var hits = 0;
+        foreach (var r in rowsForPhrase)
         {
-            if (string.IsNullOrWhiteSpace(entry.Phrase)) continue;
-            if (string.IsNullOrEmpty(entry.TopResultId)) continue;
-            var key = (NormalizePhrase(entry.Phrase), entry.TopResultId);
-            map.TryGetValue(key, out var current);
-            var click = entry.TopResultRank.HasValue
-                && entry.TopResultRank.Value >= 1
-                && entry.TopResultRank.Value <= SearchLogService.CtrRankCutoff
-                ? 1 : 0;
-            map[key] = (current.Clicks + click, current.Hits + 1);
+            clicks += r.Hits * r.Ctr;
+            hits += r.Hits;
         }
-        return map;
+        return hits == 0 ? 0d : clicks / hits;
     }
 
-    private static Dictionary<string, int> IndexLogsByPhrase(IEnumerable<SearchLogEntry> rows)
-    {
-        var map = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var entry in rows)
-        {
-            if (string.IsNullOrWhiteSpace(entry.Phrase)) continue;
-            var key = NormalizePhrase(entry.Phrase);
-            map.TryGetValue(key, out var hits);
-            map[key] = hits + 1;
-        }
-        return map;
-    }
+    private sealed record PhraseStats(int Hits, double Ctr);
 
     private static string NormalizePhrase(string phrase)
         => (phrase ?? string.Empty).Trim().ToLowerInvariant();
