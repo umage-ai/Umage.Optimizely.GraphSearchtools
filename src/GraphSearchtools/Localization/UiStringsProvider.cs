@@ -246,6 +246,7 @@ public class UiStringsProvider(LocalizationService loc)
                     actionSynonymDisabled = P("detail/insights/actionSynonymDisabled"),
                     pinPickerPlaceholder = P("detail/insights/pinPickerPlaceholder"),
                     pinUnavailable = P("detail/insights/pinUnavailable"),
+                    pinLoading = P("detail/insights/pinLoading"),
                     synPlaceholder = P("detail/insights/synPlaceholder"),
                     synUnavailable = P("detail/insights/synUnavailable"),
                     editSave = P("detail/insights/editSave"),

@@ -347,7 +347,8 @@
                 locales: opts.locales || [],
                 isGeneric: !!opts.isGeneric,
                 isSiteShared: !!opts.isSiteShared,
-                hasGraphQLDoc: !!opts.hasGraphQLDoc
+                hasGraphQLDoc: !!opts.hasGraphQLDoc,
+                queryAppliesPinned: !!opts.queryAppliesPinned
             });
         }
 
@@ -853,17 +854,48 @@
 
             cancelBtn.addEventListener('click', function () { panel.remove(); });
 
-            // If the editor isn't ready (no collection yet, or query doesn't
-            // apply pinned), surface a hint and disable save permanently.
-            if (!ed || typeof ed.canCreatePins !== 'function' || !ed.canCreatePins()) {
+            // No pinned editor at all (e.g. its host DOM wasn't rendered
+            // because the profile doesn't apply pinned) → permanently
+            // disabled state with an explanatory placeholder.
+            if (!ed || typeof ed.canCreatePins !== 'function') {
                 input.disabled = true;
                 input.placeholder = s('profiles.detail.insights.pinUnavailable',
                     'Pinned results not configured for this profile.');
                 return panel;
             }
 
+            // The pinned key is loaded async by pinned.js — if the user
+            // clicked the pin icon before that fetch settles, canCreatePins
+            // is still false. Show a transient loading state and re-check
+            // once the editor reports ready, instead of permanently locking
+            // the panel on a race.
             var picked = null;
             var debounceT = null;
+            function applyReadyState() {
+                if (ed.canCreatePins()) return; // ready: leave input enabled
+                input.disabled = true;
+                input.placeholder = s('profiles.detail.insights.pinUnavailable',
+                    'Pinned results not configured for this profile.');
+            }
+            if (!ed.canCreatePins()) {
+                input.disabled = true;
+                input.placeholder = s('profiles.detail.insights.pinLoading',
+                    'Loading pinned config…');
+                var whenReady = typeof ed.whenReady === 'function'
+                    ? ed.whenReady()
+                    : Promise.resolve();
+                whenReady.then(function () {
+                    if (!panel.isConnected) return; // user closed it
+                    if (ed.canCreatePins()) {
+                        input.disabled = false;
+                        input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder',
+                            'Search content…');
+                    } else {
+                        applyReadyState();
+                    }
+                });
+            }
+
             input.addEventListener('input', function () {
                 picked = null;
                 saveBtn.disabled = true;
