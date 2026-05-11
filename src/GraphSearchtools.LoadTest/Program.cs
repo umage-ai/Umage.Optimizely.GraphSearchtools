@@ -30,10 +30,18 @@ internal static class Program
             return 2;
         }
 
-        Console.WriteLine($"Target: {opts.BaseUrl}");
-        Console.WriteLine($"Plan:   {opts.Concurrency} workers × {opts.PerWorkerRps:F1} rps for {opts.Duration.TotalSeconds:F0}s = {opts.TotalRps} rps target");
+        Console.WriteLine($"Target:  {opts.BaseUrl}");
+        Console.WriteLine($"Plan:    {opts.Concurrency} workers × {opts.PerWorkerRps:F1} rps for {opts.Duration.TotalSeconds:F0}s = {opts.TotalRps} rps target");
         Console.WriteLine($"Phrases: {opts.PhraseCount} (Zipfian, exponent {opts.ZipfExponent})");
-        Console.WriteLine($"Click ratio: {opts.ClickRatio:P0} of search events get a follow-up click");
+        Console.WriteLine($"Clicks:  {opts.ClickRatio:P0} of accepted hit-bearing searches get a follow-up click");
+        if (opts.BackfillDays > 0)
+        {
+            Console.WriteLine($"Backfill: events stamped uniformly across the past {opts.BackfillDays} days (diurnal hour weighting)");
+        }
+        else
+        {
+            Console.WriteLine("Live mode: events stamped at the current wall clock");
+        }
         Console.WriteLine();
 
         // One HttpClient shared across workers — connection pool reuse is
@@ -46,8 +54,8 @@ internal static class Program
         };
         using var http = new HttpClient(handler) { BaseAddress = new Uri(opts.BaseUrl) };
 
-        var phrases = BuildPhrases(opts.PhraseCount);
-        var sampler = new ZipfSampler(opts.PhraseCount, opts.ZipfExponent, seed: 42);
+        var phrases = BuildKeywords(opts.PhraseCount);
+        var sampler = new ZipfSampler(phrases.Count, opts.ZipfExponent, seed: 42);
 
         var metrics = new Metrics();
         var startedAt = DateTime.UtcNow;
@@ -82,7 +90,7 @@ internal static class Program
         int workerId,
         Options opts,
         HttpClient http,
-        IReadOnlyList<string> phrases,
+        IReadOnlyList<KeywordSpec> phrases,
         ZipfSampler sampler,
         Metrics metrics,
         CancellationToken ct)
@@ -103,27 +111,89 @@ internal static class Program
             nextDispatch += perEventInterval;
 
             var phraseIdx = sampler.Sample(rng);
-            var phrase = phrases[phraseIdx];
+            var spec = phrases[phraseIdx];
             var locale = Locales[rng.Next(Locales.Length)];
             var profile = Profiles[rng.Next(Profiles.Length)];
-            var resultCount = rng.NextDouble() < 0.10 ? 0 : rng.Next(1, 50); // 10% zero-result
-            var bucketUtc = TruncateToMinute(DateTime.UtcNow);
+
+            // resultCount draws from the keyword's profile so "real" terms
+            // mostly hit and "intentional zero" terms always miss — the
+            // distribution makes the analytics surfaces feel realistic.
+            var resultCount = spec.AlwaysZero || rng.NextDouble() < spec.ZeroResultRate
+                ? 0
+                : rng.Next(1, 50);
+
+            var ts = SampleTimestamp(opts, rng);
+            var bucketUtc = TruncateToMinute(ts);
 
             var sw = Stopwatch.StartNew();
-            var status = await PostAsync(http, BuildSearchPayload(phrase, profile, locale, resultCount), ct);
+            var status = await PostAsync(http, BuildSearchPayload(spec.Phrase, profile, locale, resultCount, ts), ct);
             sw.Stop();
             metrics.RecordSearch(sw.Elapsed, status);
 
-            // Fire a follow-up click for a random fraction of accepted searches.
-            if (status == HttpStatusCode.NoContent && rng.NextDouble() < opts.ClickRatio)
+            // Fire a follow-up click for a random fraction of accepted, non-zero
+            // searches. Zero-result searches don't generate clicks (no result to
+            // click). Click rank weighted toward 1 — most users click the top hit.
+            if (status == HttpStatusCode.NoContent && resultCount > 0 && rng.NextDouble() < opts.ClickRatio)
             {
-                var rank = rng.Next(1, 5); // 1..4 — exercises both hot ranks (1..3) and the silently-dropped tail (4)
+                var rank = WeightedClickRank(rng);
+                // Clicks happen seconds-to-minutes after the search; sample
+                // within a 2-minute window so OriginalBucketUtc still maps cleanly.
+                var clickTs = ts.AddSeconds(rng.Next(2, 90));
                 var clickSw = Stopwatch.StartNew();
-                var clickStatus = await PostAsync(http, BuildClickPayload(phrase, profile, locale, rank, bucketUtc), ct);
+                var clickStatus = await PostAsync(http, BuildClickPayload(spec.Phrase, profile, locale, rank, clickTs, bucketUtc), ct);
                 clickSw.Stop();
                 metrics.RecordClick(clickSw.Elapsed, clickStatus);
             }
         }
+    }
+
+    /// <summary>
+    /// Click rank weighted toward 1 (~70%), 2 (~20%), 3 (~7%), 4+ (~3%).
+    /// Mirrors real CTR distributions where the top hit dominates engagement.
+    /// </summary>
+    private static int WeightedClickRank(Random rng)
+    {
+        var u = rng.NextDouble();
+        if (u < 0.70) return 1;
+        if (u < 0.90) return 2;
+        if (u < 0.97) return 3;
+        return rng.Next(4, 11);
+    }
+
+    /// <summary>
+    /// In live mode, the timestamp is "now". In backfill mode, the timestamp
+    /// is uniformly sampled across the past <c>BackfillDays</c> at the day
+    /// level, then weighted within the day by a cosine peaked at 14:00 UTC
+    /// — gives the analytics charts a realistic diurnal silhouette without
+    /// modeling per-keyword seasonality.
+    /// </summary>
+    private static DateTime SampleTimestamp(Options opts, Random rng)
+    {
+        if (opts.BackfillDays <= 0) return DateTime.UtcNow;
+
+        var now = DateTime.UtcNow;
+        var dayOffset = rng.NextDouble() * opts.BackfillDays;
+        var hourWeight = SampleHourWithDiurnalWeight(rng);
+        var ts = now.AddDays(-dayOffset).Date.AddHours(hourWeight);
+        // Don't sample beyond now (a same-day draw might overshoot).
+        return ts > now ? now : DateTime.SpecifyKind(ts, DateTimeKind.Utc);
+    }
+
+    /// <summary>
+    /// Rejection-sample an hour-of-day [0, 24) weighted by
+    /// <c>1 + 0.7·cos((h-14)·π/12)</c>. Peak at 14:00 UTC, trough at 02:00 UTC,
+    /// peak/trough ratio ~5.7×. Cheap enough at a few attempts per call.
+    /// </summary>
+    private static double SampleHourWithDiurnalWeight(Random rng)
+    {
+        const double maxWeight = 1.7;
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var hour = rng.NextDouble() * 24.0;
+            var weight = 1.0 + 0.7 * Math.Cos((hour - 14.0) * Math.PI / 12.0);
+            if (rng.NextDouble() * maxWeight < weight) return hour;
+        }
+        return rng.NextDouble() * 24.0;
     }
 
     private static async Task<HttpStatusCode> PostAsync(HttpClient http, string body, CancellationToken ct)
@@ -138,32 +208,97 @@ internal static class Program
         catch (HttpRequestException) { return 0; } // network failure sentinel
     }
 
-    private static string BuildSearchPayload(string phrase, string profile, string locale, int resultCount)
+    private static string BuildSearchPayload(string phrase, string profile, string locale, int resultCount, DateTime ts)
     {
         // Hand-rolled to dodge per-request serializer overhead — this is a load
         // generator, not the system under test.
-        return $"{{\"kind\":\"search\",\"phrase\":\"{Escape(phrase)}\",\"profileKey\":\"{profile}\",\"locale\":\"{locale}\",\"resultCount\":{resultCount}}}";
+        var iso = ts.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        return $"{{\"kind\":\"search\",\"phrase\":\"{Escape(phrase)}\",\"profileKey\":\"{profile}\",\"locale\":\"{locale}\",\"resultCount\":{resultCount},\"ts\":\"{iso}\"}}";
     }
 
-    private static string BuildClickPayload(string phrase, string profile, string locale, int rank, DateTime originalBucketUtc)
+    private static string BuildClickPayload(string phrase, string profile, string locale, int rank, DateTime ts, DateTime originalBucketUtc)
     {
-        var iso = originalBucketUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        return $"{{\"kind\":\"click\",\"phrase\":\"{Escape(phrase)}\",\"profileKey\":\"{profile}\",\"locale\":\"{locale}\",\"rank\":{rank},\"originalBucketUtc\":\"{iso}\"}}";
+        var tsIso = ts.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        var bucketIso = originalBucketUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        return $"{{\"kind\":\"click\",\"phrase\":\"{Escape(phrase)}\",\"profileKey\":\"{profile}\",\"locale\":\"{locale}\",\"rank\":{rank},\"ts\":\"{tsIso}\",\"originalBucketUtc\":\"{bucketIso}\"}}";
     }
 
     private static string Escape(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-    private static IReadOnlyList<string> BuildPhrases(int count)
+    /// <summary>
+    /// One synthetic search term plus its "realism profile" — how often the
+    /// term returns zero results. <see cref="AlwaysZero"/> short-circuits the
+    /// dice for terms that should always miss (typos, deliberately
+    /// uncovered topics) so the zero-result analytics surfaces fill up.
+    /// </summary>
+    internal sealed record KeywordSpec(string Phrase, double ZeroResultRate, bool AlwaysZero = false);
+
+    /// <summary>
+    /// Builds the synthetic keyword set the loader draws from. Curated to
+    /// resemble what a typical content-site SERP receives:
+    ///   - Alloy demo content terms (mostly hit)
+    ///   - General customer-support / e-commerce terms (mixed)
+    ///   - Common typos (always zero, drives the synonym-mining surface)
+    ///   - Long-tail synthetic noise (random Zipf padding)
+    /// The first <c>baseSet.Count</c> entries dominate under the Zipf
+    /// distribution; the rest tail off into the noise.
+    /// </summary>
+    internal static IReadOnlyList<KeywordSpec> BuildKeywords(int count)
     {
-        // Synthetic phrases that look like real search terms (alphabet soup
-        // works fine for the sink — normalization just lower-cases and trims).
-        var roots = new[] { "warranty", "shipping", "return", "size", "delivery", "support", "track", "refund", "address", "discount", "voucher", "billing", "invoice", "stock", "available", "color", "fit", "fabric", "wash", "care", "manual", "guide", "spec", "review", "compare" };
-        var list = new List<string>(count);
-        var rng = new Random(7);
-        for (var i = 0; i < count; i++)
+        var baseSet = new List<KeywordSpec>
         {
-            var root = roots[i % roots.Length];
-            list.Add(i < roots.Length ? root : $"{root} {rng.Next(1000, 9999)}");
+            // Alloy demo content (these match real Alloy pages — low zero rate).
+            new("alloy plan",       0.05),
+            new("alloy track",      0.05),
+            new("alloy meet",       0.05),
+            new("alloy share",      0.05),
+            new("alloy planning",   0.10),
+
+            // Customer support — fairly well-indexed.
+            new("warranty",         0.10),
+            new("shipping",         0.10),
+            new("returns",          0.10),
+            new("delivery",         0.12),
+            new("tracking",         0.12),
+            new("contact",          0.05),
+            new("support",          0.08),
+            new("billing",          0.20),
+            new("invoice",          0.30),
+            new("refund",           0.25),
+
+            // Product attribute searches — mid-tail, partial coverage.
+            new("size guide",       0.20),
+            new("color options",    0.40),
+            new("fabric care",      0.35),
+            new("fit guide",        0.30),
+            new("wash care",        0.25),
+
+            // Topic searches likely missing from index — feed the synonym-coverage card.
+            new("phone number",     0.0,  AlwaysZero: true),
+            new("store locator",    0.0,  AlwaysZero: true),
+            new("gift card",        0.0,  AlwaysZero: true),
+            new("loyalty program",  0.0,  AlwaysZero: true),
+
+            // Common typos — always zero, drive the suggested-synonyms list.
+            new("shippinig",        0.0,  AlwaysZero: true),
+            new("warrenty",         0.0,  AlwaysZero: true),
+            new("trakcing",         0.0,  AlwaysZero: true),
+            new("recieve",          0.0,  AlwaysZero: true),
+        };
+
+        var list = new List<KeywordSpec>(Math.Max(count, baseSet.Count));
+        list.AddRange(baseSet);
+
+        // Long-tail noise: random suffixes on the curated roots so the Zipf
+        // sampler has a tail to draw from. Mostly hit; some zero.
+        var rng = new Random(7);
+        var roots = baseSet.Select(k => k.Phrase.Split(' ')[0]).Distinct().ToArray();
+        while (list.Count < count)
+        {
+            var root = roots[list.Count % roots.Length];
+            var phrase = $"{root} {rng.Next(100, 999)}";
+            var zeroRate = rng.NextDouble() < 0.30 ? 0.6 : 0.15;
+            list.Add(new KeywordSpec(phrase, zeroRate));
         }
         return list;
     }
@@ -230,8 +365,9 @@ internal static class Program
 
     private static void PrintUsage()
     {
-        Console.Error.WriteLine("Usage: gst-loadtest --url <baseUrl> [--rps N] [--duration Ns] [--concurrency N] [--phrases N] [--zipf 1.0] [--click-ratio 0.3]");
-        Console.Error.WriteLine("Defaults: --rps 500 --duration 30s --concurrency 50 --phrases 1000 --zipf 1.0 --click-ratio 0.3");
+        Console.Error.WriteLine("Usage: gst-loadtest --url <baseUrl> [--rps N] [--duration Ns] [--concurrency N] [--phrases N] [--zipf 1.0] [--click-ratio 0.3] [--backfill-days N]");
+        Console.Error.WriteLine("Defaults: --rps 500 --duration 30s --concurrency 50 --phrases 100 --zipf 1.0 --click-ratio 0.3 --backfill-days 0");
+        Console.Error.WriteLine("With --backfill-days N, each event's timestamp is uniformly sampled across the past N days with diurnal hour weighting.");
     }
 
     // ── Options ──────────────────────────────────────────────────────────
@@ -245,6 +381,7 @@ internal static class Program
         public required int PhraseCount { get; init; }
         public required double ZipfExponent { get; init; }
         public required double ClickRatio { get; init; }
+        public required int BackfillDays { get; init; }
         public double PerWorkerRps => (double)TotalRps / Concurrency;
 
         public static Options? Parse(string[] args)
@@ -253,9 +390,10 @@ internal static class Program
             var rps = 500;
             var duration = TimeSpan.FromSeconds(30);
             var concurrency = 50;
-            var phrases = 1000;
+            var phrases = 100;
             var zipf = 1.0;
             var clickRatio = 0.3;
+            var backfillDays = 0;
 
             for (var i = 0; i < args.Length; i++)
             {
@@ -268,11 +406,12 @@ internal static class Program
                     case "--phrases" when i + 1 < args.Length: phrases = int.Parse(args[++i]); break;
                     case "--zipf" when i + 1 < args.Length: zipf = double.Parse(args[++i], System.Globalization.CultureInfo.InvariantCulture); break;
                     case "--click-ratio" when i + 1 < args.Length: clickRatio = double.Parse(args[++i], System.Globalization.CultureInfo.InvariantCulture); break;
+                    case "--backfill-days" when i + 1 < args.Length: backfillDays = int.Parse(args[++i]); break;
                     case "-h" or "--help": return null;
                 }
             }
             if (string.IsNullOrEmpty(url)) return null;
-            if (rps < 1 || concurrency < 1 || phrases < 1) return null;
+            if (rps < 1 || concurrency < 1 || phrases < 1 || backfillDays < 0) return null;
             return new Options
             {
                 BaseUrl = url.TrimEnd('/'),
@@ -282,6 +421,7 @@ internal static class Program
                 PhraseCount = phrases,
                 ZipfExponent = zipf,
                 ClickRatio = clickRatio,
+                BackfillDays = backfillDays,
             };
         }
 
