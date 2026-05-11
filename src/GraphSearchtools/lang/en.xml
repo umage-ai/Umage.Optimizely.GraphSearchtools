@@ -353,7 +353,8 @@
             <pinPickerPlaceholder>Search content…</pinPickerPlaceholder>
             <pinUnavailable>Pinned results not configured for this profile.</pinUnavailable>
             <pinLoading>Loading pinned config…</pinLoading>
-            <synPlaceholder>Replacement phrase the index already finds</synPlaceholder>
+            <synRulePlaceholder>phrase => replacement</synRulePlaceholder>
+            <synRuleTip>Format: original =&gt; replacement. Queries for "original" are rewritten to "replacement" at search time.</synRuleTip>
             <synUnavailable>Synonyms not loaded yet — open the Synonyms tab once.</synUnavailable>
             <editSave>Save</editSave>
             <editSaving>Saving…</editSaving>

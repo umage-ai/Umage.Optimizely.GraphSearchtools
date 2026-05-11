@@ -965,22 +965,18 @@
             var panel = document.createElement('li');
             panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--synonym';
 
-            var phraseChip = document.createElement('span');
-            phraseChip.className = 'gst-prof-ins-edit__chip';
-            phraseChip.textContent = row.phrase;
-            panel.appendChild(phraseChip);
-
-            var arrow = document.createElement('span');
-            arrow.className = 'gst-prof-ins-edit__arrow';
-            arrow.textContent = '→';
-            panel.appendChild(arrow);
-
-            var rhs = document.createElement('input');
-            rhs.type = 'text';
-            rhs.className = 'gst-prof-ins-edit__input';
-            rhs.placeholder = s('profiles.detail.insights.synPlaceholder',
-                'Replacement phrase the index already finds');
-            panel.appendChild(rhs);
+            // Single rule input prefilled with "<phrase> => " — the marketer
+            // only needs to type the replacement side. Format mirrors how the
+            // Synonyms tab stores rules so what they type here is what they'd
+            // see there.
+            var ruleInput = document.createElement('input');
+            ruleInput.type = 'text';
+            ruleInput.className = 'gst-prof-ins-edit__input gst-prof-ins-edit__input--rule';
+            var prefix = row.phrase + ' => ';
+            ruleInput.value = prefix;
+            ruleInput.placeholder = s('profiles.detail.insights.synRulePlaceholder',
+                'phrase => replacement');
+            panel.appendChild(ruleInput);
 
             var saveBtn = document.createElement('button');
             saveBtn.type = 'button';
@@ -995,19 +991,43 @@
             cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
             panel.appendChild(cancelBtn);
 
+            var tip = document.createElement('span');
+            tip.className = 'gst-prof-ins-edit__tip';
+            tip.textContent = s('profiles.detail.insights.synRuleTip',
+                'Format: original => replacement. Queries for "original" are rewritten to "replacement" at search time.');
+            panel.appendChild(tip);
+
             cancelBtn.addEventListener('click', function () { panel.remove(); });
 
             if (!ed || typeof ed.appendRule !== 'function') {
-                rhs.disabled = true;
-                rhs.placeholder = s('profiles.detail.insights.synUnavailable',
+                ruleInput.disabled = true;
+                ruleInput.value = '';
+                ruleInput.placeholder = s('profiles.detail.insights.synUnavailable',
                     'Synonyms not loaded yet — open the Synonyms tab once.');
                 return panel;
             }
 
-            rhs.addEventListener('input', function () {
-                saveBtn.disabled = !rhs.value.trim();
+            // Place caret after the prefix so the marketer starts typing the
+            // RHS without selecting / deleting the phrase.
+            requestAnimationFrame(function () {
+                try { ruleInput.setSelectionRange(prefix.length, prefix.length); }
+                catch (e) { /* type=text on some browsers refuses setSelectionRange */ }
             });
-            rhs.addEventListener('keydown', function (ev) {
+
+            function parseRule() {
+                var v = (ruleInput.value || '').trim();
+                var idx = v.indexOf('=>');
+                if (idx < 0) return null;
+                var lhs = v.slice(0, idx).trim();
+                var rhs = v.slice(idx + 2).trim();
+                if (!lhs || !rhs) return null;
+                return { lhs: lhs, rhs: rhs };
+            }
+
+            ruleInput.addEventListener('input', function () {
+                saveBtn.disabled = !parseRule();
+            });
+            ruleInput.addEventListener('keydown', function (ev) {
                 if (ev.key === 'Enter' && !saveBtn.disabled) {
                     ev.preventDefault();
                     saveBtn.click();
@@ -1015,11 +1035,11 @@
             });
 
             saveBtn.addEventListener('click', function () {
-                var rhsVal = rhs.value.trim();
-                if (!rhsVal) return;
+                var parsed = parseRule();
+                if (!parsed) return;
                 saveBtn.disabled = true;
                 saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
-                ed.appendRule(row.phrase, rhsVal).then(function () {
+                ed.appendRule(parsed.lhs, parsed.rhs).then(function () {
                     panel.classList.add('is-saved');
                     panel.innerHTML = '';
                     var ok = document.createElement('span');
