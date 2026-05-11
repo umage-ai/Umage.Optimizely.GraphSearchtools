@@ -349,6 +349,24 @@ public sealed class ProfilesService
 
         var result = await _runner.RunRawAsync(query, variables: null, cancellationToken);
 
+        // Graph's `usePinned` argument bypasses the language clause in the
+        // where filter — a pin in collection "alloy-en" surfaces in BOTH the
+        // en AND sv response branches when the preview asks for locale=en
+        // (probed empirically against cg.optimizely.com). Drop hits whose
+        // Language.Name doesn't match the requested locale so the SERP shows
+        // a single branch even when pinned items spill across locales.
+        if (!string.IsNullOrEmpty(locale) && result.Hits.Count > 0)
+        {
+            var filtered = result.Hits
+                .Where(h => string.IsNullOrEmpty(h.Language)
+                    || string.Equals(h.Language, locale, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (filtered.Count != result.Hits.Count)
+            {
+                result = result with { Hits = filtered, TotalCount = filtered.Count };
+            }
+        }
+
         // Mark which hits Graph would have pinned for this phrase. Mirrors
         // Graph's usePinned semantics on the server: load the collection's
         // items, keep targetKeys whose phrases match the preview phrase
