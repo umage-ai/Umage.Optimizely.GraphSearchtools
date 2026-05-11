@@ -15,6 +15,7 @@ using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
@@ -71,12 +72,15 @@ public class ProfilesApiControllerTests
 
         var localization = new Mock<LocalizationService>(MockBehavior.Loose, new object[0]).Object;
         var hostEnv = new StubHostEnvironment();
-        var service = new ProfilesService(registry, new SearchProfileEditService(), localization, hostEnv);
 
-        // The Index/Detail tests don't exercise the pinned endpoint, but the
-        // controller's constructor demands the dep. A loose IGraphAdminClient
-        // mock satisfies PinnedService.
+        // The Index/Detail tests don't exercise endpoints that hit Graph, but
+        // ProfilesService and PinnedService both demand graph-client deps now —
+        // a loose mock satisfies the constructor without making any calls.
         var graphClient = new Mock<IGraphAdminClient>(MockBehavior.Loose).Object;
+        var credentialsResolver = new Mock<IGraphCredentialsResolver>(MockBehavior.Loose).Object;
+        var queryRunner = new QueryRunnerService(new HttpClient(), credentialsResolver, options);
+        var service = new ProfilesService(registry, new SearchProfileEditService(), localization, hostEnv, graphClient, queryRunner);
+
         var pinnedService = new PinnedService(graphClient);
 
         var controller = new ProfilesApiController(service, registry, accessChecker, pinnedService, NullLogger<ProfilesApiController>.Instance);
