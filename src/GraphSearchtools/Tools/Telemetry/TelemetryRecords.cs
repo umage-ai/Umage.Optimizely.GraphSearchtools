@@ -17,12 +17,34 @@ public class SearchLogBucket : IDynamicData
     /// <summary>Minute-truncated UTC timestamp. Indexed because every read filters by window.</summary>
     [EPiServerDataIndex] public DateTime BucketUtc { get; set; }
 
-    /// <summary>Trim/lower of the originating phrase. The dictionary key.</summary>
-    [EPiServerDataIndex] public string PhraseNorm { get; set; } = string.Empty;
+    /// <summary>
+    /// Trim/lower of the originating phrase. Not indexed: the reader never
+    /// filters by phrase (it groups by phrase as the result), and the
+    /// flusher's upsert-lookup runs over the small per-minute slice the
+    /// BucketUtc index already reduces to.
+    /// </summary>
+    public string PhraseNorm { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Profile key. Indexed because Profile Insights filters by it on every
+    /// read, and a per-profile dashboard is the most common drill-down.
+    /// </summary>
     [EPiServerDataIndex] public string ProfileKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Locale. Indexed because the per-locale view of the Search Logs UI
+    /// filters by it. DDS supports three Indexed_String columns and this is
+    /// the third — adding a fourth would silently collide with one of the
+    /// other indexed strings, which is what NodeId / PhraseNorm gave up.
+    /// </summary>
     [EPiServerDataIndex] public string Locale { get; set; } = string.Empty;
-    [EPiServerDataIndex] public string NodeId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Originating instance. Not indexed: the reader sums across nodes at
+    /// query time so this is never a filter; the flusher's upsert lookup
+    /// uses it equality-only on a small per-minute slice.
+    /// </summary>
+    public string NodeId { get; set; } = string.Empty;
 
     /// <summary>
     /// Most-common cased form observed for the phrase in this bucket. Kept so

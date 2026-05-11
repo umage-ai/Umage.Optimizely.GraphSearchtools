@@ -98,21 +98,23 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
     /// <summary>
     /// Pulls bucket rows for the window, optionally filtered, and collapses
     /// them across NodeId so a phrase appears once even when it was seen on
-    /// many instances.
+    /// many instances. Filters are chained into the LINQ expression so DDS
+    /// picks the most selective index (BucketUtc range, then ProfileKey or
+    /// Locale equality) instead of materialising every row in the window.
     /// </summary>
     private List<PhraseAggregate> LoadAggregated(TelemetryQuery query)
     {
         var store = DynamicDataStoreFactory.Instance.CreateStore(typeof(SearchLogBucket));
-        var buckets = store.Items<SearchLogBucket>()
-            .Where(b => b.BucketUtc >= query.SinceUtc && b.BucketUtc < query.UntilUtc)
-            .ToList();
+        var q = store.Items<SearchLogBucket>()
+            .Where(b => b.BucketUtc >= query.SinceUtc && b.BucketUtc < query.UntilUtc);
 
         if (!string.IsNullOrEmpty(query.ProfileKey))
-            buckets = buckets.Where(b => b.ProfileKey == query.ProfileKey).ToList();
+            q = q.Where(b => b.ProfileKey == query.ProfileKey);
         if (!string.IsNullOrEmpty(query.Locale))
-            buckets = buckets.Where(b => b.Locale == query.Locale).ToList();
+            q = q.Where(b => b.Locale == query.Locale);
 
-        return buckets
+        return q
+            .ToList()
             .GroupBy(b => new { b.PhraseNorm, b.ProfileKey, b.Locale })
             .Select(g =>
             {
