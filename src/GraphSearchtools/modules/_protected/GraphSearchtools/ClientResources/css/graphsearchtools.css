@@ -3051,7 +3051,14 @@ td.bpe-editing select {
     background: var(--gst-primary-light);
     border-color: var(--gst-primary-light);
 }
-.gst-pinedit__action--save.is-dirty {
+/* Per-row Save only surfaces once the row is dirty. Pin rows set
+   `is-dirty` on the row's <tr>; the synonyms editor shares the same
+   `gst-pinedit__row` class so this selector covers both surfaces. */
+.gst-pinedit__row .gst-pinedit__action--save {
+    display: none;
+}
+.gst-pinedit__row.is-dirty .gst-pinedit__action--save {
+    display: inline-flex;
     color: var(--gst-primary);
     border-color: var(--gst-primary);
 }

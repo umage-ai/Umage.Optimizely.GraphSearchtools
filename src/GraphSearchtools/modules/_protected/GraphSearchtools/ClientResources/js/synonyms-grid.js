@@ -331,11 +331,23 @@
                 scopeCell.appendChild(scopeChip);
                 tr.appendChild(scopeCell);
 
-                // Actions cell — delete only (synonyms saves the whole blob,
-                // so per-row Save would be misleading; the drawer handles it).
+                // Actions cell — Save + Delete, matching the pinned editor.
+                // Save persists the full blob (no partial-save API exists),
+                // which also clears every dirty row — so per-row Save here is
+                // effectively a shortcut for the drawer's "Save all". CSS
+                // hides the Save button until the row is dirty, so it only
+                // shows up when there's something to write.
                 var actCell = document.createElement('td');
                 actCell.className = 'gst-pinedit__cell gst-pinedit__cell--actions';
                 if (!isGlobalReadOnly) {
+                    var rowSave = document.createElement('button');
+                    rowSave.type = 'button';
+                    rowSave.className = 'gst-pinedit__action gst-pinedit__action--save';
+                    rowSave.innerHTML = '<span aria-hidden="true">✓</span>';
+                    rowSave.title = s('synonyms.action_save', 'Save');
+                    rowSave.addEventListener('click', function () { save(); });
+                    actCell.appendChild(rowSave);
+
                     var del = document.createElement('button');
                     del.type = 'button';
                     del.className = 'gst-pinedit__action gst-pinedit__action--delete';
