@@ -344,6 +344,7 @@
             <emptyZero>No zero-result phrases — every search found something.</emptyZero>
             <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
             <loadFailed>Failed to load insights.</loadFailed>
+            <showMore>Show more</showMore>
             <ctaPreview>Preview</ctaPreview>
             <ctaPin>Draft pin</ctaPin>
             <ctaSynonym>Draft synonym</ctaSynonym>

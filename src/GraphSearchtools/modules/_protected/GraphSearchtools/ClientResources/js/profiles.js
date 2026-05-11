@@ -454,10 +454,30 @@
         // recomputed at fetch time so the window is always anchored to "now"
         // rather than going stale across long-lived sessions.
         var WINDOWS = { '1h': 3600e3, '24h': 86400e3, '7d': 7 * 86400e3, '30d': 30 * 86400e3 };
+
+        // Lane-local state. Each lane starts at INITIAL_TAKE rows and grows
+        // by SHOW_MORE_STEP per "show more" click. Resets back to INITIAL_TAKE
+        // whenever the window or locale changes — a fresh slice is a fresh
+        // surface, no point preserving an expanded view across a context flip.
+        var INITIAL_TAKE = 5;
+        var SHOW_MORE_STEP = 10;
+        var LANES = ['top', 'zero', 'lowctr'];
+        var LANE_API = { top: 'Top', zero: 'ZeroResults', lowctr: 'LowCtr' };
+        var LANE_DOM = {
+            top:    { listId: 'gst-prof-ins-top',    countId: 'gst-prof-ins-top-count' },
+            zero:   { listId: 'gst-prof-ins-zero',   countId: 'gst-prof-ins-zero-count' },
+            lowctr: { listId: 'gst-prof-ins-lowctr', countId: 'gst-prof-ins-lowctr-count' }
+        };
+
         var state = {
             window: '24h',
-            inflight: null
+            inflight: null,
+            takes: { top: INITIAL_TAKE, zero: INITIAL_TAKE, lowctr: INITIAL_TAKE }
         };
+
+        function resetTakes() {
+            LANES.forEach(function (l) { state.takes[l] = INITIAL_TAKE; });
+        }
 
         // The Pinned editor's locale chip (`#gst-pin-locale`) is the page's
         // single source of truth for which language branch the editor is
@@ -482,19 +502,23 @@
             alertEl.classList.add('gst-alert--danger');
         }
 
-        // Window pill click → state change → refetch.
+        // Window pill click → state change → refetch. Reset per-lane takes
+        // so a fresh window opens compact rather than carrying over a
+        // previously-expanded row count.
         pillEls.forEach(function (pill) {
             pill.addEventListener('click', function () {
                 if (pill.classList.contains('is-active')) return;
                 pillEls.forEach(function (p) { p.classList.remove('is-active'); });
                 pill.classList.add('is-active');
                 state.window = pill.dataset.window || '24h';
+                resetTakes();
                 fetchAll();
             });
         });
 
         if (refreshBtn) {
             refreshBtn.addEventListener('click', function () {
+                resetTakes();
                 fetchAll();
             });
         }
@@ -506,19 +530,37 @@
         // being inspected.
         if (localeSel) {
             localeSel.addEventListener('change', function () {
+                resetTakes();
                 fetchAll();
             });
         }
 
-        function fetchLane(slug) {
+        function fetchLane(lane) {
             var since = new Date(Date.now() - activeWindowMs()).toISOString();
-            var url = SEARCHLOGS_API + '/' + slug
+            var url = SEARCHLOGS_API + '/' + LANE_API[lane]
                 + '?since=' + encodeURIComponent(since)
-                + '&take=10'
+                + '&take=' + state.takes[lane]
                 + '&profileKey=' + encodeURIComponent(profileKey);
             var loc = activeLocale();
             if (loc) url += '&locale=' + encodeURIComponent(loc);
             return GST.fetchJson(url);
+        }
+
+        // Show-more bumps just one lane's take and re-renders that lane.
+        // The reader caches the underlying aggregate per (window, profile,
+        // locale) for 30s, so the bigger take re-runs only the in-memory
+        // sort-and-take — no DB roundtrip on the hot path.
+        function showMore(lane) {
+            state.takes[lane] += SHOW_MORE_STEP;
+            paintLoading(lane);
+            var stamp = state.inflight = {};
+            fetchLane(lane).then(function (rows) {
+                if (state.inflight !== stamp) return;
+                paintLane(lane, rows);
+            }).catch(function (err) {
+                if (state.inflight !== stamp) return;
+                paintLane(lane, { _err: err });
+            });
         }
 
         function fetchAll() {
@@ -533,31 +575,37 @@
             paintLoading('lowctr');
 
             Promise.all([
-                fetchLane('Top').catch(function (e) { return { _err: e }; }),
-                fetchLane('ZeroResults').catch(function (e) { return { _err: e }; }),
-                fetchLane('LowCtr').catch(function (e) { return { _err: e }; })
+                fetchLane('top').catch(function (e) { return { _err: e }; }),
+                fetchLane('zero').catch(function (e) { return { _err: e }; }),
+                fetchLane('lowctr').catch(function (e) { return { _err: e }; })
             ]).then(function (results) {
                 if (state.inflight !== stamp) return;
                 if (refreshBtn) refreshBtn.classList.remove('is-spinning');
-                paintLane('top',    results[0], 'gst-prof-ins-top',    'gst-prof-ins-top-count');
-                paintLane('zero',   results[1], 'gst-prof-ins-zero',   'gst-prof-ins-zero-count');
-                paintLane('lowctr', results[2], 'gst-prof-ins-lowctr', 'gst-prof-ins-lowctr-count');
+                paintLane('top',    results[0]);
+                paintLane('zero',   results[1]);
+                paintLane('lowctr', results[2]);
             });
         }
 
         function paintLoading(lane) {
-            var listId = lane === 'top' ? 'gst-prof-ins-top'
-                : lane === 'zero' ? 'gst-prof-ins-zero' : 'gst-prof-ins-lowctr';
-            var listEl = document.getElementById(listId);
+            var listEl = document.getElementById(LANE_DOM[lane].listId);
             if (!listEl) return;
+            removeShowMore(lane);
             // Skeleton lives inside an <li> so the <ol> stays valid.
             listEl.innerHTML = '<li class="gst-prof-ins-lane__loading"><span></span></li>';
         }
 
-        function paintLane(lane, payload, listId, countId) {
-            var listEl = document.getElementById(listId);
-            var countEl = document.getElementById(countId);
+        function removeShowMore(lane) {
+            var btn = document.getElementById('gst-prof-ins-' + lane + '-more');
+            if (btn) btn.remove();
+        }
+
+        function paintLane(lane, payload) {
+            var dom = LANE_DOM[lane];
+            var listEl = document.getElementById(dom.listId);
+            var countEl = document.getElementById(dom.countId);
             if (!listEl) return;
+            removeShowMore(lane);
 
             if (payload && payload._err) {
                 listEl.innerHTML = '<li class="gst-prof-ins-lane__error">'
@@ -599,6 +647,28 @@
                 frag.appendChild(buildRow(lane, row, maxHits));
             });
             listEl.appendChild(frag);
+
+            // "Show more" only when the lane returned exactly its requested
+            // take — that's the signal there might be additional rows. When
+            // the server returns fewer than asked for, we've reached the end
+            // of the available data and the button stays hidden.
+            if (rows.length >= state.takes[lane]) {
+                appendShowMore(lane, listEl);
+            }
+        }
+
+        function appendShowMore(lane, listEl) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = 'gst-prof-ins-' + lane + '-more';
+            btn.className = 'gst-prof-ins-lane__more';
+            btn.textContent = s('profiles.detail.insights.showMore', 'Show more');
+            btn.addEventListener('click', function () {
+                showMore(lane);
+            });
+            // Drop the button after the <ol>; it sits in the lane's flow but
+            // outside the list so screen readers don't announce it as an item.
+            listEl.parentNode.appendChild(btn);
         }
 
         function buildRow(lane, row, maxHits) {

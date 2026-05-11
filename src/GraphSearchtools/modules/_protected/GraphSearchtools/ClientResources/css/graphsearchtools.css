@@ -4438,6 +4438,31 @@ td.bpe-editing select {
     padding: 0;
 }
 
+/* "Show more" affordance — sits below the list, outside the <ol> so screen
+   readers don't announce it as a row. Quiet text-button styling so it stays
+   secondary to the data rows above; lane-accent on hover keeps it visually
+   tied to its lane. */
+.gst-prof-ins-lane__more {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 8px var(--gst-space-md);
+    background: transparent;
+    border: 0;
+    border-top: 1px solid var(--gst-border-light);
+    color: var(--gst-text-muted);
+    font: inherit;
+    font-size: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+.gst-prof-ins-lane__more:hover,
+.gst-prof-ins-lane__more:focus-visible {
+    background: var(--gst-surface-hover);
+    color: var(--lane-accent, var(--gst-text));
+}
+
 /* ── Phrase row ──────────────────────────────────────────────── */
 /* Grid: phrase | bar | count | locale | actions
    The bar is the second-glance signal and its width animates in
