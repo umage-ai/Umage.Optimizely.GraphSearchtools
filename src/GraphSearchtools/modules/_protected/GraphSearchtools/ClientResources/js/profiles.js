@@ -803,9 +803,22 @@
             panel.dataset.kind = kind;
             // Insert as a sibling <li> after the row so the <ol> stays valid.
             rowEl.parentNode.insertBefore(panel, rowEl.nextSibling);
+            // Mirror the row's phrase into the live preview so the marketer
+            // sees the current SERP while picking a target / typing a rule.
+            applyToPreview(row.phrase);
             // Move keyboard focus into the panel for fast keyboard completion.
             var firstField = panel.querySelector('input, button:not([disabled])');
             if (firstField) firstField.focus();
+        }
+
+        // Re-fire the preview query for `phrase` so the SERP reflects an edit
+        // that just landed (new pin, new synonym rule). Bypasses lastQuery
+        // staleness because dispatching `input` always reschedules run().
+        function refreshPreview(phrase) {
+            var input = document.getElementById('gst-pin-tryit-q');
+            if (!input) return;
+            if (phrase && input.value !== phrase) input.value = phrase;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
         function buildInlinePinEditor(row) {
@@ -949,6 +962,7 @@
                     ok.textContent = s('profiles.detail.insights.editPinSaved',
                         '✓ Pinned — open the Pinned tab to refine.');
                     panel.appendChild(ok);
+                    refreshPreview(row.phrase);
                     setTimeout(function () { if (panel.parentNode) panel.remove(); }, 2200);
                 }).catch(function (err) {
                     saveBtn.disabled = false;
@@ -1047,6 +1061,7 @@
                     ok.textContent = s('profiles.detail.insights.editSynSaved',
                         '✓ Synonym added.');
                     panel.appendChild(ok);
+                    refreshPreview(row.phrase);
                     setTimeout(function () { if (panel.parentNode) panel.remove(); }, 1800);
                 }).catch(function (err) {
                     saveBtn.disabled = false;
