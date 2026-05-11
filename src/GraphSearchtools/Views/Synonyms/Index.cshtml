@@ -10,40 +10,117 @@
     <p>@Loc.GetString("/graphsearchtools/tools/synonyms/description")</p>
 </div>
 
-<div id="gst-alert" class="gst-alert" hidden></div>
-
-<div class="gst-card">
-    <div class="gst-toolbar">
-        <select id="syn-language-filter"></select>
-        <input id="syn-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/synonyms/filter_placeholder")" />
-        <div class="gst-toolbar__spacer"></div>
-        <button type="button" id="syn-add" class="gst-btn gst-btn--primary">+ @Loc.GetString("/graphsearchtools/tools/synonyms/add")</button>
+@* Same grid widget as the Profile-detail Synonyms tab — see synonyms-grid.js.
+   Difference vs the profile surface: the language picker is the standalone's
+   own <select>, and global/lang are not merged (the picker selects which scope
+   to edit). *@
+<div id="gst-syn" class="gst-pinedit gst-syn-page">
+    <div class="gst-pinedit__cmdbar">
+        <label class="gst-syn-page__lang">
+            <span class="gst-syn-page__lang-label">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</span>
+            <select id="syn-language-filter" class="gst-syn-page__lang-select"></select>
+        </label>
+        <span class="gst-pinedit__sep" aria-hidden="true"></span>
+        <div class="gst-pinedit__searchbox">
+            <svg class="gst-pinedit__searchglyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <input type="text" id="gst-syn-filter"
+                   class="gst-pinedit__searchinput"
+                   placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")"
+                   autocomplete="off" />
+        </div>
+        <span class="gst-pinedit__count" id="gst-syn-count" aria-live="polite">0</span>
+        <span class="gst-pinedit__sep" aria-hidden="true"></span>
+        <button type="button" id="gst-syn-add" class="gst-pinedit__addbtn">
+            <span class="gst-pinedit__addbtn__plus">＋</span>
+            <span>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRow")</span>
+        </button>
     </div>
 
-    <table class="gst-table">
-        <thead>
-        <tr>
-            <th>@Loc.GetString("/graphsearchtools/tools/synonyms/col_rule")</th>
-            <th class="gst-syn-actions-col"></th>
-        </tr>
-        </thead>
-        <tbody id="syn-grid"></tbody>
-    </table>
+    @* Rule-format hint sits next to the Add button — that's where a marketer
+       reaches for it (right when typing a new rule). *@
+    <details class="gst-prof-syn__help">
+        <summary>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/helpSummary")</summary>
+        <dl class="gst-prof-syn__help-dl">
+            <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_label"):</dt>
+            <dd><code>laptop =&gt; computer</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_text")</dd>
+            <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_label"):</dt>
+            <dd><code>laptop, computer, pc</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_text")</dd>
+        </dl>
+    </details>
 
-    <div class="gst-syn-footer">
-        <div class="gst-muted gst-syn-footer__help">
-            <strong>@Loc.GetString("/graphsearchtools/tools/synonyms/help_replacement_label")</strong>
-            <code>H2O =&gt; water</code> &mdash; @Loc.GetString("/graphsearchtools/tools/synonyms/help_replacement_text")
-            <br/>
-            <strong>@Loc.GetString("/graphsearchtools/tools/synonyms/help_equivalent_label")</strong>
-            <code>laptop, computer, pc</code> &mdash; @Loc.GetString("/graphsearchtools/tools/synonyms/help_equivalent_text")
+    <div id="gst-syn-alert" class="gst-alert" hidden></div>
+
+    <div class="gst-pinedit__grid-wrap">
+        <table class="gst-pinedit__grid" role="grid" aria-describedby="gst-syn-pager-status">
+            <colgroup>
+                <col style="width: 6%" />
+                <col style="width: 71%" />
+                <col style="width: 12%" />
+                <col style="width: 11%" />
+            </colgroup>
+            <thead>
+                <tr class="gst-pinedit__head-sort">
+                    <th class="gst-pinedit__col" aria-hidden="true"></th>
+                    <th class="gst-pinedit__col" data-sort="rule">
+                        <button type="button" class="gst-pinedit__sortbtn">
+                            <span>@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</span>
+                            <span class="gst-pinedit__caret"></span>
+                        </button>
+                    </th>
+                    <th class="gst-pinedit__col" data-sort="scope">
+                        <button type="button" class="gst-pinedit__sortbtn">
+                            <span>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</span>
+                            <span class="gst-pinedit__caret"></span>
+                        </button>
+                    </th>
+                    <th class="gst-pinedit__col" aria-hidden="true"></th>
+                </tr>
+            </thead>
+            <tbody id="gst-syn-rows"></tbody>
+        </table>
+        <div id="gst-syn-empty" class="gst-pinedit__empty" hidden>
+            <p>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/emptyHeadline")</p>
+            <button type="button" class="gst-pinedit__empty-add" id="gst-syn-empty-add">
+                @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addFirst")
+            </button>
         </div>
-        <div class="gst-actions">
-            <button type="button" id="syn-save" class="gst-btn gst-btn--primary">@Loc.GetString("/graphsearchtools/tools/synonyms/save")</button>
+    </div>
+
+    <nav class="gst-pager" id="gst-syn-pager" hidden
+         aria-label="@Loc.GetString("/graphsearchtools/ui/shared/pagerLabel")">
+        <button type="button" class="gst-pager__btn" id="gst-syn-prev"
+                title="@Loc.GetString("/graphsearchtools/ui/shared/prev")">
+            <span aria-hidden="true">‹</span>
+            <span>@Loc.GetString("/graphsearchtools/ui/shared/prev")</span>
+        </button>
+        <span class="gst-pager__status" id="gst-syn-pager-status" aria-live="polite"></span>
+        <button type="button" class="gst-pager__btn" id="gst-syn-next"
+                title="@Loc.GetString("/graphsearchtools/ui/shared/next")">
+            <span>@Loc.GetString("/graphsearchtools/ui/shared/next")</span>
+            <span aria-hidden="true">›</span>
+        </button>
+    </nav>
+
+    <div id="gst-syn-drawer" class="gst-pinedit__drawer" hidden>
+        <span class="gst-pinedit__drawer__count">
+            <strong id="gst-syn-dirty-count">0</strong>
+            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/unsaved")
+        </span>
+        <div class="gst-pinedit__drawer__actions">
+            <button type="button" id="gst-syn-discard" class="gst-pinedit__drawer__btn">
+                @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/discard")
+            </button>
+            <button type="button" id="gst-syn-save" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary">
+                @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/save")
+            </button>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms-grid.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms.js")"></script>
 }

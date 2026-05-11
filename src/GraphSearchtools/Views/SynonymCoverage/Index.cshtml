@@ -1,0 +1,62 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/synonymCoverage/title");
+}
+
+<div class="gst-page-header">
+    <h1>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-toolbar gst-sc-toolbar">
+    <span class="gst-sc-meta" id="sc-generated-at"></span>
+    <div class="gst-toolbar__spacer"></div>
+    <button type="button" id="sc-refresh" class="gst-btn">
+        @Loc.GetString("/graphsearchtools/tools/synonymCoverage/refresh")
+    </button>
+</div>
+
+<div class="gst-card">
+    <div class="gst-card__header">
+        <h2 class="gst-card__title">@Loc.GetString("/graphsearchtools/tools/synonymCoverage/unused_title")</h2>
+        <p class="gst-card__subtitle">@Loc.GetString("/graphsearchtools/tools/synonymCoverage/unused_subtitle")</p>
+    </div>
+    <table class="gst-table gst-sc-unused">
+        <thead>
+            <tr>
+                <th>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_language")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_entry")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_reason")</th>
+                <th class="gst-sc-actions-col" aria-hidden="true"></th>
+            </tr>
+        </thead>
+        <tbody id="sc-unused-grid"></tbody>
+    </table>
+</div>
+
+<div class="gst-card">
+    <div class="gst-card__header">
+        <h2 class="gst-card__title">@Loc.GetString("/graphsearchtools/tools/synonymCoverage/suggested_title")</h2>
+        <p class="gst-card__subtitle">@Loc.GetString("/graphsearchtools/tools/synonymCoverage/suggested_subtitle")</p>
+    </div>
+    <table class="gst-table gst-sc-suggested">
+        <thead>
+            <tr>
+                <th>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_phrase")</th>
+                <th class="num">@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_hits")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_closest")</th>
+                <th class="num">@Loc.GetString("/graphsearchtools/tools/synonymCoverage/col_similarity")</th>
+                <th class="gst-sc-actions-col" aria-hidden="true"></th>
+            </tr>
+        </thead>
+        <tbody id="sc-suggested-grid"></tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonym-coverage.js")"></script>
+}

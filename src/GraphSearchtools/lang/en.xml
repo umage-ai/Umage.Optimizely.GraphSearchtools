@@ -18,7 +18,14 @@
               <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
               <Health>Run Optimizely Graph health probes — gateway, credentials, query endpoint, index population.</Health>
               <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
-              <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
+              <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
+              <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
+              <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
+              <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
+              <SearchLogs>View Search Logs analytics — top phrases, zero-result phrases, low-CTR phrases, recent raw events.</SearchLogs>
+              <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
+              <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
+              <ContentSearchabilityAudit>Scan the CMS content tree for empty Name / MainBody / Tags and string fields exceeding Graph's 1024-character sortable-field limit.</ContentSearchabilityAudit>
             </permissions>
           </GraphSearchtools>
         </groups>
@@ -28,11 +35,17 @@
       <menu>
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
+        <profiles>Profiles</profiles>
         <pinned>Pinned Results</pinned>
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
-        <savedqueries>Saved Queries</savedqueries>
+        <webhooks>Webhooks</webhooks>
+        <semanticTuner>Semantic Weight Tuner</semanticTuner>
+        <searchLogs>Search Logs</searchLogs>
+        <synonymCoverage>Synonym Coverage</synonymCoverage>
+        <pinnedCoverage>Pinned Coverage</pinnedCoverage>
+        <contentSearchabilityAudit>Content Searchability Audit</contentSearchabilityAudit>
         <about>About</about>
       </menu>
 
@@ -109,44 +122,323 @@
           <locale_label>Locale</locale_label>
           <limit>Limit</limit>
         </autocomplete>
-        <savedqueries>
-          <title>Saved Queries</title>
-          <description>Run Optimizely Graph queries interactively, then save the phrase + ranking knobs as a named preset so you (or another editor) can re-run them with one click.</description>
-          <presets_title>Saved queries</presets_title>
-          <presets_filter_placeholder>Filter saved queries…</presets_filter_placeholder>
-          <presets_empty>No saved queries yet — run a query and save one.</presets_empty>
-          <presets_no_match>No saved queries match the filter.</presets_no_match>
-          <presets_add>+ New</presets_add>
-          <runner_title>Run</runner_title>
-          <placeholder>Search phrase…</placeholder>
-          <run>Run</run>
-          <save>Save…</save>
-          <save_update>Update saved query</save_update>
-          <save_as_new>Save as new…</save_as_new>
-          <ranking>Ranking</ranking>
-          <semantic_weight>Semantic weight</semantic_weight>
-          <min_score>Minimum score</min_score>
-          <limit>Limit</limit>
-          <idle>Enter a phrase, or pick a preset.</idle>
-          <show_query>Show query</show_query>
-          <col_name>Name</col_name>
-          <col_type>Type</col_type>
-          <col_lang>Lang</col_lang>
-          <col_score>Score</col_score>
-          <col_snippet>Snippet</col_snippet>
-          <default_query_active>A custom default query is configured for this site. The ranking knobs are disabled because the configured query controls its own ranking.</default_query_active>
-          <new_title>New saved query</new_title>
-          <edit_title>Edit saved query</edit_title>
-          <field_name>Name</field_name>
-          <field_description>Description</field_description>
-          <field_query>Query</field_query>
-          <field_locale>Locale</field_locale>
-          <field_ranking>Ranking</field_ranking>
-          <field_weight>Semantic weight</field_weight>
-          <field_min_score>Minimum score</field_min_score>
-          <field_limit>Limit</field_limit>
-        </savedqueries>
+        <webhooks>
+          <title>Webhooks</title>
+          <description>Manage Optimizely Graph webhooks. Graph fires these on content changes; subscribers run downstream sync, cache invalidation, or notifications.</description>
+          <no_edit_notice>Graph's API doesn't support editing webhooks. To change one, delete it and create a new one.</no_edit_notice>
+          <empty>No webhooks registered yet.</empty>
+          <add>+ New webhook</add>
+          <col_url>URL</col_url>
+          <col_method>Method</col_method>
+          <col_headers>Headers</col_headers>
+          <col_filters>Filters</col_filters>
+          <col_status>Status</col_status>
+          <col_created>Created</col_created>
+          <col_actions></col_actions>
+          <status_active>Active</status_active>
+          <status_disabled>Disabled</status_disabled>
+          <delete>Delete</delete>
+          <delete_confirm>Delete this webhook? Subscribers will stop receiving events. This cannot be undone.</delete_confirm>
+          <dialog_new>New webhook</dialog_new>
+          <field_url>URL</field_url>
+          <field_method>HTTP method</field_method>
+          <field_headers>Headers</field_headers>
+          <field_filters>Filters</field_filters>
+          <field_url_placeholder>https://example.com/hooks/graph</field_url_placeholder>
+          <save>Create</save>
+          <cancel>Cancel</cancel>
+          <save_failed>Could not save webhook.</save_failed>
+          <delete_failed>Could not delete webhook.</delete_failed>
+          <load_failed>Could not load webhooks.</load_failed>
+        </webhooks>
+        <semanticTuner>
+          <title>Semantic Weight Tuner</title>
+          <description>Tier the Optimizely Graph ranking mode and semantic weight by query token count — e.g. "1–2 tokens lean RELEVANCE, 3+ tokens go SEMANTIC w=0.3". Saved policy persists in DDS and is also emitted as an appsettings.json snippet you can paste into the host config for cold-start fallback.</description>
+          <tier_min_tokens>Min tokens</tier_min_tokens>
+          <tier_max_tokens>Max tokens</tier_max_tokens>
+          <tier_ranking>Ranking</tier_ranking>
+          <tier_weight>Semantic weight</tier_weight>
+          <tier_description>Description (optional)</tier_description>
+          <tier_max_unbounded>∞</tier_max_unbounded>
+          <add_tier>+ Add tier</add_tier>
+          <remove_tier>Remove tier</remove_tier>
+          <save>Save policy</save>
+          <saved>Policy saved.</saved>
+          <save_failed>Could not save policy.</save_failed>
+          <load_failed>Could not load policy.</load_failed>
+          <snippet_label>appsettings.json snippet</snippet_label>
+          <snippet_help>Drop this into the host's appsettings.json. The bound config acts as a cold-start fallback; the saved DDS row above is the runtime source of truth.</snippet_help>
+          <copy>Copy</copy>
+          <copied>Copied</copied>
+          <empty>No tiers defined yet. Add a tier to start tuning.</empty>
+          <ranking_relevance>Relevance</ranking_relevance>
+          <ranking_semantic>Semantic</ranking_semantic>
+          <ranking_boostonly>Boost only</ranking_boostonly>
+          <ranking_doc>Doc</ranking_doc>
+        </semanticTuner>
+        <searchLogs>
+          <title>Search Logs</title>
+          <description>Top queries, zero-result phrases, low-CTR head queries, and a live tail of recent search events. The synonym-mining and pinned-tuning surface — every row links into the tool that fixes it.</description>
+          <window_1h>Last 1h</window_1h>
+          <window_24h>Last 24h</window_24h>
+          <window_7d>Last 7d</window_7d>
+          <window_30d>Last 30d</window_30d>
+          <top_title>Top phrases</top_title>
+          <zero_results_title>Zero-result phrases</zero_results_title>
+          <low_ctr_title>Low-CTR phrases</low_ctr_title>
+          <raw_title>Recent events</raw_title>
+          <col_phrase>Phrase</col_phrase>
+          <col_count>Count</col_count>
+          <col_locale>Locale</col_locale>
+          <col_profile>Profile</col_profile>
+          <col_when>When</col_when>
+          <col_top_result>Top click</col_top_result>
+          <col_duration>Duration</col_duration>
+          <col_status>Status</col_status>
+          <add_as_synonym>→ add as synonym?</add_as_synonym>
+          <tune_pinned>→ tune pinned?</tune_pinned>
+          <empty_title>No telemetry yet</empty_title>
+          <empty_body>Wire host queries to POST /api/telemetry/searchlog from your search SDK to populate this surface. Until then, the cards stay empty.</empty_body>
+          <load_failed>Could not load search logs.</load_failed>
+        </searchLogs>
+        <synonymCoverage>
+          <title>Synonym Coverage</title>
+          <description>Joins your saved synonyms with the recent search-log window to surface two complementary actions: prune entries that never matched a logged query, and add synonyms for top zero-result phrases that look like missing rules.</description>
+          <generated_at>Generated</generated_at>
+          <refresh>Refresh</refresh>
+          <unused_title>Unused synonyms</unused_title>
+          <unused_subtitle>Synonym entries with no matching query in the last 30 days. Likely candidates to prune.</unused_subtitle>
+          <col_language>Language</col_language>
+          <col_entry>Entry</col_entry>
+          <col_reason>Reason</col_reason>
+          <suggested_title>Suggested adds</suggested_title>
+          <suggested_subtitle>Top zero-result phrases that look like typos or missing synonyms. The closest indexed term is shown when the analyzer found one.</suggested_subtitle>
+          <col_phrase>Phrase</col_phrase>
+          <col_hits>Hits</col_hits>
+          <col_closest>Closest indexed term</col_closest>
+          <col_similarity>Edit distance</col_similarity>
+          <prune_in_synonyms>Prune in Synonyms</prune_in_synonyms>
+          <add_in_synonyms>Add in Synonyms</add_in_synonyms>
+          <empty>No prune candidates — every synonym entry fired at least once.</empty>
+          <load_failed>Could not load synonym coverage.</load_failed>
+          <no_logs>No zero-result phrases in the window — nothing to suggest.</no_logs>
+        </synonymCoverage>
+        <pinnedCoverage>
+          <title>Pinned Result Coverage</title>
+          <description>Audit every pinned result against live CMS state and the recent search-log window. Surfaces broken targets (unpublished or deleted), expired pins, pins earning no clicks, pins with no recent activity, and phrases pinned in more than one collection.</description>
+          <generated_at>Generated</generated_at>
+          <run_audit>Run audit</run_audit>
+          <issue_kind_unpublished>Unpublished</issue_kind_unpublished>
+          <issue_kind_deleted>Deleted</issue_kind_deleted>
+          <issue_kind_expired>Expired</issue_kind_expired>
+          <issue_kind_low_ctr>Low CTR</issue_kind_low_ctr>
+          <issue_kind_no_activity>No activity</issue_kind_no_activity>
+          <col_kind>Issue</col_kind>
+          <col_phrase>Phrase</col_phrase>
+          <col_target>Target</col_target>
+          <col_collection>Collection</col_collection>
+          <col_detail>Detail</col_detail>
+          <fix_in_profile>Fix in profile</fix_in_profile>
+          <overlaps_title>Phrase overlaps</overlaps_title>
+          <overlap_phrase>Phrase</overlap_phrase>
+          <overlap_collections>Collections</overlap_collections>
+          <empty>No pinned issues found.</empty>
+          <load_failed>Could not load coverage audit.</load_failed>
+        </pinnedCoverage>
       </tools>
+
+      <!--
+        Phase 2.5 — Search Profiles. Keys are alphabetised by element path
+        inside <profiles> so additions stay mechanical to merge.
+      -->
+      <profiles>
+        <api>
+          <profileKeyRequired>profileKey is required when search profiles are registered.</profileKeyRequired>
+        </api>
+        <generic>
+          <name>Generic</name>
+          <desc>Catchment for pinned collections and synonym groups that don't match a registered profile.</desc>
+        </generic>
+        <registration>
+          <invalidKey>Profile key must match [a-z0-9-]+.</invalidKey>
+          <unknownSite>Site '{0}' is not registered with the CMS — profile will still load.</unknownSite>
+        </registration>
+        <detail>
+          <audit>
+            <col>
+              <when>When</when>
+              <who>Who</who>
+              <kind>Kind</kind>
+              <action>Action</action>
+              <subject>Subject</subject>
+              <locale>Locale</locale>
+            </col>
+            <empty>No edits recorded yet.</empty>
+          </audit>
+          <backToList>Back to all profiles</backToList>
+          <comingSoon>Editor lands in a follow-up PR.</comingSoon>
+          <meta>
+            <allLocales>all locales</allLocales>
+            <allSites>all sites</allSites>
+            <docInline>inline (registered in code)</docInline>
+            <docNotFound>File not found in the host project.</docNotFound>
+            <graphqlDoc>GraphQL document</graphqlDoc>
+            <locales>Locales declared</locales>
+            <pinnedKey>Pinned key formula</pinnedKey>
+            <ranking>Ranking · semantic blend</ranking>
+            <searchedFields>Searched fields</searchedFields>
+            <sites>Sites</sites>
+          </meta>
+          <overview>
+            <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
+            <graphqlInlineNote>Registered inline — admin reflects the same query string the runtime executes.</graphqlInlineNote>
+            <graphqlPathNote>Loaded from the host project.</graphqlPathNote>
+            <graphqlTitle>GraphQL query</graphqlTitle>
+          </overview>
+          <pinned>
+            <addFirst>Add your first pin</addFirst>
+            <addRow>Add pin</addRow>
+            <colPhrase>Phrase</colPhrase>
+            <colPriority>Priority</colPriority>
+            <colTarget>Target</colTarget>
+            <colType>Type</colType>
+            <discardAll>Discard changes</discardAll>
+            <empty>No pinned items for this phrase yet.</empty>
+            <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
+            <globalFilter>Search pins by phrase, target, or type…</globalFilter>
+            <organicTitle>Organic results (no pins applied)</organicTitle>
+            <previewFailed>Preview failed</previewFailed>
+            <saveAll>Save all changes</saveAll>
+            <serpEmpty>No matches.</serpEmpty>
+            <serpEmptyHelp>No content matched this phrase. Try a different term, or pin a target above.</serpEmptyHelp>
+            <serpPinnedBadge>Pinned</serpPinnedBadge>
+            <serpPinnedTooltip>This result is locked to the top by a pin in this profile.</serpPinnedTooltip>
+            <serpPlaceholder>Search the live index…</serpPlaceholder>
+            <serpScoreTooltip>Graph relevance score</serpScoreTooltip>
+            <serpShowJson>inspect</serpShowJson>
+            <serpUntitled>(untitled)</serpUntitled>
+            <sharedSite>Shared across sites</sharedSite>
+            <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
+            <tryTitle>Live preview</tryTitle>
+            <unsaved>unsaved</unsaved>
+          </pinned>
+          <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
+          <tabs>
+            <audit>Audit log</audit>
+            <details>Details</details>
+            <insights>Insights</insights>
+            <overview>Overview</overview>
+            <pinned>Pinned</pinned>
+            <synonyms>Synonyms</synonyms>
+          </tabs>
+          <insights>
+            <windowLabel>Time window</windowLabel>
+            <topTitle>Top phrases</topTitle>
+            <topHint>What people are searching for</topHint>
+            <zeroTitle>Zero-result phrases</zeroTitle>
+            <zeroHint>Synonym-mining candidates</zeroHint>
+            <lowCtrTitle>Low-CTR phrases</lowCtrTitle>
+            <lowCtrHint>Pin-candidate phrases</lowCtrHint>
+            <countSuffix>in window</countSuffix>
+            <empty>No traffic in this window yet.</empty>
+            <emptyZero>No zero-result phrases — every search found something.</emptyZero>
+            <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
+            <loadFailed>Failed to load insights.</loadFailed>
+            <ctaPreview>Preview</ctaPreview>
+            <ctaPin>Draft pin</ctaPin>
+            <ctaSynonym>Draft synonym</ctaSynonym>
+            <ctaDrafted>✓ Drafted</ctaDrafted>
+            <draftedPin>Drafted in Pinned tab — fill in a target.</draftedPin>
+            <draftedSynonym>Drafted in Synonyms tab — finish the rule.</draftedSynonym>
+            <ctrLabel>CTR</ctrLabel>
+            <hitsLabel>hits</hitsLabel>
+            <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
+          </insights>
+          <workspace>
+            <consoleLabel>Profile tools</consoleLabel>
+            <livePreviewEyebrow>Try-it</livePreviewEyebrow>
+            <livePreviewTitle>Live preview</livePreviewTitle>
+            <previewDisabledTitle>Preview unavailable</previewDisabledTitle>
+            <previewLabel>Live preview</previewLabel>
+            <scopeLabel>Scope</scopeLabel>
+            <switcherLabel>Profile tools</switcherLabel>
+          </workspace>
+          <synonyms>
+            <addFirst>Add your first rule</addFirst>
+            <addRow>Add rule</addRow>
+            <colScope>Scope</colScope>
+            <discard>Discard changes</discard>
+            <emptyHeadline>No synonym rules yet — add one to expand or substitute terms at query time.</emptyHeadline>
+            <globalNote>Showing every rule that applies when previewing in this language: the per-language blob (editable here) plus the global blob, which is shared across languages and managed in the Synonyms tool.</globalNote>
+            <globalRowTip>Global rule — applies in every language. Manage in the Synonyms tool.</globalRowTip>
+            <helpSummary>Rule format</helpSummary>
+            <noMatches>No rules match the current filter.</noMatches>
+            <save>Save all changes</save>
+            <scopeGlobal>global</scopeGlobal>
+            <scopeGlobalTip>Stored in the global synonym blob — applies to every language.</scopeGlobalTip>
+            <scopeLangTip>Stored in this language's synonym blob.</scopeLangTip>
+            <title>Synonym rules</title>
+          </synonyms>
+          <details>
+            <auditTitle>Audit log</auditTitle>
+            <metaTitle>Profile metadata</metaTitle>
+          </details>
+          <unwiredPinned>
+            <tabTitle>Pinned results not wired into this query</tabTitle>
+            <title>Pinned results not wired into this query</title>
+            <body>This profile's registered GraphQL query doesn't include the usePinned directive, so any pins saved here won't reach the storefront SERP.</body>
+            <howto>To enable, add the directive to your storefront query:</howto>
+          </unwiredPinned>
+          <unwiredSynonyms>
+            <tabTitle>Synonyms not wired into this query</tabTitle>
+            <title>Synonyms not wired into this query</title>
+            <body>This profile's registered GraphQL query doesn't opt in to Graph's synonym pool, so synonym rules won't be applied at storefront query time.</body>
+            <howto>To enable, pass synonyms: ONE inside _fulltext (use TWO if you maintain a staging slot):</howto>
+          </unwiredSynonyms>
+        </detail>
+        <index>
+          <cols>
+            <lastEdited>Last edited</lastEdited>
+            <profile>Profile</profile>
+            <scope>Sites &amp; locales</scope>
+            <status>Status</status>
+            <tuning>Tuning</tuning>
+          </cols>
+          <empty>
+            <body>Register profiles in code via AddSearchProfile(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
+            <title>No profiles registered yet</title>
+          </empty>
+          <filter>
+            <allLocales>All locales</allLocales>
+            <allSites>All sites</allSites>
+          </filter>
+          <filterPlaceholder>Filter profiles…</filterPlaceholder>
+          <stats>
+            <coverage>Production traffic via profiles</coverage>
+            <locales>locales</locales>
+            <pinned>Pinned phrases</pinned>
+            <profiles>Profiles registered</profiles>
+            <sites>sites</sites>
+            <synonyms>Synonym entries</synonyms>
+          </stats>
+          <subtitle>Marketer-facing tuning for each search surface.</subtitle>
+          <title>Search Profiles</title>
+        </index>
+        <requestFailed>Failed to load profiles.</requestFailed>
+        <status>
+          <cold>Cold</cold>
+          <docMissing>GraphQL doc missing</docMissing>
+          <freeForm>Free-form</freeForm>
+          <needsReview>Review pinned</needsReview>
+          <tuned>Tuned</tuned>
+        </status>
+        <time>
+          <daysAgo>days ago</daysAgo>
+          <hoursAgo>hrs ago</hoursAgo>
+          <justNow>just now</justNow>
+          <minutesAgo>min ago</minutesAgo>
+        </time>
+      </profiles>
 
       <about>
         <title>About Graph Search Tools</title>
@@ -175,6 +467,10 @@
           <all>All</all>
           <prev>Previous</prev>
           <next>Next</next>
+          <copy>Copy</copy>
+          <copied>Copied</copied>
+          <pagerLabel>Pagination</pagerLabel>
+          <pagerStatus>Page %1 of %2</pagerStatus>
         </shared>
         <components>
           <picker_title>Select content</picker_title>
@@ -210,6 +506,15 @@
           <rule_placeholder>H2O =&gt; water  or  laptop, computer, pc</rule_placeholder>
           <saved>Synonyms saved.</saved>
           <confirm_unsaved>You have unsaved synonym changes. Press OK to save, or Cancel to discard.</confirm_unsaved>
+          <filter_placeholder>Filter rules...</filter_placeholder>
+          <placeholder_hint>Type a new synonym rule…</placeholder_hint>
+          <add>Add</add>
+          <col_rule>Rule</col_rule>
+          <save>Save changes</save>
+          <help_replacement_label>Replacement</help_replacement_label>
+          <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
+          <help_equivalent_label>Equivalent</help_equivalent_label>
+          <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
         </synonyms>
         <health>
           <request_failed>Health check failed</request_failed>
@@ -243,30 +548,6 @@
           <returned_for>Returned %1 in %2 ms</returned_for>
           <error_pick_type_and_field>Pick a type and a field first.</error_pick_type_and_field>
         </autocomplete>
-        <savedqueries>
-          <request_failed>Request failed</request_failed>
-          <no_items>No saved queries yet.</no_items>
-          <no_filter_match>No saved queries match the filter.</no_filter_match>
-          <all_locales>ALL</all_locales>
-          <action_load>Load</action_load>
-          <action_run>Run</action_run>
-          <action_edit>Edit</action_edit>
-          <action_delete>Delete</action_delete>
-          <new_title>New saved query</new_title>
-          <edit_title>Edit saved query</edit_title>
-          <error_name_required>Name is required.</error_name_required>
-          <error_query_required>Enter a query to run.</error_query_required>
-          <created>Saved query saved.</created>
-          <updated>Saved query updated.</updated>
-          <deleted>Saved query deleted.</deleted>
-          <confirm_delete>Delete saved query "%1"?</confirm_delete>
-          <run_failed>Search failed</run_failed>
-          <running>Running…</running>
-          <no_results>No matching content.</no_results>
-          <returned_for>Returned %1 of %2 in %3 ms</returned_for>
-          <show_query>Show query</show_query>
-          <hide_query>Hide query</hide_query>
-        </savedqueries>
       </ui>
     </graphsearchtools>
   </language>

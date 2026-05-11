@@ -95,8 +95,12 @@ modulesbin/
 # Local settings
 appsettings.local.json
 
+# Local SQL Server data volume (dockerised mssql)
+src/GraphSearchtools.SampleSite/App_Data/mssql/
+
 # Claude Code - include project settings, exclude local
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 .playwright-mcp/
 .claude/worktrees/
 .worktrees/

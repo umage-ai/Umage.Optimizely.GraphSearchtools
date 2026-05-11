@@ -1,0 +1,168 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/relevancyLab/title");
+
+    string T(string key) => Loc.GetString("/graphsearchtools/tools/relevancyLab/" + key);
+}
+
+<div class="gst-page-header">
+    <h1>@T("title")</h1>
+    <p>@T("description")</p>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+<div class="gst-tabs gst-rl-tabs" role="tablist">
+    <button type="button" class="gst-tab gst-tab--active" data-rl-tab="sets" role="tab" aria-selected="true">@T("tab_sets")</button>
+    <button type="button" class="gst-tab" data-rl-tab="run" role="tab" aria-selected="false">@T("tab_run")</button>
+    <button type="button" class="gst-tab" data-rl-tab="compare" role="tab" aria-selected="false">@T("tab_compare")</button>
+</div>
+
+@* ─── Sets ─────────────────────────────────────────── *@
+<section class="gst-rl-pane" data-rl-pane="sets">
+    <div class="gst-card">
+        <div class="gst-card__header">
+            <span class="gst-card__title">@T("sets_title")</span>
+            <button type="button" class="gst-btn gst-btn--primary gst-btn--sm" data-rl="set-new">@T("set_new")</button>
+        </div>
+        <div class="gst-card__body">
+            <div class="gst-rl-sets" data-rl="sets-list" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="gst-card" data-rl="set-editor" hidden>
+        <div class="gst-card__header">
+            <span class="gst-card__title" data-rl="set-editor-title">@T("set_editor_new")</span>
+        </div>
+        <div class="gst-card__body">
+            <div class="gst-rl-form">
+                <label class="gst-rl-field">
+                    <span>@T("set_name")</span>
+                    <input type="text" data-rl-field="name" />
+                </label>
+                <label class="gst-rl-field">
+                    <span>@T("set_locale")</span>
+                    <input type="text" data-rl-field="locale" placeholder="@T("set_locale_placeholder")" />
+                </label>
+                <label class="gst-rl-field gst-rl-field--full">
+                    <span>@T("set_description")</span>
+                    <input type="text" data-rl-field="description" />
+                </label>
+            </div>
+
+            <h4 class="gst-rl-subhead">@T("items_title")</h4>
+            <div class="gst-rl-items" data-rl="items"></div>
+            <button type="button" class="gst-btn gst-btn--sm" data-rl="item-add">@T("item_add")</button>
+
+            <div class="gst-rl-actions">
+                <button type="button" class="gst-btn" data-rl="set-cancel">@T("cancel")</button>
+                <div class="gst-rl-actions__spacer"></div>
+                <button type="button" class="gst-btn" data-rl="set-delete" hidden>@T("set_delete")</button>
+                <button type="button" class="gst-btn gst-btn--primary" data-rl="set-save">@T("set_save")</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ─── Run ─────────────────────────────────────────── *@
+<section class="gst-rl-pane" data-rl-pane="run" hidden>
+    <div class="gst-card">
+        <div class="gst-card__header">
+            <span class="gst-card__title">@T("run_title")</span>
+        </div>
+        <div class="gst-card__body">
+            <div class="gst-rl-form">
+                <label class="gst-rl-field">
+                    <span>@T("run_set")</span>
+                    <select class="gst-select" data-rl="run-set"></select>
+                </label>
+                <label class="gst-rl-field">
+                    <span>@T("ranking")</span>
+                    <select class="gst-select" data-rl="run-ranking">
+                        <option value="Relevance">@T("ranking_relevance")</option>
+                        <option value="Semantic">@T("ranking_semantic")</option>
+                        <option value="BoostOnly">@T("ranking_boostonly")</option>
+                        <option value="Doc">@T("ranking_doc")</option>
+                    </select>
+                </label>
+                <label class="gst-rl-field">
+                    <span>@T("semantic_weight") <output data-rl="run-weight-out">0.20</output></span>
+                    <input type="range" min="-1" max="1" step="0.05" value="0.2" data-rl="run-weight" />
+                </label>
+                <label class="gst-rl-field">
+                    <span>@T("min_score")</span>
+                    <input type="number" step="0.01" data-rl="run-minscore" />
+                </label>
+            </div>
+
+            <div class="gst-rl-actions">
+                <div class="gst-rl-actions__spacer"></div>
+                <button type="button" class="gst-btn gst-btn--primary" data-rl="run-go">@T("run_go")</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="gst-card" data-rl="run-results" hidden>
+        <div class="gst-card__header">
+            <span class="gst-card__title" data-rl="run-summary"></span>
+            <a href="#" class="gst-btn gst-btn--sm" data-rl="run-export">@T("run_export_csv")</a>
+        </div>
+        <div class="gst-card__body">
+            <div data-rl="run-table"></div>
+        </div>
+    </div>
+
+    <div class="gst-card">
+        <div class="gst-card__header">
+            <span class="gst-card__title">@T("history_title")</span>
+        </div>
+        <div class="gst-card__body">
+            <div data-rl="history-list" aria-live="polite"></div>
+        </div>
+    </div>
+</section>
+
+@* ─── Compare ─────────────────────────────────────────── *@
+<section class="gst-rl-pane" data-rl-pane="compare" hidden>
+    <div class="gst-card">
+        <div class="gst-card__header">
+            <span class="gst-card__title">@T("compare_title")</span>
+        </div>
+        <div class="gst-card__body">
+            <div class="gst-rl-form">
+                <label class="gst-rl-field">
+                    <span>@T("compare_run_a")</span>
+                    <select class="gst-select" data-rl="compare-a"></select>
+                </label>
+                <label class="gst-rl-field">
+                    <span>@T("compare_run_b")</span>
+                    <select class="gst-select" data-rl="compare-b"></select>
+                </label>
+            </div>
+            <div class="gst-rl-actions">
+                <div class="gst-rl-actions__spacer"></div>
+                <button type="button" class="gst-btn gst-btn--primary" data-rl="compare-go">@T("compare_go")</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="gst-card" data-rl="compare-results" hidden>
+        <div class="gst-card__header">
+            <span class="gst-card__title" data-rl="compare-summary"></span>
+        </div>
+        <div class="gst-card__body">
+            <div data-rl="compare-table"></div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/relevancy-lab.js")"></script>
+    <script>
+        (function () {
+            GST.relevancyLab.boot({ container: document.body });
+        })();
+    </script>
+}

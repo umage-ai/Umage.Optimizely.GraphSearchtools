@@ -443,6 +443,65 @@ public sealed class GraphAdminClient : IGraphAdminClient
         return results;
     }
 
+    // ── Webhooks (Phase 3) ────────────────────────────────────────────────
+    // Endpoints are `/api/webhooks` per `docs/research/graph-authentication.md`
+    // §7. Auth is the same Basic (AppKey:Secret) header as pinned/synonyms.
+
+    public async Task<IReadOnlyList<WebhookResult>> GetWebhooksAsync(CancellationToken cancellationToken)
+    {
+        using var request = CreateRequest(HttpMethod.Get, "api/webhooks");
+        // Graph may return a bare array OR an envelope { hooks: [...] }; the
+        // docs aren't explicit. Read the body once and probe both shapes so a
+        // future server-side change doesn't silently empty the list.
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new GraphSearchApiException(response.StatusCode, content);
+        }
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return Array.Empty<WebhookResult>();
+        }
+
+        using var doc = JsonDocument.Parse(content);
+        var root = doc.RootElement;
+        JsonElement arrayElement;
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = root;
+        }
+        else if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("hooks", out var hooks) && hooks.ValueKind == JsonValueKind.Array)
+        {
+            arrayElement = hooks;
+        }
+        else
+        {
+            return Array.Empty<WebhookResult>();
+        }
+
+        var raw = arrayElement.GetRawText();
+        return JsonSerializer.Deserialize<List<WebhookResult>>(raw, _serializerOptions) ?? new List<WebhookResult>();
+    }
+
+    public async Task<WebhookResult> CreateWebhookAsync(WebhookPayload payload, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+        using var request = CreateJsonRequest(HttpMethod.Post, "api/webhooks", payload);
+        return await SendJsonAsync<WebhookResult>(request, cancellationToken)
+            ?? throw new InvalidOperationException("Graph API returned an empty webhook response.");
+    }
+
+    public async Task DeleteWebhookAsync(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw new ArgumentException("Webhook id is required.", nameof(id));
+        }
+        using var request = CreateRequest(HttpMethod.Delete, $"api/webhooks/{Uri.EscapeDataString(id)}");
+        await SendNoContentAsync(request, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken)
     {
         var creds = _credentials.Resolve();
@@ -736,4 +795,5 @@ public sealed class GraphAdminClient : IGraphAdminClient
             throw new InvalidOperationException("Optimizely Content Graph settings (GatewayAddress, AppKey, Secret) are not configured.");
         }
     }
+
 }

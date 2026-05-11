@@ -2216,3 +2216,2574 @@ td.bpe-editing select {
     background: var(--gst-primary-light);
     color: var(--gst-primary);
 }
+
+/* ============================================================
+   Search Profiles (Phase 2.5) — gst-prof-* / gst-pin-*
+   ============================================================ */
+
+/* ── Profile index table (specialised .gst-table) ──────────── */
+.gst-prof-table td { padding: var(--gst-space-md); }
+.gst-prof-table tr { cursor: pointer; }
+.gst-prof-table tr.is-active td {
+    background: var(--gst-primary-light);
+    box-shadow: inset 3px 0 0 var(--gst-primary);
+}
+.gst-prof-table tr.is-active:hover td { background: var(--gst-primary-light); }
+
+.gst-prof-name { display: flex; flex-direction: column; gap: 2px; }
+.gst-prof-name__title {
+    font-size: var(--gst-text-base);
+    font-weight: 600;
+    color: var(--gst-text);
+    display: flex; align-items: center; gap: 6px;
+}
+.gst-prof-name__title .gst-prof-name__sub {
+    font-weight: 400;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+}
+.gst-prof-name__key { font-family: var(--gst-font-mono); font-size: 11px; color: var(--gst-text-muted); }
+
+.gst-prof-scope { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.gst-prof-bars { display: grid; grid-template-columns: 36px 1fr 28px; row-gap: 4px; column-gap: 8px; align-items: center; min-width: 160px; }
+.gst-prof-bars__name {
+    font-family: var(--gst-font-mono);
+    font-size: 10px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-prof-bars__bar {
+    height: 4px;
+    background: var(--gst-surface-active);
+    border-radius: 2px;
+    position: relative; overflow: hidden;
+}
+.gst-prof-bars__bar::after {
+    content: ""; position: absolute; inset: 0; width: var(--w, 0%);
+    background: var(--gst-primary);
+    border-radius: 2px;
+}
+.gst-prof-bars__bar.muted::after { background: var(--gst-text-muted); }
+.gst-prof-bars__num { font-family: var(--gst-font-mono); font-size: 10px; color: var(--gst-text-secondary); text-align: right; }
+
+.gst-prof-status { display: flex; flex-direction: column; gap: 2px; }
+.gst-prof-status__line { font-size: 11px; color: var(--gst-text-muted); }
+
+.gst-prof-arrow {
+    color: var(--gst-text-muted);
+    transition: color .15s, transform .15s;
+    width: 16px; height: 16px;
+}
+.gst-prof-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
+
+/* ── Profile detail layout ──────────────────────────────────── */
+.gst-prof-layout {
+    display: grid;
+    /* minmax(0, 1fr) — without the explicit 0 floor, grid tracks expand to
+       their min-content width, which lets a wide <pre> (e.g. the Live preview's
+       JSON inspector) push the right column past the viewport edge and create
+       horizontal page scroll. */
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: var(--gst-space-md);
+    align-items: flex-start;
+}
+.gst-prof-rail { position: sticky; top: calc(48px + var(--gst-space-lg)); }
+
+.gst-prof-rail .gst-card__body { padding: var(--gst-space-md) var(--gst-space-lg); }
+.gst-prof-rail h2 { font-size: var(--gst-text-xl); font-weight: 600; margin-bottom: 2px; }
+.gst-prof-rail .gst-prof-name__key { margin-bottom: var(--gst-space-md); }
+
+.gst-prof-meta { display: flex; flex-direction: column; gap: var(--gst-space-md); margin: 0; }
+.gst-prof-meta dt {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+.gst-prof-meta dd { font-size: var(--gst-text-sm); color: var(--gst-text); }
+.gst-prof-meta dd .em { color: var(--gst-text-secondary); font-size: 11px; display: block; margin-top: 2px; }
+.gst-prof-meta__missing { color: var(--gst-danger); }
+
+/* ── Detail page tabs (specialised .gst-tabs) ───────────────── */
+.gst-prof-tabs { margin: 0; padding: 0 var(--gst-space-lg); }
+.gst-prof-tabs .gst-badge { margin-left: 6px; }
+
+/* ── Audit log table ────────────────────────────────────────── */
+.gst-prof-audit-table th { padding: var(--gst-space-sm) var(--gst-space-md); }
+.gst-prof-audit-table td { padding: var(--gst-space-sm) var(--gst-space-md); white-space: nowrap; }
+.gst-prof-audit-table td:nth-child(5) { white-space: normal; }
+
+/* ── Pinned editor (specialised) ────────────────────────────── */
+.gst-pin-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: var(--gst-space-md);
+    align-items: end;
+}
+.gst-pin-controls .gst-field { display: flex; flex-direction: column; gap: 4px; }
+.gst-pin-controls .gst-field label {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-pin-controls .gst-field .gst-select { width: 100%; }
+
+.gst-pin-keyline {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    background: var(--gst-bg);
+    border: 1px dashed var(--gst-border);
+    border-radius: var(--gst-radius);
+    margin-top: var(--gst-space-md);
+    font-size: var(--gst-text-sm);
+}
+.gst-pin-keyline__label {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-pin-keyline__value {
+    font-family: var(--gst-font-mono);
+    color: var(--gst-primary);
+    font-weight: 600;
+}
+.gst-pin-keyline__hint { margin-left: auto; color: var(--gst-text-muted); font-size: 11px; }
+.gst-pin-keyline__hint code { font-family: var(--gst-font-mono); color: var(--gst-text-secondary); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .gst-prof-layout { grid-template-columns: 1fr; }
+    .gst-prof-rail { position: static; }
+}
+@media (max-width: 720px) {
+    .gst-pin-controls { grid-template-columns: 1fr 1fr; }
+    .gst-prof-table .col-tuning, .gst-prof-table .col-scope { display: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Phase 3 — Decay & Factor Sandbox
+   Two side-by-side panels, each with knobs / SVG plot / emit block.
+   ───────────────────────────────────────────────────────────────────── */
+
+.gst-decay-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gst-space-md);
+}
+
+.gst-decay-panel { display: flex; flex-direction: column; }
+
+.gst-decay-knobs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gst-space-sm) var(--gst-space-md);
+    margin-bottom: var(--gst-space-md);
+}
+
+.gst-decay-knob {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--gst-text-muted);
+    min-width: 0;
+}
+.gst-decay-knob > span { font-weight: 500; }
+.gst-decay-knob input[type="text"],
+.gst-decay-knob input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: 3px;
+    background: var(--gst-surface);
+    color: var(--gst-text);
+    font-family: inherit;
+    font-size: 12px;
+}
+.gst-decay-knob input[type="range"] { width: 100%; }
+
+.gst-decay-pillset {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.gst-decay-pillset button {
+    padding: 3px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: 999px;
+    background: var(--gst-surface);
+    color: var(--gst-text);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+}
+.gst-decay-pillset button:hover { background: var(--gst-surface-hover); }
+.gst-decay-pillset button[aria-checked="true"] {
+    background: var(--gst-primary);
+    border-color: var(--gst-primary);
+    color: #fff;
+}
+
+.gst-decay-plot {
+    margin: var(--gst-space-sm) 0;
+}
+.gst-decay-plot svg {
+    width: 100%;
+    height: 160px;
+    display: block;
+    border: 1px solid var(--gst-border);
+    border-radius: 3px;
+    background: var(--gst-surface);
+}
+.gst-decay-plot__bg { fill: var(--gst-surface); }
+.gst-decay-plot__grid {
+    stroke: var(--gst-border);
+    stroke-width: 0.5;
+    stroke-dasharray: 2 3;
+}
+.gst-decay-plot__curve {
+    stroke: var(--gst-primary);
+    stroke-width: 1.6;
+    fill: none;
+}
+.gst-decay-plot__marker {
+    stroke: var(--gst-text-muted);
+    stroke-width: 0.5;
+    stroke-dasharray: 2 2;
+}
+.gst-decay-plot__axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--gst-text-muted);
+    margin-top: 2px;
+    padding: 0 2px;
+}
+
+.gst-decay-emit {
+    position: relative;
+    margin-top: var(--gst-space-sm);
+}
+.gst-decay-emit pre {
+    background: var(--gst-surface-hover);
+    border: 1px solid var(--gst-border);
+    border-radius: 3px;
+    padding: 8px 10px;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.gst-decay-emit > .gst-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
+@media (max-width: 1100px) {
+    .gst-decay-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+    .gst-decay-knobs { grid-template-columns: 1fr; }
+}
+
+/* ─── Webhooks (Phase 3) ─────────────────────────────────────── */
+.gst-webhook-actions-col { width: 1%; white-space: nowrap; }
+.gst-webhook-field {
+    margin-bottom: var(--gst-space-md);
+}
+.gst-webhook-field > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.gst-webhook-field > input,
+.gst-webhook-field > select {
+    width: 100%;
+    box-sizing: border-box;
+}
+.gst-webhook-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.gst-webhook-kv-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
+    align-items: center;
+}
+.gst-webhook-kv-row input { box-sizing: border-box; width: 100%; }
+.gst-webhook-kv-remove {
+    padding: 4px 10px;
+    line-height: 1;
+}
+
+/* ── Request Logs (Phase 3) ───────────────────────────────────────── */
+.gst-rl-toolbar {
+    flex-wrap: wrap;
+    gap: var(--gst-space-sm);
+    align-items: center;
+}
+.gst-rl-pillgroup {
+    display: inline-flex;
+    border: 1px solid var(--gst-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.gst-rl-pill {
+    background: transparent;
+    border: 0;
+    padding: 4px 12px;
+    font: inherit;
+    color: var(--gst-text-secondary);
+    cursor: pointer;
+    line-height: 1.6;
+}
+.gst-rl-pill + .gst-rl-pill { border-left: 1px solid var(--gst-border); }
+.gst-rl-pill:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-rl-pill--active {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+    font-weight: 600;
+}
+.gst-rl-errors-toggle {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    cursor: pointer;
+}
+.gst-rl-search {
+    min-width: 220px;
+    padding: 4px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    font: inherit;
+    box-sizing: border-box;
+}
+.gst-rl-table tr.gst-rl-row { cursor: pointer; }
+.gst-rl-row--expanded > td { background: var(--gst-surface-hover); }
+.gst-rl-chevron-col { width: 28px; text-align: center; }
+.gst-rl-chevron { color: var(--gst-text-muted); font-size: 12px; }
+.gst-rl-dim { color: var(--gst-text-muted); }
+.gst-rl-expansion > td {
+    padding: 0;
+    background: var(--gst-surface);
+    border-top: 0;
+}
+.gst-rl-expansion__inner {
+    padding: var(--gst-space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-sm);
+}
+.gst-rl-section__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-weight: 600;
+    color: var(--gst-text-secondary);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.gst-rl-pre {
+    background: var(--gst-surface-active);
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 360px;
+}
+.gst-rl-meta {
+    color: var(--gst-text-muted);
+    font-size: 11px;
+}
+.gst-rl-meta code { color: var(--gst-text-secondary); }
+
+/* ── Search Logs (Phase 4 Wave 5) ─────────────────────────────────── */
+/*
+   Four-card analytics grid backed by a single time-window pill. Three of the
+   four cards are phrase-level aggregates (top / zero-result / low-CTR); the
+   fourth spans the full row and renders the live tail of recent events.
+*/
+.gst-sl-toolbar-card { margin-bottom: var(--gst-space-md); }
+.gst-sl-toolbar { display: flex; align-items: center; gap: var(--gst-space-sm); padding: var(--gst-space-sm); }
+.gst-sl-pillgroup { display: inline-flex; gap: 0; }
+.gst-sl-pill {
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text);
+    padding: 4px 10px;
+    font: inherit;
+    cursor: pointer;
+}
+.gst-sl-pill + .gst-sl-pill { border-left: none; }
+.gst-sl-pill:first-child { border-radius: 4px 0 0 4px; }
+.gst-sl-pill:last-child { border-radius: 0 4px 4px 0; }
+.gst-sl-pill:hover { background: var(--gst-surface-hover); }
+.gst-sl-pill--active {
+    background: var(--gst-primary);
+    color: var(--gst-on-primary);
+    border-color: var(--gst-primary);
+}
+
+.gst-sl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--gst-space-md);
+}
+.gst-sl-card { display: flex; flex-direction: column; }
+.gst-sl-card--wide { grid-column: 1 / -1; }
+.gst-sl-card__head {
+    padding: var(--gst-space-sm) var(--gst-space-md);
+    border-bottom: 1px solid var(--gst-border);
+}
+.gst-sl-card__head h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gst-text-secondary); }
+
+.gst-sl-table { width: 100%; }
+.gst-sl-table td.num, .gst-sl-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.gst-sl-table--raw td { font-size: 12px; }
+.gst-sl-action-col { width: 1%; white-space: nowrap; text-align: right; }
+.gst-sl-link { color: var(--gst-link); text-decoration: none; font-size: 12px; }
+.gst-sl-link:hover { text-decoration: underline; }
+
+.gst-sl-empty { padding: var(--gst-space-md); margin-bottom: var(--gst-space-md); }
+.gst-sl-empty h2 { margin: 0 0 6px; font-size: 14px; }
+.gst-sl-empty p { margin: 0; color: var(--gst-text-muted); font-size: 13px; }
+
+/* ── Synonym Coverage (Phase 4 Wave 5) ────────────────────────────── */
+.gst-sc-toolbar { margin-bottom: var(--gst-space-md); }
+.gst-sc-meta { color: var(--gst-text-muted); font-size: 12px; }
+.gst-sc-actions-col { width: 1%; white-space: nowrap; text-align: right; }
+.gst-sc-row td { vertical-align: middle; }
+.gst-sc-row .gst-mono { font-size: 12px; }
+.gst-card__subtitle { color: var(--gst-text-muted); font-size: 12px; margin: 4px 0 0; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Editable data grid (gst-pinedit-*)
+   Originally built for the Pinned editor; now reused by the Profile
+   detail Synonyms panel and intended as the shared shape for any
+   admin-grade list-edit surface in this addon. The class prefix is
+   historical — when you see `gst-pinedit__cmdbar`, `__grid`, `__row`,
+   `__cell`, `__drawer`, `__action`, `__count`, `__addbtn`, `__searchbox`,
+   `__sortbtn`, etc. on non-pinned markup, treat them as the shared
+   editor-grid library. Pin-specific styling stays under
+   `gst-pinedit__target*` and `gst-pinedit__typeahead*`.
+   ───────────────────────────────────────────────────────────────────── */
+
+.gst-pinedit {
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Command bar — global search, count chip, add button */
+.gst-pinedit__cmdbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gst-space-sm);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gst-border);
+    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+}
+/* Standalone Synonyms tool — locale picker that selects the editable scope.
+   Profile-detail surface piggybacks on the live preview's locale chip and
+   doesn't render this. */
+.gst-syn-page__lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--gst-text-muted);
+}
+.gst-syn-page__lang-label {
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.gst-syn-page__lang-select {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    background: var(--gst-bg);
+    color: var(--gst-text);
+}
+.gst-pinedit__searchbox {
+    position: relative;
+    /* Take the whole first row when space is tight — flex-basis 240px is the
+       knee where the placeholder ("Search pins by phrase, target, or type…")
+       stops fitting alongside the count chip + add button. Below that the
+       searchbox jumps to its own row, count + add wrap to the second row. */
+    flex: 1 1 240px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+.gst-pinedit__searchglyph {
+    position: absolute;
+    left: 12px;
+    color: var(--gst-text-muted);
+    pointer-events: none;
+}
+.gst-pinedit__searchinput {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1px solid transparent;
+    background: var(--gst-surface);
+    border-radius: var(--gst-radius);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text);
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+    box-sizing: border-box;
+}
+.gst-pinedit__searchinput:hover { border-color: var(--gst-border); }
+.gst-pinedit__searchinput:focus {
+    outline: none;
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
+}
+
+.gst-pinedit__count {
+    font-family: var(--gst-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--gst-text-secondary);
+    padding: 4px 8px;
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    white-space: nowrap;
+}
+.gst-pinedit__sep {
+    width: 1px;
+    align-self: stretch;
+    margin: 4px 4px;
+    background: var(--gst-border);
+}
+.gst-pinedit__addbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--gst-primary);
+    background: var(--gst-primary);
+    color: #fff;
+    border-radius: var(--gst-radius);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    transition: background-color 120ms ease, transform 120ms ease;
+}
+.gst-pinedit__addbtn:hover { background: var(--gst-primary-hover); border-color: var(--gst-primary-hover); }
+.gst-pinedit__addbtn:active { transform: translateY(1px); }
+.gst-pinedit__addbtn__plus { font-size: 14px; line-height: 1; }
+
+/* Grid table */
+.gst-pinedit__grid-wrap {
+    flex: 1;
+    min-height: 240px;
+    overflow: auto;
+    position: relative;
+}
+.gst-pinedit__grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--gst-text-sm);
+    /* Pair `table-layout: fixed` with the explicit `<colgroup>` in the
+       Razor view — fixed layout uses the col widths as authoritative for
+       both thead and tbody, so the row cells line up with the headers
+       regardless of cell content size (auto layout was collapsing the
+       priority column because its content is small). */
+    table-layout: fixed;
+}
+.gst-pinedit__grid thead {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--gst-surface);
+}
+.gst-pinedit__col {
+    text-align: left;
+    padding: 0;
+    background: var(--gst-bg);
+    border-bottom: 1px solid var(--gst-border);
+}
+.gst-pinedit__head-sort .gst-pinedit__col {
+    border-bottom: none;
+    background: var(--gst-bg);
+}
+.gst-pinedit__sortbtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 9px 12px 7px;
+    background: transparent;
+    border: none;
+    font: inherit;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gst-text-secondary);
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+.gst-pinedit__sortbtn:hover { color: var(--gst-text); }
+.gst-pinedit__caret {
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    opacity: 0;
+    transform: translateY(0);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+.gst-pinedit__col.is-asc .gst-pinedit__sortbtn,
+.gst-pinedit__col.is-desc .gst-pinedit__sortbtn { color: var(--gst-primary); }
+.gst-pinedit__col.is-asc .gst-pinedit__caret { opacity: 1; transform: rotate(180deg); }
+.gst-pinedit__col.is-desc .gst-pinedit__caret { opacity: 1; }
+
+/* Column widths come from the <colgroup> in the Razor view. */
+
+/* Rows */
+.gst-pinedit__row {
+    border-bottom: 1px solid var(--gst-border-light);
+    transition: background-color 120ms ease;
+    /* DO NOT add `position: relative` here — Chromium responds by injecting
+       an anonymous layout slot for any pseudo-element, which shifts the
+       body cells one column to the right and collapses the last one. The
+       dirty/new "rail" lives on the first cell's left border instead so we
+       don't need a positioned containing block on the row. */
+}
+.gst-pinedit__row:hover { background: var(--gst-surface-hover); }
+.gst-pinedit__row.is-dirty { background: var(--gst-warning-light); }
+.gst-pinedit__row.is-new   { background: var(--gst-success-light); }
+/* Status rail — the first cell of a dirty/new row carries a 3px inset
+   shadow on its left edge. Targets `:first-child` rather than a column
+   modifier so the rail works for any consumer of the grid (pinned,
+   synonyms, future tools) without each one having to opt in. */
+.gst-pinedit__row.is-dirty > .gst-pinedit__cell:first-child {
+    box-shadow: inset 3px 0 0 0 var(--gst-warning);
+}
+.gst-pinedit__row.is-new > .gst-pinedit__cell:first-child {
+    box-shadow: inset 3px 0 0 0 var(--gst-success);
+}
+
+.gst-pinedit__cell {
+    padding: 6px 12px;
+    vertical-align: middle;
+}
+.gst-pinedit__cell--actions { text-align: right; white-space: nowrap; }
+
+/* Inline inputs — visually flat until hovered/focused */
+.gst-pinedit__input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--gst-radius-sm);
+    background: transparent;
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text);
+    box-sizing: border-box;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+.gst-pinedit__input:hover { border-color: var(--gst-border); background: var(--gst-surface); }
+.gst-pinedit__input:focus {
+    outline: none;
+    border-color: var(--gst-primary);
+    background: var(--gst-surface);
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.10);
+}
+/* Target pill — name display with edit affordance */
+.gst-pinedit__target {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 5px 10px 5px 12px;
+    border: 1px solid var(--gst-border-light);
+    border-radius: 999px;
+    background: var(--gst-bg);
+    color: var(--gst-text);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    cursor: pointer;
+    transition: border-color 120ms ease, background-color 120ms ease;
+}
+/* `display: inline-flex` above beats the UA default for [hidden]; re-assert
+   so `pill.hidden = true` actually hides the button. Without this, new /
+   unresolved rows render the pill placeholder *and* the typeahead input
+   side by side. */
+.gst-pinedit__target[hidden] { display: none; }
+.gst-pinedit__target:hover {
+    border-color: var(--gst-primary);
+    background: var(--gst-primary-light);
+}
+.gst-pinedit__target:focus { outline: none; box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.18); }
+.gst-pinedit__target.is-empty { font-style: italic; color: var(--gst-text-muted); }
+.gst-pinedit__target__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+}
+.gst-pinedit__target__name--placeholder { color: var(--gst-text-muted); font-style: italic; }
+.gst-pinedit__target__edit {
+    margin-left: auto;
+    color: var(--gst-text-muted);
+    font-size: 11px;
+    line-height: 1;
+}
+
+.gst-pinedit__input--target { /* take full cell width when in edit mode */
+    background: var(--gst-surface);
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.10);
+}
+
+/* Typeahead dropdown */
+.gst-pinedit__typeahead {
+    display: none;
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: calc(100% - 6px);
+    z-index: 30;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    box-shadow: var(--gst-shadow-lg);
+}
+.gst-pinedit__typeahead__hit {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--gst-border-light);
+    transition: background-color 100ms ease;
+}
+.gst-pinedit__typeahead__hit:last-child { border-bottom: none; }
+.gst-pinedit__typeahead__hit:hover { background: var(--gst-primary-light); }
+.gst-pinedit__typeahead__name {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+.gst-pinedit__typeahead__meta {
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    white-space: nowrap;
+}
+.gst-pinedit__typeahead__none {
+    padding: 12px;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+    font-style: italic;
+    text-align: center;
+}
+
+/* Type chips */
+.gst-pinedit__chip {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-pinedit__chip.is-page      { background: var(--gst-primary-light); color: var(--gst-primary); }
+.gst-pinedit__chip.is-product   { background: var(--gst-success-light); color: var(--gst-success); }
+.gst-pinedit__chip.is-editorial { background: var(--gst-warning-light); color: var(--gst-warning); }
+.gst-pinedit__chip.is-other     { background: var(--gst-surface-active); color: var(--gst-text-secondary); }
+
+/* Actions */
+.gst-pinedit__action {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--gst-text-muted);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px 8px;
+    margin-left: 2px;
+    border-radius: var(--gst-radius-sm);
+    cursor: pointer;
+    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+.gst-pinedit__action--save:hover {
+    color: var(--gst-primary);
+    background: var(--gst-primary-light);
+    border-color: var(--gst-primary-light);
+}
+.gst-pinedit__action--save.is-dirty {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+}
+.gst-pinedit__action--delete:hover {
+    color: var(--gst-danger);
+    background: var(--gst-danger-light);
+    border-color: var(--gst-danger-light);
+}
+
+/* Empty state */
+.gst-pinedit__empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--gst-text-muted);
+}
+.gst-pinedit__empty p {
+    margin: 0 0 12px;
+    font-style: italic;
+    font-size: var(--gst-text-sm);
+}
+.gst-pinedit__empty-add {
+    background: transparent;
+    border: 1px dashed var(--gst-border);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    padding: 6px 14px;
+    border-radius: var(--gst-radius);
+    cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease;
+}
+.gst-pinedit__empty-add:hover {
+    border-color: var(--gst-primary);
+    color: var(--gst-primary);
+    border-style: solid;
+}
+
+.gst-pinedit__norows td {
+    padding: 28px 16px;
+    color: var(--gst-text-muted);
+    font-style: italic;
+    font-size: var(--gst-text-sm);
+    text-align: center;
+}
+
+/* Unsaved-changes drawer — only surfaces when ≥1 row is dirty */
+.gst-pinedit__drawer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--gst-warning-light) 0%, #fff7ec 100%);
+    border-top: 1px solid var(--gst-warning);
+    animation: gst-pinedit-drawer-up 220ms ease;
+}
+/* `display: flex` above beats the user-agent default that powers [hidden],
+   so re-assert hiding when the attribute is set. */
+.gst-pinedit__drawer[hidden] { display: none; }
+@keyframes gst-pinedit-drawer-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.gst-pinedit__drawer__count {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-secondary);
+}
+.gst-pinedit__drawer__count strong {
+    color: var(--gst-warning);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    margin-right: 4px;
+}
+.gst-pinedit__drawer__actions { display: flex; gap: 8px; }
+.gst-pinedit__drawer__btn {
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    padding: 6px 14px;
+    border-radius: var(--gst-radius);
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+}
+.gst-pinedit__drawer__btn:hover { border-color: var(--gst-text-secondary); }
+.gst-pinedit__drawer__btn--primary {
+    background: var(--gst-primary);
+    border-color: var(--gst-primary);
+    color: #fff;
+}
+.gst-pinedit__drawer__btn--primary:hover {
+    background: var(--gst-primary-hover);
+    border-color: var(--gst-primary-hover);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Pager — shared by Pinned grid and Synonym list (Profile detail).
+   Compact prev / status / next strip; only renders when total > page size.
+   ───────────────────────────────────────────────────────────────────── */
+.gst-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--gst-border-light);
+    background: var(--gst-surface);
+    font-size: var(--gst-text-sm);
+}
+.gst-pager[hidden] { display: none; }
+.gst-pager__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    padding: 4px 10px;
+    border-radius: var(--gst-radius);
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.gst-pager__btn:hover:not(:disabled) {
+    border-color: var(--gst-primary);
+    color: var(--gst-primary);
+}
+.gst-pager__btn:disabled {
+    color: var(--gst-text-muted);
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+.gst-pager__status {
+    color: var(--gst-text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 96px;
+    text-align: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Phase 6 — Live preview (gst-serp-*)
+   Google-ish SERP renderer for the Profiles tab Try-it. Title in Georgia
+   for an editorial cadence; URL in mono; phrase highlights in soft amber;
+   each card has a "{ }" toggle that expands the raw item JSON beneath.
+   ───────────────────────────────────────────────────────────────────── */
+
+.gst-serp {
+    --gst-serp-title-font: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    --gst-serp-mark-bg: #fff3b0;
+    --gst-serp-mark-fg: #5a3a00;
+    --gst-serp-link: #1a0dab;
+    --gst-serp-link-visited: #6c1ea1;
+    --gst-serp-url-fg: #006621;
+    --gst-serp-card-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /* min-width: 0 propagates the parent grid's minmax(0, 1fr) constraint
+       down to the SERP cards and the JSON inspector inside them. Without it,
+       the longest line of a <pre> would fight to widen the column. */
+    min-width: 0;
+}
+.gst-serp__results,
+.gst-serp__hit { min-width: 0; }
+
+/* Search input */
+.gst-serp__input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--gst-border);
+    border-radius: 999px;
+    background: var(--gst-surface);
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.gst-serp__input:focus-within {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.10);
+}
+.gst-serp__glyph { color: var(--gst-text-muted); flex-shrink: 0; }
+.gst-serp__input input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text);
+    min-width: 0;
+}
+.gst-serp__input input::placeholder { color: var(--gst-text-muted); font-style: italic; }
+
+/* Loading spinner — sits at the trailing edge of the input pill, opposite
+   the magnifier glyph, only while the preview fetch is in flight. */
+.gst-serp__spinner {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(21, 101, 192, 0.18);
+    border-top-color: var(--gst-primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: gst-serp-spin 0.7s linear infinite;
+}
+.gst-serp__input.is-loading .gst-serp__spinner { display: block; }
+@keyframes gst-serp-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .gst-serp__spinner { animation-duration: 1.6s; }
+}
+
+/* Stats line */
+.gst-serp__stats {
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    letter-spacing: 0.02em;
+    min-height: 14px;
+    padding: 0 4px;
+    transition: color 120ms ease;
+}
+.gst-serp__stats--err {
+    color: var(--gst-danger);
+    font-style: italic;
+    letter-spacing: 0;
+}
+
+/* Synonym hint chips — heuristic preview of which synonym rules in the
+   active language match the current query. Sits between stats and the
+   result list so it reads as context for the SERP, not an action.
+   "Matching" is intentional in the label — we don't *prove* Graph
+   applied the rule, we just surface that one exists for this query. */
+.gst-serp__syn {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 4px 0;
+}
+.gst-serp__syn[hidden] { display: none; }
+.gst-serp__syn-label {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    letter-spacing: 0.02em;
+}
+.gst-serp__syn-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1.6;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-bg);
+    color: var(--gst-text-secondary);
+    cursor: help;
+}
+.gst-serp__syn-chip.is-replacement {
+    border-color: var(--gst-primary);
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+}
+.gst-serp__syn-chip.is-equivalent {
+    border-color: var(--gst-border);
+    background: var(--gst-surface);
+}
+.gst-serp__syn-src { font-weight: 600; }
+.gst-serp__syn-op {
+    font-family: var(--gst-font-mono);
+    color: var(--gst-text-muted);
+}
+.gst-serp__syn-exp {
+    font-family: var(--gst-font-mono);
+    font-size: 10.5px;
+}
+
+/* Results list */
+.gst-serp__results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 60px;
+    transition: opacity 120ms ease;
+}
+.gst-serp__results.is-loading { opacity: 0.55; }
+
+/* Empty state */
+.gst-serp__empty {
+    padding: 18px 12px;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+    font-style: italic;
+    text-align: center;
+    border: 1px dashed var(--gst-border-light);
+    border-radius: var(--gst-radius);
+    background: var(--gst-bg);
+}
+
+/* Single result card */
+.gst-serp__hit {
+    padding: 10px 4px 12px;
+    border-bottom: 1px solid var(--gst-border-light);
+    animation: gst-serp-rise 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: var(--gst-serp-stagger, 0ms);
+    position: relative;
+    transition: background-color 160ms ease, padding-left 160ms ease;
+}
+
+/* Pinned cards — left accent rail, soft primary tint, star ribbon top-right.
+   Reads like a curator's "we promoted this" marker, not a banner ad. */
+.gst-serp__hit.is-pinned {
+    background: linear-gradient(90deg, rgba(21, 101, 192, 0.06) 0%, rgba(21, 101, 192, 0) 60%);
+    padding-left: 14px;
+    border-radius: var(--gst-radius);
+    border-bottom-color: transparent;
+    box-shadow: inset 3px 0 0 0 var(--gst-primary);
+}
+.gst-serp__hit.is-pinned + .gst-serp__hit:not(.is-pinned) {
+    /* Restore the divider when an organic card follows a pinned cluster. */
+    border-top: 1px solid var(--gst-border-light);
+    margin-top: 4px;
+    padding-top: 14px;
+}
+.gst-serp__pin-ribbon {
+    position: absolute;
+    top: 6px;
+    right: 0;
+    color: var(--gst-primary);
+    line-height: 0;
+    opacity: 0.85;
+}
+.gst-serp__pin-ribbon svg { display: block; }
+.gst-serp__hit:last-child { border-bottom: none; }
+@keyframes gst-serp-rise {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Title row — serif headline + score badge */
+.gst-serp__hit-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 2px;
+}
+.gst-serp__title {
+    font-family: var(--gst-serp-title-font);
+    font-size: 17px;
+    line-height: 1.35;
+    color: var(--gst-serp-link);
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 120ms ease;
+}
+.gst-serp__title:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.gst-serp__title:visited { color: var(--gst-serp-link-visited); }
+.gst-serp__title.is-disabled {
+    color: var(--gst-text);
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Relevance score — small mono badge to the right */
+.gst-serp__score {
+    flex-shrink: 0;
+    font-family: var(--gst-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--gst-text-muted);
+    padding: 2px 7px;
+    border: 1px solid var(--gst-border-light);
+    border-radius: 999px;
+    background: var(--gst-bg);
+}
+
+/* URL line — Google-green mono with leading chevron */
+.gst-serp__url {
+    font-family: var(--gst-font-mono);
+    font-size: 12px;
+    color: var(--gst-serp-url-fg);
+    margin: 0 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-serp__url-glyph {
+    color: var(--gst-text-muted);
+    margin-right: 2px;
+}
+
+/* Snippet — body copy, 2-line clamp */
+.gst-serp__snippet {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--gst-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Phrase highlight */
+.gst-serp__mark {
+    background: var(--gst-serp-mark-bg);
+    color: var(--gst-serp-mark-fg);
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+/* Meta row */
+.gst-serp__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--gst-text-muted);
+}
+.gst-serp__chip {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--gst-surface-active);
+    color: var(--gst-text-secondary);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+.gst-serp__chip--pinned {
+    background: var(--gst-primary);
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 2px 9px;
+}
+.gst-serp__lang {
+    font-family: var(--gst-font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* JSON toggle — sits in the meta row */
+.gst-serp__json-toggle {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--gst-border-light);
+    border-radius: 999px;
+    background: var(--gst-surface);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+.gst-serp__json-toggle:hover {
+    color: var(--gst-text);
+    border-color: var(--gst-text-muted);
+    background: var(--gst-bg);
+}
+.gst-serp__json-toggle.is-open {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+    background: var(--gst-primary-light);
+}
+.gst-serp__json-toggle__brace {
+    font-family: var(--gst-font-mono);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+.gst-serp__json-toggle__label { letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* JSON inspector — self-contained scroll panel. Long values (e.g. _fulltext
+   carrying the full HTML body of an Alloy page) scroll horizontally inside
+   the box rather than stretching the page. */
+.gst-serp__json {
+    margin: 8px 0 0;
+    padding: 12px 14px;
+    background: #1d1f23;
+    color: #e8e8e8;
+    border-radius: var(--gst-radius);
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    line-height: 1.55;
+    max-height: 320px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: auto;
+    white-space: pre;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: gst-serp-json-open 180ms ease both;
+    /* Slim, dark-theme-appropriate scrollbars so the panel reads as a
+       contained pane rather than the host scrollbar bleeding through. */
+    scrollbar-width: thin;
+    scrollbar-color: #555 transparent;
+}
+.gst-serp__json::-webkit-scrollbar { height: 8px; width: 8px; }
+.gst-serp__json::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+.gst-serp__json::-webkit-scrollbar-track { background: transparent; }
+.gst-serp__json[hidden] { display: none; }
+@keyframes gst-serp-json-open {
+    from { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+    to   { opacity: 1; max-height: 320px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Shared code-block + copy button.
+
+   Any container marked `.gst-codeblock` is a positioning context for an
+   overlay copy button (`.gst-copybtn--overlay`) anchored top-right. The
+   button shows on hover/focus to keep code samples readable but is
+   always reachable via keyboard tab order.
+   ───────────────────────────────────────────────────────────────────── */
+
+.gst-codeblock {
+    position: relative;
+    min-width: 0;
+}
+.gst-codeblock[hidden] { display: none; }
+.gst-codeblock > pre {
+    /* Reserve top-right room so long unbroken JSON values don't slide
+       directly under the copy button on first paint. */
+    padding-right: 96px;
+}
+
+.gst-copybtn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-surface);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease, transform 120ms ease;
+}
+.gst-copybtn:hover {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+    background: var(--gst-primary-light);
+}
+.gst-copybtn:active { transform: translateY(1px); }
+.gst-copybtn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.18);
+}
+.gst-copybtn.is-copied {
+    color: var(--gst-success);
+    border-color: var(--gst-success);
+    background: var(--gst-success-light);
+}
+.gst-copybtn__icon { flex-shrink: 0; }
+.gst-copybtn__label { line-height: 1; }
+
+/* Overlay variant — pinned to the top-right of a `.gst-codeblock`. Works
+   over both light <pre> blocks (GraphQL doc) and dark inspectors (SERP
+   JSON) by inverting the surface tint when the parent is dark. */
+.gst-copybtn--overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    opacity: 0.85;
+}
+.gst-codeblock:hover .gst-copybtn--overlay,
+.gst-copybtn--overlay:focus-visible { opacity: 1; }
+
+/* When the parent code block has a dark surface (SERP JSON inspector),
+   flip the button to a translucent dark chrome so it reads against the
+   dark background. */
+.gst-serp__json-wrap .gst-copybtn--overlay {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #e8e8e8;
+}
+.gst-serp__json-wrap .gst-copybtn--overlay:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: #fff;
+}
+.gst-serp__json-wrap .gst-copybtn--overlay.is-copied {
+    color: #a6e6a6;
+    border-color: rgba(166, 230, 166, 0.5);
+    background: rgba(46, 125, 50, 0.18);
+}
+
+/* ─── GraphQL syntax highlight ───────────────────────────────────────
+   Token palette mirrors GraphiQL's light theme (CodeMirror tokens) so
+   the doc panels read the same as the IDE the editors will open in
+   parallel. Tokens are emitted by GST.gqlHighlight and applied at first
+   paint via GST.applyGqlHighlight to any [data-lang="graphql"] block.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* CMS Shell's base stylesheet decorates <span>/<code> children with
+   per-line border + text-decoration rules that paint as horizontal
+   "line bars" running across our highlighted code panels. Reset both
+   on the panel itself and every span inside it so our highlight reads
+   as flat coloured tokens, not striped lines. */
+[data-lang="graphql"],
+[data-lang="graphql"] * {
+    border: 0 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    background: transparent !important;
+}
+[data-lang="graphql"] .gst-gql-kw    { color: hsl(320, 95%, 43%); }   /* query / mutation / fragment / on */
+[data-lang="graphql"] .gst-gql-atom  { color: hsl(188, 100%, 36%); }  /* enum values, true/false/null */
+[data-lang="graphql"] .gst-gql-num   { color: hsl(158, 60%, 42%); }   /* numeric literals */
+[data-lang="graphql"] .gst-gql-str   { color: hsl(36, 100%, 41%); }   /* string + block string literals */
+[data-lang="graphql"] .gst-gql-var   { color: hsl(242, 51%, 61%); }   /* $variable */
+[data-lang="graphql"] .gst-gql-arg   { color: hsl(188, 100%, 36%); }  /* argument names (followed by :) */
+[data-lang="graphql"] .gst-gql-field { color: hsl(208, 100%, 46%); }  /* field names in selection sets */
+[data-lang="graphql"] .gst-gql-dir   { color: hsl(320, 95%, 43%); }   /* @directive references */
+[data-lang="graphql"] .gst-gql-cm    { color: hsla(219, 28%, 32%, 0.6); font-style: italic; }
+[data-lang="graphql"] .gst-gql-punct { color: hsla(219, 28%, 32%, 0.85); }
+
+/* gst-serp__json-wrap inherits the JSON inspector's open/close animation
+   that previously lived on the <pre> directly. */
+.gst-serp__json-wrap {
+    margin: 8px 0 0;
+    animation: gst-serp-json-open 180ms ease both;
+}
+.gst-serp__json-wrap[hidden] { display: none; }
+.gst-serp__json-wrap > .gst-serp__json {
+    /* The wrapper now owns the animation + margin; let the inner <pre>
+       render flat so the layered button looks consistent. */
+    margin: 0;
+    animation: none;
+    padding-right: 96px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Profile detail workspace — 50/50 split with persistent live preview.
+
+   Editorial split: left side is a calm, result-focused preview that
+   stays anchored as the user works the right-side console. The right
+   side is a segmented switcher over three slim panels (Pinned /
+   Synonyms / Details). The seam between them is intentionally a
+   single hairline — no panels, just two sibling regions sharing a
+   common rhythm.
+   ───────────────────────────────────────────────────────────────────── */
+
+.gst-prof-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--gst-space-md);
+    margin-bottom: var(--gst-space-md);
+}
+.gst-prof-detail-header__crumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--gst-text-muted);
+}
+.gst-prof-detail-header__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--gst-text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 120ms ease;
+}
+.gst-prof-detail-header__back:hover { color: var(--gst-primary); }
+.gst-prof-detail-header__sep { color: var(--gst-text-muted); }
+.gst-prof-detail-header__key {
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    color: var(--gst-text-secondary);
+    background: var(--gst-bg);
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--gst-border-light);
+}
+.gst-prof-detail-header h1 {
+    font-size: var(--gst-text-2xl);
+    font-weight: 600;
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+}
+
+/* ── Workspace split ─────────────────────────────────────────── */
+.gst-prof-workspace {
+    display: grid;
+    /* 50/50 with floor(0) so wide content (JSON pre, GraphQL doc) can't
+       force horizontal page scroll on either side. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius-lg);
+    box-shadow: var(--gst-shadow-sm);
+    /* Clip the rounded corners without making this a scroll container;
+       overflow: hidden was breaking position: sticky on the column heads. */
+    isolation: isolate;
+}
+
+/* ── LEFT — live preview workshop ────────────────────────────── */
+.gst-prof-preview {
+    /* A subtle warm-paper tint to differentiate the preview region
+       from the right-side tools console without resorting to heavy
+       dividers or shadows. */
+    background:
+        radial-gradient(circle at 0% 0%, rgba(21, 101, 192, 0.025), transparent 55%),
+        var(--gst-surface);
+    border-right: 1px solid var(--gst-border-light);
+    min-width: 0;
+    align-self: stretch;
+}
+.gst-prof-preview__inner {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Preview head matches the right-side switcher's height/padding so the two
+   columns share a single horizontal header rail at the top of the workspace. */
+.gst-prof-preview__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gst-space-md);
+    flex-wrap: wrap;
+    padding: 0 var(--gst-space-lg);
+    min-height: 44px;
+    border-bottom: 1px solid var(--gst-border-light);
+    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+}
+.gst-prof-preview__heading {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+.gst-prof-preview__eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gst-primary);
+    opacity: 0.85;
+}
+.gst-prof-preview__title {
+    font-size: var(--gst-text-sm);
+    font-weight: 600;
+    color: var(--gst-text);
+    margin: 0;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+}
+
+.gst-prof-preview__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: var(--gst-space-md) var(--gst-space-lg) var(--gst-space-lg);
+    min-width: 0;
+}
+
+/* ── Selector chips ──────────────────────────────────────────── */
+.gst-prof-preview__pickers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.gst-prof-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-surface);
+    font-size: 12px;
+    color: var(--gst-text);
+    line-height: 1.4;
+    /* accent-color tints the dropdown highlight so the popup's selected
+       row picks up the brand colour instead of the OS default blue. */
+    accent-color: var(--gst-primary);
+}
+.gst-prof-chip__label {
+    font-size: 10px;
+    color: var(--gst-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+.gst-prof-chip__value {
+    color: var(--gst-text);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+}
+.gst-prof-chip--input {
+    cursor: pointer;
+    position: relative;
+    padding-right: 26px;
+    box-shadow: 0 1px 0 rgba(15, 20, 28, 0.02);
+    transition: border-color 160ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 160ms cubic-bezier(.2,.8,.2,1),
+                background-color 160ms ease;
+}
+.gst-prof-chip--input:hover {
+    border-color: var(--gst-text-muted);
+    background: var(--gst-surface-hover);
+}
+.gst-prof-chip--input:focus-within {
+    border-color: var(--gst-primary);
+    background: var(--gst-surface);
+    box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.16),
+                0 1px 2px rgba(15, 20, 28, 0.04);
+}
+/* Inside an interactive chip the value renders alongside the label. The
+   actual <select> sits transparently above this span so clicks anywhere
+   on the pill open the dropdown — see .gst-prof-chip__select below. */
+.gst-prof-chip--input .gst-prof-chip__value { font-weight: 600; }
+.gst-prof-chip__select {
+    /* Stretched across the entire chip so the click target is the whole
+       pill, not just the option text. The native select's hit area
+       otherwise collapses to its content width, leaving the label,
+       caret zone, and padding feeling dead.
+
+       color: transparent hides the trigger's value text — the visible
+       .gst-prof-chip__value beneath the select renders it instead, kept
+       in sync by the picker change handlers. The dropdown popup uses
+       its own option text, which the <option> rule below restores. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    /* Stop iOS from zooming the viewport when the select is focused. */
+    font-size: 16px;
+    cursor: pointer;
+    outline: none;
+}
+.gst-prof-chip__select option {
+    /* Re-assert readable text/background for the dropdown popup; some
+       Chromium builds inherit the trigger's transparent color into the
+       option list and would otherwise render an invisible menu.
+       Padding gives the popup rows breathing room (Firefox renders this
+       fully; Chromium honours the typography even where padding is
+       capped) so the option list feels less cramped under the pill. */
+    color: var(--gst-text);
+    background: var(--gst-surface);
+    font-family: var(--gst-font);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+}
+.gst-prof-chip__select option:checked {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary-hover);
+    font-weight: 600;
+}
+.gst-prof-chip__caret {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gst-text-muted);
+    pointer-events: none;
+    /* Sit above the transparent <select> so the glyph is visible — but
+       pointer-events:none lets the click pass through to the select. */
+    z-index: 1;
+    transition: transform 200ms cubic-bezier(.34, 1.56, .64, 1),
+                color 160ms ease;
+}
+.gst-prof-chip--input:hover .gst-prof-chip__caret { color: var(--gst-text); }
+.gst-prof-chip--input:focus-within .gst-prof-chip__caret {
+    transform: translateY(-50%) rotate(180deg);
+    color: var(--gst-primary);
+}
+.gst-prof-chip--static {
+    background: var(--gst-bg);
+    border-color: var(--gst-border-light);
+}
+/* The hidden form holders for the disabled selector — pinned.js still
+   reads .value off them so the runtime resolves the right pinned key. */
+.gst-prof-chip__hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ── SERP body ───────────────────────────────────────────────── */
+.gst-prof-preview__serp {
+    /* The SERP already manages its own gap, but tighten the input → results
+       relationship for the workshop context. */
+    gap: 10px;
+}
+
+/* ── Empty state when no GraphQL doc ─────────────────────────── */
+.gst-prof-preview__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 36px 16px 28px;
+    border: 1px dashed var(--gst-border);
+    border-radius: var(--gst-radius);
+    background: var(--gst-bg);
+    color: var(--gst-text-secondary);
+}
+.gst-prof-preview__empty-glyph {
+    color: var(--gst-text-muted);
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+.gst-prof-preview__empty-title {
+    font-size: var(--gst-text-base);
+    font-weight: 600;
+    color: var(--gst-text);
+    margin: 0 0 4px;
+}
+.gst-prof-preview__empty-body {
+    font-size: var(--gst-text-sm);
+    margin: 0;
+    max-width: 32em;
+    line-height: 1.5;
+}
+
+/* ── RIGHT — tools console ───────────────────────────────────── */
+.gst-prof-console {
+    min-width: 0;
+    background: var(--gst-surface);
+    align-self: stretch;
+}
+
+/* ── Segmented switcher ──────────────────────────────────────── */
+.gst-prof-switcher {
+    display: flex;
+    gap: 0;
+    padding: 0 var(--gst-space-lg);
+    min-height: 44px;
+    align-items: stretch;
+    border-bottom: 1px solid var(--gst-border-light);
+    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+}
+.gst-prof-switcher__btn {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    padding: 0 14px;
+    margin-bottom: -1px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.01em;
+    transition: color 140ms ease, border-color 140ms ease;
+}
+.gst-prof-switcher__btn:hover { color: var(--gst-text); }
+.gst-prof-switcher__btn.is-active {
+    color: var(--gst-primary);
+    border-bottom-color: var(--gst-primary);
+}
+.gst-prof-switcher__icon {
+    display: inline-flex;
+    align-items: center;
+    color: currentColor;
+    opacity: 0.8;
+}
+.gst-prof-switcher__btn.is-active .gst-prof-switcher__icon { opacity: 1; }
+
+/* Unwired tab — the registered GraphQL query doesn't opt in to this
+   feature (no usePinned / no `synonyms: ONE`). The tab still works as
+   navigation so the user can see the explanation, but the icon and
+   label are dimmed and a small "muted" dot trails the label. */
+.gst-prof-switcher__btn.is-unwired {
+    color: var(--gst-text-muted);
+}
+.gst-prof-switcher__btn.is-unwired .gst-prof-switcher__icon { opacity: 0.4; }
+.gst-prof-switcher__btn.is-unwired::after {
+    content: '';
+    width: 5px;
+    height: 5px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--gst-warning, #c97a2a);
+    flex-shrink: 0;
+}
+.gst-prof-switcher__btn.is-unwired.is-active {
+    color: var(--gst-text-secondary);
+}
+.gst-prof-switcher__btn.is-unwired.is-active .gst-prof-switcher__icon { opacity: 0.7; }
+
+/* ── Unwired callout ─────────────────────────────────────────── */
+/* Shown inside a panel when the registered query doesn't support
+   pinned-results or synonym substitution. Replaces the editor with a
+   short explanation + a copy-able snippet of the GraphQL fragment to
+   add. Editing controls are intentionally absent — saved rules wouldn't
+   reach the storefront, so we don't pretend they would. */
+.gst-prof-unwired {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 32px 24px 28px;
+    color: var(--gst-text-secondary);
+}
+.gst-prof-unwired__glyph {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gst-warning-light, rgba(201, 122, 42, 0.12));
+    color: var(--gst-warning, #c97a2a);
+    margin-bottom: 4px;
+}
+.gst-prof-unwired__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gst-text);
+    margin: 0;
+}
+.gst-prof-unwired__body {
+    max-width: 56ch;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.gst-prof-unwired__howto {
+    max-width: 56ch;
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--gst-text-muted);
+}
+.gst-prof-unwired__code {
+    width: 100%;
+    max-width: 560px;
+    margin-top: 6px;
+    text-align: left;
+}
+.gst-prof-unwired__code > pre {
+    margin: 0;
+    padding: 12px 16px;
+    padding-right: 96px;
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+/* ── Panels ──────────────────────────────────────────────────── */
+.gst-prof-panel {
+    padding: var(--gst-space-md) var(--gst-space-lg) var(--gst-space-lg);
+    min-width: 0;
+    animation: gst-prof-panel-in 200ms ease both;
+}
+.gst-prof-panel[hidden] { display: none; }
+@keyframes gst-prof-panel-in {
+    from { opacity: 0; transform: translateY(2px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Synonyms panel ──────────────────────────────────────────── */
+/* Synonyms panel — body lives inside the shared `.gst-pinedit` editor
+   shell (same shape as the Pinned grid). The styles below cover the
+   bits that are specific to synonyms: the explanatory note, the kind
+   chip + scope badge inside grid cells, and the read-only row variant
+   for global rules viewed from a language-scoped panel. */
+.gst-prof-syn__note {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    margin: 0;
+    padding: 8px 14px 0;
+    max-width: 60em;
+    line-height: 1.5;
+}
+
+/* Kind chip lives inside a grid cell — center it horizontally so it
+   reads as a column glyph rather than a left-floated badge. */
+.gst-prof-syn__kind-cell { text-align: center; }
+.gst-prof-syn__kind {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    font-family: var(--gst-font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--gst-bg);
+    color: var(--gst-text-muted);
+    border: 1px solid var(--gst-border-light);
+}
+.gst-prof-syn__kind.is-replacement {
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+    border-color: rgba(21, 101, 192, 0.25);
+}
+.gst-prof-syn__kind.is-equivalent {
+    background: var(--gst-success-light);
+    color: var(--gst-success);
+    border-color: rgba(46, 125, 50, 0.25);
+}
+
+/* Scope badge — small lang/global pill, mirrors the type chip pattern
+   used elsewhere in the addon. */
+.gst-prof-syn__scope {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    color: var(--gst-text-secondary);
+    background: var(--gst-surface-active);
+    border: 1px solid var(--gst-border-light);
+    user-select: none;
+}
+.gst-prof-syn__scope.is-global {
+    color: var(--gst-warning);
+    background: var(--gst-warning-light);
+    border-color: rgba(217, 119, 6, 0.22);
+}
+
+/* Read-only rows (global rules viewed from a language-scoped panel) —
+   slightly muted text + cursor to telegraph "view only". The leftmost
+   cell still shows the dirty/new rail when applicable; readonly rows
+   never become dirty so there's no conflict. */
+.gst-pinedit__row.is-readonly .gst-pinedit__input {
+    color: var(--gst-text-secondary);
+    cursor: default;
+}
+.gst-pinedit__row.is-readonly .gst-pinedit__input:hover {
+    background: transparent;
+    border-color: transparent;
+}
+
+.gst-prof-syn__help {
+    margin-top: 4px;
+    border-top: 1px dashed var(--gst-border-light);
+    padding: 10px 14px 12px;
+}
+.gst-prof-syn__help summary {
+    cursor: pointer;
+    color: var(--gst-text-secondary);
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+}
+.gst-prof-syn__help summary::-webkit-details-marker { display: none; }
+.gst-prof-syn__help summary::before {
+    content: '›';
+    display: inline-block;
+    width: 14px;
+    color: var(--gst-text-muted);
+    transition: transform 140ms ease;
+}
+.gst-prof-syn__help[open] summary::before { transform: rotate(90deg); }
+.gst-prof-syn__help-dl {
+    margin: 8px 0 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 12px;
+    font-size: var(--gst-text-sm);
+    line-height: 1.5;
+}
+.gst-prof-syn__help-dl dt { font-weight: 600; color: var(--gst-text); }
+.gst-prof-syn__help-dl dd { margin: 0; color: var(--gst-text-secondary); }
+.gst-prof-syn__help-dl code {
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border-light);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--gst-text);
+    font-family: var(--gst-font-mono);
+}
+
+/* ── Insights panel ──────────────────────────────────────────── */
+/*
+   Three vertically-stacked lanes of phrase signal scoped to the active
+   profile: top phrases, zero-result phrases, low-CTR phrases. Each lane
+   is anchored by a 2px colored rule on the left (--gst-primary / warning
+   / danger) so the eye lands on severity before reading. Phrase rows are
+   click-targets that drop the phrase into the live preview on the left;
+   hover reveals secondary CTAs to seed a draft pin or synonym row.
+
+   Visual contract:
+     - The mini-bar (.gst-prof-ins-row__bar) is the second-glance metric.
+       Width is set per-row via `--w` (0–100 percent of the lane's max).
+     - Counts use tabular-nums so the column visually aligns even at the
+       end of a string of varying lengths.
+     - CTAs are tertiary; they fade in on row hover so they don't compete
+       with the phrase typography in the resting state.
+*/
+
+.gst-prof-ins {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-md);
+}
+
+/* ── Window pills + refresh ──────────────────────────────────── */
+.gst-prof-ins__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--gst-space-sm);
+    padding: 6px 8px;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border-light);
+    border-radius: var(--gst-radius);
+}
+.gst-prof-ins__bar-spacer { flex: 1; }
+.gst-prof-ins__windows {
+    display: inline-flex;
+    border: 1px solid var(--gst-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.gst-prof-ins__pill {
+    appearance: none;
+    background: var(--gst-surface);
+    border: 0;
+    border-right: 1px solid var(--gst-border);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    padding: 4px 12px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 120ms ease, color 120ms ease;
+}
+.gst-prof-ins__pill:last-child { border-right: 0; }
+.gst-prof-ins__pill:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-prof-ins__pill.is-active {
+    background: var(--gst-primary);
+    color: #fff;
+    cursor: default;
+}
+.gst-prof-ins__pill.is-active:hover { background: var(--gst-primary); }
+.gst-prof-ins__refresh {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text-secondary);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 140ms ease, border-color 140ms ease, transform 200ms ease;
+}
+.gst-prof-ins__refresh:hover {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+}
+.gst-prof-ins__refresh.is-spinning svg {
+    animation: gst-prof-ins-spin 800ms linear infinite;
+}
+@keyframes gst-prof-ins-spin {
+    from { transform: rotate(0); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Lanes ───────────────────────────────────────────────────── */
+.gst-prof-ins__lanes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-md);
+}
+.gst-prof-ins-lane {
+    /* Each lane carries an accent color in --lane-accent, applied to the
+       left rule inside the head and to the bar fills inside its rows. */
+    --lane-accent: var(--gst-primary);
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border-light);
+    border-radius: var(--gst-radius);
+    overflow: hidden;
+}
+.gst-prof-ins-lane--top    { --lane-accent: var(--gst-primary); }
+.gst-prof-ins-lane--zero   { --lane-accent: var(--gst-danger); }
+.gst-prof-ins-lane--lowctr { --lane-accent: var(--gst-warning); }
+
+.gst-prof-ins-lane__head {
+    display: grid;
+    grid-template-columns: 2px max-content 1fr max-content;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px var(--gst-space-md) 10px 0;
+    border-bottom: 1px solid var(--gst-border-light);
+    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 220%);
+}
+.gst-prof-ins-lane__rule {
+    align-self: stretch;
+    width: 2px;
+    background: var(--lane-accent);
+    margin-right: 2px;
+}
+.gst-prof-ins-lane__title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gst-text);
+}
+.gst-prof-ins-lane__hint {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    letter-spacing: 0.01em;
+    /* Hint text gets a subtle separator dot before it. */
+}
+.gst-prof-ins-lane__hint::before {
+    content: '·';
+    margin: 0 8px 0 0;
+    color: var(--gst-border);
+}
+.gst-prof-ins-lane__count {
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gst-text-secondary);
+    letter-spacing: 0.04em;
+}
+.gst-prof-ins-lane__count::after {
+    content: ' · ' attr(data-window);
+    color: var(--gst-text-muted);
+    font-weight: 500;
+    margin-left: 2px;
+}
+.gst-prof-ins-lane__count[data-window=""]::after { content: ''; }
+
+.gst-prof-ins-lane__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Phrase row ──────────────────────────────────────────────── */
+/* Grid: phrase | bar | count | locale | actions
+   The bar is the second-glance signal and its width animates in
+   on first paint via --w. */
+.gst-prof-ins-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 84px max-content max-content max-content;
+    align-items: center;
+    gap: 14px;
+    padding: 9px var(--gst-space-md) 9px 14px;
+    border-top: 1px solid var(--gst-border-light);
+    cursor: pointer;
+    position: relative;
+    transition: background 120ms ease;
+}
+.gst-prof-ins-row:first-child { border-top: 0; }
+.gst-prof-ins-row:hover {
+    background: var(--gst-surface-hover);
+}
+.gst-prof-ins-row.is-active {
+    background: color-mix(in srgb, var(--lane-accent) 8%, var(--gst-surface));
+}
+.gst-prof-ins-row.is-active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--lane-accent);
+}
+
+.gst-prof-ins-row__phrase {
+    font-size: 13px;
+    color: var(--gst-text);
+    font-weight: 500;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 120ms ease;
+}
+.gst-prof-ins-row:hover .gst-prof-ins-row__phrase { color: var(--lane-accent); }
+
+/* Bar — fills via the row's --w (0–100). Empty bars (zero-result lanes)
+   render as a row of 4 small severity dots instead. */
+.gst-prof-ins-row__bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gst-border-light);
+    position: relative;
+    overflow: hidden;
+}
+.gst-prof-ins-row__bar::after {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: var(--w, 0%);
+    background: var(--lane-accent);
+    border-radius: inherit;
+    /* Subtle entrance animation — first paint feels alive without being
+       distracting on subsequent re-renders. */
+    transform-origin: left;
+    animation: gst-prof-ins-bar 360ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes gst-prof-ins-bar {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+/* Zero-result lane swaps the bar for a small "miss" indicator —
+   four little ticks the eye can count, instead of a 0%-width bar. */
+.gst-prof-ins-lane--zero .gst-prof-ins-row__bar {
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: auto;
+}
+.gst-prof-ins-lane--zero .gst-prof-ins-row__bar::after { display: none; }
+.gst-prof-ins-row__miss {
+    width: 6px; height: 6px;
+    border-radius: 1px;
+    background: var(--lane-accent);
+    opacity: 0.85;
+}
+/* Low-CTR lane swaps the bar for a CTR percentage chip instead — the
+   absolute number reads better than a proportional bar at the bottom of
+   the scale. The bar element still occupies its grid cell so columns
+   stay aligned across lanes. */
+.gst-prof-ins-lane--lowctr .gst-prof-ins-row__bar {
+    background: transparent;
+    height: auto;
+    text-align: center;
+}
+.gst-prof-ins-lane--lowctr .gst-prof-ins-row__bar::after { display: none; }
+.gst-prof-ins-row__ctr {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--lane-accent);
+    letter-spacing: 0.02em;
+}
+.gst-prof-ins-row__ctr-num { font-size: 12px; }
+
+.gst-prof-ins-row__count {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--gst-text-secondary);
+    text-align: right;
+    min-width: 32px;
+}
+.gst-prof-ins-row__count strong {
+    color: var(--gst-text);
+    font-weight: 600;
+}
+.gst-prof-ins-row__count small {
+    font-size: 10px;
+    color: var(--gst-text-muted);
+    margin-left: 4px;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+}
+
+.gst-prof-ins-row__locale {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--gst-text-secondary);
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border-light);
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.gst-prof-ins-row__locale[hidden] { display: none; }
+
+/* CTA cluster — invisible until row hover (or focus-within). Keeps the
+   resting state clean so the eye reads the typography first. */
+.gst-prof-ins-row__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transform: translateX(4px);
+    transition: opacity 140ms ease, transform 160ms ease;
+    pointer-events: none;
+}
+.gst-prof-ins-row:hover .gst-prof-ins-row__actions,
+.gst-prof-ins-row:focus-within .gst-prof-ins-row__actions {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+.gst-prof-ins-row__cta {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.gst-prof-ins-row__cta:hover {
+    background: var(--gst-surface);
+    border-color: var(--gst-border);
+    color: var(--gst-text);
+}
+.gst-prof-ins-row__cta--primary {
+    color: var(--lane-accent);
+}
+.gst-prof-ins-row__cta--primary:hover {
+    background: color-mix(in srgb, var(--lane-accent) 12%, var(--gst-surface));
+    border-color: color-mix(in srgb, var(--lane-accent) 35%, transparent);
+    color: var(--lane-accent);
+}
+/* Post-click confirmation: not a button anymore, a state badge. */
+.gst-prof-ins-row__cta--drafted,
+.gst-prof-ins-row__cta--drafted:hover {
+    background: color-mix(in srgb, var(--lane-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--lane-accent) 30%, transparent);
+    color: var(--lane-accent);
+    cursor: default;
+    opacity: .85;
+}
+
+/* ── Empty / loading / error states ──────────────────────────── */
+.gst-prof-ins-lane__empty,
+.gst-prof-ins-lane__loading,
+.gst-prof-ins-lane__error {
+    margin: 0;
+    padding: 16px var(--gst-space-md) 18px;
+    font-size: 12px;
+    color: var(--gst-text-muted);
+    text-align: center;
+    line-height: 1.5;
+}
+.gst-prof-ins-lane__error { color: var(--gst-danger); }
+.gst-prof-ins-lane__loading {
+    /* Three skeleton bars stacked vertically — gives a sense of "phrases
+       are coming" without committing to any specific row count. */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    padding: 14px var(--gst-space-md) 16px;
+}
+.gst-prof-ins-lane__loading::before,
+.gst-prof-ins-lane__loading::after,
+.gst-prof-ins-lane__loading > span {
+    content: '';
+    height: 12px;
+    border-radius: 3px;
+    background: linear-gradient(90deg,
+        var(--gst-border-light) 0%,
+        var(--gst-surface-hover) 50%,
+        var(--gst-border-light) 100%);
+    background-size: 200% 100%;
+    animation: gst-prof-ins-shimmer 1100ms ease-in-out infinite;
+}
+.gst-prof-ins-lane__loading::before { width: 78%; }
+.gst-prof-ins-lane__loading > span  { width: 62%; }
+.gst-prof-ins-lane__loading::after  { width: 44%; }
+@keyframes gst-prof-ins-shimmer {
+    from { background-position: 100% 0; }
+    to   { background-position: -100% 0; }
+}
+
+/* Footnote sits below the lanes and explains where the data comes from. */
+.gst-prof-ins__footnote {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--gst-text-muted);
+    padding: 0 4px;
+}
+
+/* Toast-style flash that confirms a draft was seeded into another tab.
+   Lives on top of the panel for ~2.5s, then fades out — keeps users in
+   the Insights flow rather than yanking them away on every CTA click. */
+.gst-prof-ins__flash {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translate(-50%, 8px);
+    background: var(--gst-text);
+    color: var(--gst-surface);
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    box-shadow: var(--gst-shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    z-index: 5;
+}
+.gst-prof-ins__flash.is-shown {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+.gst-prof-ins__flash-cta {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-left: 8px;
+    pointer-events: auto;
+}
+
+.gst-prof-panel[data-panel="insights"] {
+    position: relative; /* anchor for .gst-prof-ins__flash */
+}
+
+/* ── Details panel ───────────────────────────────────────────── */
+.gst-prof-details__section + .gst-prof-details__section {
+    margin-top: var(--gst-space-lg);
+    padding-top: var(--gst-space-md);
+    border-top: 1px solid var(--gst-border-light);
+}
+.gst-prof-details__title {
+    font-size: var(--gst-text-base);
+    font-weight: 600;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.gst-prof-details__sublabel {
+    font-size: 11px;
+    color: var(--gst-text-muted);
+    margin: 0 0 8px;
+}
+.gst-prof-details__meta {
+    /* Two-column where space allows; folds gracefully. */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--gst-space-md);
+}
+.gst-prof-details__shared { margin-top: var(--gst-space-md); }
+.gst-prof-details__doc {
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border-light);
+    border-radius: var(--gst-radius);
+    padding: var(--gst-space-md);
+    overflow-x: auto;
+    white-space: pre;
+    font-size: var(--gst-text-sm);
+    line-height: 1.5;
+    margin: 0;
+    /* Trim the height so it doesn't push everything below it offscreen.
+       Long docs scroll inside the pre. */
+    max-height: 360px;
+    overflow-y: auto;
+}
+.gst-prof-details__audit { font-size: var(--gst-text-sm); }
+.gst-prof-details__audit table { width: 100%; }
+
+/* ── Pinned panel: editor lives flush in the panel ───────────── */
+.gst-prof-panel[data-panel="pinned"] .gst-pinedit { padding-top: 4px; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1280px) {
+    /* Tighten the column padding before we collapse to single-column. */
+    .gst-prof-preview__inner,
+    .gst-prof-panel { padding-left: var(--gst-space-md); padding-right: var(--gst-space-md); }
+    .gst-prof-switcher { padding: 0 var(--gst-space-md); }
+}
+@media (max-width: 1100px) {
+    .gst-prof-workspace { grid-template-columns: minmax(0, 1fr); }
+    .gst-prof-preview { border-right: 0; border-bottom: 1px solid var(--gst-border-light); }
+}
+@media (max-width: 720px) {
+    .gst-prof-preview__pickers { width: 100%; }
+    .gst-prof-switcher__btn { padding: 12px 10px; }
+    .gst-prof-switcher__btn span:not(.gst-prof-switcher__icon) {
+        /* Drop the labels on narrow screens — the icons carry the meaning. */
+        display: none;
+    }
+}
