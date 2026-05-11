@@ -715,17 +715,10 @@
                 + '<small>' + escHtml(s('profiles.detail.insights.hitsLabel', 'hits')) + '</small>';
             li.appendChild(countEl);
 
-            // 4: locale chip
-            var locEl = document.createElement('span');
-            locEl.className = 'gst-prof-ins-row__locale';
-            if (row.locale) {
-                locEl.textContent = row.locale;
-            } else {
-                locEl.hidden = true;
-            }
-            li.appendChild(locEl);
-
-            // 5: actions
+            // 4: actions
+            // (Locale is implied by the page-level locale chip — when it's
+            //  empty we show all locales, but the chip says so. Per-row
+            //  badges duplicated that information, so they're omitted.)
             var actEl = document.createElement('span');
             actEl.className = 'gst-prof-ins-row__actions';
             // Preview button is always offered.

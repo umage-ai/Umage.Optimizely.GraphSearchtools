@@ -4464,12 +4464,14 @@ td.bpe-editing select {
 }
 
 /* ── Phrase row ──────────────────────────────────────────────── */
-/* Grid: phrase | bar | count | locale | actions
+/* Grid: phrase | bar | count | actions
+   Locale used to be a 5th column but is now redundant — the page-level
+   locale chip pins the active branch for every lane simultaneously.
    The bar is the second-glance signal and its width animates in
    on first paint via --w. */
 .gst-prof-ins-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 84px max-content max-content max-content;
+    grid-template-columns: minmax(0, 1fr) 84px max-content max-content;
     align-items: center;
     gap: 14px;
     padding: 9px var(--gst-space-md) 9px 14px;
@@ -4585,22 +4587,6 @@ td.bpe-editing select {
     text-transform: lowercase;
     letter-spacing: 0.04em;
 }
-
-.gst-prof-ins-row__locale {
-    display: inline-flex;
-    align-items: center;
-    height: 18px;
-    padding: 0 7px;
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--gst-text-secondary);
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border-light);
-    border-radius: 3px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-.gst-prof-ins-row__locale[hidden] { display: none; }
 
 /* CTA cluster — invisible until row hover (or focus-within). Keeps the
    resting state clean so the eye reads the typography first. */
