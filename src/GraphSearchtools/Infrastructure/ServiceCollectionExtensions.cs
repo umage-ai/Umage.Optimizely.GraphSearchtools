@@ -2,6 +2,8 @@ using EPiServer.Shell.Modules;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
@@ -19,6 +21,7 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Webhooks;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Infrastructure;
@@ -119,6 +122,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<RelevancyLabService>(sp =>
             new RelevancyLabService(sp.GetRequiredService<IServiceScopeFactory>()));
 
+        // Telemetry: local sink + bucket flusher + reader on by default. To
+        // route telemetry through a 3rd-party backend instead (App Insights,
+        // Mixpanel, Matomo …), call UseExternalTelemetryReader<T>() after
+        // AddGraphSearchtools — it removes the local sink + flusher and zero
+        // DDS rows are written from this addon.
+        services.AddSingleton<TelemetryAbuseGuard>();
+        services.AddSingleton<LocalTelemetrySink>();
+        services.AddSingleton<ITelemetrySink>(sp => sp.GetRequiredService<LocalTelemetrySink>());
+        services.AddSingleton<ITelemetryMetrics>(sp => sp.GetRequiredService<LocalTelemetrySink>());
+        services.AddSingleton<ITelemetryReader, LocalTelemetryReader>();
+        services.AddHostedService<BucketFlusher>();
+
         services.Configure<ProtectedModuleOptions>(options =>
         {
             options.Items.Add(new ModuleDetails
@@ -128,6 +143,43 @@ public static class ServiceCollectionExtensions
         });
 
         return new GraphSearchtoolsBuilder(services);
+    }
+
+    /// <summary>
+    /// Replaces the default local telemetry pipeline with a customer-supplied
+    /// reader (e.g. an App Insights / Mixpanel / Matomo adapter). Removes the
+    /// local sink and bucket flusher so the addon writes zero DDS rows for
+    /// telemetry; the public ingest endpoint then returns 410 Gone, and the
+    /// client SDK disables itself after one such response.
+    /// </summary>
+    /// <remarks>
+    /// This affects only the new aggregate-first telemetry pipeline introduced
+    /// by the v0.5 design. The legacy <c>SearchLogService</c> ingest path
+    /// (Phase 4 foundation) continues to write to its own DDS table independent
+    /// of this switch — coexistence is intentional during the dual-running
+    /// migration window described in <c>docs/search-telemetry-design.md</c> §8.
+    /// </remarks>
+    public static IGraphSearchtoolsBuilder UseExternalTelemetryReader<TReader>(this IGraphSearchtoolsBuilder builder)
+        where TReader : class, ITelemetryReader
+    {
+        var services = builder.Services;
+        services.RemoveAll<ITelemetrySink>();
+        services.RemoveAll<ITelemetryMetrics>();
+        services.RemoveAll<LocalTelemetrySink>();
+        services.RemoveAll<ITelemetryReader>();
+
+        for (var i = services.Count - 1; i >= 0; i--)
+        {
+            var d = services[i];
+            if (d.ImplementationType == typeof(BucketFlusher) ||
+                (d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(BucketFlusher)))
+            {
+                services.RemoveAt(i);
+            }
+        }
+
+        services.AddSingleton<ITelemetryReader, TReader>();
+        return builder;
     }
 }
 

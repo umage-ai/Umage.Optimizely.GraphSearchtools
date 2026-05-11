@@ -45,6 +45,14 @@ public class GraphSearchtoolsOptions
     /// Semantic Weight Tuner-specific options (token-count-tiered ranking policy).
     /// </summary>
     public SemanticTuningOptions SemanticTuning { get; set; } = new();
+
+    /// <summary>
+    /// Local telemetry sink tunables (queue size, flush cadence, retention,
+    /// abuse caps). Used when the default local sink is wired (see
+    /// <c>AddGraphSearchtools</c>); ignored when the host has substituted a
+    /// 3rd-party reader via <c>UseExternalTelemetryReader&lt;T&gt;</c>.
+    /// </summary>
+    public LocalTelemetryOptions Telemetry { get; set; } = new();
 }
 
 /// <summary>
