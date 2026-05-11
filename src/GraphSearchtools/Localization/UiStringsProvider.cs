@@ -238,6 +238,7 @@ public class UiStringsProvider(LocalizationService loc)
                     emptyZero = P("detail/insights/emptyZero"),
                     emptyLowCtr = P("detail/insights/emptyLowCtr"),
                     loadFailed = P("detail/insights/loadFailed"),
+                    showMore = P("detail/insights/showMore"),
                     ctaPreview = P("detail/insights/ctaPreview"),
                     ctaPin = P("detail/insights/ctaPin"),
                     ctaSynonym = P("detail/insights/ctaSynonym"),
