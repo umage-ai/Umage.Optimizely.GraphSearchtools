@@ -39,6 +39,18 @@
         </button>
     </div>
 
+    @* Rule-format hint sits next to the Add button — that's where a marketer
+       reaches for it (right when typing a new rule). *@
+    <details class="gst-prof-syn__help">
+        <summary>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/helpSummary")</summary>
+        <dl class="gst-prof-syn__help-dl">
+            <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_label"):</dt>
+            <dd><code>laptop =&gt; computer</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_text")</dd>
+            <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_label"):</dt>
+            <dd><code>laptop, computer, pc</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_text")</dd>
+        </dl>
+    </details>
+
     <div id="gst-syn-alert" class="gst-alert" hidden></div>
 
     <div class="gst-pinedit__grid-wrap">
@@ -106,16 +118,6 @@
             </button>
         </div>
     </div>
-
-    <details class="gst-prof-syn__help">
-        <summary>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/helpSummary")</summary>
-        <dl class="gst-prof-syn__help-dl">
-            <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_label"):</dt>
-            <dd><code>laptop =&gt; computer</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_text")</dd>
-            <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_label"):</dt>
-            <dd><code>laptop, computer, pc</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_text")</dd>
-        </dl>
-    </details>
 </div>
 
 @section Scripts {
