@@ -208,10 +208,11 @@
                     @* The data-* attributes on each result <li> feed the
                        click beacon (see <script> below). A visitor click on
                        any anchor inside fires sendBeacon('/search/click')
-                       with phrase + 1-based rank + content GUID, which the
-                       SearchClickController records as a SearchLogEntry with
-                       TopResultRank set so the Search Logs CTR rollup can
-                       attribute clicks to the originating phrase. *@
+                       with phrase + 1-based rank + the originating search's
+                       bucket timestamp, which the SearchClickController
+                       records as a ClickEvent so the telemetry flusher can
+                       attribute clicks to their source bucket even when the
+                       bucket has rolled over before the click arrives. *@
                     <ol class="search-hits">
                         @{ var rank = 0; }
                         @foreach (var hit in Model.Hits)
@@ -241,6 +242,7 @@
                             if (!hits) return;
                             var phrase = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SearchedQuery ?? string.Empty));
                             var locale = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActiveLocale ?? string.Empty));
+                            var bucketUtc = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SearchBucketUtc?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")));
                             if (!phrase) return; // no telemetry without a phrase
                             hits.addEventListener('click', function (ev) {
                                 var li = ev.target.closest('li.search-hit[data-search-hit]');
@@ -251,7 +253,7 @@
                                     phrase: phrase,
                                     locale: locale,
                                     rank: rank,
-                                    contentId: li.getAttribute('data-search-content-id') || ''
+                                    originalBucketUtc: bucketUtc
                                 };
                                 var body = JSON.stringify(payload);
                                 // sendBeacon survives the navigation that the

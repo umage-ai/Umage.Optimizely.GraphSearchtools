@@ -1,5 +1,5 @@
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Helpers;
-using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage.Models;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
@@ -34,6 +34,13 @@ public sealed class SynonymCoverageService
     /// <summary>Cap on top-result phrases used to seed the indexed-term sample.</summary>
     private const int IndexedTermSampleSize = 200;
 
+    /// <summary>
+    /// Cap on the phrase enumeration used to answer "did this synonym ever fire?".
+    /// We deliberately ask for far more than the UI cards display so the unused-
+    /// detection pass sees the long tail, not just the head.
+    /// </summary>
+    private const int LoggedPhraseEnumerationSize = 5000;
+
     /// <summary>Levenshtein cut-off for "close enough to be a typo".</summary>
     private const int LevenshteinThreshold = 2;
 
@@ -41,16 +48,16 @@ public sealed class SynonymCoverageService
     private const int NGramLength = 4;
 
     private readonly SynonymsService _synonyms;
-    private readonly SearchLogService _logs;
+    private readonly ITelemetryReader _reader;
     private readonly LanguageSiteEnumerator? _languageSites;
 
     public SynonymCoverageService(
         SynonymsService synonyms,
-        SearchLogService logs,
+        ITelemetryReader reader,
         LanguageSiteEnumerator? languageSites = null)
     {
         _synonyms = synonyms;
-        _logs = logs;
+        _reader = reader;
         _languageSites = languageSites;
     }
 
@@ -73,19 +80,22 @@ public sealed class SynonymCoverageService
         // 1. Pull every synonym entry across all configured languages + Global.
         var entries = await CollectSynonymEntriesAsync(cancellationToken);
 
-        // 2. Pull recent log rows so we can answer "did this rule ever fire?"
-        //    SearchLogService.ListSince clamps take to [1, 50000]; we ask for
-        //    that cap because the analyzer's whole point is to look at every
-        //    captured query.
-        var logRows = _logs.ListSince(since, take: 50000).ToList();
+        // 2. Enumerate the phrase set the window has actually seen. Under the
+        //    aggregate-first design we ask the reader for the long-tail head —
+        //    each PhraseAggregate counts as "this phrase fired N times".
+        //    LoggedPhraseEnumerationSize is generous because the unused-
+        //    detection pass cares about the tail, not the head.
+        var phraseAggregates = await _reader.TopPhrasesAsync(
+            new TelemetryQuery(since, now, LoggedPhraseEnumerationSize),
+            cancellationToken);
 
-        // 3. Build a deduped, lower-cased set of phrase tokens we've actually
-        //    observed in the window. The synonym-vs-logs join is membership-only;
-        //    we don't need per-row counts.
-        var loggedPhrases = logRows
-            .Where(r => !string.IsNullOrWhiteSpace(r.Phrase))
-            .Select(r => r.Phrase.Trim().ToLowerInvariant())
+        // 3. Build the deduped, lower-cased set used for synonym membership.
+        var loggedPhrases = phraseAggregates
+            .Where(p => !string.IsNullOrWhiteSpace(p.Phrase))
+            .Select(p => p.Phrase.Trim().ToLowerInvariant())
             .ToHashSet();
+
+        var totalEvents = phraseAggregates.Sum(p => p.Hits);
 
         // 4. Pruning candidates: synonym entries whose trigger terms are all
         //    absent from the log set.
@@ -93,13 +103,13 @@ public sealed class SynonymCoverageService
 
         // 5. Suggested adds: zero-result phrases not already covered, optionally
         //    enriched with a closest-indexed-term hint.
-        var suggested = FindSuggestedAdds(entries, since);
+        var suggested = await FindSuggestedAddsAsync(entries, since, now, cancellationToken);
 
         return new SynonymCoverageResult
         {
             GeneratedAt = now,
             WindowStart = since,
-            LogsScanned = logRows.Count,
+            LogsScanned = totalEvents,
             UnusedEntries = unused,
             SuggestedAdds = suggested
         };
@@ -214,9 +224,11 @@ public sealed class SynonymCoverageService
 
     // ── Suggested adds ──────────────────────────────────────────────────
 
-    private IReadOnlyList<SuggestedSynonym> FindSuggestedAdds(
+    private async Task<IReadOnlyList<SuggestedSynonym>> FindSuggestedAddsAsync(
         IReadOnlyList<ParsedSynonymEntry> entries,
-        DateTime since)
+        DateTime since,
+        DateTime until,
+        CancellationToken cancellationToken)
     {
         // Already-covered triggers — case-insensitive set so we filter zero-
         // result phrases that the existing synonym set already addresses.
@@ -224,7 +236,9 @@ public sealed class SynonymCoverageService
             .SelectMany(e => e.TriggerTerms)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var zeros = _logs.ZeroResultPhrases(since, take: ZeroResultPullSize)
+        var zeros = (await _reader.ZeroResultPhrasesAsync(
+                new TelemetryQuery(since, until, ZeroResultPullSize),
+                cancellationToken))
             .Where(z => !string.IsNullOrWhiteSpace(z.Phrase))
             .Where(z => !covered.Contains(z.Phrase.Trim().ToLowerInvariant()))
             .ToList();
@@ -239,8 +253,9 @@ public sealed class SynonymCoverageService
         // misleading hints. When the sample is empty (a brand-new tenant),
         // we degrade to the fall-back behaviour: list zero-result phrases
         // without a closest-term annotation.
-        var indexedSample = _logs
-            .TopPhrases(since, take: IndexedTermSampleSize)
+        var indexedSample = (await _reader.TopPhrasesAsync(
+                new TelemetryQuery(since, until, IndexedTermSampleSize),
+                cancellationToken))
             .Where(p => p.ZeroResultRate < 1d)
             .Select(p => p.Phrase.Trim().ToLowerInvariant())
             .Where(p => !string.IsNullOrEmpty(p))

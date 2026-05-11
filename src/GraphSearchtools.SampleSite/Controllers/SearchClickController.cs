@@ -1,30 +1,29 @@
-using EPiServer.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 
 namespace UmageAI.Optimizely.GraphSearchTools.SampleSite.Controllers;
 
 /// <summary>
 /// Click-beacon receiver for the search SERP. The SearchPage view fires a
 /// <c>navigator.sendBeacon</c> request here when a visitor clicks a result;
-/// we record a follow-up <see cref="SearchLogEntry"/> with
-/// <see cref="SearchLogEntry.TopResultRank"/> and
-/// <see cref="SearchLogEntry.TopResultId"/> set so the Search Logs analytics
-/// can compute click-through rate per phrase.
+/// we record a <see cref="ClickEvent"/> against the originating search bucket
+/// so the telemetry flusher can attribute it to the right minute even when
+/// the click arrives after the bucket has rolled over.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Anonymous on purpose — public visitors fire this beacon, not editors.
-/// The endpoint is a SampleSite controller (not the addon's
-/// <c>TelemetryApi</c>, which is editor-auth-gated and aimed at out-of-process
-/// hosts pushing over HTTP).
+/// Anonymous on purpose — public visitors fire this beacon, not editors. The
+/// endpoint is a SampleSite controller (not the addon's public ingest beacon),
+/// because we resolve <see cref="ITelemetrySink"/> directly via DI rather than
+/// going over HTTP for the co-located case.
 /// </para>
 /// <para>
 /// Telemetry is fire-and-forget: returns 204 No Content on every successful
-/// path so the beacon's response is always tiny, and any append failure is
-/// logged + swallowed so a visitor's click never fails because of a DDS
-/// hiccup.
+/// path so the beacon's response is always tiny, and any record failure is
+/// logged + swallowed so a visitor's click never fails because of a sink
+/// hiccup. The sink itself is contractually non-blocking, so this defense is
+/// belt-and-braces.
 /// </para>
 /// </remarks>
 [Route("search/click")]
@@ -32,12 +31,12 @@ public class SearchClickController : Controller
 {
     private const string ProfileKey = "alloy-search";
 
-    private readonly SearchLogService _searchLog;
+    private readonly ITelemetrySink _telemetry;
     private readonly ILogger<SearchClickController> _logger;
 
-    public SearchClickController(SearchLogService searchLog, ILogger<SearchClickController> logger)
+    public SearchClickController(ITelemetrySink telemetry, ILogger<SearchClickController> logger)
     {
-        _searchLog = searchLog;
+        _telemetry = telemetry;
         _logger = logger;
     }
 
@@ -46,7 +45,13 @@ public class SearchClickController : Controller
         public string? Phrase { get; set; }
         public string? Locale { get; set; }
         public int Rank { get; set; }
-        public string? ContentId { get; set; }
+
+        /// <summary>
+        /// Minute-truncated timestamp of the originating search bucket.
+        /// Optional — when absent the flusher folds into the click's own
+        /// minute as a best-effort fallback (per design §5).
+        /// </summary>
+        public DateTime? OriginalBucketUtc { get; set; }
     }
 
     [HttpPost]
@@ -63,57 +68,21 @@ public class SearchClickController : Controller
 
         try
         {
-            _searchLog.Append(new SearchLogEntry
-            {
-                At = DateTime.UtcNow,
-                Phrase = request.Phrase.Trim(),
-                Locale = (request.Locale ?? string.Empty).ToLowerInvariant(),
-                Site = SiteDefinition.Current?.Name ?? string.Empty,
-                ProfileKey = ProfileKey,
-                // -1 because the click event isn't a search — the impression
-                // was already recorded by SearchPageController.Index. The
-                // Search Logs CTR rollup keys off TopResultRank presence,
-                // not result counts, so a sentinel here is correct.
-                ResultCount = -1,
-                TopResultRank = request.Rank,
-                TopResultId = (request.ContentId ?? string.Empty).Trim(),
-                DurationMs = 0,
-                Ranking = "Semantic",
-                ClientId = string.Empty,
-                UserAgentClass = ClassifyUserAgent(Request?.Headers["User-Agent"].ToString()),
-                Source = "host-sdk"
-            });
+            _telemetry.Record(new ClickEvent(
+                Phrase: request.Phrase.Trim(),
+                ProfileKey: ProfileKey,
+                Locale: (request.Locale ?? string.Empty).ToLowerInvariant(),
+                Rank: request.Rank,
+                TimestampUtc: DateTime.UtcNow,
+                OriginalBucketUtc: request.OriginalBucketUtc));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Search-click telemetry append failed for phrase '{Phrase}' rank {Rank}.",
+                "Search-click telemetry record failed for phrase '{Phrase}' rank {Rank}.",
                 request.Phrase, request.Rank);
         }
 
         return NoContent();
-    }
-
-    /// <summary>
-    /// Mirror of <c>SearchPageController.ClassifyUserAgent</c> — kept inline
-    /// rather than extracted because the two controllers are the only callers
-    /// and the heuristic is two lines.
-    /// </summary>
-    private static string ClassifyUserAgent(string? ua)
-    {
-        if (string.IsNullOrEmpty(ua)) return string.Empty;
-        if (ua.Contains("bot", StringComparison.OrdinalIgnoreCase)
-            || ua.Contains("crawler", StringComparison.OrdinalIgnoreCase)
-            || ua.Contains("spider", StringComparison.OrdinalIgnoreCase))
-        {
-            return "bot";
-        }
-        if (ua.Contains("Mobile", StringComparison.Ordinal)
-            || ua.Contains("Android", StringComparison.Ordinal)
-            || ua.Contains("iPhone", StringComparison.Ordinal))
-        {
-            return "mobile";
-        }
-        return "desktop";
     }
 }

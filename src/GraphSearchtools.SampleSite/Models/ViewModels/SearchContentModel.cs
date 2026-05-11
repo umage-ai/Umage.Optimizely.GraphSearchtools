@@ -32,4 +32,13 @@ public class SearchContentModel : PageViewModel<SearchPage>
     /// misconfigured tenant. Rendered as an inline notice on the page.
     /// </summary>
     public string ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Minute-truncated UTC timestamp of the originating search event.
+    /// Echoed back on click beacons via <c>originalBucketUtc</c> so the
+    /// telemetry flusher can attribute the click to its source bucket even
+    /// when the bucket has rolled over before the click arrives. Null when
+    /// no telemetry was emitted (empty query / disabled service).
+    /// </summary>
+    public DateTime? SearchBucketUtc { get; set; }
 }
