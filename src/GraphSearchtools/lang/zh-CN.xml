@@ -18,6 +18,7 @@
               <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
               <Health>Run Optimizely Graph health probes — gateway, credentials, query endpoint, index population.</Health>
               <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
+              <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
               <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
             </permissions>
           </GraphSearchtools>
@@ -28,6 +29,7 @@
       <menu>
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
+        <profiles>Profiles</profiles>
         <pinned>Pinned Results</pinned>
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
@@ -148,6 +150,199 @@
         </savedqueries>
       </tools>
 
+      <!--
+        Phase 2.5 — Search Profiles. Keys are alphabetised by element path
+        inside <profiles> so additions stay mechanical to merge.
+      -->
+      <profiles>
+        <api>
+          <profileKeyRequired>profileKey is required when search profiles are registered.</profileKeyRequired>
+        </api>
+        <generic>
+          <name>Generic</name>
+          <desc>Catchment for pinned collections and synonym groups that don't match a registered profile.</desc>
+        </generic>
+        <registration>
+          <invalidKey>Profile key must match [a-z0-9-]+.</invalidKey>
+          <unknownSite>Site '{0}' is not registered with the CMS — profile will still load.</unknownSite>
+        </registration>
+        <detail>
+          <audit>
+            <col>
+              <when>When</when>
+              <who>Who</who>
+              <kind>Kind</kind>
+              <action>Action</action>
+              <subject>Subject</subject>
+              <locale>Locale</locale>
+            </col>
+            <empty>No edits recorded yet.</empty>
+          </audit>
+          <backToList>Back to all profiles</backToList>
+          <comingSoon>Editor lands in a follow-up PR.</comingSoon>
+          <meta>
+            <allLocales>all locales</allLocales>
+            <allSites>all sites</allSites>
+            <docInline>inline (registered in code)</docInline>
+            <docNotFound>File not found in the host project.</docNotFound>
+            <graphqlDoc>GraphQL document</graphqlDoc>
+            <locales>Locales declared</locales>
+            <pinnedKey>Pinned key formula</pinnedKey>
+            <ranking>Ranking · semantic blend</ranking>
+            <searchedFields>Searched fields</searchedFields>
+            <sites>Sites</sites>
+          </meta>
+          <overview>
+            <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
+            <graphqlInlineNote>Registered inline — admin reflects the same query string the runtime executes.</graphqlInlineNote>
+            <graphqlPathNote>Loaded from the host project.</graphqlPathNote>
+            <graphqlTitle>GraphQL query</graphqlTitle>
+          </overview>
+          <pinned>
+            <addFirst>Add your first pin</addFirst>
+            <addRow>Add pin</addRow>
+            <colPhrase>Phrase</colPhrase>
+            <colPriority>Priority</colPriority>
+            <colTarget>Target</colTarget>
+            <colType>Type</colType>
+            <discardAll>Discard changes</discardAll>
+            <empty>No pinned items for this phrase yet.</empty>
+            <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
+            <globalFilter>Search pins by phrase, target, or type…</globalFilter>
+            <organicTitle>Organic results (no pins applied)</organicTitle>
+            <previewFailed>Preview failed</previewFailed>
+            <saveAll>Save all changes</saveAll>
+            <serpEmpty>No matches.</serpEmpty>
+            <serpEmptyHelp>No content matched this phrase. Try a different term, or pin a target above.</serpEmptyHelp>
+            <serpPinnedBadge>Pinned</serpPinnedBadge>
+            <serpPinnedTooltip>This result is locked to the top by a pin in this profile.</serpPinnedTooltip>
+            <serpPlaceholder>Search the live index…</serpPlaceholder>
+            <serpScoreTooltip>Graph relevance score</serpScoreTooltip>
+            <serpShowJson>inspect</serpShowJson>
+            <serpUntitled>(untitled)</serpUntitled>
+            <sharedSite>Shared across sites</sharedSite>
+            <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
+            <tryTitle>Live preview</tryTitle>
+            <unsaved>unsaved</unsaved>
+          </pinned>
+          <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
+          <tabs>
+            <audit>Audit log</audit>
+            <details>Details</details>
+            <insights>Insights</insights>
+            <overview>Overview</overview>
+            <pinned>Pinned</pinned>
+            <synonyms>Synonyms</synonyms>
+          </tabs>
+          <insights>
+            <windowLabel>Time window</windowLabel>
+            <topTitle>Top phrases</topTitle>
+            <topHint>What people are searching for</topHint>
+            <zeroTitle>Zero-result phrases</zeroTitle>
+            <zeroHint>Synonym-mining candidates</zeroHint>
+            <lowCtrTitle>Low-CTR phrases</lowCtrTitle>
+            <lowCtrHint>Pin-candidate phrases</lowCtrHint>
+            <countSuffix>in window</countSuffix>
+            <empty>No traffic in this window yet.</empty>
+            <emptyZero>No zero-result phrases — every search found something.</emptyZero>
+            <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
+            <loadFailed>Failed to load insights.</loadFailed>
+            <ctaPreview>Preview</ctaPreview>
+            <ctaPin>Draft pin</ctaPin>
+            <ctaSynonym>Draft synonym</ctaSynonym>
+            <ctaDrafted>✓ Drafted</ctaDrafted>
+            <draftedPin>Drafted in Pinned tab — fill in a target.</draftedPin>
+            <draftedSynonym>Drafted in Synonyms tab — finish the rule.</draftedSynonym>
+            <ctrLabel>CTR</ctrLabel>
+            <hitsLabel>hits</hitsLabel>
+            <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
+          </insights>
+          <workspace>
+            <consoleLabel>Profile tools</consoleLabel>
+            <livePreviewEyebrow>Try-it</livePreviewEyebrow>
+            <livePreviewTitle>Live preview</livePreviewTitle>
+            <previewDisabledTitle>Preview unavailable</previewDisabledTitle>
+            <previewLabel>Live preview</previewLabel>
+            <scopeLabel>Scope</scopeLabel>
+            <switcherLabel>Profile tools</switcherLabel>
+          </workspace>
+          <synonyms>
+            <addFirst>Add your first rule</addFirst>
+            <addRow>Add rule</addRow>
+            <colScope>Scope</colScope>
+            <discard>Discard changes</discard>
+            <emptyHeadline>No synonym rules yet — add one to expand or substitute terms at query time.</emptyHeadline>
+            <globalNote>Showing every rule that applies when previewing in this language: the per-language blob (editable here) plus the global blob, which is shared across languages and managed in the Synonyms tool.</globalNote>
+            <globalRowTip>Global rule — applies in every language. Manage in the Synonyms tool.</globalRowTip>
+            <helpSummary>Rule format</helpSummary>
+            <noMatches>No rules match the current filter.</noMatches>
+            <save>Save all changes</save>
+            <scopeGlobal>global</scopeGlobal>
+            <scopeGlobalTip>Stored in the global synonym blob — applies to every language.</scopeGlobalTip>
+            <scopeLangTip>Stored in this language's synonym blob.</scopeLangTip>
+            <title>Synonym rules</title>
+          </synonyms>
+          <details>
+            <auditTitle>Audit log</auditTitle>
+            <metaTitle>Profile metadata</metaTitle>
+          </details>
+          <unwiredPinned>
+            <tabTitle>Pinned results not wired into this query</tabTitle>
+            <title>Pinned results not wired into this query</title>
+            <body>This profile&apos;s registered GraphQL query doesn&apos;t include the usePinned directive, so any pins saved here won&apos;t reach the storefront SERP.</body>
+            <howto>To enable, add the directive to your storefront query:</howto>
+          </unwiredPinned>
+          <unwiredSynonyms>
+            <tabTitle>Synonyms not wired into this query</tabTitle>
+            <title>Synonyms not wired into this query</title>
+            <body>This profile&apos;s registered GraphQL query doesn&apos;t opt in to Graph&apos;s synonym pool, so synonym rules won&apos;t be applied at storefront query time.</body>
+            <howto>To enable, pass synonyms: ONE inside _fulltext (use TWO if you maintain a staging slot):</howto>
+          </unwiredSynonyms>
+        </detail>
+        <index>
+          <cols>
+            <lastEdited>Last edited</lastEdited>
+            <profile>Profile</profile>
+            <scope>Sites &amp; locales</scope>
+            <status>Status</status>
+            <tuning>Tuning</tuning>
+          </cols>
+          <empty>
+            <body>Register profiles in code via AddSearchProfile(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
+            <title>No profiles registered yet</title>
+          </empty>
+          <filter>
+            <allLocales>All locales</allLocales>
+            <allSites>All sites</allSites>
+          </filter>
+          <filterPlaceholder>Filter profiles…</filterPlaceholder>
+          <stats>
+            <coverage>Production traffic via profiles</coverage>
+            <locales>locales</locales>
+            <pinned>Pinned phrases</pinned>
+            <profiles>Profiles registered</profiles>
+            <sites>sites</sites>
+            <synonyms>Synonym entries</synonyms>
+          </stats>
+          <subtitle>Marketer-facing tuning for each search surface.</subtitle>
+          <title>Search Profiles</title>
+        </index>
+        <requestFailed>Failed to load profiles.</requestFailed>
+        <status>
+          <cold>Cold</cold>
+          <docMissing>GraphQL doc missing</docMissing>
+          <freeForm>Free-form</freeForm>
+          <needsReview>Review pinned</needsReview>
+          <tuned>Tuned</tuned>
+        </status>
+        <time>
+          <daysAgo>days ago</daysAgo>
+          <hoursAgo>hrs ago</hoursAgo>
+          <justNow>just now</justNow>
+          <minutesAgo>min ago</minutesAgo>
+        </time>
+      </profiles>
+
       <about>
         <title>About Graph Search Tools</title>
         <description>Editor and admin tooling for Optimizely Graph: pinned results, synonyms, query playground, and relevancy tuning.</description>
@@ -175,6 +370,10 @@
           <all>All</all>
           <prev>Previous</prev>
           <next>Next</next>
+          <copy>Copy</copy>
+          <copied>Copied</copied>
+          <pagerLabel>Pagination</pagerLabel>
+          <pagerStatus>Page %1 of %2</pagerStatus>
         </shared>
         <components>
           <picker_title>Select content</picker_title>
@@ -210,6 +409,15 @@
           <rule_placeholder>H2O =&gt; water  or  laptop, computer, pc</rule_placeholder>
           <saved>Synonyms saved.</saved>
           <confirm_unsaved>You have unsaved synonym changes. Press OK to save, or Cancel to discard.</confirm_unsaved>
+          <filter_placeholder>Filter rules...</filter_placeholder>
+          <placeholder_hint>Type a new synonym rule…</placeholder_hint>
+          <add>Add</add>
+          <col_rule>Rule</col_rule>
+          <save>Save changes</save>
+          <help_replacement_label>Replacement</help_replacement_label>
+          <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
+          <help_equivalent_label>Equivalent</help_equivalent_label>
+          <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
         </synonyms>
         <health>
           <request_failed>Health check failed</request_failed>

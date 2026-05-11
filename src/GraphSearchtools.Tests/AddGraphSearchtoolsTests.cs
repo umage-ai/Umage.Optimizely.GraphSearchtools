@@ -14,6 +14,7 @@ using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
+using UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
@@ -48,10 +49,15 @@ public class AddGraphSearchtoolsTests
         services.Should().Contain(d => d.ServiceType == typeof(PinnedService));
         services.Should().Contain(d => d.ServiceType == typeof(SynonymsService));
 
-        // Phase 2: Health / Saved Queries (runner + presets) services.
+        // Phase 2: Health + the Saved Queries runner (the user-facing preset
+        // CRUD surface was dropped in favour of Graph's own GraphiQL; the
+        // runner stays because the Pinned tab's A/B preview hits it).
         services.Should().Contain(d => d.ServiceType == typeof(HealthService));
         services.Should().Contain(d => d.ServiceType == typeof(QueryRunnerService));
-        services.Should().Contain(d => d.ServiceType == typeof(SavedQueriesService));
+
+        // Phase 2.5: Search Profiles registry + audit-log service.
+        services.Should().Contain(d => d.ServiceType == typeof(ISearchProfileRegistry));
+        services.Should().Contain(d => d.ServiceType == typeof(SearchProfileEditService));
 
         var provider = services.BuildServiceProvider();
 
@@ -64,7 +70,12 @@ public class AddGraphSearchtoolsTests
         options.Value.Features.Synonyms.Should().BeTrue();
         options.Value.Features.Health.Should().BeTrue();
         options.Value.Features.Autocomplete.Should().BeTrue();
-        options.Value.Features.SavedQueries.Should().BeTrue();
+
+        // Phase 3: Semantic Weight Tuner — DDS-backed policy editor.
+        services.Should().Contain(d => d.ServiceType == typeof(SemanticTunerService));
+        GraphSearchtoolsPermissions.SemanticTuner.Should().NotBeNull();
+        GraphSearchtoolsPermissions.SemanticTuner.Name.Should().Be("SemanticTuner");
+        options.Value.Features.SemanticTuner.Should().BeTrue();
 
         // Auth policy is configured under the canonical name.
         var authOptions = provider.GetRequiredService<IOptions<AuthorizationOptions>>();
@@ -133,5 +144,78 @@ public class AddGraphSearchtoolsTests
             .WhoseValue!.ToString().Should().Be("ProductNode");
         options.Value.SavedQueries.DefaultQueryVariables.Should().ContainKey("contentType")
             .WhoseValue!.ToString().Should().Be("Content");
+    }
+
+    [Fact]
+    public void AddSearchProfile_RegistersProfileWithBuilderAndServiceCollection()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        var builder = services.AddGraphSearchtools()
+            .AddSearchProfile("site-search", p => p
+                .DisplayName("Site search")
+                .Sites("corporate")
+                .Locales("en")
+                .UsesPinnedKey("site-{locale}"));
+
+        builder.Profiles.Should().ContainSingle().Which.Key.Should().Be("site-search");
+
+        // The profile is also a DI singleton so the registry can find it via IEnumerable<SearchProfile>.
+        var registered = services
+            .Where(d => d.ServiceType == typeof(SearchProfile))
+            .Select(d => d.ImplementationInstance)
+            .OfType<SearchProfile>()
+            .ToList();
+        registered.Should().ContainSingle().Which.Key.Should().Be("site-search");
+    }
+
+    [Fact]
+    public void AddSearchProfile_GraphQLDocumentInline_RoundtripsContent()
+    {
+        // The "single source of truth" wiring: hosts pass the same query string
+        // their runtime executes via GraphQLDocumentInline so the admin Profile
+        // detail view renders what production sends to Graph — no static .graphql
+        // stub to drift from the live code.
+        const string queryDoc = "{ Content(where: { _and: [{ ContentType: { eq: \"Page\" } }] } limit: 20) { items { Name } } }";
+
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        services.AddGraphSearchtools()
+            .AddSearchProfile("site-search", p => p
+                .DisplayName("Site search")
+                .GraphQLDocumentInline(queryDoc));
+
+        var profile = services
+            .Where(d => d.ServiceType == typeof(SearchProfile))
+            .Select(d => d.ImplementationInstance)
+            .OfType<SearchProfile>()
+            .Single();
+
+        profile.GraphQLDocumentContent.Should().Be(queryDoc);
+        profile.GraphQLDocumentPath.Should().BeNull();
+    }
+
+    [Fact]
+    public void AddSearchProfile_ThrowsOnDuplicateKey()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        var act = () => services.AddGraphSearchtools()
+            .AddSearchProfile("dup", p => p.DisplayName("first"))
+            .AddSearchProfile("dup", p => p.DisplayName("second"));
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*dup*");
     }
 }

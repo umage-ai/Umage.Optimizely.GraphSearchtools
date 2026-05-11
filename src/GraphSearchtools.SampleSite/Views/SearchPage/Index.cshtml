@@ -1,58 +1,283 @@
+@using UmageAI.Optimizely.GraphSearchTools.SampleSite.Services
 @model SearchContentModel
 
 @{
-    Layout = "~/Views/Shared/Layouts/_TwoPlusOne.cshtml";
-}
+    Layout = "~/Views/Shared/Layouts/_Root.cshtml";
 
-<div class="row">
-    <div class="span8,search-form">
-        @{
-            using (Html.BeginForm(null, null, Html.ViewContext.IsInEditMode() ? FormMethod.Post : FormMethod.Get, new { @action = Model.Layout.SearchActionUrl }))
-            {
-                <input type="text" tabindex="1" name="q" value="@Model.SearchedQuery" />
-                <input type="submit" tabindex="2" class="btn" value="@Html.Translate("/searchpagetemplate/searchbutton")" disabled="@(Model.SearchServiceDisabled ? "disabled" : null)" />
-            }
+    // Resolve the SearchPage's own URL so toggle links and the form action
+    // both go back to this page (Url.Action("Index") resolves to the
+    // EPiServer admin route, not the page route).
+    var pageUrl = Url.ContentUrl(Model.CurrentPage.ContentLink);
+
+    // Build a toggle URL for a facet value: includes/excludes `value` in the
+    // facet's parameter while preserving every other active facet. This is
+    // how OR-within-group is encoded into the querystring without JS.
+    string ToggleUrl(string facetParam, FacetValue value)
+    {
+        var pairs = new List<KeyValuePair<string, string>>();
+        if (!string.IsNullOrEmpty(Model.SearchedQuery))
+        {
+            pairs.Add(new("q", Model.SearchedQuery));
         }
-    </div>
-</div>
 
-@if (Model.Hits != null)
-{
-    <div class="row">
-        <div class="span8 grayHead">
-            <h2>@Html.Translate("/searchpagetemplate/result")</h2>
-            <p>
-                @Html.Translate("/searchpagetemplate/searchfor") <i>@Model.SearchedQuery</i>
-                @Html.Translate("/searchpagetemplate/resultedin")
-                @if (Model.NumberOfHits > 0)
-                {
-                    @Model.NumberOfHits
-                }
-                else
-                {
-                    @Html.Translate("/searchpagetemplate/zero")
-                }
-                @Html.Translate("/searchpagetemplate/hits")
-            </p>
-        </div>
-    </div>
+        // Only ContentType is user-toggleable now; locale comes from the
+        // page route (PageContext.LanguageID), not the querystring.
+        AppendFacet(pairs, "type", Model.ContentTypeFacet, facetParam == "type" ? value.Name : null, facetParam == "type" && value.Selected);
 
-    <div class="row">
-        <div class="span8 SearchResults">
-            @foreach (var hit in Model.Hits)
+        if (pairs.Count == 0) return pageUrl;
+        var sb = new System.Text.StringBuilder(pageUrl);
+        sb.Append('?');
+        for (var i = 0; i < pairs.Count; i++)
+        {
+            if (i > 0) sb.Append('&');
+            sb.Append(System.Net.WebUtility.UrlEncode(pairs[i].Key));
+            sb.Append('=');
+            sb.Append(System.Net.WebUtility.UrlEncode(pairs[i].Value));
+        }
+        return sb.ToString();
+    }
+
+    void AppendFacet(List<KeyValuePair<string, string>> pairs, string key, FacetGroup group, string toggle, bool removeToggle)
+    {
+        foreach (var v in group.Values.Where(v => v.Selected))
+        {
+            if (removeToggle && string.Equals(v.Name, toggle, StringComparison.Ordinal)) continue;
+            pairs.Add(new(key, v.Name));
+        }
+        if (!removeToggle && !string.IsNullOrEmpty(toggle))
+        {
+            pairs.Add(new(key, toggle));
+        }
+    }
+
+    string ContentTypeLabel(string raw) => raw switch
+    {
+        "ArticlePage" => "Articles",
+        "NewsPage" => "News sections",
+        "ProductPage" => "Products",
+        "StandardPage" => "Standard pages",
+        "LandingPage" => "Landing pages",
+        "ContactPage" => "Contact pages",
+        _ => raw
+    };
+
+    string LanguageLabel(string raw) => raw switch
+    {
+        "en" => "English",
+        "sv" => "Swedish",
+        "da" => "Danish",
+        "no" => "Norwegian",
+        "de" => "German",
+        "fr" => "French",
+        "es" => "Spanish",
+        _ => raw.ToUpperInvariant()
+    };
+
+    // Bold the matched terms inside the excerpt — Google's snippet treatment.
+    // The excerpt arrives pre-marked by Graph's native highlight ( …
+    //  around every match, including synonym expansions); we just
+    // HTML-encode the surrounding text and replace the markers with <b>.
+    // That way the bold lands on the *actual* matched token, not the typed
+    // phrase — so a `floop => alloy` synonym bolds "alloy" in the snippet.
+    // The output is safe to emit via Html.Raw because markers are control
+    // chars that can't appear in source content.
+    Microsoft.AspNetCore.Html.IHtmlContent HighlightExcerpt(string excerpt, string query)
+    {
+        if (string.IsNullOrWhiteSpace(excerpt))
+        {
+            return new Microsoft.AspNetCore.Html.HtmlString(string.Empty);
+        }
+        var encoded = System.Net.WebUtility.HtmlEncode(excerpt);
+        var rendered = encoded.Replace("\u0001", "<b>").Replace("\u0002", "</b>");
+        return new Microsoft.AspNetCore.Html.HtmlString(rendered);
+    }
+
+    var hasSelection = Model.ContentTypeFacet.SelectedCount > 0;
+    var clearAllUrl = !string.IsNullOrEmpty(Model.SearchedQuery)
+        ? pageUrl + "?q=" + System.Net.WebUtility.UrlEncode(Model.SearchedQuery)
+        : pageUrl;
+}
+
+@* Stylesheet + autocomplete script load from the root layout (see _Root.cshtml). *@
+
+<div class="container search-page">
+    <header class="search-page__header">
+        <h1>Search the Alloy site</h1>
+        <form action="@pageUrl" method="get" class="search-page__form">
+            <input type="text" name="q" value="@Model.SearchedQuery" placeholder="Try alloy, framework, technology…" autocomplete="off" data-autocomplete-search />
+            @* Preserve current facet state across a new search submission. *@
+            @foreach (var v in Model.ContentTypeFacet.Values.Where(x => x.Selected))
             {
-                <div class="listResult">
-                    <h3><a href="@hit.Url">@hit.Title</a></h3>
-                    <p>@hit.Excerpt</p>
-                    <hr />
-                </div>
+                <input type="hidden" name="type" value="@v.Name" />
             }
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </header>
+
+    @if (Model.SearchServiceDisabled)
+    {
+        <div class="alert alert-warning">
+            Optimizely Graph is not configured (gateway / single-key missing). Set <code>Optimizely:ContentGraph</code> in <code>appsettings.json</code> and reload to enable site search.
         </div>
-    </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            Search failed: @Model.ErrorMessage
+        </div>
+    }
+    else
+    {
+        <div class="search-page__layout">
+            <aside class="search-page__facets" aria-label="Refine results">
+                @if (hasSelection)
+                {
+                    <div class="facet-actions">
+                        <a class="facet-clear" href="@clearAllUrl">Clear all filters</a>
+                    </div>
+                }
 
-}
+                <section class="facet">
+                    <h2 class="facet__title">Content type</h2>
+                    @if (!Model.ContentTypeFacet.Values.Any())
+                    {
+                        <p class="facet__empty">No types in the index.</p>
+                    }
+                    else
+                    {
+                        <ul class="facet__list">
+                            @foreach (var v in Model.ContentTypeFacet.Values)
+                            {
+                                @* §4: 0-count rows render disabled-not-hidden so the panel
+                                   doesn't jitter as users click. A selected 0-count row stays
+                                   clickable so the user can un-click it. *@
+                                var disabled = v.Count == 0 && !v.Selected;
+                                <li class="facet__row @(v.Selected ? "is-selected" : null) @(disabled ? "is-disabled" : null)">
+                                    @if (disabled)
+                                    {
+                                        <span class="facet__label">
+                                            <span class="facet__check" aria-hidden="true"></span>
+                                            <span class="facet__name">@ContentTypeLabel(v.Name)</span>
+                                            <span class="facet__count facet__count--zero">0</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <a class="facet__label" href="@ToggleUrl("type", v)" rel="nofollow">
+                                            <span class="facet__check" aria-hidden="true">@(v.Selected ? "✓" : "")</span>
+                                            <span class="facet__name">@ContentTypeLabel(v.Name)</span>
+                                            <span class="facet__count">@v.Count</span>
+                                        </a>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
 
-@if (Model.SearchServiceDisabled && Html.ViewContext.IsInEditMode())
-{
-    @await Html.PartialAsync("TemplateHint", Html.Translate("/searchpagetemplate/disabled").ToString())
-}
+                @* Locale is no longer a user-selectable facet — the page is
+                   served per language branch and the SERP scopes itself to
+                   that branch. We surface the active locale as a static label
+                   so visitors know which content set they're looking at. *@
+                @if (!string.IsNullOrEmpty(Model.ActiveLocale))
+                {
+                    <section class="facet facet--locale">
+                        <h2 class="facet__title">Language</h2>
+                        <p class="facet__locale-active">
+                            Showing results in <strong>@LanguageLabel(Model.ActiveLocale)</strong>.
+                            Switch the site language to search a different branch.
+                        </p>
+                    </section>
+                }
+            </aside>
+
+            <section class="search-page__results">
+                <div class="search-page__summary">
+                    @if (!string.IsNullOrEmpty(Model.SearchedQuery))
+                    {
+                        <span>About <strong>@Model.NumberOfHits</strong> result@(Model.NumberOfHits == 1 ? "" : "s") for <em>@Model.SearchedQuery</em></span>
+                    }
+                    else
+                    {
+                        <span>About <strong>@Model.NumberOfHits</strong> page@(Model.NumberOfHits == 1 ? "" : "s") match the active filters</span>
+                    }
+                </div>
+
+                @if (Model.Hits.Any())
+                {
+                    @* The data-* attributes on each result <li> feed the
+                       click beacon (see <script> below). A visitor click on
+                       any anchor inside fires sendBeacon('/search/click')
+                       with phrase + 1-based rank + content GUID, which the
+                       SearchClickController records as a SearchLogEntry with
+                       TopResultRank set so the Search Logs CTR rollup can
+                       attribute clicks to the originating phrase. *@
+                    <ol class="search-hits">
+                        @{ var rank = 0; }
+                        @foreach (var hit in Model.Hits)
+                        {
+                            rank++;
+                            <li class="search-hit"
+                                data-search-hit
+                                data-search-rank="@rank"
+                                data-search-content-id="@hit.ContentLink">
+                                <a class="search-hit__title" href="@hit.Url">@hit.Title<span class="search-hit__type-tag">@ContentTypeLabel(hit.ContentType)</span></a>
+                                @if (!string.IsNullOrWhiteSpace(hit.Excerpt))
+                                {
+                                    <p class="search-hit__excerpt">@Html.Raw(HighlightExcerpt(hit.Excerpt, Model.SearchedQuery))</p>
+                                }
+                                <a class="search-hit__path" href="@hit.Url">@hit.Url</a>
+                            </li>
+                        }
+                    </ol>
+                    @* Click beacon. Single delegated handler on the results
+                       container — works for both anchors per row, survives
+                       middle-click/cmd-click (event still fires before the
+                       new tab opens), and uses sendBeacon so the request
+                       isn't cancelled by the navigation that follows. *@
+                    <script>
+                        (function () {
+                            var hits = document.querySelector('.search-hits');
+                            if (!hits) return;
+                            var phrase = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SearchedQuery ?? string.Empty));
+                            var locale = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActiveLocale ?? string.Empty));
+                            if (!phrase) return; // no telemetry without a phrase
+                            hits.addEventListener('click', function (ev) {
+                                var li = ev.target.closest('li.search-hit[data-search-hit]');
+                                if (!li) return;
+                                var rank = parseInt(li.getAttribute('data-search-rank'), 10);
+                                if (isNaN(rank) || rank < 1) return;
+                                var payload = {
+                                    phrase: phrase,
+                                    locale: locale,
+                                    rank: rank,
+                                    contentId: li.getAttribute('data-search-content-id') || ''
+                                };
+                                var body = JSON.stringify(payload);
+                                // sendBeacon survives the navigation that the
+                                // anchor click is about to start; fetch with
+                                // keepalive is the fallback for browsers that
+                                // don't ship sendBeacon (rare today).
+                                if (navigator.sendBeacon) {
+                                    var blob = new Blob([body], { type: 'application/json' });
+                                    navigator.sendBeacon('/search/click', blob);
+                                } else {
+                                    fetch('/search/click', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: body,
+                                        keepalive: true
+                                    }).catch(function () { /* never block the navigation */ });
+                                }
+                            });
+                        })();
+                    </script>
+                }
+                else if (!string.IsNullOrEmpty(Model.SearchedQuery) || Model.ContentTypeFacet.SelectedCount > 0)
+                {
+                    <p class="search-page__empty">No matching content. Try fewer filters or a different phrase.</p>
+                }
+            </section>
+        </div>
+    }
+</div>

@@ -18,7 +18,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 ///  2. <c>Admin credentials</c>   — Basic-auth GET against <c>api/pinned/collections</c>; 2xx valid, 401/403 bad.
 ///  3. <c>Single key</c>          — tiny <c>__schema { queryType { name } }</c> introspection authed with SingleKey;
 ///                                  isolates "is the key valid" from "does the index have data".
-///  4. <c>Index population</c>    — <c>Content { total }</c>; 0 items = red, otherwise green.
+///  4. <c>Index population</c>    — <c>Content { total(all: true) }</c>; 0 items = red, otherwise green. <c>all: true</c> counts every locale/version, not just the caller's default branch.
 /// </summary>
 public sealed class HealthService
 {
@@ -154,7 +154,7 @@ public sealed class HealthService
         var sw = Stopwatch.StartNew();
         try
         {
-            const string queryDocument = "query HealthIndex { Content { total } }";
+            const string queryDocument = "query HealthIndex { Content { total(all: true) } }";
             var payload = JsonSerializer.Serialize(new { query = queryDocument });
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
             {

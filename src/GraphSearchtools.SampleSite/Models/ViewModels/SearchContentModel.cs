@@ -1,4 +1,5 @@
 using UmageAI.Optimizely.GraphSearchTools.SampleSite.Models.Pages;
+using UmageAI.Optimizely.GraphSearchTools.SampleSite.Services;
 
 namespace UmageAI.Optimizely.GraphSearchTools.SampleSite.Models.ViewModels;
 
@@ -15,14 +16,20 @@ public class SearchContentModel : PageViewModel<SearchPage>
 
     public int NumberOfHits { get; set; }
 
-    public IEnumerable<SearchHit> Hits { get; set; }
+    public IEnumerable<AlloySearchHit> Hits { get; set; } = Array.Empty<AlloySearchHit>();
 
-    public class SearchHit
-    {
-        public string Title { get; set; }
+    public FacetGroup ContentTypeFacet { get; set; } = new();
 
-        public string Url { get; set; }
+    /// <summary>
+    /// Language branch that scoped this search — set from
+    /// <c>PageContext.LanguageID</c>. Rendered as a small label on the SERP
+    /// so visitors know they're seeing only the active branch's content.
+    /// </summary>
+    public string ActiveLocale { get; set; }
 
-        public string Excerpt { get; set; }
-    }
+    /// <summary>
+    /// Runtime error the search service surfaced, e.g. a Graph 401 from a
+    /// misconfigured tenant. Rendered as an inline notice on the page.
+    /// </summary>
+    public string ErrorMessage { get; set; }
 }

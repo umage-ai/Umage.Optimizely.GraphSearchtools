@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
@@ -47,7 +48,15 @@ public sealed class QueryRunnerService
         _serializerOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            // Optimizely Graph caches GraphQL requests by raw JSON bytes, not
+            // by parsed-string equivalence. With the default encoder, inner
+            // double-quotes in the query field serialize as `"` — Graph
+            // then evaluates that as a distinct (and, with usePinned, empty)
+            // query from the same logical document with `\"` escapes. Switch
+            // to the relaxed encoder so we emit `\"` and Graph routes the
+            // query through its normal cache.
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
     }
 
@@ -105,6 +114,33 @@ public sealed class QueryRunnerService
             };
         }
 
+        return await SendAsync(queryDocument, variables, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a fully-formed GraphQL document to Graph as-is. Used by callers
+    /// that already produced an executable query (e.g. the Profiles preview,
+    /// which substitutes placeholders into the registered profile's document)
+    /// and don't want the runner's <c>SavedQueries.DefaultQuery</c> /
+    /// built-in template fallbacks.
+    /// </summary>
+    public Task<RunnerResult> RunRawAsync(string queryDocument, IDictionary<string, object?>? variables, CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
+        if (!creds.IsQueryConfigured)
+        {
+            throw new InvalidOperationException("Optimizely Content Graph query settings (GatewayAddress, SingleKey) are not configured.");
+        }
+        if (string.IsNullOrWhiteSpace(queryDocument))
+        {
+            return Task.FromResult(new RunnerResult(0, 0, string.Empty, Array.Empty<RunnerHit>()));
+        }
+        return SendAsync(queryDocument, variables ?? new Dictionary<string, object?>(StringComparer.Ordinal), cancellationToken);
+    }
+
+    private async Task<RunnerResult> SendAsync(string queryDocument, IDictionary<string, object?> variables, CancellationToken cancellationToken)
+    {
+        var creds = _credentials.Resolve();
         var graphqlRequest = new { query = queryDocument, variables };
         var json = JsonSerializer.Serialize(graphqlRequest, _serializerOptions);
         var endpoint = $"{creds.GatewayAddress.TrimEnd('/')}/content/v2?auth={creds.SingleKey}";
@@ -178,13 +214,16 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
             foreach (var item in items.EnumerateArray())
             {
                 hits.Add(new RunnerHit(
-                    Name: GetString(item, "Name", "name") ?? string.Empty,
+                    Name: GetString(item, "Name", "name", "Title", "title") ?? string.Empty,
                     ContentType: GetFirstContentType(item) ?? "Content",
                     Language: GetNestedString(item, "Language", "Name") ?? string.Empty,
                     ContentId: GetNestedInt(item, "ContentLink", "Id"),
                     ContentGuid: GetNestedString(item, "ContentLink", "GuidValue") ?? string.Empty,
                     Score: GetDouble(item, "_score", "score"),
-                    FullTextSnippet: TrimSnippet(GetString(item, "_fulltext", "GetExcerpt", "Excerpt", "Description", "Url"))));
+                    FullTextSnippet: TrimSnippet(GetSnippetText(item)),
+                    Url: GetString(item, "Url", "url", "RelativePath", "relativePath", "Path", "path", "Slug", "slug"),
+                    Raw: PrettyJson(item),
+                    Pinned: false));
             }
         }
 
@@ -247,6 +286,48 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
         return null;
     }
 
+    // Extract a snippet for the result card. Prefers a `_fulltext` array entry
+    // that carries native highlight markers ('' / '') so the card
+    // surfaces the actual matched span, not a leading paragraph that may not
+    // mention the query at all. Falls through to scalar `_fulltext` /
+    // `GetExcerpt` / `Excerpt` / `Description` shapes for non-Alloy queries
+    // that don't enable highlight or use a different field name.
+    private static string? GetSnippetText(JsonElement item)
+    {
+        if (item.TryGetProperty("_fulltext", out var ft))
+        {
+            if (ft.ValueKind == JsonValueKind.String)
+            {
+                var s = ft.GetString();
+                if (!string.IsNullOrEmpty(s)) return StripHtml(s);
+            }
+            else if (ft.ValueKind == JsonValueKind.Array)
+            {
+                string? firstNonEmpty = null;
+                foreach (var entry in ft.EnumerateArray())
+                {
+                    if (entry.ValueKind != JsonValueKind.String) continue;
+                    var s = entry.GetString();
+                    if (string.IsNullOrWhiteSpace(s)) continue;
+                    firstNonEmpty ??= s;
+                    if (s.IndexOf('\u0001') >= 0) return StripHtml(s);
+                }
+                if (firstNonEmpty != null) return StripHtml(firstNonEmpty);
+            }
+        }
+        return GetString(item, "GetExcerpt", "Excerpt", "Description");
+    }
+
+    private static string StripHtml(string s)
+    {
+        // Rich text fields land here as <p>…</p>. Strip tags + decode entities
+        // + collapse whitespace so the snippet renders flat. Markers (
+        // / ) survive both passes since they're not HTML.
+        var stripped = System.Text.RegularExpressions.Regex.Replace(s, "<[^>]+>", " ");
+        var decoded = System.Net.WebUtility.HtmlDecode(stripped);
+        return System.Text.RegularExpressions.Regex.Replace(decoded, @"\s+", " ").Trim();
+    }
+
     private static string? GetNestedString(JsonElement el, string a, string b)
         => el.TryGetProperty(a, out var inner) && inner.ValueKind == JsonValueKind.Object ? GetString(inner, b) : null;
 
@@ -287,5 +368,19 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
         if (string.IsNullOrWhiteSpace(snippet)) return snippet;
         const int maxLength = 240;
         return snippet.Length <= maxLength ? snippet : snippet[..maxLength] + "…";
+    }
+
+    private static readonly JsonSerializerOptions PrettyOptions = new() { WriteIndented = true };
+
+    /// <summary>
+    /// Returns a pretty-printed copy of the source <see cref="JsonElement"/>,
+    /// or null if serialization fails. Used to feed the SERP preview's
+    /// "show JSON" detail toggle so editors can inspect every field the
+    /// registered profile projects, not just the heuristic-selected ones.
+    /// </summary>
+    private static string? PrettyJson(JsonElement element)
+    {
+        try { return JsonSerializer.Serialize(element, PrettyOptions); }
+        catch { return null; }
     }
 }

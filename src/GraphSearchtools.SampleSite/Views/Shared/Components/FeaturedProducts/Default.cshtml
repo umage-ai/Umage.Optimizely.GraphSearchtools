@@ -1,0 +1,36 @@
+@using UmageAI.Optimizely.GraphSearchTools.SampleSite.Services
+@model IReadOnlyList<FeaturedProduct>
+
+@if (Model != null && Model.Any())
+{
+    <section class="featured-products">
+        <header class="featured-products__header">
+            <h2 class="featured-products__title">Featured products</h2>
+            <p class="featured-products__subtitle">Curated by the <em>alloy-products</em> search profile.</p>
+        </header>
+        <div class="featured-products__grid">
+            @foreach (var product in Model)
+            {
+                <article class="featured-product">
+                    <h3 class="featured-product__title">
+                        <a href="@product.Url">@product.Name</a>
+                    </h3>
+                    @if (!string.IsNullOrWhiteSpace(product.Teaser))
+                    {
+                        <p class="featured-product__teaser">@product.Teaser</p>
+                    }
+                    @if (product.SellingPoints != null && product.SellingPoints.Any())
+                    {
+                        <ul class="featured-product__usps">
+                            @foreach (var usp in product.SellingPoints.Take(3))
+                            {
+                                <li>@usp</li>
+                            }
+                        </ul>
+                    }
+                    <a class="featured-product__cta" href="@product.Url">Learn more →</a>
+                </article>
+            }
+        </div>
+    </section>
+}
