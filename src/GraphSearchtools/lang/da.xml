@@ -203,7 +203,7 @@
             <addRow>Add pin</addRow>
             <colPhrase>Phrase</colPhrase>
             <colPriority>Priority</colPriority>
-            <colTarget>Target</colTarget>
+            <colTarget>Always show</colTarget>
             <colType>Type</colType>
             <discardAll>Discard changes</discardAll>
             <empty>No pinned items for this phrase yet.</empty>
