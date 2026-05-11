@@ -1807,6 +1807,58 @@
             reload: loadRows,
 
             /**
+             * Look up content by free-text query against the pinned editor's
+             * existing typeahead endpoint. Used by the Insights tab inline
+             * pin editor so callers can rely on the same matching rules /
+             * locale scoping that the typeahead in the table cell uses.
+             */
+            lookupContent: function (query) {
+                var locale = state.locale ? '&locale=' + encodeURIComponent(state.locale) : '';
+                return ajax(BASE + '/ContentLookupApi/Search?q=' + encodeURIComponent(query) + locale);
+            },
+
+            /**
+             * Whether the editor is in a state where new pins can be created
+             * (collection key resolved, profile actually applies pinned).
+             * The Insights inline editor disables its save button against this.
+             */
+            canCreatePins: function () {
+                return !!state.pinnedKey && !!opts.queryAppliesPinned;
+            },
+
+            /**
+             * Create-and-save a pinned item for `phrase` against `target`.
+             * Skips the table-edit flow used by draftPhrase — the inline
+             * Insights editor already collected the target so we go straight
+             * to the wire. Adds the saved row to the table state on success
+             * so opening the Pinned tab shows it without a reload.
+             */
+            createPin: function (phrase, target) {
+                if (!phrase || !target || !target.targetKey) {
+                    return Promise.reject(new Error('phrase and target are required'));
+                }
+                var row = {
+                    id: null,
+                    collectionId: state.collectionId,
+                    collectionKey: state.pinnedKey,
+                    phrases: phrase,
+                    targetKey: target.targetKey,
+                    contentName: target.contentName || '',
+                    contentType: target.contentType || '',
+                    language: state.locale || null,
+                    priority: 1000,
+                    isActive: true,
+                    _dirty: true,
+                    _isNew: true
+                };
+                state.rows.push(row);
+                return saveRow(row).then(function () {
+                    renderRows();
+                    return row;
+                });
+            },
+
+            /**
              * Seed a new draft pin row pre-filled with `phrase` and focus the
              * target cell — used by the Insights tab "draft pin" CTA so the
              * editor opens ready for the marketer to pick a target. Returns

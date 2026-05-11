@@ -248,12 +248,21 @@
             <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
             <loadFailed>Failed to load insights.</loadFailed>
             <showMore>Show more</showMore>
-            <ctaPreview>Preview</ctaPreview>
-            <ctaPin>Draft pin</ctaPin>
-            <ctaSynonym>Draft synonym</ctaSynonym>
-            <ctaDrafted>✓ Drafted</ctaDrafted>
-            <draftedPin>Drafted in Pinned tab — fill in a target.</draftedPin>
-            <draftedSynonym>Drafted in Synonyms tab — finish the rule.</draftedSynonym>
+            <actionPreview>Preview this phrase</actionPreview>
+            <actionPin>Pin a result for this phrase</actionPin>
+            <actionPinDisabled>This profile doesn't apply pinned results.</actionPinDisabled>
+            <actionSynonym>Add a synonym for this phrase</actionSynonym>
+            <actionSynonymDisabled>This profile doesn't apply synonyms.</actionSynonymDisabled>
+            <pinPickerPlaceholder>Search content…</pinPickerPlaceholder>
+            <pinUnavailable>Pinned results not configured for this profile.</pinUnavailable>
+            <synPlaceholder>Replacement phrase the index already finds</synPlaceholder>
+            <synUnavailable>Synonyms not loaded yet — open the Synonyms tab once.</synUnavailable>
+            <editSave>Save</editSave>
+            <editSaving>Saving…</editSaving>
+            <editCancel>Cancel</editCancel>
+            <editPinSaved>✓ Pinned — open the Pinned tab to refine.</editPinSaved>
+            <editSynSaved>✓ Synonym added.</editSynSaved>
+            <editFailed>Save failed.</editFailed>
             <ctrLabel>CTR</ctrLabel>
             <hitsLabel>hits</hitsLabel>
             <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
