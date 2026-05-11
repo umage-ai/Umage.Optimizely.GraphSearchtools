@@ -170,8 +170,11 @@ internal static class Program
 
     private static DateTime TruncateToMinute(DateTime utc) => new(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, 0, DateTimeKind.Utc);
 
-    private static readonly string[] Locales = { "en", "da", "sv", "no", "de" };
-    private static readonly string[] Profiles = { "kb-search", "global-search", "product-search" };
+    private static readonly string[] Locales = { "en", "sv" };
+    // Default to the Alloy SampleSite's registered profile so load-test data
+    // appears in the per-profile Insights tab without further wiring. Sites
+    // with multiple profiles can supply --profiles on the command line.
+    private static readonly string[] Profiles = { "alloy-search" };
 
     private static async Task ProbeReadPathAsync(HttpClient http, DateTime sinceUtc, DateTime untilUtc)
     {
