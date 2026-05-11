@@ -833,11 +833,14 @@
             buildTargetCell(row, tr, targetCell);
             tr.appendChild(targetCell);
 
-            // Actions — Save + Delete with status-aware coloring.
+            // Actions — Save + Delete. The Save button is rendered for every
+            // row but CSS-hidden until the row's `is-dirty` class flips on,
+            // matching the synonyms editor so both surfaces show the same
+            // per-row save affordance on the same trigger.
             var actCell = document.createElement('td');
             actCell.className = 'gst-pinedit__cell gst-pinedit__cell--actions';
-            actCell.appendChild(buildActionBtn('save', row, tr, function () { saveRow(row, tr); }));
-            actCell.appendChild(buildActionBtn('delete', row, tr, function () { deleteRow(row); }));
+            actCell.appendChild(buildSaveBtn(function () { saveRow(row, tr); }));
+            actCell.appendChild(buildDeleteBtn(function () { deleteRow(row); }));
             tr.appendChild(actCell);
 
             return tr;
@@ -991,18 +994,22 @@
                 .catch(function () { dropdown.style.display = 'none'; });
         }
 
-        function buildActionBtn(kind, row, tr, onClick) {
+        function buildSaveBtn(onClick) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            if (kind === 'save') {
-                btn.className = 'gst-pinedit__action gst-pinedit__action--save' + (row._dirty ? ' is-dirty' : '');
-                btn.innerHTML = '<span aria-hidden="true">✓</span>';
-                btn.title = STRINGS.action_save || 'Save';
-            } else {
-                btn.className = 'gst-pinedit__action gst-pinedit__action--delete';
-                btn.innerHTML = '<span aria-hidden="true">×</span>';
-                btn.title = STRINGS.action_delete || 'Delete';
-            }
+            btn.className = 'gst-pinedit__action gst-pinedit__action--save';
+            btn.innerHTML = '<span aria-hidden="true">✓</span>';
+            btn.title = STRINGS.action_save || 'Save';
+            btn.addEventListener('click', onClick);
+            return btn;
+        }
+
+        function buildDeleteBtn(onClick) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gst-pinedit__action gst-pinedit__action--delete';
+            btn.innerHTML = '<span aria-hidden="true">×</span>';
+            btn.title = STRINGS.action_delete || 'Delete';
             btn.addEventListener('click', onClick);
             return btn;
         }
@@ -1010,8 +1017,6 @@
         function markDirty(row, tr) {
             row._dirty = true;
             tr.classList.add('is-dirty');
-            var saveBtn = tr.querySelector('.gst-pinedit__action--save');
-            if (saveBtn) saveBtn.classList.add('is-dirty');
             refreshChrome();
         }
 
