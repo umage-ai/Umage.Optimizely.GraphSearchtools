@@ -1036,6 +1036,12 @@
             };
         }
 
+        // The first loadRows() promise — exposed via whenReady() so callers
+        // (e.g. the Insights tab's inline pin editor) can defer their
+        // canCreatePins check until state.pinnedKey is resolved instead of
+        // racing the initial fetch.
+        var initialLoad = null;
+
         function loadRows() {
             setAlert(null);
             // Switching site / locale gives a different rowset entirely; the
@@ -1044,7 +1050,7 @@
             var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
                 + '/pinned?site=' + encodeURIComponent(state.site || '')
                 + '&locale=' + encodeURIComponent(state.locale || '');
-            ajax(url).then(function (resp) {
+            var p = ajax(url).then(function (resp) {
                 resp = resp || {};
                 state.collectionId = resp.collectionId || null;
                 state.pinnedKey = resp.pinnedKey || null;
@@ -1056,6 +1062,8 @@
             }).catch(function (err) {
                 setAlert(err.message, true);
             });
+            if (!initialLoad) initialLoad = p;
+            return p;
         }
 
         function buildPayload(row) {
@@ -1805,6 +1813,14 @@
 
         return {
             reload: loadRows,
+
+            /**
+             * Resolves when the first loadRows() settles, so callers can
+             * defer state.pinnedKey-dependent checks (canCreatePins) until
+             * the editor has actually fetched its config. Always returns a
+             * promise — never rejects — so callers can just `.then(...)`.
+             */
+            whenReady: function () { return initialLoad || Promise.resolve(); },
 
             /**
              * Look up content by free-text query against the pinned editor's

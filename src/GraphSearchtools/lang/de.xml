@@ -255,6 +255,7 @@
             <actionSynonymDisabled>This profile doesn't apply synonyms.</actionSynonymDisabled>
             <pinPickerPlaceholder>Search content…</pinPickerPlaceholder>
             <pinUnavailable>Pinned results not configured for this profile.</pinUnavailable>
+            <pinLoading>Loading pinned config…</pinLoading>
             <synPlaceholder>Replacement phrase the index already finds</synPlaceholder>
             <synUnavailable>Synonyms not loaded yet — open the Synonyms tab once.</synUnavailable>
             <editSave>Save</editSave>
