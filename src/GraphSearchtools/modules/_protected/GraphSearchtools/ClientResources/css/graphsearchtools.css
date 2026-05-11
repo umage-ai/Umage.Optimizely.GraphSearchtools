@@ -4588,8 +4588,10 @@ td.bpe-editing select {
     letter-spacing: 0.04em;
 }
 
-/* CTA cluster — invisible until row hover (or focus-within). Keeps the
-   resting state clean so the eye reads the typography first. */
+/* Icon-button cluster — invisible until row hover (or focus-within) so the
+   resting row reads as data, not chrome. The pin and synonym buttons stay
+   visible (faded) when their inline editor is open so the user can see
+   which control toggled the panel. */
 .gst-prof-ins-row__actions {
     display: inline-flex;
     align-items: center;
@@ -4605,40 +4607,160 @@ td.bpe-editing select {
     transform: translateX(0);
     pointer-events: auto;
 }
-.gst-prof-ins-row__cta {
+.gst-prof-ins-row__icon {
     appearance: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
     background: transparent;
     border: 1px solid transparent;
     color: var(--gst-text-secondary);
-    font: inherit;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 3px 8px;
-    border-radius: 3px;
+    border-radius: 4px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
-.gst-prof-ins-row__cta:hover {
+.gst-prof-ins-row__icon svg {
+    width: 14px;
+    height: 14px;
+}
+.gst-prof-ins-row__icon:hover:not(:disabled) {
     background: var(--gst-surface);
     border-color: var(--gst-border);
+    color: var(--lane-accent, var(--gst-text));
+}
+.gst-prof-ins-row__icon:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+/* ── Inline pin / synonym editor (sibling <li> below a row) ─────
+   Sits flush under the originating row, full width, with a left
+   accent stripe matching the lane so the eye keeps the connection
+   between row and panel. */
+.gst-prof-ins-edit {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--lane-accent) 5%, var(--gst-surface));
+    border-top: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-border-light);
+    position: relative;
+}
+.gst-prof-ins-edit::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--lane-accent);
+}
+.gst-prof-ins-edit__chip {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 8px;
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border-light);
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--gst-text);
 }
-.gst-prof-ins-row__cta--primary {
-    color: var(--lane-accent);
+.gst-prof-ins-edit__arrow {
+    color: var(--gst-text-muted);
+    font-size: 14px;
 }
-.gst-prof-ins-row__cta--primary:hover {
-    background: color-mix(in srgb, var(--lane-accent) 12%, var(--gst-surface));
-    border-color: color-mix(in srgb, var(--lane-accent) 35%, transparent);
-    color: var(--lane-accent);
+.gst-prof-ins-edit__picker {
+    position: relative;
+    flex: 1 1 220px;
+    min-width: 180px;
 }
-/* Post-click confirmation: not a button anymore, a state badge. */
-.gst-prof-ins-row__cta--drafted,
-.gst-prof-ins-row__cta--drafted:hover {
-    background: color-mix(in srgb, var(--lane-accent) 14%, transparent);
-    border-color: color-mix(in srgb, var(--lane-accent) 30%, transparent);
+.gst-prof-ins-edit__input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 28px;
+    padding: 0 8px;
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border);
+    border-radius: 3px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--gst-text);
+}
+.gst-prof-ins-edit__input:focus {
+    outline: none;
+    border-color: var(--lane-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lane-accent) 20%, transparent);
+}
+.gst-prof-ins-edit__dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--gst-bg);
+    border: 1px solid var(--gst-border);
+    border-radius: 3px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+.gst-prof-ins-edit__hit {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-top: 1px solid var(--gst-border-light);
+    font-size: 12px;
+}
+.gst-prof-ins-edit__hit:first-child { border-top: 0; }
+.gst-prof-ins-edit__hit:hover { background: var(--gst-surface-hover); }
+.gst-prof-ins-edit__hit small {
+    color: var(--gst-text-muted);
+    font-size: 11px;
+}
+.gst-prof-ins-edit__save,
+.gst-prof-ins-edit__cancel {
+    appearance: none;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 3px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-bg);
+    color: var(--gst-text);
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.gst-prof-ins-edit__cancel:hover {
+    background: var(--gst-surface-hover);
+}
+.gst-prof-ins-edit__save {
+    background: var(--lane-accent);
+    border-color: var(--lane-accent);
+    color: #fff;
+}
+.gst-prof-ins-edit__save:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+.gst-prof-ins-edit__save:hover:not(:disabled) {
+    filter: brightness(0.95);
+}
+.gst-prof-ins-edit__ok {
     color: var(--lane-accent);
-    cursor: default;
-    opacity: .85;
+    font-size: 12px;
+    font-weight: 500;
+}
+.gst-prof-ins-edit.is-saved {
+    justify-content: flex-start;
 }
 
 /* ── Empty / loading / error states ──────────────────────────── */

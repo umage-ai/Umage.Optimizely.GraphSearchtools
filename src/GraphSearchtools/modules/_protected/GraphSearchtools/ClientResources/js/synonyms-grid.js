@@ -22,7 +22,7 @@
  *                       drawerEl?, drawerCount?, sortBtns? (NodeList).
  *   pageSize          — defaults to 20.
  *
- * Returns { draftRule(rule): bool, reload(): Promise }.
+ * Returns { draftRule(rule): bool, appendRule(lhs, rhs): Promise, reload(): Promise }.
  */
 (function () {
     'use strict';
@@ -561,6 +561,36 @@
                     initialLoad.then(seed, seed);
                     return true;
                 },
+
+                /**
+                 * Append a single replacement rule (`lhs => rhs`) to the
+                 * active scope and persist it directly. Used by the
+                 * Profile Insights inline synonym editor so a marketer
+                 * doesn't have to switch tabs to complete a one-line edit.
+                 *
+                 * Scope: when a locale is active, write to that locale's
+                 * blob; otherwise write to the global blob — same policy
+                 * the drawer Save uses. Returns the underlying PUT promise.
+                 */
+                appendRule: function (lhs, rhs) {
+                    if (!lhs || !rhs) return Promise.reject(new Error('lhs and rhs are required'));
+                    return initialLoad.then(function () {
+                        var scope = state.lang ? 'lang' : 'global';
+                        var rule = lhs.trim() + ' => ' + rhs.trim();
+                        state.rows.push({ rule: rule, scope: scope });
+                        var content = joinedScopeContent(scope);
+                        return writeScope(scope, content).then(function () {
+                            state.snapshots[scope] = content;
+                            renderRows();
+                            // Mirror save()'s broadcast so the live preview
+                            // drops its cached synonym rules for this lang.
+                            window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
+                                detail: { lang: scope === 'lang' ? state.lang : '' }
+                            }));
+                        });
+                    });
+                },
+
                 reload: function () { return loadForLang(state.lang); }
             };
         }

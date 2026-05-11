@@ -715,43 +715,42 @@
                 + '<small>' + escHtml(s('profiles.detail.insights.hitsLabel', 'hits')) + '</small>';
             li.appendChild(countEl);
 
-            // 4: actions
-            // (Locale is implied by the page-level locale chip — when it's
-            //  empty we show all locales, but the chip says so. Per-row
-            //  badges duplicated that information, so they're omitted.)
+            // 4: actions — three icon buttons (preview / pin / synonym) on
+            //    every row regardless of lane. Pin and synonym are disabled
+            //    when the active profile's GraphQL doc doesn't apply them
+            //    (so the buttons are still visible for affordance, but a
+            //    tooltip explains why they can't be used here).
             var actEl = document.createElement('span');
             actEl.className = 'gst-prof-ins-row__actions';
-            // Preview button is always offered.
-            actEl.appendChild(makeCta(s('profiles.detail.insights.ctaPreview', 'Preview'), false, function (ev) {
-                ev.stopPropagation();
-                applyToPreview(row.phrase);
-            }));
-            // The "draft" CTA depends on lane type:
-            //  - top / low-CTR → draft pin (these phrases get traffic; pin
-            //    candidate is the right next step)
-            //  - zero-result → draft synonym (the goal is to map them into
-            //    something Graph already finds)
-            if (lane === 'zero') {
-                if (opts.queryAppliesSynonyms) {
-                    var synBtn = makeCta(s('profiles.detail.insights.ctaSynonym', 'Draft synonym'), true, function (ev) {
-                        ev.stopPropagation();
-                        if (draftSynonymFor(row.phrase)) {
-                            markCtaDrafted(synBtn, s('profiles.detail.insights.ctaDrafted', '✓ Drafted'));
-                        }
-                    });
-                    actEl.appendChild(synBtn);
-                }
-            } else {
-                if (opts.queryAppliesPinned) {
-                    var pinBtn = makeCta(s('profiles.detail.insights.ctaPin', 'Draft pin'), true, function (ev) {
-                        ev.stopPropagation();
-                        if (draftPinFor(row.phrase)) {
-                            markCtaDrafted(pinBtn, s('profiles.detail.insights.ctaDrafted', '✓ Drafted'));
-                        }
-                    });
-                    actEl.appendChild(pinBtn);
-                }
-            }
+
+            actEl.appendChild(makeIconButton(
+                'preview',
+                GST.icons.search,
+                s('profiles.detail.insights.actionPreview', 'Preview this phrase'),
+                false,
+                function (ev) { ev.stopPropagation(); applyToPreview(row.phrase); }
+            ));
+
+            actEl.appendChild(makeIconButton(
+                'pin',
+                GST.icons.pin,
+                opts.queryAppliesPinned
+                    ? s('profiles.detail.insights.actionPin', 'Pin a result for this phrase')
+                    : s('profiles.detail.insights.actionPinDisabled', 'This profile doesn\'t apply pinned results.'),
+                !opts.queryAppliesPinned,
+                function (ev) { ev.stopPropagation(); toggleInlineEditor(li, row, 'pin'); }
+            ));
+
+            actEl.appendChild(makeIconButton(
+                'synonym',
+                GST.icons.synonym,
+                opts.queryAppliesSynonyms
+                    ? s('profiles.detail.insights.actionSynonym', 'Add a synonym for this phrase')
+                    : s('profiles.detail.insights.actionSynonymDisabled', 'This profile doesn\'t apply synonyms.'),
+                !opts.queryAppliesSynonyms,
+                function (ev) { ev.stopPropagation(); toggleInlineEditor(li, row, 'synonym'); }
+            ));
+
             li.appendChild(actEl);
 
             // Whole row is the click target → loads into preview.
@@ -768,26 +767,243 @@
             return li;
         }
 
-        function makeCta(label, isPrimary, onClick) {
+        function makeIconButton(kind, svg, title, disabled, onClick) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'gst-prof-ins-row__cta'
-                + (isPrimary ? ' gst-prof-ins-row__cta--primary' : '');
-            btn.textContent = label;
+            btn.className = 'gst-prof-ins-row__icon gst-prof-ins-row__icon--' + kind;
+            btn.title = title;
+            btn.setAttribute('aria-label', title);
+            btn.disabled = !!disabled;
+            btn.innerHTML = svg;
             btn.addEventListener('click', onClick);
             return btn;
         }
 
-        // Swap a draft CTA into a non-clickable confirmation chip so the user
-        // can see the action took. The button stays in the DOM (so layout
-        // doesn't jitter) but disables itself and visually demotes — the
-        // toast handles the "what next" guidance.
-        function markCtaDrafted(btn, label) {
-            if (!btn) return;
-            btn.textContent = label;
-            btn.disabled = true;
-            btn.classList.remove('gst-prof-ins-row__cta--primary');
-            btn.classList.add('gst-prof-ins-row__cta--drafted');
+        // Toggle the inline pin/synonym editor below `rowEl`. The panel is
+        // sibling to the row (inside the same <ol>) so its hover / focus
+        // state stays bounded to the row context. Closing one variant always
+        // collapses the other so only one inline form is open per row.
+        function toggleInlineEditor(rowEl, row, kind) {
+            var existing = rowEl.nextElementSibling;
+            if (existing && existing.classList && existing.classList.contains('gst-prof-ins-edit')) {
+                var sameKind = existing.dataset.kind === kind;
+                existing.remove();
+                if (sameKind) return; // second click on same icon → toggle off
+            }
+            // Synonyms editor is lazy-mounted; force-mount before opening
+            // its inline editor so the helper handle is available.
+            if (kind === 'synonym' && opts.ensureSynonymsMounted) {
+                opts.ensureSynonymsMounted();
+            }
+            var panel = kind === 'pin'
+                ? buildInlinePinEditor(row)
+                : buildInlineSynonymEditor(row);
+            if (!panel) return;
+            panel.dataset.kind = kind;
+            // Insert as a sibling <li> after the row so the <ol> stays valid.
+            rowEl.parentNode.insertBefore(panel, rowEl.nextSibling);
+            // Move keyboard focus into the panel for fast keyboard completion.
+            var firstField = panel.querySelector('input, button:not([disabled])');
+            if (firstField) firstField.focus();
+        }
+
+        function buildInlinePinEditor(row) {
+            var ed = (opts.getEditors() || {}).pinned;
+            var panel = document.createElement('li');
+            panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--pin';
+
+            // Phrase chip — read-only — the picker fills the right side.
+            var phraseChip = document.createElement('span');
+            phraseChip.className = 'gst-prof-ins-edit__chip';
+            phraseChip.textContent = row.phrase;
+            panel.appendChild(phraseChip);
+
+            var arrow = document.createElement('span');
+            arrow.className = 'gst-prof-ins-edit__arrow';
+            arrow.textContent = '→';
+            panel.appendChild(arrow);
+
+            // Content typeahead box. Reuses pinned editor's lookup endpoint
+            // (locale-scoped) so the suggestions match the table's typeahead.
+            var pickerWrap = document.createElement('span');
+            pickerWrap.className = 'gst-prof-ins-edit__picker';
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'gst-prof-ins-edit__input';
+            input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder', 'Search content…');
+            pickerWrap.appendChild(input);
+            var dropdown = document.createElement('div');
+            dropdown.className = 'gst-prof-ins-edit__dropdown';
+            dropdown.hidden = true;
+            pickerWrap.appendChild(dropdown);
+            panel.appendChild(pickerWrap);
+
+            var saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'gst-prof-ins-edit__save';
+            saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+            saveBtn.disabled = true;
+            panel.appendChild(saveBtn);
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'gst-prof-ins-edit__cancel';
+            cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
+            panel.appendChild(cancelBtn);
+
+            cancelBtn.addEventListener('click', function () { panel.remove(); });
+
+            // If the editor isn't ready (no collection yet, or query doesn't
+            // apply pinned), surface a hint and disable save permanently.
+            if (!ed || typeof ed.canCreatePins !== 'function' || !ed.canCreatePins()) {
+                input.disabled = true;
+                input.placeholder = s('profiles.detail.insights.pinUnavailable',
+                    'Pinned results not configured for this profile.');
+                return panel;
+            }
+
+            var picked = null;
+            var debounceT = null;
+            input.addEventListener('input', function () {
+                picked = null;
+                saveBtn.disabled = true;
+                clearTimeout(debounceT);
+                var q = input.value.trim();
+                if (q.length < 2) { dropdown.hidden = true; dropdown.innerHTML = ''; return; }
+                debounceT = setTimeout(function () { runLookup(q); }, 250);
+            });
+
+            function runLookup(q) {
+                ed.lookupContent(q).then(function (hits) {
+                    dropdown.innerHTML = '';
+                    hits = hits || [];
+                    if (!hits.length) {
+                        dropdown.hidden = true;
+                        return;
+                    }
+                    hits.slice(0, 8).forEach(function (hit) {
+                        var hitEl = document.createElement('div');
+                        hitEl.className = 'gst-prof-ins-edit__hit';
+                        hitEl.innerHTML = '<strong>' + escHtml(hit.name || '') + '</strong>'
+                            + '<small>' + escHtml((hit.contentType || '') + ' · ' + (hit.language || '')) + '</small>';
+                        hitEl.addEventListener('click', function () {
+                            picked = {
+                                targetKey: hit.contentGuid,
+                                contentName: hit.name,
+                                contentType: hit.contentType
+                            };
+                            input.value = hit.name || '';
+                            dropdown.hidden = true;
+                            saveBtn.disabled = false;
+                            saveBtn.focus();
+                        });
+                        dropdown.appendChild(hitEl);
+                    });
+                    dropdown.hidden = false;
+                }).catch(function () {
+                    dropdown.hidden = true;
+                });
+            }
+
+            saveBtn.addEventListener('click', function () {
+                if (!picked) return;
+                saveBtn.disabled = true;
+                saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
+                ed.createPin(row.phrase, picked).then(function () {
+                    panel.classList.add('is-saved');
+                    panel.innerHTML = '';
+                    var ok = document.createElement('span');
+                    ok.className = 'gst-prof-ins-edit__ok';
+                    ok.textContent = s('profiles.detail.insights.editPinSaved',
+                        '✓ Pinned — open the Pinned tab to refine.');
+                    panel.appendChild(ok);
+                    setTimeout(function () { if (panel.parentNode) panel.remove(); }, 2200);
+                }).catch(function (err) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+                    flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
+                });
+            });
+
+            return panel;
+        }
+
+        function buildInlineSynonymEditor(row) {
+            var ed = (opts.getEditors() || {}).synonyms;
+            var panel = document.createElement('li');
+            panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--synonym';
+
+            var phraseChip = document.createElement('span');
+            phraseChip.className = 'gst-prof-ins-edit__chip';
+            phraseChip.textContent = row.phrase;
+            panel.appendChild(phraseChip);
+
+            var arrow = document.createElement('span');
+            arrow.className = 'gst-prof-ins-edit__arrow';
+            arrow.textContent = '→';
+            panel.appendChild(arrow);
+
+            var rhs = document.createElement('input');
+            rhs.type = 'text';
+            rhs.className = 'gst-prof-ins-edit__input';
+            rhs.placeholder = s('profiles.detail.insights.synPlaceholder',
+                'Replacement phrase the index already finds');
+            panel.appendChild(rhs);
+
+            var saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'gst-prof-ins-edit__save';
+            saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+            saveBtn.disabled = true;
+            panel.appendChild(saveBtn);
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'gst-prof-ins-edit__cancel';
+            cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
+            panel.appendChild(cancelBtn);
+
+            cancelBtn.addEventListener('click', function () { panel.remove(); });
+
+            if (!ed || typeof ed.appendRule !== 'function') {
+                rhs.disabled = true;
+                rhs.placeholder = s('profiles.detail.insights.synUnavailable',
+                    'Synonyms not loaded yet — open the Synonyms tab once.');
+                return panel;
+            }
+
+            rhs.addEventListener('input', function () {
+                saveBtn.disabled = !rhs.value.trim();
+            });
+            rhs.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' && !saveBtn.disabled) {
+                    ev.preventDefault();
+                    saveBtn.click();
+                }
+            });
+
+            saveBtn.addEventListener('click', function () {
+                var rhsVal = rhs.value.trim();
+                if (!rhsVal) return;
+                saveBtn.disabled = true;
+                saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
+                ed.appendRule(row.phrase, rhsVal).then(function () {
+                    panel.classList.add('is-saved');
+                    panel.innerHTML = '';
+                    var ok = document.createElement('span');
+                    ok.className = 'gst-prof-ins-edit__ok';
+                    ok.textContent = s('profiles.detail.insights.editSynSaved',
+                        '✓ Synonym added.');
+                    panel.appendChild(ok);
+                    setTimeout(function () { if (panel.parentNode) panel.remove(); }, 1800);
+                }).catch(function (err) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+                    flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
+                });
+            });
+
+            return panel;
         }
 
         function applyToPreview(phrase) {
@@ -809,33 +1025,6 @@
             input.dispatchEvent(new Event('input', { bubbles: true }));
             // Don't steal focus; leaving focus inside the row keeps keyboard
             // navigation working.
-        }
-
-        function draftPinFor(phrase) {
-            if (!phrase) return false;
-            opts.activateTab('pinned');
-            // After tab activation the Pinned panel is visible; seed via the
-            // editor handle the detail() function captured at mount.
-            var editors = opts.getEditors();
-            var ed = editors.pinned;
-            var ok = ed && typeof ed.draftPhrase === 'function' && ed.draftPhrase(phrase);
-            if (ok) flash(s('profiles.detail.insights.draftedPin', 'Drafted in Pinned tab — fill in a target.'));
-            return !!ok;
-        }
-
-        function draftSynonymFor(phrase) {
-            if (!phrase) return false;
-            // Synonym tab needs to be mounted before we can seed it.
-            opts.ensureSynonymsMounted();
-            opts.activateTab('synonyms');
-            var editors = opts.getEditors();
-            var ed = editors.synonyms;
-            // Replacement-style template — matches the most common synonym
-            // mining shape ("offending phrase => something Graph already finds").
-            var rule = phrase + ' => ';
-            var ok = ed && typeof ed.draftRule === 'function' && ed.draftRule(rule);
-            if (ok) flash(s('profiles.detail.insights.draftedSynonym', 'Drafted in Synonyms tab — finish the rule.'));
-            return !!ok;
         }
 
         var flashTimer = null;
