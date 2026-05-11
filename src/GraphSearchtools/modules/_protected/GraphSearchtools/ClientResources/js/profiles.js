@@ -459,6 +459,17 @@
             inflight: null
         };
 
+        // The Pinned editor's locale chip (`#gst-pin-locale`) is the page's
+        // single source of truth for which language branch the editor is
+        // looking at. Mirroring it here means a marketer who narrows the
+        // preview to "sv" sees only Swedish search activity in the lanes,
+        // and switching back to "en" reflects English-only data without a
+        // separate pill on the Insights surface.
+        var localeSel = document.getElementById('gst-pin-locale');
+        function activeLocale() {
+            return (localeSel && !localeSel.disabled) ? (localeSel.value || '') : '';
+        }
+
         function activeWindowMs() {
             return WINDOWS[state.window] || WINDOWS['24h'];
         }
@@ -488,12 +499,25 @@
             });
         }
 
+        // Locale switch on the Pinned editor → re-fetch insights for the new
+        // branch. Pinned listens to the same event to reload its rows; both
+        // mutations land on the page in lockstep so the preview, the pinned
+        // table, and the analytics lanes always agree on which locale is
+        // being inspected.
+        if (localeSel) {
+            localeSel.addEventListener('change', function () {
+                fetchAll();
+            });
+        }
+
         function fetchLane(slug) {
             var since = new Date(Date.now() - activeWindowMs()).toISOString();
             var url = SEARCHLOGS_API + '/' + slug
                 + '?since=' + encodeURIComponent(since)
                 + '&take=10'
                 + '&profileKey=' + encodeURIComponent(profileKey);
+            var loc = activeLocale();
+            if (loc) url += '&locale=' + encodeURIComponent(loc);
             return GST.fetchJson(url);
         }
 

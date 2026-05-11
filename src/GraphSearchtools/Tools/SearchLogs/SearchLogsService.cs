@@ -37,26 +37,27 @@ public sealed class SearchLogsService
     /// <summary>
     /// Top phrases by hit count in the window. Returns most-frequent first.
     /// When <paramref name="profileKey"/> is supplied, only sessions that ran
-    /// against that profile are counted — the Profiles detail page passes the
-    /// active profile key here.
+    /// against that profile are counted; <paramref name="locale"/> further
+    /// narrows to one language branch — the Profile detail page passes both
+    /// so each lane reflects exactly the preview the editor is staring at.
     /// </summary>
     public async Task<IReadOnlyList<SearchLogPhraseRow>> TopPhrasesAsync(
-        DateTime? since, int? take, string? profileKey = null, CancellationToken cancellationToken = default)
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey);
+        var query = BuildQuery(since, take, profileKey, locale);
         var rows = await _reader.TopPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>
     /// Phrases whose sessions returned zero hits. Most-frequent first;
-    /// these are the strongest synonym-mining candidates. Profile-scoped when
-    /// <paramref name="profileKey"/> is supplied.
+    /// these are the strongest synonym-mining candidates. Profile- and
+    /// locale-scoped when those are supplied.
     /// </summary>
     public async Task<IReadOnlyList<SearchLogPhraseRow>> ZeroResultPhrasesAsync(
-        DateTime? since, int? take, string? profileKey = null, CancellationToken cancellationToken = default)
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey);
+        var query = BuildQuery(since, take, profileKey, locale);
         var rows = await _reader.ZeroResultPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
@@ -66,9 +67,9 @@ public sealed class SearchLogsService
     /// excludes phrases with too few hits to score honestly.
     /// </summary>
     public async Task<IReadOnlyList<SearchLogPhraseRow>> LowCtrPhrasesAsync(
-        DateTime? since, int? take, string? profileKey = null, CancellationToken cancellationToken = default)
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey);
+        var query = BuildQuery(since, take, profileKey, locale);
         var rows = await _reader.LowCtrPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
@@ -83,7 +84,7 @@ public sealed class SearchLogsService
     public async Task<IReadOnlyList<SearchLogRawRow>> RecentEntriesAsync(
         DateTime? since, int? take, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey: null);
+        var query = BuildQuery(since, take, profileKey: null, locale: null);
         var rows = await _reader.RecentRawAsync(query, cancellationToken);
         return rows.Select(ToRawRow).ToList();
     }
@@ -95,7 +96,7 @@ public sealed class SearchLogsService
     /// Future-dated <c>since</c> values are clamped to "now" so a clock-skewed
     /// caller can't accidentally request the empty set.
     /// </summary>
-    internal static TelemetryQuery BuildQuery(DateTime? since, int? take, string? profileKey)
+    internal static TelemetryQuery BuildQuery(DateTime? since, int? take, string? profileKey, string? locale)
     {
         var now = DateTime.UtcNow;
         DateTime sinceUtc;
@@ -113,7 +114,8 @@ public sealed class SearchLogsService
 
         var clamped = Math.Clamp(take ?? DefaultTake, 1, MaxTake);
         var profile = string.IsNullOrWhiteSpace(profileKey) ? null : profileKey;
-        return new TelemetryQuery(sinceUtc, now, clamped, profile);
+        var loc = string.IsNullOrWhiteSpace(locale) ? null : locale;
+        return new TelemetryQuery(sinceUtc, now, clamped, profile, loc);
     }
 
     private static SearchLogPhraseRow ToPhraseRow(PhraseAggregate row) => new()
