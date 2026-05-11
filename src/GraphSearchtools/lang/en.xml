@@ -235,7 +235,7 @@
           <issue_kind_no_activity>No activity</issue_kind_no_activity>
           <col_kind>Issue</col_kind>
           <col_phrase>Phrase</col_phrase>
-          <col_target>Target</col_target>
+          <col_target>Always show</col_target>
           <col_collection>Collection</col_collection>
           <col_detail>Detail</col_detail>
           <fix_in_profile>Fix in profile</fix_in_profile>
@@ -300,7 +300,7 @@
             <addRow>Add pin</addRow>
             <colPhrase>Phrase</colPhrase>
             <colPriority>Priority</colPriority>
-            <colTarget>Target</colTarget>
+            <colTarget>Always show</colTarget>
             <colType>Type</colType>
             <discardAll>Discard changes</discardAll>
             <empty>No pinned items for this phrase yet.</empty>
