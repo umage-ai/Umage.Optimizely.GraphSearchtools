@@ -336,6 +336,17 @@ public sealed class ProfilesService
             query = UsePinnedRegex.Replace(query, string.Empty);
         }
 
+        // Graph keys its query cache by the raw JSON bytes of the request — two
+        // logically-identical queries with the same bytes share a cache entry.
+        // For the admin preview that's the wrong default: a marketer who just
+        // saved a pin or synonym re-runs the same phrase and expects to see the
+        // edit reflected, but Graph happily serves the pre-edit response from
+        // cache (we've seen empty results persist for minutes even though the
+        // pin lives in the collection). Appending a per-call nonce comment
+        // forces a cache miss so every preview hits live data. The comment is
+        // a no-op for GraphQL semantics — it changes only the request bytes.
+        query += "\n# preview-nonce-" + Guid.NewGuid().ToString("N");
+
         var result = await _runner.RunRawAsync(query, variables: null, cancellationToken);
 
         // Mark which hits Graph would have pinned for this phrase. Mirrors
