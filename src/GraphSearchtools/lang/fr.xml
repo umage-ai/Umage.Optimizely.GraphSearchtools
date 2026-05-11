@@ -186,11 +186,11 @@
             <docInline>inline (registered in code)</docInline>
             <docNotFound>File not found in the host project.</docNotFound>
             <graphqlDoc>GraphQL document</graphqlDoc>
-            <locales>Locales declared</locales>
+            <locales>Locale</locales>
             <pinnedKey>Pinned key formula</pinnedKey>
             <ranking>Ranking · semantic blend</ranking>
             <searchedFields>Searched fields</searchedFields>
-            <sites>Sites</sites>
+            <sites>Site</sites>
           </meta>
           <overview>
             <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
