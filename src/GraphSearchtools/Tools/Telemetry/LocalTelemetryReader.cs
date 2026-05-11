@@ -1,4 +1,7 @@
 using EPiServer.Data.Dynamic;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
@@ -23,12 +26,23 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
     private static readonly TimeSpan AggregateCacheTtl = TimeSpan.FromSeconds(30);
 
     private readonly LocalTelemetryOptions _options;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<LocalTelemetryReader> _logger;
     private readonly object _cacheLock = new();
     private CacheEntry? _cache;
 
-    public LocalTelemetryReader(IOptions<GraphSearchtoolsOptions> options)
+    private readonly object _columnMapLock = new();
+    private BucketColumnMap? _columnMap;
+    private bool _columnMapResolved;
+
+    public LocalTelemetryReader(
+        IOptions<GraphSearchtoolsOptions> options,
+        IConfiguration configuration,
+        ILogger<LocalTelemetryReader> logger)
     {
         _options = options.Value.Telemetry;
+        _configuration = configuration;
+        _logger = logger;
     }
 
     private readonly record struct CacheKey(DateTime SinceUtc, DateTime UntilUtc, string? ProfileKey, string? Locale);
@@ -143,7 +157,7 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
             }
         }
 
-        var rows = LoadAggregated(query);
+        var rows = LoadAggregatedFast(query) ?? LoadAggregated(query);
 
         lock (_cacheLock)
         {
@@ -151,6 +165,119 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// Fast path: a single SQL query that lets SQL Server do the GROUP BY
+    /// server-side instead of round-tripping every bucket row through DDS'
+    /// reflection-based projection. Returns null when the column map can't
+    /// be resolved (fresh install before first write, or DB unavailable);
+    /// the caller falls back to the LINQ-over-DDS path. With ~30k rows in
+    /// the window, raw SQL is ~10–20 ms vs. ~10 s for the LINQ path.
+    /// </summary>
+    private List<PhraseAggregate>? LoadAggregatedFast(TelemetryQuery query)
+    {
+        var map = ResolveColumnMap();
+        if (map == null) return null;
+
+        var connectionString = _configuration.GetConnectionString("EPiServerDB");
+        if (string.IsNullOrEmpty(connectionString)) return null;
+
+        var sql = BuildAggregateSql(map, includeProfile: !string.IsNullOrEmpty(query.ProfileKey), includeLocale: !string.IsNullOrEmpty(query.Locale));
+
+        try
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.Parameters.Add(new SqlParameter("@since", System.Data.SqlDbType.DateTime) { Value = query.SinceUtc });
+            cmd.Parameters.Add(new SqlParameter("@until", System.Data.SqlDbType.DateTime) { Value = query.UntilUtc });
+            if (!string.IsNullOrEmpty(query.ProfileKey))
+                cmd.Parameters.Add(new SqlParameter("@profile", query.ProfileKey));
+            if (!string.IsNullOrEmpty(query.Locale))
+                cmd.Parameters.Add(new SqlParameter("@locale", query.Locale));
+
+            using var reader = cmd.ExecuteReader();
+            var rows = new List<PhraseAggregate>(capacity: 256);
+            while (reader.Read())
+            {
+                var phraseNorm = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+                var profileKey = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                var locale     = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
+                var hits       = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                var zeroes     = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+                var clicks     = reader.IsDBNull(5) ? 0 : reader.GetInt32(5);
+                var display    = reader.IsDBNull(6) ? phraseNorm : reader.GetString(6);
+
+                var zeroRate = hits == 0 ? (zeroes > 0 ? 1.0 : 0.0) : (double)zeroes / hits;
+                var ctr = hits == 0 ? 0.0 : (double)clicks / hits;
+                rows.Add(new PhraseAggregate(display, hits, zeroRate, ctr, locale, profileKey));
+            }
+            return rows;
+        }
+        catch (Exception ex)
+        {
+            // SQL fast path failed for any reason — log once at warning, then
+            // disable for this read so the caller falls back to DDS-LINQ.
+            // Common causes: connection drift, DDS schema bump that obsoleted
+            // a column we cached the old name for. The fallback always works.
+            _logger.LogWarning(ex, "Telemetry fast-path SQL query failed; falling back to DDS-LINQ.");
+            return null;
+        }
+    }
+
+    private static string BuildAggregateSql(BucketColumnMap m, bool includeProfile, bool includeLocale)
+    {
+        // Column names come from a whitelist-validated source (see
+        // BucketColumnMap.ResolveAsync), so direct interpolation is safe.
+        // The literal store name is constant, also safe.
+        var profileFilter = includeProfile ? $" AND {m.ProfileKey} = @profile" : string.Empty;
+        var localeFilter = includeLocale ? $" AND {m.Locale} = @locale" : string.Empty;
+        return $@"
+SELECT
+    {m.PhraseNorm}    AS PhraseNorm,
+    {m.ProfileKey}    AS ProfileKey,
+    {m.Locale}        AS Locale,
+    SUM({m.Hits})     AS Hits,
+    SUM({m.Zeroes})   AS Zeroes,
+    SUM({m.Clicks1} + {m.Clicks2} + {m.Clicks3}) AS Clicks,
+    MIN(NULLIF({m.DisplayPhrase}, ''))           AS DisplayPhrase
+FROM tblBigTable
+WHERE StoreName = 'GraphSearchtools_SearchLogBucket'
+  AND {m.BucketUtc} >= @since
+  AND {m.BucketUtc} <  @until{profileFilter}{localeFilter}
+GROUP BY {m.PhraseNorm}, {m.ProfileKey}, {m.Locale}";
+    }
+
+    /// <summary>
+    /// Lazy-initialised, thread-safe column map cache. First reader pays the
+    /// resolve cost (~5 ms); every subsequent read is a field load.
+    /// </summary>
+    private BucketColumnMap? ResolveColumnMap()
+    {
+        if (_columnMapResolved) return _columnMap;
+        lock (_columnMapLock)
+        {
+            if (_columnMapResolved) return _columnMap;
+            var connectionString = _configuration.GetConnectionString("EPiServerDB");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                _columnMapResolved = true;
+                return null;
+            }
+            try
+            {
+                _columnMap = BucketColumnMap.ResolveAsync(connectionString, CancellationToken.None).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Telemetry column-map resolve failed; reader will use DDS-LINQ path until next process start.");
+                _columnMap = null;
+            }
+            _columnMapResolved = true;
+            return _columnMap;
+        }
     }
 
     /// <summary>

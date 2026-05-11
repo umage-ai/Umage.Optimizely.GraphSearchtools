@@ -46,6 +46,20 @@
   </ItemGroup>
 
   <!--
+    Used by the telemetry reader's fast path (raw aggregate query against
+    DDS' underlying tblBigTable). EPiServer.CMS pulls in the SqlClient
+    transitively; we add an explicit reference per-TFM so the addon builds
+    standalone, with a version range that matches what CMS itself
+    constrains to (5.* on CMS 12, 6.* on CMS 13).
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.*" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.*" />
+  </ItemGroup>
+
+  <!--
     CMS 12 / CMS 13 packages use floating major-version ranges so the
     add-on doesn't force a specific patch level on consumers.
   -->
