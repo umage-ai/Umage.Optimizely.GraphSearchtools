@@ -49,15 +49,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Profiles))
         };
 
-        // Phase 2.5 §4.1: Pinned no longer has a top-level menu entry — pinned
-        // results are always profile-scoped (Graph keys them per collection),
-        // so marketers reach the editor via Profiles → {profile} → Pinned tab.
-        // The legacy /pinned URL still serves a 301 redirect for hosts that
-        // bookmark it (see GraphSearchtoolsController.Pinned). The Pinned
-        // FeatureToggle now gates the in-profile tab instead.
+        // Editorial group: top-level Pinned + Synonyms tools — global views
+        // that mirror the per-profile tabs inside Profile detail. The Pinned
+        // tool also absorbs the former Pinned Coverage as an "Audit" tab.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned"), BaseMenuPath + "/pinned",
+            GetResourcePath("GraphSearchtools/Pinned"))
+        {
+            SortIndex = 200,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Pinned))
+        };
 
-        // Editorial group (Phase 1): Synonyms keeps its top-level entry
-        // because Graph's Global synonym slot needs a tenant-level surface.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/synonyms", "Synonyms"), BaseMenuPath + "/synonyms",
             GetResourcePath("GraphSearchtools/Synonyms"))
         {
@@ -92,17 +93,9 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchLogs))
         };
 
-        // Pinned Result Coverage (Phase 4 Wave 5 §6) — read-only audit that
-        // joins Graph pinned data with CMS content state and the 7-day
-        // search-log window. Surfaces broken targets (unpublished/deleted),
-        // expired pins, low-CTR pins, no-activity pins, and overlap conflicts
-        // (same phrase pinned in multiple collections).
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinnedCoverage", "Pinned Coverage"), BaseMenuPath + "/pinnedcoverage",
-            GetResourcePath("GraphSearchtools/PinnedCoverage"))
-        {
-            SortIndex = 520,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.PinnedCoverage))
-        };
+        // Pinned Coverage absorbed into the Pinned tool as an "Audit" tab
+        // — no standalone menu entry. Legacy /pinnedcoverage URL still 301s
+        // to /Pinned#audit via GraphSearchtoolsController.PinnedCoverage.
 
         // Synonym Coverage (Phase 4 Wave 5) — joins the saved synonym blobs
         // with the search-log table to surface unused entries (prune

@@ -420,6 +420,8 @@
           <deleted>Pinned item deleted.</deleted>
           <confirm_delete>Delete this pinned item?</confirm_delete>
           <no_sites>No sites available.</no_sites>
+          <tab_pins>Pins</tab_pins>
+          <tab_audit>Audit</tab_audit>
         </pinned>
         <synonyms>
           <request_failed>Request failed</request_failed>
