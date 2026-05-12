@@ -22,7 +22,7 @@
  *                       drawerEl?, drawerCount?, sortBtns? (NodeList).
  *   pageSize          — defaults to 20.
  *
- * Returns { draftRule(rule): bool, appendRule(lhs, rhs): Promise, reload(): Promise }.
+ * Returns { draftRule, appendRule, updateRule, findRuleForPhrase, whenReady, reload }.
  */
 (function () {
     'use strict';
@@ -596,6 +596,70 @@
                             renderRows();
                             // Mirror save()'s broadcast so the live preview
                             // drops its cached synonym rules for this lang.
+                            window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
+                                detail: { lang: scope === 'lang' ? state.lang : '' }
+                            }));
+                        });
+                    });
+                },
+
+                /**
+                 * Resolves when the first loadForLang() settles. The Insights
+                 * inline editor uses this to wait for state.rows to populate
+                 * before looking for an existing rule to prefill, instead of
+                 * racing the initial fetch and seeing an empty rowset.
+                 */
+                whenReady: function () { return initialLoad || Promise.resolve(); },
+
+                /**
+                 * Find an existing replacement rule whose LHS matches `phrase`
+                 * (case-insensitive, trimmed) within the scope appendRule
+                 * would write to (lang when lang is set, else global). Returns
+                 * { ruleObj, lhs, rhs } or null. Inline editors call this to
+                 * prefill themselves so editing the existing rule writes back
+                 * instead of stacking a duplicate.
+                 */
+                findRuleForPhrase: function (phrase) {
+                    if (!phrase) return null;
+                    var lhsLower = phrase.trim().toLowerCase();
+                    var scope = state.lang ? 'lang' : 'global';
+                    for (var i = 0; i < state.rows.length; i++) {
+                        var r = state.rows[i];
+                        if (r.scope !== scope) continue;
+                        var idx = (r.rule || '').indexOf('=>');
+                        if (idx < 0) continue;
+                        var lhs = r.rule.slice(0, idx).trim();
+                        if (lhs.toLowerCase() === lhsLower) {
+                            return { ruleObj: r, lhs: lhs, rhs: r.rule.slice(idx + 2).trim() };
+                        }
+                    }
+                    return null;
+                },
+
+                /**
+                 * Replace `existingRuleObj`'s rule string with `lhs => rhs` and
+                 * persist the blob. Paired with findRuleForPhrase() so the
+                 * inline editor can update a rule in place rather than push
+                 * a parallel one with the same source phrase.
+                 */
+                updateRule: function (existingRuleObj, lhs, rhs) {
+                    if (!existingRuleObj || !lhs || !rhs) {
+                        return Promise.reject(new Error('existing row, lhs, and rhs are required'));
+                    }
+                    return initialLoad.then(function () {
+                        if (state.rows.indexOf(existingRuleObj) < 0) {
+                            // Reloaded out from under us — fall back to append
+                            // so the marketer's edit isn't lost.
+                            state.rows.push({ rule: lhs.trim() + ' => ' + rhs.trim(),
+                                              scope: state.lang ? 'lang' : 'global' });
+                        } else {
+                            existingRuleObj.rule = lhs.trim() + ' => ' + rhs.trim();
+                        }
+                        var scope = state.lang ? 'lang' : 'global';
+                        var content = joinedScopeContent(scope);
+                        return writeScope(scope, content).then(function () {
+                            state.snapshots[scope] = content;
+                            renderRows();
                             window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
                                 detail: { lang: scope === 'lang' ? state.lang : '' }
                             }));

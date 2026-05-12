@@ -879,35 +879,48 @@
 
             // The pinned key is loaded async by pinned.js — if the user
             // clicked the pin icon before that fetch settles, canCreatePins
-            // is still false. Show a transient loading state and re-check
-            // once the editor reports ready, instead of permanently locking
-            // the panel on a race.
+            // is still false. Show a spinner and re-check once the editor
+            // reports ready, instead of permanently locking the panel on a
+            // race. After ready we also look up an existing pin for this
+            // phrase and prefill if one exists so the save path edits
+            // instead of stacking a duplicate.
             var picked = null;
             var debounceT = null;
-            function applyReadyState() {
-                if (ed.canCreatePins()) return; // ready: leave input enabled
-                input.disabled = true;
-                input.placeholder = s('profiles.detail.insights.pinUnavailable',
-                    'Pinned results not configured for this profile.');
-            }
-            if (!ed.canCreatePins()) {
-                input.disabled = true;
-                input.placeholder = s('profiles.detail.insights.pinLoading',
-                    'Loading pinned config…');
-                var whenReady = typeof ed.whenReady === 'function'
-                    ? ed.whenReady()
-                    : Promise.resolve();
-                whenReady.then(function () {
-                    if (!panel.isConnected) return; // user closed it
-                    if (ed.canCreatePins()) {
-                        input.disabled = false;
-                        input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder',
-                            'Search content…');
-                    } else {
-                        applyReadyState();
-                    }
-                });
-            }
+            var existingPin = null;
+            var spinner = makeSpinner();
+            input.disabled = true;
+            pickerWrap.appendChild(spinner);
+
+            var whenReady = typeof ed.whenReady === 'function'
+                ? ed.whenReady()
+                : Promise.resolve();
+            whenReady.then(function () {
+                if (!panel.isConnected) return; // user closed it
+                spinner.remove();
+                if (!ed.canCreatePins()) {
+                    input.placeholder = s('profiles.detail.insights.pinUnavailable',
+                        'Pinned results not configured for this profile.');
+                    return;
+                }
+                input.disabled = false;
+                input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder',
+                    'Search content…');
+                existingPin = typeof ed.findPinForPhrase === 'function'
+                    ? ed.findPinForPhrase(row.phrase)
+                    : null;
+                if (existingPin) {
+                    picked = {
+                        targetKey: existingPin.targetKey,
+                        contentName: existingPin.contentName,
+                        contentType: existingPin.contentType
+                    };
+                    input.value = existingPin.contentName || '';
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = s('profiles.detail.insights.editUpdate', 'Update');
+                } else {
+                    input.focus();
+                }
+            });
 
             input.addEventListener('input', function () {
                 picked = null;
@@ -952,9 +965,13 @@
 
             saveBtn.addEventListener('click', function () {
                 if (!picked) return;
+                var saveLabel = saveBtn.textContent;
                 saveBtn.disabled = true;
                 saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
-                ed.createPin(row.phrase, picked).then(function () {
+                var saveCall = existingPin && typeof ed.updatePin === 'function'
+                    ? ed.updatePin(existingPin, picked)
+                    : ed.createPin(row.phrase, picked);
+                saveCall.then(function () {
                     panel.classList.add('is-saved');
                     panel.innerHTML = '';
                     var ok = document.createElement('span');
@@ -966,7 +983,7 @@
                     setTimeout(function () { if (panel.parentNode) panel.remove(); }, 2200);
                 }).catch(function (err) {
                     saveBtn.disabled = false;
-                    saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+                    saveBtn.textContent = saveLabel;
                     flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
                 });
             });
@@ -979,18 +996,22 @@
             var panel = document.createElement('li');
             panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--synonym';
 
-            // Single rule input prefilled with "<phrase> => " — the marketer
-            // only needs to type the replacement side. Format mirrors how the
-            // Synonyms tab stores rules so what they type here is what they'd
-            // see there.
+            // Single rule input. While the synonyms blob is loading, we show
+            // a spinner and disable the input — once ready we either prefill
+            // with an existing rule for this phrase (so the save path edits
+            // the row in place) or with "<phrase> => " (so the marketer only
+            // types the replacement side).
             var ruleInput = document.createElement('input');
             ruleInput.type = 'text';
             ruleInput.className = 'gst-prof-ins-edit__input gst-prof-ins-edit__input--rule';
             var prefix = row.phrase + ' => ';
-            ruleInput.value = prefix;
             ruleInput.placeholder = s('profiles.detail.insights.synRulePlaceholder',
                 'phrase => replacement');
+            ruleInput.disabled = true;
             panel.appendChild(ruleInput);
+
+            var spinner = makeSpinner();
+            panel.appendChild(spinner);
 
             var saveBtn = document.createElement('button');
             saveBtn.type = 'button';
@@ -1014,19 +1035,11 @@
             cancelBtn.addEventListener('click', function () { panel.remove(); });
 
             if (!ed || typeof ed.appendRule !== 'function') {
-                ruleInput.disabled = true;
-                ruleInput.value = '';
+                spinner.remove();
                 ruleInput.placeholder = s('profiles.detail.insights.synUnavailable',
                     'Synonyms not loaded yet — open the Synonyms tab once.');
                 return panel;
             }
-
-            // Place caret after the prefix so the marketer starts typing the
-            // RHS without selecting / deleting the phrase.
-            requestAnimationFrame(function () {
-                try { ruleInput.setSelectionRange(prefix.length, prefix.length); }
-                catch (e) { /* type=text on some browsers refuses setSelectionRange */ }
-            });
 
             function parseRule() {
                 var v = (ruleInput.value || '').trim();
@@ -1037,6 +1050,31 @@
                 if (!lhs || !rhs) return null;
                 return { lhs: lhs, rhs: rhs };
             }
+
+            var existingRule = null;
+            var whenReady = typeof ed.whenReady === 'function'
+                ? ed.whenReady()
+                : Promise.resolve();
+            whenReady.then(function () {
+                if (!panel.isConnected) return;
+                spinner.remove();
+                ruleInput.disabled = false;
+                existingRule = typeof ed.findRuleForPhrase === 'function'
+                    ? ed.findRuleForPhrase(row.phrase)
+                    : null;
+                if (existingRule) {
+                    ruleInput.value = existingRule.ruleObj.rule;
+                    saveBtn.disabled = !parseRule();
+                    saveBtn.textContent = s('profiles.detail.insights.editUpdate', 'Update');
+                } else {
+                    ruleInput.value = prefix;
+                }
+                // Place caret at the end so the marketer continues typing the
+                // RHS rather than selecting / deleting the phrase.
+                try { ruleInput.setSelectionRange(ruleInput.value.length, ruleInput.value.length); }
+                catch (e) { /* type=text on some browsers refuses setSelectionRange */ }
+                ruleInput.focus();
+            });
 
             ruleInput.addEventListener('input', function () {
                 saveBtn.disabled = !parseRule();
@@ -1051,9 +1089,13 @@
             saveBtn.addEventListener('click', function () {
                 var parsed = parseRule();
                 if (!parsed) return;
+                var saveLabel = saveBtn.textContent;
                 saveBtn.disabled = true;
                 saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
-                ed.appendRule(parsed.lhs, parsed.rhs).then(function () {
+                var saveCall = existingRule && typeof ed.updateRule === 'function'
+                    ? ed.updateRule(existingRule.ruleObj, parsed.lhs, parsed.rhs)
+                    : ed.appendRule(parsed.lhs, parsed.rhs);
+                saveCall.then(function () {
                     panel.classList.add('is-saved');
                     panel.innerHTML = '';
                     var ok = document.createElement('span');
@@ -1065,12 +1107,23 @@
                     setTimeout(function () { if (panel.parentNode) panel.remove(); }, 1800);
                 }).catch(function (err) {
                     saveBtn.disabled = false;
-                    saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+                    saveBtn.textContent = saveLabel;
                     flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
                 });
             });
 
             return panel;
+        }
+
+        // Tiny inline spinner element used while either editor is waiting on
+        // its source data to load. Kept as a helper because both inline
+        // editors mount it the same way (append, then remove on ready).
+        function makeSpinner() {
+            var el = document.createElement('span');
+            el.className = 'gst-prof-ins-edit__spinner';
+            el.setAttribute('role', 'progressbar');
+            el.setAttribute('aria-label', s('shared.loading', 'Loading…'));
+            return el;
         }
 
         function applyToPreview(phrase) {

@@ -300,6 +300,7 @@
             <synRuleTip>Format: original =&gt; replacement. Queries for "original" are rewritten to "replacement" at search time.</synRuleTip>
             <synUnavailable>Synonyms not loaded yet — open the Synonyms tab once.</synUnavailable>
             <editSave>Save</editSave>
+            <editUpdate>Update</editUpdate>
             <editSaving>Saving…</editSaving>
             <editCancel>Cancel</editCancel>
             <editPinSaved>✓ Pinned — open the Pinned tab to refine.</editPinSaved>

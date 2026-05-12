@@ -1880,6 +1880,49 @@
             },
 
             /**
+             * Find an existing pinned row in the current (site, locale)
+             * collection whose phrase matches `phrase` (case-insensitive,
+             * comma-tokenized — the same matching the storefront applies).
+             * Returns the row object or null. The Insights inline editor
+             * uses this to prefill itself so re-pinning the same phrase
+             * updates the existing pin instead of creating a duplicate.
+             */
+            findPinForPhrase: function (phrase) {
+                if (!phrase || !state.rows.length) return null;
+                var lower = phrase.trim().toLowerCase();
+                for (var i = 0; i < state.rows.length; i++) {
+                    var r = state.rows[i];
+                    if (!r.phrases) continue;
+                    var tokens = r.phrases.split(',');
+                    for (var j = 0; j < tokens.length; j++) {
+                        if (tokens[j].trim().toLowerCase() === lower) return r;
+                    }
+                }
+                return null;
+            },
+
+            /**
+             * Replace `existingRow`'s target with `target` and PUT. Marks
+             * the row dirty so saveRow takes the update path (PUT, not
+             * POST). Paired with findPinForPhrase() so the inline editor
+             * can edit an existing pin's target rather than stacking a
+             * second item with the same phrase.
+             */
+            updatePin: function (existingRow, target) {
+                if (!existingRow || !target || !target.targetKey) {
+                    return Promise.reject(new Error('row and target are required'));
+                }
+                existingRow.targetKey = target.targetKey;
+                existingRow.contentName = target.contentName || '';
+                existingRow.contentType = target.contentType || '';
+                existingRow._dirty = true;
+                return saveRow(existingRow).then(function () {
+                    renderRows();
+                    return existingRow;
+                });
+            },
+
+            /**
              * Seed a new draft pin row pre-filled with `phrase` and focus the
              * target cell — used by the Insights tab "draft pin" CTA so the
              * editor opens ready for the marketer to pick a target. Returns

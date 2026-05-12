@@ -4538,6 +4538,18 @@ td.bpe-editing select {
     line-height: 1.4;
     margin-top: 2px;
 }
+/* Inline spinner shown while the pin or synonym blob is still loading.
+   Sized to sit next to the disabled input without resizing the row. */
+.gst-prof-ins-edit__spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid color-mix(in srgb, var(--lane-accent) 25%, transparent);
+    border-top-color: var(--lane-accent);
+    border-radius: 50%;
+    animation: gst-spin 720ms linear infinite;
+    flex: 0 0 auto;
+}
 .gst-prof-ins-edit.is-saved {
     justify-content: flex-start;
 }
