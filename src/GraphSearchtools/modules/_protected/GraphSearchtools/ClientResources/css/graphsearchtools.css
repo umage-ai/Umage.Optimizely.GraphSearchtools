@@ -2859,6 +2859,31 @@ td.bpe-editing select {
     text-align: center;
 }
 
+/* Loading row shown while a grid is fetching its data (Pinned and
+   Synonyms tabs reuse the same class — they share the gst-pinedit__
+   grid skin). Spinner + label sit on one line so the row keeps the
+   grid's vertical rhythm during the load. */
+.gst-pinedit__loading td {
+    padding: 28px 16px;
+    color: var(--gst-text-muted);
+    font-size: var(--gst-text-sm);
+    text-align: center;
+}
+.gst-pinedit__loading__spinner {
+    display: inline-block;
+    vertical-align: middle;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    border: 2px solid color-mix(in srgb, var(--gst-primary) 25%, transparent);
+    border-top-color: var(--gst-primary);
+    border-radius: 50%;
+    animation: gst-spin 720ms linear infinite;
+}
+.gst-pinedit__loading__label {
+    vertical-align: middle;
+}
+
 /* Unsaved-changes drawer — only surfaces when ≥1 row is dirty */
 .gst-pinedit__drawer {
     display: flex;

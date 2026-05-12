@@ -248,6 +248,7 @@
             <discardAll>Discard changes</discardAll>
             <empty>No pinned items for this phrase yet.</empty>
             <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
+            <loading>Loading pinned items…</loading>
             <globalFilter>Search pins by phrase, target, or type…</globalFilter>
             <organicTitle>Organic results (no pins applied)</organicTitle>
             <previewFailed>Preview failed</previewFailed>
@@ -325,6 +326,7 @@
             <colScope>Scope</colScope>
             <discard>Discard changes</discard>
             <emptyHeadline>No synonym rules yet — add one to expand or substitute terms at query time.</emptyHeadline>
+            <loading>Loading synonym rules…</loading>
             <globalNote>Showing every rule that applies when previewing in this language: the per-language blob (editable here) plus the global blob, which is shared across languages and managed in the Synonyms tool.</globalNote>
             <globalRowTip>Global rule — applies in every language. Manage in the Synonyms tool.</globalRowTip>
             <helpSummary>Rule format</helpSummary>

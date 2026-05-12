@@ -1052,6 +1052,18 @@
             // Switching site / locale gives a different rowset entirely; the
             // previous page index is meaningless in the new context.
             state.page = 1;
+            // Replace stale rows with a loading row immediately so the user
+            // sees the grid reacting to the site/locale switch instead of
+            // staring at the previous scope's data while Graph responds.
+            // renderRows() clears the tbody on success / failure.
+            if (rowsTbody) {
+                rowsTbody.innerHTML = '<tr class="gst-pinedit__loading"><td colspan="3">'
+                    + '<span class="gst-pinedit__loading__spinner" aria-hidden="true"></span>'
+                    + '<span class="gst-pinedit__loading__label">'
+                    + escHtml(s('profiles.detail.pinned.loading', 'Loading pinned items…'))
+                    + '</span></td></tr>';
+            }
+            if (emptyEl) emptyEl.hidden = true;
             var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
                 + '/pinned?site=' + encodeURIComponent(state.site || '')
                 + '&locale=' + encodeURIComponent(state.locale || '');

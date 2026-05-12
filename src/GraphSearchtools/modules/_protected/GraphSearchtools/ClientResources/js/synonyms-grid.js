@@ -386,6 +386,19 @@
 
             function loadForLang(lang) {
                 setAlert(null);
+                // Replace any stale rows with a loading row so the user sees
+                // the grid reacting to the locale switch / initial mount
+                // instead of staring at the previous scope's data while the
+                // synonyms blobs fetch. renderRows() clears the tbody on
+                // success / failure.
+                if (rowsHost) {
+                    rowsHost.innerHTML = '<tr class="gst-pinedit__loading"><td colspan="4">'
+                        + '<span class="gst-pinedit__loading__spinner" aria-hidden="true"></span>'
+                        + '<span class="gst-pinedit__loading__label">'
+                        + escHtml(s('profiles.detail.synonyms.loading', 'Loading synonym rules…'))
+                        + '</span></td></tr>';
+                }
+                if (emptyEl) emptyEl.hidden = true;
                 // In merge mode, fetch lang AND global in parallel so the
                 // active locale view shows every rule that applies to it.
                 // Outside merge mode, fetch only the scope the picker chose.
