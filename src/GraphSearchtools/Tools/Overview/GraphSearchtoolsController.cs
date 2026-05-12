@@ -31,15 +31,18 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Phase 2.5 §4.1: Pinned no longer has a standalone page. Marketers edit
-    /// pinned results via Profiles → {profile} → Pinned tab. We keep this
-    /// action for hosts that linked directly to <c>/pinned</c> and 301-redirect
-    /// to the Profiles index — they'll click into whichever profile they need.
+    /// Global Pinned tool — the cross-collection editor. Renders the merged
+    /// view with Pins (default) and Audit tabs; Audit absorbs the former
+    /// Pinned Coverage view. Phase 2.5 §4.1 originally redirected this to
+    /// Profiles, but a global pin-management surface (matching the global
+    /// Synonyms tool) is the right home for "see all my pins" workflows.
     /// </summary>
     [HttpGet]
     public IActionResult Pinned()
     {
-        return RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Pinned), GraphSearchtoolsPermissions.Pinned))
+            return Forbid();
+        return View("/Views/Pinned/Index.cshtml");
     }
 
     [HttpGet]
@@ -81,17 +84,15 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Phase 4 Wave 5 §6 — Pinned Result Coverage audit. Joins Graph pinned
-    /// data with CMS content state and the 7-day search-log window to surface
-    /// broken targets (unpublished/deleted), expired pins, low-CTR pins,
-    /// no-activity pins, and overlap conflicts.
+    /// Pinned Coverage was absorbed into the Pinned tool as an "Audit" tab.
+    /// We keep this action 301-redirecting so any bookmarked links keep
+    /// working. The Pinned page reads the #audit fragment on load and
+    /// switches to the Audit tab.
     /// </summary>
     [HttpGet]
     public IActionResult PinnedCoverage()
     {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.PinnedCoverage), GraphSearchtoolsPermissions.PinnedCoverage))
-            return Forbid();
-        return View("/Views/PinnedCoverage/Index.cshtml");
+        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Pinned#audit");
     }
 
     [HttpGet]
