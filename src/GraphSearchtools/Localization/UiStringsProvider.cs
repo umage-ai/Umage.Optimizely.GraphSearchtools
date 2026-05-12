@@ -230,6 +230,7 @@ public class UiStringsProvider(LocalizationService loc)
                     synRuleTip = P("detail/insights/synRuleTip"),
                     synUnavailable = P("detail/insights/synUnavailable"),
                     editSave = P("detail/insights/editSave"),
+                    editUpdate = P("detail/insights/editUpdate"),
                     editSaving = P("detail/insights/editSaving"),
                     editCancel = P("detail/insights/editCancel"),
                     editPinSaved = P("detail/insights/editPinSaved"),
