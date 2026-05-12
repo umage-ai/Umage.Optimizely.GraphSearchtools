@@ -161,7 +161,21 @@
           <col_closest>Closest indexed term</col_closest>
           <col_similarity>Edit distance</col_similarity>
           <prune_in_synonyms>Prune in Synonyms</prune_in_synonyms>
+          <delete_entry>Delete</delete_entry>
+          <confirm_delete_entry>Delete this synonym rule? This can't be undone.</confirm_delete_entry>
+          <delete_failed>Could not delete rule.</delete_failed>
+          <delete_not_found>The rule was not found in the current synonym set. Refresh and try again.</delete_not_found>
           <add_in_synonyms>Add in Synonyms</add_in_synonyms>
+          <add_entry>Add</add_entry>
+          <add_save>Save</add_save>
+          <add_update>Update</add_update>
+          <add_cancel>Cancel</add_cancel>
+          <add_saving>Saving…</add_saving>
+          <add_saved>✓ Rule added.</add_saved>
+          <add_failed>Could not add rule.</add_failed>
+          <add_rule_placeholder>phrase => replacement</add_rule_placeholder>
+          <add_rule_tip>Format: original =&gt; replacement. Queries for "original" are rewritten to "replacement".</add_rule_tip>
+          <add_unavailable>Synonyms editor not ready — open the Rules tab once and try again.</add_unavailable>
           <empty>No prune candidates — every synonym entry fired at least once.</empty>
           <load_failed>Could not load synonym coverage.</load_failed>
           <no_logs>No zero-result phrases in the window — nothing to suggest.</no_logs>
@@ -479,6 +493,8 @@
           <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
+          <tab_rules>Rules</tab_rules>
+          <tab_unused>Unused</tab_unused>
         </synonyms>
         <health>
           <request_failed>Health check failed</request_failed>
