@@ -325,6 +325,17 @@
 }
 .gst-btn--primary:hover { background: var(--gst-primary-hover); }
 
+.gst-btn--danger {
+    color: var(--gst-danger, #b3261e);
+    border-color: var(--gst-border);
+}
+.gst-btn--danger:hover {
+    background: var(--gst-danger, #b3261e);
+    color: #fff;
+    border-color: var(--gst-danger, #b3261e);
+}
+.gst-btn--danger:disabled { opacity: 0.6; cursor: default; }
+
 .gst-btn--sm { padding: 3px 8px; font-size: 11px; }
 .gst-btn--icon { padding: 4px 6px; }
 
@@ -4794,3 +4805,42 @@ td.bpe-editing select {
     border-bottom-color: var(--gst-primary);
 }
 .gst-tabpanel[hidden] { display: none; }
+
+/* ── Synonym Coverage inline editor ─────────────────────────────── */
+/* Mirrors the Profile Insights inline editor (gst-prof-ins-edit*) but
+   sized for a table row: the editor sits in a colspan <td> directly
+   under the suggested row so the marketer can add or update the rule
+   without leaving the Unused tab. */
+.gst-sc-edit-row > .gst-sc-edit-cell {
+    background: var(--gst-bg-soft, #f5f7fb);
+    border-top: 1px dashed var(--gst-border-light, #e5e7eb);
+    padding: 10px 14px;
+}
+.gst-sc-edit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.gst-sc-edit__input {
+    flex: 1 1 320px;
+    min-width: 220px;
+    padding: 5px 8px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius-sm, 4px);
+    font: inherit;
+    font-size: 13px;
+}
+.gst-sc-edit__input:focus { outline: 2px solid var(--gst-primary); outline-offset: -1px; }
+.gst-sc-edit__input:disabled { background: var(--gst-bg, #fafbfc); color: var(--gst-text-muted, #888); }
+.gst-sc-edit__tip {
+    flex-basis: 100%;
+    color: var(--gst-text-muted, #6b7280);
+    font-size: 11px;
+    margin-top: 2px;
+}
+.gst-sc-edit__ok {
+    color: var(--gst-success, #2f7a3a);
+    font-weight: 600;
+}
+.gst-btn.is-active { background: var(--gst-bg-soft, #eef1f6); border-color: var(--gst-primary); color: var(--gst-primary); }

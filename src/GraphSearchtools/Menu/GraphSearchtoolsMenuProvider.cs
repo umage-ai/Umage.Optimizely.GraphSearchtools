@@ -97,17 +97,9 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // — no standalone menu entry. Legacy /pinnedcoverage URL still 301s
         // to /Pinned#audit via GraphSearchtoolsController.PinnedCoverage.
 
-        // Synonym Coverage (Phase 4 Wave 5) — joins the saved synonym blobs
-        // with the search-log table to surface unused entries (prune
-        // candidates) and zero-result phrases that look like missing synonyms
-        // (suggested adds). Read-only; both tables deep-link into the
-        // Synonyms editor.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/synonymCoverage", "Synonym Coverage"), BaseMenuPath + "/synonymcoverage",
-            GetResourcePath("GraphSearchtools/SynonymCoverage"))
-        {
-            SortIndex = 530,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SynonymCoverage))
-        };
+        // Synonym Coverage absorbed into the Synonyms tool as an "Unused" tab
+        // — no standalone menu entry. Legacy /synonymcoverage URL still 301s
+        // to /synonyms#unused via GraphSearchtoolsController.SynonymCoverage.
 
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
             GetResourcePath("GraphSearchtools/About"))

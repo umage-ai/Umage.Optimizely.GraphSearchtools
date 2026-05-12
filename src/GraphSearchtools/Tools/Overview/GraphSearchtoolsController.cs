@@ -75,12 +75,16 @@ public class GraphSearchtoolsController : Controller
     /// entries (prune candidates) and zero-result phrases that look like
     /// missing synonyms (suggested adds).
     /// </summary>
+    /// <summary>
+    /// Synonym Coverage was absorbed into the Synonyms tool as an "Unused"
+    /// tab. We keep this action 301-redirecting to the new home so any
+    /// bookmarked links keep working. The Synonyms page reads the #unused
+    /// fragment on load and switches to the Unused tab.
+    /// </summary>
     [HttpGet]
     public IActionResult SynonymCoverage()
     {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SynonymCoverage), GraphSearchtoolsPermissions.SynonymCoverage))
-            return Forbid();
-        return View("/Views/SynonymCoverage/Index.cshtml");
+        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Synonyms#unused");
     }
 
     /// <summary>
