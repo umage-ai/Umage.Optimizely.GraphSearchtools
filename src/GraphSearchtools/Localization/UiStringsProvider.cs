@@ -207,6 +207,14 @@ public class UiStringsProvider(LocalizationService loc)
                         locale = P("detail/audit/col/locale")
                     }
                 },
+                pinned = new
+                {
+                    loading = P("detail/pinned/loading")
+                },
+                synonyms = new
+                {
+                    loading = P("detail/synonyms/loading")
+                },
                 insights = new
                 {
                     topTitle = P("detail/insights/topTitle"),
