@@ -42,7 +42,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // Phase 2.5 — Search Profiles top-level surface. Sits between Overview
         // and the editorial tools so marketers land on the per-surface tuning
         // index before drilling into individual data shapes.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/profiles", "Profiles"), BaseMenuPath + "/profiles",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/profiles", "Search profiles"), BaseMenuPath + "/profiles",
             "/EPiServer/cms/graphsearchtools/profiles")
         {
             SortIndex = 150,
@@ -75,7 +75,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Health))
         };
 
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/autocomplete", "Autocomplete"), BaseMenuPath + "/autocomplete",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/autocomplete", "Autocomplete check"), BaseMenuPath + "/autocomplete",
             GetResourcePath("GraphSearchtools/Autocomplete"))
         {
             SortIndex = 310,
@@ -86,7 +86,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // group because it's the synonym-mining surface every other Wave 5
         // tool feeds off: top phrases, zero-result phrases, low-CTR phrases,
         // recent raw events.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search Logs"), BaseMenuPath + "/searchlogs",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search insights"), BaseMenuPath + "/searchlogs",
             GetResourcePath("SearchLogs/Index"))
         {
             SortIndex = 510,

@@ -29,11 +29,11 @@
       <menu>
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
-        <profiles>Profiles</profiles>
-        <pinned>Pinned Results</pinned>
+        <profiles>Search profiles</profiles>
+        <pinned>Pinned</pinned>
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
-        <autocomplete>Autocomplete</autocomplete>
+        <autocomplete>Autocomplete check</autocomplete>
         <savedqueries>Saved Queries</savedqueries>
         <about>About</about>
       </menu>
@@ -43,9 +43,13 @@
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
         </overview>
+        <profiles>
+          <title>Search profiles</title>
+          <description>Tune each registered search surface — pins, synonyms, and insights scoped to one profile.</description>
+        </profiles>
         <pinned>
-          <title>Pinned Results</title>
-          <description>Pin specific content to appear at the top of the search results for chosen phrases, per site and language.</description>
+          <title>Pinned</title>
+          <description>Pin specific content to the top of the results for chosen phrases, per collection and locale.</description>
           <filter_placeholder>Filter by phrase or content...</filter_placeholder>
           <all_sites>All sites</all_sites>
           <add>Add</add>
@@ -55,7 +59,7 @@
         </pinned>
         <synonyms>
           <title>Synonyms</title>
-          <description>Manage replacement and equivalent synonym rules per language. Editors can change behaviour without re-indexing.</description>
+          <description>Manage replacement and equivalent synonym rules per locale. Changes take effect immediately.</description>
           <filter_placeholder>Filter rules...</filter_placeholder>
           <add>Add</add>
           <col_rule>Rule</col_rule>
@@ -64,10 +68,12 @@
           <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
+          <tab_rules>Rules</tab_rules>
+          <tab_unused>Unused</tab_unused>
         </synonyms>
         <health>
           <title>Health</title>
-          <description>Live diagnostics for Optimizely Graph: gateway reach, credential validity (Basic + SingleKey), and index population. Auto-mode runs a background scan every 5 minutes that cycles through published pages and flags any that are missing from Graph.</description>
+          <description>Live diagnostics for Optimizely Graph — gateway reach, credentials, and index population. Auto-mode runs a background scan every 5 minutes against your published pages and flags any that are missing from Graph.</description>
           <run>Run check</run>
           <auto_label>Auto</auto_label>
           <auto_off>OFF</auto_off>
@@ -101,8 +107,8 @@
           <issue_reason_removed>Removed from CMS</issue_reason_removed>
         </health>
         <autocomplete>
-          <title>Autocomplete Tester</title>
-          <description>Try out the Optimizely Graph autocomplete field. Pick a content type and a field — the dropdowns are populated by introspecting the live Graph schema, so what you see is what's actually queryable on this tenant.</description>
+          <title>Autocomplete check</title>
+          <description>Verify what the Optimizely Graph autocomplete returns for a given content type and field. The dropdowns reflect the live Graph schema for this environment.</description>
           <placeholder>Type to see suggestions…</placeholder>
           <type>Type</type>
           <type_placeholder>Search content types…</type_placeholder>
@@ -439,8 +445,6 @@
           <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
           <help_equivalent_label>Equivalent</help_equivalent_label>
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
-          <tab_rules>Rules</tab_rules>
-          <tab_unused>Unused</tab_unused>
         </synonyms>
         <health>
           <request_failed>Health check failed</request_failed>

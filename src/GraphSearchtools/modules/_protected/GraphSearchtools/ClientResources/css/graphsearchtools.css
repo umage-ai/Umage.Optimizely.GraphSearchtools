@@ -4844,3 +4844,41 @@ td.bpe-editing select {
     font-weight: 600;
 }
 .gst-btn.is-active { background: var(--gst-bg-soft, #eef1f6); border-color: var(--gst-primary); color: var(--gst-primary); }
+
+/* ── About page ─────────────────────────────────────────────────── */
+.gst-about dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: var(--gst-space-lg);
+    row-gap: var(--gst-space-sm);
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius-lg);
+    box-shadow: var(--gst-shadow-sm);
+    padding: var(--gst-space-md) var(--gst-space-lg);
+    max-width: 720px;
+}
+
+.gst-about dt {
+    color: var(--gst-text-secondary);
+    font-size: var(--gst-text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    align-self: center;
+}
+
+.gst-about dd {
+    font-family: var(--gst-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: var(--gst-text-base);
+    word-break: break-all;
+}
+
+.gst-about dd a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid var(--gst-border);
+}
+
+.gst-about dd a:hover {
+    border-bottom-color: var(--gst-text-primary);
+}
