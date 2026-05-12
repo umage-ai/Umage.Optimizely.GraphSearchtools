@@ -148,6 +148,11 @@
                 lang: getLang(),
                 rows: [],
                 filter: '',
+                // Per-column substring filters layered on top of the global
+                // filter (same model as the pinned grid). Empty values are
+                // no-ops; scope strings match against the scope label, e.g.
+                // 'lang' or 'global'.
+                colFilters: { rule: '', scope: '' },
                 page: 1,
                 sort: { field: 'rule', dir: 'asc' },
                 snapshots: { lang: '', global: '' }
@@ -179,6 +184,17 @@
                 if (q) {
                     rows = rows.filter(function (r) {
                         return (r.rule || '').toLowerCase().indexOf(q) !== -1;
+                    });
+                }
+                // Per-column filters AND against the global one. Scope is
+                // stored as 'lang'/'global'; matching against that token
+                // lets the user type either to narrow.
+                var cf = state.colFilters || {};
+                if (cf.rule || cf.scope) {
+                    rows = rows.filter(function (r) {
+                        if (cf.rule && (r.rule || '').toLowerCase().indexOf(cf.rule) === -1) return false;
+                        if (cf.scope && (r.scope || '').toLowerCase().indexOf(cf.scope) === -1) return false;
+                        return true;
                     });
                 }
                 var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
@@ -533,6 +549,40 @@
                     }, 80);
                 });
             }
+
+            // Per-column filter row — injected into <thead> below the sort
+            // row. Rendered in JS rather than the Razor template so both
+            // surfaces that mount the synonyms grid (the standalone tool
+            // and the Profile detail tab) pick it up from one place.
+            (function wireColumnFilters() {
+                if (!rowsHost) return;
+                var thead = rowsHost.parentNode && rowsHost.parentNode.querySelector
+                    ? rowsHost.parentNode.querySelector('thead')
+                    : null;
+                if (!thead || thead.querySelector('.gst-pinedit__head-filter')) return;
+                var tr = document.createElement('tr');
+                tr.className = 'gst-pinedit__head-filter';
+                var rulePh = s('profiles.detail.synonyms.colFilterRule', 'Filter rule…');
+                var scopePh = s('profiles.detail.synonyms.colFilterScope', 'Filter scope…');
+                tr.innerHTML =
+                    '<th class="gst-pinedit__col" aria-hidden="true"></th>' +
+                    '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="rule" autocomplete="off" placeholder="' + escHtml(rulePh) + '"></th>' +
+                    '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="scope" autocomplete="off" placeholder="' + escHtml(scopePh) + '"></th>' +
+                    '<th class="gst-pinedit__col" aria-hidden="true"></th>';
+                thead.appendChild(tr);
+                var debounces = {};
+                tr.querySelectorAll('.gst-pinedit__colfilter').forEach(function (input) {
+                    var col = input.dataset.col;
+                    input.addEventListener('input', function () {
+                        clearTimeout(debounces[col]);
+                        debounces[col] = setTimeout(function () {
+                            state.colFilters[col] = (input.value || '').toLowerCase().trim();
+                            state.page = 1;
+                            renderRows();
+                        }, 120);
+                    });
+                });
+            })();
 
             if (sortBtns && sortBtns.length) {
                 GST.editGrid.wireSortHeaders(sortBtns, state.sort, function () {

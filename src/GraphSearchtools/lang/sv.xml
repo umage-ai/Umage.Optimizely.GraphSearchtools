@@ -204,6 +204,8 @@
             <colPhrase>Phrase</colPhrase>
             <colPriority>Priority</colPriority>
             <colTarget>Always show</colTarget>
+            <colFilterPhrase>Filter phrase…</colFilterPhrase>
+            <colFilterTarget>Filter content…</colFilterTarget>
             <colType>Type</colType>
             <discardAll>Discard changes</discardAll>
             <empty>No pinned items for this phrase yet.</empty>
@@ -284,6 +286,8 @@
             <addFirst>Add your first rule</addFirst>
             <addRow>Add rule</addRow>
             <colScope>Scope</colScope>
+            <colFilterRule>Filter rule…</colFilterRule>
+            <colFilterScope>Filter scope…</colFilterScope>
             <discard>Discard changes</discard>
             <emptyHeadline>No synonym rules yet — add one to expand or substitute terms at query time.</emptyHeadline>
             <loading>Loading synonym rules…</loading>
