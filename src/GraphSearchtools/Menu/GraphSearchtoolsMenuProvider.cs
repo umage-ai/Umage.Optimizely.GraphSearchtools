@@ -81,26 +81,6 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
         };
 
-        // Webhooks (Phase 3) — list/create/delete Graph webhooks. Edits are
-        // delete + recreate per the upstream constraint; the page surfaces
-        // that honestly via an info banner.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/webhooks", "Webhooks"), BaseMenuPath + "/webhooks",
-            GetResourcePath("GraphSearchtools/Webhooks"))
-        {
-            SortIndex = 420,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Webhooks))
-        };
-
-        // Semantic Weight Tuner (Phase 3) — token-count-tiered ranking policy
-        // editor. Pure client + tiny persistence layer; emits an
-        // appsettings.json snippet alongside the saved DDS row.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/semanticTuner", "Semantic Weight Tuner"), BaseMenuPath + "/semantictuner",
-            GetResourcePath("SemanticTuner/Index"))
-        {
-            SortIndex = 450,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SemanticTuner))
-        };
-
         // Analytics & audits group (Phase 4 Wave 5). Search Logs leads the
         // group because it's the synonym-mining surface every other Wave 5
         // tool feeds off: top phrases, zero-result phrases, low-CTR phrases,
@@ -134,30 +114,6 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         {
             SortIndex = 530,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SynonymCoverage))
-        };
-
-        // Content Searchability Audit (Phase 4 Wave 5 §6) — local CMS scan
-        // that flags pages whose editorial fields will trip Graph's relevance
-        // (empty Name / MainBody / Tags) or its 1024-char sortable-field
-        // limit. On-demand only because the scan walks every published page
-        // under every site root.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/contentSearchabilityAudit", "Content Searchability Audit"), BaseMenuPath + "/contentsearchabilityaudit",
-            GetResourcePath("GraphSearchtools/ContentSearchabilityAudit"))
-        {
-            SortIndex = 540,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.ContentSearchabilityAudit))
-        };
-
-        // Relevancy Lab (Phase 5) — golden query sets, NDCG@10 + MRR scoring,
-        // run history, two-config side-by-side comparison, CSV export. Sits
-        // after the Wave 5 audits because it builds on top of them: tune via
-        // Decay/SemanticTuner, observe coverage via the audits, then validate
-        // changes here against a curated golden set.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/relevancyLab", "Relevancy Lab"), BaseMenuPath + "/relevancylab",
-            GetResourcePath("RelevancyLab/Index"))
-        {
-            SortIndex = 600,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.RelevancyLab))
         };
 
         yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",

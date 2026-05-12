@@ -42,40 +42,12 @@ public class GraphSearchtoolsOptions
     public SavedQueriesOptions SavedQueries { get; set; } = new();
 
     /// <summary>
-    /// Semantic Weight Tuner-specific options (token-count-tiered ranking policy).
-    /// </summary>
-    public SemanticTuningOptions SemanticTuning { get; set; } = new();
-
-    /// <summary>
     /// Local telemetry sink tunables (queue size, flush cadence, retention,
     /// abuse caps). Used when the default local sink is wired (see
     /// <c>AddGraphSearchtools</c>); ignored when the host has substituted a
     /// 3rd-party reader via <c>UseExternalTelemetryReader&lt;T&gt;</c>.
     /// </summary>
     public LocalTelemetryOptions Telemetry { get; set; } = new();
-}
-
-/// <summary>
-/// Token-count-tiered ranking policy emitted by the Semantic Weight Tuner.
-/// </summary>
-/// <remarks>
-/// Two surfaces carry this policy: the bound configuration here (cold-start
-/// default, populated by the host's <c>appsettings.json</c>) and the
-/// DDS-persisted record edited via <c>SemanticTunerService</c>. They are
-/// independent — the bound options act as a static fallback, while the saved
-/// policy is the editable source of truth in the running app. A consumer that
-/// wants the live policy should call <c>SemanticTunerService.GetPolicy()</c>
-/// rather than reading these options directly.
-/// </remarks>
-public class SemanticTuningOptions
-{
-    /// <summary>
-    /// Ordered tiers. The first tier whose <c>MinTokens..MaxTokens</c> range
-    /// covers a query's token count wins. An open-ended last tier
-    /// (<c>MaxTokens == null</c>) catches everything beyond the previous
-    /// upper bound.
-    /// </summary>
-    public List<UmageAI.Optimizely.GraphSearchTools.Tools.SemanticTuner.Models.SemanticTier> Tiers { get; set; } = new();
 }
 
 /// <summary>

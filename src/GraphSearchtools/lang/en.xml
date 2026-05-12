@@ -40,12 +40,9 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete</autocomplete>
-        <webhooks>Webhooks</webhooks>
-        <semanticTuner>Semantic Weight Tuner</semanticTuner>
         <searchLogs>Search Logs</searchLogs>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
-        <contentSearchabilityAudit>Content Searchability Audit</contentSearchabilityAudit>
         <about>About</about>
       </menu>
 
@@ -122,60 +119,6 @@
           <locale_label>Locale</locale_label>
           <limit>Limit</limit>
         </autocomplete>
-        <webhooks>
-          <title>Webhooks</title>
-          <description>Manage Optimizely Graph webhooks. Graph fires these on content changes; subscribers run downstream sync, cache invalidation, or notifications.</description>
-          <no_edit_notice>Graph's API doesn't support editing webhooks. To change one, delete it and create a new one.</no_edit_notice>
-          <empty>No webhooks registered yet.</empty>
-          <add>+ New webhook</add>
-          <col_url>URL</col_url>
-          <col_method>Method</col_method>
-          <col_headers>Headers</col_headers>
-          <col_filters>Filters</col_filters>
-          <col_status>Status</col_status>
-          <col_created>Created</col_created>
-          <col_actions></col_actions>
-          <status_active>Active</status_active>
-          <status_disabled>Disabled</status_disabled>
-          <delete>Delete</delete>
-          <delete_confirm>Delete this webhook? Subscribers will stop receiving events. This cannot be undone.</delete_confirm>
-          <dialog_new>New webhook</dialog_new>
-          <field_url>URL</field_url>
-          <field_method>HTTP method</field_method>
-          <field_headers>Headers</field_headers>
-          <field_filters>Filters</field_filters>
-          <field_url_placeholder>https://example.com/hooks/graph</field_url_placeholder>
-          <save>Create</save>
-          <cancel>Cancel</cancel>
-          <save_failed>Could not save webhook.</save_failed>
-          <delete_failed>Could not delete webhook.</delete_failed>
-          <load_failed>Could not load webhooks.</load_failed>
-        </webhooks>
-        <semanticTuner>
-          <title>Semantic Weight Tuner</title>
-          <description>Tier the Optimizely Graph ranking mode and semantic weight by query token count — e.g. "1–2 tokens lean RELEVANCE, 3+ tokens go SEMANTIC w=0.3". Saved policy persists in DDS and is also emitted as an appsettings.json snippet you can paste into the host config for cold-start fallback.</description>
-          <tier_min_tokens>Min tokens</tier_min_tokens>
-          <tier_max_tokens>Max tokens</tier_max_tokens>
-          <tier_ranking>Ranking</tier_ranking>
-          <tier_weight>Semantic weight</tier_weight>
-          <tier_description>Description (optional)</tier_description>
-          <tier_max_unbounded>∞</tier_max_unbounded>
-          <add_tier>+ Add tier</add_tier>
-          <remove_tier>Remove tier</remove_tier>
-          <save>Save policy</save>
-          <saved>Policy saved.</saved>
-          <save_failed>Could not save policy.</save_failed>
-          <load_failed>Could not load policy.</load_failed>
-          <snippet_label>appsettings.json snippet</snippet_label>
-          <snippet_help>Drop this into the host's appsettings.json. The bound config acts as a cold-start fallback; the saved DDS row above is the runtime source of truth.</snippet_help>
-          <copy>Copy</copy>
-          <copied>Copied</copied>
-          <empty>No tiers defined yet. Add a tier to start tuning.</empty>
-          <ranking_relevance>Relevance</ranking_relevance>
-          <ranking_semantic>Semantic</ranking_semantic>
-          <ranking_boostonly>Boost only</ranking_boostonly>
-          <ranking_doc>Doc</ranking_doc>
-        </semanticTuner>
         <searchLogs>
           <title>Search Logs</title>
           <description>Top queries, zero-result phrases, low-CTR head queries, and a live tail of recent search events. The synonym-mining and pinned-tuning surface — every row links into the tool that fixes it.</description>
