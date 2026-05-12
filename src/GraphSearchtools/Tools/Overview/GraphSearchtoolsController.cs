@@ -66,29 +66,6 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Autocomplete/Index.cshtml");
     }
 
-    [HttpGet]
-    public IActionResult Webhooks()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Webhooks), GraphSearchtoolsPermissions.Webhooks))
-            return Forbid();
-        return View("/Views/Webhooks/Index.cshtml");
-    }
-
-    /// <summary>
-    /// Phase 3 — Semantic Weight Tuner. The dedicated
-    /// <c>SemanticTunerController</c> hosts the canonical menu URL; this
-    /// action preserves the per-tool action pattern shared with Webhooks so
-    /// direct links to
-    /// <c>/cms/graphsearchtools/GraphSearchtools/SemanticTuner</c> resolve too.
-    /// </summary>
-    [HttpGet]
-    public IActionResult SemanticTuner()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SemanticTuner), GraphSearchtoolsPermissions.SemanticTuner))
-            return Forbid();
-        return View("/Views/SemanticTuner/Index.cshtml");
-    }
-
     /// <summary>
     /// Phase 4 Wave 5 — Synonym Coverage. Read-only analyzer that joins the
     /// saved synonym blobs with the search-log table to surface unused
@@ -115,21 +92,6 @@ public class GraphSearchtoolsController : Controller
         if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.PinnedCoverage), GraphSearchtoolsPermissions.PinnedCoverage))
             return Forbid();
         return View("/Views/PinnedCoverage/Index.cshtml");
-    }
-
-    /// <summary>
-    /// Phase 4 Wave 5 §6 — Content Searchability Audit. Renders the runner
-    /// page; the actual scan kicks off via
-    /// <c>POST /ContentSearchabilityAuditApi/Run</c>. The view is gated on the
-    /// matching feature toggle + EPiServer permission so direct URL hits respect
-    /// the same access checks the menu does.
-    /// </summary>
-    [HttpGet]
-    public IActionResult ContentSearchabilityAudit()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.ContentSearchabilityAudit), GraphSearchtoolsPermissions.ContentSearchabilityAudit))
-            return Forbid();
-        return View("/Views/ContentSearchabilityAudit/Index.cshtml");
     }
 
     [HttpGet]

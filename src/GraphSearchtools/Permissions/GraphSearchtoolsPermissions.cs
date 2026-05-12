@@ -30,14 +30,6 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Profiles { get; } =
         new("GraphSearchtools", "Profiles");
 
-    // Phase 3 — token-count-tiered Semantic Weight Tuner policy editor.
-    public static PermissionType SemanticTuner { get; } =
-        new("GraphSearchtools", "SemanticTuner");
-
-    // Phase 3 — Optimizely Graph webhook administration (list, create, delete).
-    public static PermissionType Webhooks { get; } =
-        new("GraphSearchtools", "Webhooks");
-
     // Phase 4 foundation — push search-log telemetry from host search surfaces
     // into the GraphSearchtools log table (consumed by Phase 4 Wave 5 tools).
     public static PermissionType Telemetry { get; } =
@@ -59,15 +51,4 @@ public static class GraphSearchtoolsPermissions
     // to surface broken / stale / overlapping pins.
     public static PermissionType PinnedCoverage { get; } =
         new("GraphSearchtools", "PinnedCoverage");
-
-    // Phase 4 Wave 5 — Content Searchability Audit. Local CMS scan flagging
-    // pages with empty Name, missing MainBody-style body fields, no Tags, and
-    // string fields exceeding Graph's 1024-char sortable-field limit.
-    public static PermissionType ContentSearchabilityAudit { get; } =
-        new("GraphSearchtools", "ContentSearchabilityAudit");
-
-    // Phase 5 — Relevancy Lab (golden query sets, NDCG@10 + MRR scoring,
-    // run history, two-config comparison, CSV export).
-    public static PermissionType RelevancyLab { get; } =
-        new("GraphSearchtools", "RelevancyLab");
 }

@@ -13,8 +13,6 @@ public class FeatureToggles
     public bool Health { get; set; } = true;
     public bool Autocomplete { get; set; } = true;
     public bool Profiles { get; set; } = true;
-    public bool SemanticTuner { get; set; } = true;
-    public bool Webhooks { get; set; } = true;
 
     /// <summary>
     /// Gates the public ingest beacon (<c>POST /api/telemetry/searchlog</c>).
@@ -45,20 +43,4 @@ public class FeatureToggles
     /// collections.
     /// </summary>
     public bool PinnedCoverage { get; set; } = true;
-
-    /// <summary>
-    /// Phase 4 Wave 5 — local CMS scan that flags pages with empty <c>Name</c>,
-    /// missing <c>MainBody</c>-style body fields, no <c>Tags</c>, and string
-    /// properties exceeding Optimizely Graph's 1024-character sortable-field
-    /// limit (per <c>optimizely-graph-site-search.md</c> §3 caveat). Scan is
-    /// on-demand only because it walks every published page under every site.
-    /// </summary>
-    public bool ContentSearchabilityAudit { get; set; } = true;
-
-    /// <summary>
-    /// Phase 5 — Relevancy Lab. CRUD for golden query sets, run engine
-    /// (NDCG@10 + MRR scoring), DDS-persisted run history, two-config
-    /// side-by-side comparison, and CSV export.
-    /// </summary>
-    public bool RelevancyLab { get; set; } = true;
 }

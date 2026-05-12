@@ -17,19 +17,6 @@ public class UiStringsProvider(LocalizationService loc)
     private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
 
     /// <summary>
-    /// Lookup for Webhooks strings under /graphsearchtools/tools/webhooks/*.
-    /// Webhooks JS reads inline confirm/empty/save messages from this section.
-    /// </summary>
-    private string W(string key) => loc.GetString($"/graphsearchtools/tools/webhooks/{key}");
-
-    /// <summary>
-    /// Lookup for Semantic Weight Tuner strings under
-    /// /graphsearchtools/tools/semanticTuner/*. The page is a thin client; all
-    /// labels and toast messages route through this section.
-    /// </summary>
-    private string ST(string key) => loc.GetString($"/graphsearchtools/tools/semanticTuner/{key}");
-
-    /// <summary>
     /// Lookup for Search Logs strings under /graphsearchtools/tools/searchLogs/*.
     /// The Search Logs JS reads inline empty-card / status-badge / link / load-
     /// failed messages from this section.
@@ -51,14 +38,6 @@ public class UiStringsProvider(LocalizationService loc)
     /// load-failed copy from this section.
     /// </summary>
     private string SC(string key) => loc.GetString($"/graphsearchtools/tools/synonymCoverage/{key}");
-
-    /// <summary>
-    /// Lookup for Content Searchability Audit strings under
-    /// /graphsearchtools/tools/contentSearchabilityAudit/*. The audit JS reads
-    /// the kind labels, stat labels, run/running button text, table column
-    /// headers, and empty / run-failed copy from this section.
-    /// </summary>
-    private string CSA(string key) => loc.GetString($"/graphsearchtools/tools/contentSearchabilityAudit/{key}");
 
     public object GetAll() => new
     {
@@ -261,41 +240,6 @@ public class UiStringsProvider(LocalizationService loc)
                 }
             }
         },
-        webhooks = new
-        {
-            empty = W("empty"),
-            status_active = W("status_active"),
-            status_disabled = W("status_disabled"),
-            delete = W("delete"),
-            delete_confirm = W("delete_confirm"),
-            save_failed = W("save_failed"),
-            delete_failed = W("delete_failed"),
-            load_failed = W("load_failed")
-        },
-        semanticTuner = new
-        {
-            tier_min_tokens = ST("tier_min_tokens"),
-            tier_max_tokens = ST("tier_max_tokens"),
-            tier_max_unbounded = ST("tier_max_unbounded"),
-            tier_ranking = ST("tier_ranking"),
-            tier_weight = ST("tier_weight"),
-            tier_description = ST("tier_description"),
-            add_tier = ST("add_tier"),
-            remove_tier = ST("remove_tier"),
-            save = ST("save"),
-            saved = ST("saved"),
-            save_failed = ST("save_failed"),
-            load_failed = ST("load_failed"),
-            snippet_label = ST("snippet_label"),
-            snippet_help = ST("snippet_help"),
-            copy = ST("copy"),
-            copied = ST("copied"),
-            empty = ST("empty"),
-            ranking_relevance = ST("ranking_relevance"),
-            ranking_semantic = ST("ranking_semantic"),
-            ranking_boostonly = ST("ranking_boostonly"),
-            ranking_doc = ST("ranking_doc")
-        },
         searchLogs = new
         {
             add_as_synonym = SL("add_as_synonym"),
@@ -334,26 +278,5 @@ public class UiStringsProvider(LocalizationService loc)
             no_logs = SC("no_logs"),
             load_failed = SC("load_failed")
         },
-        contentAudit = new
-        {
-            run = CSA("run"),
-            running = CSA("running"),
-            scanned_at = CSA("scanned_at"),
-            items_scanned = CSA("items_scanned"),
-            issues_total = CSA("issues_total"),
-            kind_missing_name = CSA("kind_missing_name"),
-            kind_missing_main_body = CSA("kind_missing_main_body"),
-            kind_no_tags = CSA("kind_no_tags"),
-            kind_oversize_sort = CSA("kind_oversize_sort"),
-            col_kind = CSA("col_kind"),
-            col_name = CSA("col_name"),
-            col_type = CSA("col_type"),
-            col_detail = CSA("col_detail"),
-            col_edit = CSA("col_edit"),
-            edit = CSA("edit"),
-            empty = CSA("empty"),
-            load_failed = CSA("load_failed"),
-            run_failed = CSA("run_failed")
-        }
     };
 }

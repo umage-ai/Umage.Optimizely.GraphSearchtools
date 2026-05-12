@@ -8,8 +8,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 /// <summary>
 /// Serves the Razor view for the Search Logs dashboard. Standalone controller
 /// so the menu URL <c>/EPiServer/cms/graphsearchtools/searchlogs</c> resolves
-/// against a tool-local route name (mirrors <c>RelevancyLabController</c> and
-/// <c>SemanticTunerController</c>). Read APIs live in
+/// against a tool-local route name. Read APIs live in
 /// <see cref="SearchLogsApiController"/>.
 /// </summary>
 [Authorize(Policy = "codeart:graphsearchtools")]
