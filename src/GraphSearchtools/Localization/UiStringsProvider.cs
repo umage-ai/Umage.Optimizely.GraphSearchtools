@@ -209,11 +209,15 @@ public class UiStringsProvider(LocalizationService loc)
                 },
                 pinned = new
                 {
-                    loading = P("detail/pinned/loading")
+                    loading = P("detail/pinned/loading"),
+                    colFilterPhrase = P("detail/pinned/colFilterPhrase"),
+                    colFilterTarget = P("detail/pinned/colFilterTarget")
                 },
                 synonyms = new
                 {
-                    loading = P("detail/synonyms/loading")
+                    loading = P("detail/synonyms/loading"),
+                    colFilterRule = P("detail/synonyms/colFilterRule"),
+                    colFilterScope = P("detail/synonyms/colFilterScope")
                 },
                 insights = new
                 {

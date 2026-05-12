@@ -673,6 +673,10 @@
             // Persistent UI state across renders
             sort: { field: 'phrases', dir: 'asc' },
             global: '',
+            // Per-column substring filters layered on top of the global one
+            // so a marketer can narrow by phrase OR target independently.
+            // Keyed by row field; '' means the column has no active filter.
+            colFilters: { phrases: '', contentName: '' },
             page: 1,
             activeTypeahead: null
         };
@@ -720,6 +724,17 @@
                 rows = rows.filter(function (r) {
                     return [r.phrases, r.contentName, r.targetKey, r.contentType, r.language]
                         .some(function (v) { return (v || '').toLowerCase().indexOf(g) !== -1; });
+                });
+            }
+            // Per-column filters AND against the global filter — both need
+            // to match for a row to render. Empty colFilters values are
+            // no-ops, so an unused column doesn't constrain anything.
+            var cf = state.colFilters || {};
+            if (cf.phrases || cf.contentName) {
+                rows = rows.filter(function (r) {
+                    if (cf.phrases && (r.phrases || '').toLowerCase().indexOf(cf.phrases) === -1) return false;
+                    if (cf.contentName && (r.contentName || '').toLowerCase().indexOf(cf.contentName) === -1) return false;
+                    return true;
                 });
             }
             var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
@@ -1800,6 +1815,40 @@
                 }, 120);
             });
         }
+
+        // Per-column filter row — injected into the existing <thead> below
+        // the sort row so each text column gets its own substring filter.
+        // We render in JS rather than Razor so this single setup covers any
+        // surface that hosts the same `gst-pinedit__grid` table without
+        // having to keep two view templates in lockstep.
+        (function wireColumnFilters() {
+            if (!rowsTbody) return;
+            var thead = rowsTbody.parentNode && rowsTbody.parentNode.querySelector
+                ? rowsTbody.parentNode.querySelector('thead')
+                : null;
+            if (!thead || thead.querySelector('.gst-pinedit__head-filter')) return;
+            var tr = document.createElement('tr');
+            tr.className = 'gst-pinedit__head-filter';
+            var phrasePh = s('profiles.detail.pinned.colFilterPhrase', 'Filter phrase…');
+            var targetPh = s('profiles.detail.pinned.colFilterTarget', 'Filter content…');
+            tr.innerHTML =
+                '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="phrases" autocomplete="off" placeholder="' + escHtml(phrasePh) + '"></th>' +
+                '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="contentName" autocomplete="off" placeholder="' + escHtml(targetPh) + '"></th>' +
+                '<th class="gst-pinedit__col" aria-hidden="true"></th>';
+            thead.appendChild(tr);
+            var debounces = {};
+            tr.querySelectorAll('.gst-pinedit__colfilter').forEach(function (input) {
+                var col = input.dataset.col;
+                input.addEventListener('input', function () {
+                    clearTimeout(debounces[col]);
+                    debounces[col] = setTimeout(function () {
+                        state.colFilters[col] = (input.value || '').toLowerCase().trim();
+                        state.page = 1;
+                        renderRows();
+                    }, 120);
+                });
+            });
+        })();
 
         GST.editGrid.wireSortHeaders(sortBtns, state.sort, function () {
             state.page = 1;
