@@ -33,32 +33,63 @@
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-@* ─────────────── Pins panel (existing global editor) ─────────────── *@
+@* ─────────────── Pins panel — Aurora grid (Phase 4) ─────────────── *@
+@* One row per (phrase, collection, locale) group; targets are managed
+   inside the flyout. The grid is read-only at this level; the ⋯ menu and
+   row click open the PinFlyout for editing. *@
 <div class="gst-tabpanel" role="tabpanel" data-panel="pins"
      aria-labelledby="gst-pin-tab-pins">
-    <div class="gst-card">
-        <div class="gst-toolbar">
-            <input id="pin-filter" type="text" placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
-            <select id="pin-collection-filter">
+
+    <div class="gst-toolbar">
+        <div class="gst-search">
+            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="gst-pin-search"
+                   placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
+        </div>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</span>
+            <select class="gst-filter__select" id="gst-pin-collection-filter">
                 <option value="">@Loc.GetString("/graphsearchtools/tools/pinned/all_sites")</option>
             </select>
-            <div class="gst-toolbar__spacer"></div>
-            <button type="button" id="pin-add" class="gst-btn gst-btn--primary">+ @Loc.GetString("/graphsearchtools/tools/pinned/add")</button>
-        </div>
-
-        <table class="gst-table gst-pin-table">
-            <thead>
-            <tr>
-                <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site") <span class="gst-sort-arrow"></span></th>
-                <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase") <span class="gst-sort-arrow"></span></th>
-                <th data-sort="content" class="gst-pin-content-col">@Loc.GetString("/graphsearchtools/tools/pinned/col_content") <span class="gst-sort-arrow"></span></th>
-                <th class="gst-pin-actions-col"></th>
-            </tr>
-            </thead>
-            <tbody id="pin-grid"></tbody>
-        </table>
+        </label>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
+            <select class="gst-filter__select" id="gst-pin-locale-filter">
+                <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
+            </select>
+        </label>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
+            + @Loc.GetString("/graphsearchtools/tools/pinned/add")
+        </button>
     </div>
+
+    <table class="gst-table gst-pin-aurora-table">
+        <thead>
+            <tr>
+                <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
+                <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
+                <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
+                <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
+                <th data-sort="state">@Loc.GetString("/graphsearchtools/tools/pinned/col_state")</th>
+                <th data-sort="modified">@Loc.GetString("/graphsearchtools/tools/pinned/col_modified")</th>
+                <th aria-label="Actions"></th>
+            </tr>
+        </thead>
+        <tbody id="gst-pin-aurora-rows"></tbody>
+    </table>
 </div>
+
+@* Pin flyout — shared markup; the Aurora JS opens/closes it via GST.flyout.
+   Use the absolute path so Razor's partial search (which expects a separate
+   GraphSearchtools.Views assembly that this RCL doesn't emit) doesn't
+   spurious-404. *@
+@await Html.PartialAsync("/Views/Shared/_PinFlyout.cshtml")
 
 @* ─────────────── Audit panel (absorbs Pinned Coverage) ─────────────── *@
 <div class="gst-tabpanel" role="tabpanel" data-panel="audit"
@@ -115,7 +146,7 @@
 </div>
 
 @section Scripts {
-    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-aurora.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-coverage.js")"></script>
     <script>
         (function () {

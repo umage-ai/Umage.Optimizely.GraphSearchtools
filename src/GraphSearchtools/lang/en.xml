@@ -36,11 +36,12 @@
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
         <profiles>Search profiles</profiles>
+        <insights>Insights</insights>
         <pinned>Pinned</pinned>
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete check</autocomplete>
-        <searchLogs>Search insights</searchLogs>
+        <searchLogs>Search logs</searchLogs>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
         <about>About</about>
@@ -64,6 +65,22 @@
           <col_site>Site</col_site>
           <col_phrase>Phrase</col_phrase>
           <col_content>Content</col_content>
+          <col_items>Pinned items</col_items>
+          <col_state>State</col_state>
+          <col_modified>Modified</col_modified>
+          <state_active>Active</state_active>
+          <state_inactive>Inactive</state_inactive>
+          <state_mixed>Mixed</state_mixed>
+          <state_expired>Expired</state_expired>
+          <items_count>%1 items</items_count>
+          <empty_grid>No pinned items yet. Click "Add" to create one.</empty_grid>
+          <load_failed>Could not load pinned items.</load_failed>
+          <save_failed>%1 of %2 changes failed. See console for details.</save_failed>
+          <save_progress>Saving %1 of %2…</save_progress>
+          <conflict>This phrase is also pinned in: %1</conflict>
+          <target_pick>Pick content…</target_pick>
+          <target_unresolved>Content not in index</target_unresolved>
+          <confirm_delete>Delete this pinned item?</confirm_delete>
         </pinned>
         <synonyms>
           <title>Synonyms</title>
@@ -123,8 +140,40 @@
           <locale_label>Locale</locale_label>
           <limit>Limit</limit>
         </autocomplete>
+        <insights>
+          <title>Insights</title>
+          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every profile.</description>
+          <window_7d>Last 7d</window_7d>
+          <window_30d>Last 30d</window_30d>
+          <top_title>Top phrases</top_title>
+          <top_subtitle>Most-searched phrases. Zero-result counts are derived from the same window.</top_subtitle>
+          <zero_title>Zero-result phrases</zero_title>
+          <zero_subtitle>What people searched for and found nothing — pin candidates.</zero_subtitle>
+          <coverage_title>Synonym coverage</coverage_title>
+          <coverage_subtitle>How well your synonyms keep up with the search log.</coverage_subtitle>
+          <coverage_total>%1 rules</coverage_total>
+          <coverage_unused>%1 unused</coverage_unused>
+          <coverage_logs_scanned>%1 events scanned</coverage_logs_scanned>
+          <activity_title>Recent activity</activity_title>
+          <activity_subtitle>Latest edits across every profile.</activity_subtitle>
+          <col_phrase>Phrase</col_phrase>
+          <col_count>Count</col_count>
+          <col_zero>Zero results</col_zero>
+          <col_locale>Locale</col_locale>
+          <col_profile>Profile</col_profile>
+          <col_when>When</col_when>
+          <col_kind>Kind</col_kind>
+          <col_action>Action</col_action>
+          <col_subject>Subject</col_subject>
+          <col_actor>Editor</col_actor>
+          <empty_phrases>No phrases logged in this window yet.</empty_phrases>
+          <empty_zero>No zero-result phrases — every search found something.</empty_zero>
+          <empty_activity>No edits recorded yet.</empty_activity>
+          <coverage_no_rules>No synonym rules defined yet.</coverage_no_rules>
+          <load_failed>Could not load insights.</load_failed>
+        </insights>
         <searchLogs>
-          <title>Search insights</title>
+          <title>Search logs</title>
           <description>What people are searching for — and where it's failing. Top phrases, zero-result phrases, low-CTR phrases, and a live tail of recent events. Every row links into the tool that fixes it.</description>
           <window_1h>Last 1h</window_1h>
           <window_24h>Last 24h</window_24h>
@@ -288,13 +337,21 @@
           </pinned>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
+            <activity>Activity</activity>
             <audit>Audit log</audit>
             <details>Details</details>
             <insights>Insights</insights>
             <overview>Overview</overview>
             <pinned>Pinned</pinned>
+            <settings>Settings</settings>
             <synonyms>Synonyms</synonyms>
           </tabs>
+          <statRow>
+            <label>Profile at a glance</label>
+            <pinnedLabel>Pinned phrases</pinnedLabel>
+            <synonymsLabel>Synonym entries</synonymsLabel>
+            <recentLabel>Edits in last 7 days</recentLabel>
+          </statRow>
           <insights>
             <windowLabel>Time window</windowLabel>
             <topTitle>Top phrases</topTitle>
@@ -484,6 +541,18 @@
           <no_sites>No sites available.</no_sites>
           <tab_pins>Pins</tab_pins>
           <tab_audit>Audit</tab_audit>
+          <target_unresolved>Content not in index</target_unresolved>
+          <target_pick>Pick content…</target_pick>
+          <items_count>%1 items</items_count>
+          <empty_grid>No pinned items yet. Click "Add" to create one.</empty_grid>
+          <load_failed>Could not load pinned items.</load_failed>
+          <save_failed>%1 of %2 changes failed. See console for details.</save_failed>
+          <save_progress>Saving %1 of %2…</save_progress>
+          <conflict>This phrase is also pinned in: %1</conflict>
+          <state_active>Active</state_active>
+          <state_inactive>Inactive</state_inactive>
+          <state_mixed>Mixed</state_mixed>
+          <state_expired>Expired</state_expired>
         </pinned>
         <synonyms>
           <request_failed>Request failed</request_failed>
@@ -503,7 +572,41 @@
           <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
           <tab_rules>Rules</tab_rules>
           <tab_unused>Unused</tab_unused>
+          <col_activity>Activity (30d)</col_activity>
+          <activity_unknown>—</activity_unknown>
+          <activity_load_failed>Activity unavailable</activity_load_failed>
         </synonyms>
+        <pinFlyout>
+          <createTitle>Create pin</createTitle>
+          <editTitle>Edit pin</editTitle>
+          <phraseLabel>Phrase(s)</phraseLabel>
+          <phraseHint>Comma-separated; each phrase triggers the pin.</phraseHint>
+          <targetsLabel>Targets</targetsLabel>
+          <targetsAdd>+ Add another target</targetsAdd>
+          <targetsHint>Targets are pinned to the top of the results in the order shown. Drag the grip handle to reorder, click × to remove.</targetsHint>
+          <localeLabel>Locale</localeLabel>
+          <effectiveLabel>Effective until</effectiveLabel>
+          <effectiveHint>Blank = never.</effectiveHint>
+          <activeLabel>Active</activeLabel>
+          <conflictPrefix>Conflict:</conflictPrefix>
+          <conflictBody>phrase %1 is also pinned in %2.</conflictBody>
+          <save>Save</save>
+          <cancel>Cancel</cancel>
+        </pinFlyout>
+        <synFlyout>
+          <createTitle>Create synonym rule</createTitle>
+          <editTitle>Edit synonym rule</editTitle>
+          <ruleLabel>Rule</ruleLabel>
+          <ruleHintEquiv>Equivalent: a, b, c</ruleHintEquiv>
+          <ruleHintRepl>Replacement: a =&gt; b</ruleHintRepl>
+          <localeLabel>Locale</localeLabel>
+          <typeLabel>Type</typeLabel>
+          <typeEquivalent>Equivalent</typeEquivalent>
+          <typeReplacement>Replacement</typeReplacement>
+          <activeLabel>Active</activeLabel>
+          <save>Save</save>
+          <cancel>Cancel</cancel>
+        </synFlyout>
         <health>
           <request_failed>Health check failed</request_failed>
           <probing>Probing…</probing>
