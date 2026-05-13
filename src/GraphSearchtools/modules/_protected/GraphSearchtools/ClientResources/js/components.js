@@ -3,9 +3,213 @@
  *
  * Content Picker:  GST.contentPicker(opts)  → Promise<{id, name}>
  * Content Type Picker: GST.contentTypePicker(opts) → Promise<{id, name, displayName}>
+ * Flyout:          GST.flyout.open(key, opts) / GST.flyout.close(key)
+ * Row menu:        GST.rowMenu(anchor, [{ label, onSelect, danger? }, ...])
  */
 (function () {
     const API = window.GST_BASE_URL + 'ComponentsApi';
+
+    // ── Row menu (Aurora ⋯ popover) ────────────────────────────────────
+    // Anchors a small popover beneath the ⋯ button and renders a list of
+    // labelled actions. Closes on outside-click / Esc. One menu is open at
+    // a time; opening a second auto-dismisses the first.
+    let _openMenu = null;
+
+    GST.rowMenu = function (anchor, items) {
+        if (!anchor || !items || items.length === 0) return;
+        if (_openMenu) { _openMenu.close(); _openMenu = null; }
+
+        const menu = document.createElement('div');
+        menu.className = 'gst-rowmenu__popover';
+        menu.setAttribute('role', 'menu');
+        items.forEach(function (it) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gst-rowmenu__item' + (it.danger ? ' gst-rowmenu__item--danger' : '');
+            btn.setAttribute('role', 'menuitem');
+            btn.textContent = it.label;
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                close();
+                if (typeof it.onSelect === 'function') it.onSelect();
+            });
+            menu.appendChild(btn);
+        });
+
+        // Position the popover under the anchor's right edge so the menu
+        // hangs into the row's interior rather than off the right edge of
+        // the table — which is where the anchor itself sits.
+        const rect = anchor.getBoundingClientRect();
+        menu.style.position = 'fixed';
+        menu.style.top = (rect.bottom + 4) + 'px';
+        menu.style.left = 'auto';
+        menu.style.right = (window.innerWidth - rect.right) + 'px';
+        document.body.appendChild(menu);
+
+        function onDocClick(e) {
+            if (menu.contains(e.target) || anchor.contains(e.target)) return;
+            close();
+        }
+        function onKey(e) { if (e.key === 'Escape') close(); }
+
+        function close() {
+            if (menu.parentNode) menu.parentNode.removeChild(menu);
+            document.removeEventListener('click', onDocClick, true);
+            document.removeEventListener('keydown', onKey);
+            _openMenu = null;
+        }
+
+        // Defer the outside-click listener to the next tick so the click
+        // that opened the menu doesn't immediately close it.
+        setTimeout(function () {
+            document.addEventListener('click', onDocClick, true);
+            document.addEventListener('keydown', onKey);
+        }, 0);
+
+        _openMenu = { close: close };
+        return _openMenu;
+    };
+
+    // ── Flyout ─────────────────────────────────────────────────────
+    // Aurora-style right-edge edit panel. The flyout's DOM is pre-rendered
+    // on the page (typically by a Razor partial — _PinFlyout.cshtml /
+    // _SynonymFlyout.cshtml) with these conventional IDs:
+    //
+    //     <div id="gst-flyout-{key}-backdrop" class="gst-flyout-backdrop" hidden></div>
+    //     <aside id="gst-flyout-{key}" class="gst-flyout" hidden ...>...</aside>
+    //
+    // The helper reveals/hides them, traps focus, restores focus on close,
+    // and dismisses on Esc or backdrop-click. Only one flyout per key.
+    const flyoutState = {}; // key -> { lastFocus, onKey, onTab }
+
+    function flyoutEls(key) {
+        return {
+            panel: document.getElementById('gst-flyout-' + key),
+            backdrop: document.getElementById('gst-flyout-' + key + '-backdrop')
+        };
+    }
+
+    function focusables(panel) {
+        return Array.prototype.filter.call(
+            panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+            function (el) { return el.offsetParent !== null || el === document.activeElement; }
+        );
+    }
+
+    GST.flyout = {
+        /**
+         * Open the flyout identified by `key`. Markup must already exist
+         * on the page. Options:
+         *   onOpen({ panel, key }):  called after the panel is revealed,
+         *                            before focus moves to the first field.
+         *                            Use this to populate fields from a row.
+         *   focus:                   selector inside the panel to focus
+         *                            first. Defaults to the first
+         *                            textarea/input/select.
+         *   onClose({ panel, key }): called after the panel is hidden,
+         *                            before focus restores.
+         */
+        open: function (key, opts) {
+            opts = opts || {};
+            const els = flyoutEls(key);
+            if (!els.panel || !els.backdrop) {
+                console.warn('GST.flyout.open: no markup for key', key);
+                return;
+            }
+            // Already open: re-run onOpen (so callers can refresh fields)
+            // but don't re-bind listeners or re-record lastFocus.
+            const reopening = !els.panel.hidden;
+            if (!reopening) {
+                flyoutState[key] = flyoutState[key] || {};
+                flyoutState[key].lastFocus = document.activeElement;
+            }
+
+            els.backdrop.hidden = false;
+            els.panel.hidden = false;
+
+            if (typeof opts.onOpen === 'function') {
+                opts.onOpen({ panel: els.panel, key: key });
+            }
+
+            // Focus the first interactive control in the panel so keyboard
+            // users land where they can type immediately.
+            setTimeout(function () {
+                let target = null;
+                if (opts.focus) target = els.panel.querySelector(opts.focus);
+                if (!target) target = els.panel.querySelector('textarea, input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), select');
+                if (target) target.focus();
+            }, 0);
+
+            if (reopening) return;
+
+            const state = flyoutState[key];
+            const onBackdrop = function () { GST.flyout.close(key, opts); };
+            const onKey = function (e) {
+                if (e.key === 'Escape') {
+                    e.stopPropagation();
+                    GST.flyout.close(key, opts);
+                }
+            };
+            const onTab = function (e) {
+                if (e.key !== 'Tab') return;
+                // Focus trap — only redirect if focus would leave the panel.
+                const items = focusables(els.panel);
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            };
+
+            state.onBackdrop = onBackdrop;
+            state.onKey = onKey;
+            state.onTab = onTab;
+            state.opts = opts;
+            els.backdrop.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onKey);
+            els.panel.addEventListener('keydown', onTab);
+        },
+
+        close: function (key, opts) {
+            const els = flyoutEls(key);
+            if (!els.panel || els.panel.hidden) return;
+            els.backdrop.hidden = true;
+            els.panel.hidden = true;
+
+            const state = flyoutState[key];
+            if (state) {
+                if (state.onBackdrop) els.backdrop.removeEventListener('click', state.onBackdrop);
+                if (state.onKey) document.removeEventListener('keydown', state.onKey);
+                if (state.onTab) els.panel.removeEventListener('keydown', state.onTab);
+            }
+
+            const closeOpts = opts || (state && state.opts) || {};
+            if (typeof closeOpts.onClose === 'function') {
+                closeOpts.onClose({ panel: els.panel, key: key });
+            }
+
+            if (state && state.lastFocus && typeof state.lastFocus.focus === 'function') {
+                state.lastFocus.focus();
+            }
+            if (state) {
+                state.onBackdrop = null;
+                state.onKey = null;
+                state.onTab = null;
+                state.lastFocus = null;
+                state.opts = null;
+            }
+        },
+
+        isOpen: function (key) {
+            const els = flyoutEls(key);
+            return !!(els.panel && !els.panel.hidden);
+        }
+    };
 
     // ── Content Picker ─────────────────────────────────────────────
     /**

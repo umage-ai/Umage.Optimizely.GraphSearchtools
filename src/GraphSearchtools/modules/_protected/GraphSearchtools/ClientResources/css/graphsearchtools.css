@@ -391,6 +391,9 @@
      <span class="gst-filter__label">Content Type</span>
      <select class="gst-filter__select">…</select>
    </label>                                                              */
+/* Aurora "Content Types" filter chip: borderless, label-above-value with a
+   caret to the right. The chip has no chrome at rest — focus reveals just
+   a thin underline so the affordance still reads as interactive. */
 .gst-filter {
     display: inline-flex;
     flex-direction: column;
@@ -398,25 +401,21 @@
     position: relative;
     min-width: 168px;
     height: 56px;
-    padding: 8px 36px 8px 14px;
-    border: 1px solid var(--gst-border);
-    border-radius: var(--gst-radius);
-    background: var(--gst-surface);
+    padding: 8px 28px 8px 0;
+    border: 0;
+    background: transparent;
     cursor: pointer;
-    transition: border-color .15s, box-shadow .15s;
+    transition: opacity .15s;
 }
-.gst-filter:hover { border-color: #c8ccd2; }
-.gst-filter:focus-within {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
-}
+.gst-filter:hover { opacity: 0.9; }
+.gst-filter:focus-within .gst-filter__select { color: var(--gst-primary); }
 .gst-filter__label {
     display: block;
     font-size: var(--gst-text-xs);
     font-weight: 500;
     color: var(--gst-text-secondary);
     line-height: 1.2;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     pointer-events: none;
 }
 .gst-filter__select {
@@ -427,7 +426,7 @@
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
     font-weight: 500;
-    color: var(--gst-text);
+    color: var(--gst-primary);
     cursor: pointer;
     outline: none;
     width: 100%;
@@ -436,11 +435,11 @@
 .gst-filter::after {
     content: '';
     position: absolute;
-    right: 14px;
-    top: 50%;
+    right: 4px;
+    top: auto;
+    bottom: 16px;
     width: 10px;
     height: 6px;
-    transform: translateY(-50%);
     background: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
     pointer-events: none;
 }
@@ -552,6 +551,67 @@
     white-space: nowrap;
     padding-right: 8px;
 }
+
+/* Aurora row-action button — single-action variant. Used for the
+   per-row Delete affordance in the Pinned and Synonyms grids; replaces
+   the prior `⋯` overflow menu now that Edit lives on row-click and
+   Delete is the only other action. */
+.gst-rowdelete {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--gst-text-muted);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+    padding: 0;
+}
+.gst-rowdelete:hover { background: var(--gst-danger-light); color: var(--gst-danger); }
+.gst-rowdelete svg { width: 16px; height: 16px; }
+
+/* Row-menu popover anchored under the ⋯ button. Renders as a small,
+   shadow-elevated column of labelled actions. Single instance only —
+   opening a new menu closes any prior one. */
+.gst-rowmenu__popover {
+    z-index: 1100;
+    background: var(--gst-surface);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    box-shadow: var(--gst-shadow);
+    min-width: 160px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    animation: gst-fade-in .12s ease;
+}
+.gst-rowmenu__item {
+    background: transparent;
+    border: 0;
+    text-align: left;
+    padding: 8px 12px;
+    border-radius: var(--gst-radius-sm);
+    cursor: pointer;
+    font-family: var(--gst-font);
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text);
+}
+.gst-rowmenu__item:hover { background: var(--gst-surface-hover); }
+.gst-rowmenu__item--danger { color: var(--gst-danger); }
+.gst-rowmenu__item--danger:hover { background: var(--gst-danger-light); }
+
+/* Aurora "Activity (30d)" column in the Synonyms grid (and any other
+   compact-count column that uses .num). Without a width cap the cell
+   expands to fill the leftover row space and the value drifts far away
+   from its header. Cap the column and right-align the header so the
+   header label and the value share a vertical edge. */
+.gst-syn-aurora-table th[data-sort="activity"],
+.gst-syn-aurora-table td.num { width: 120px; }
+.gst-syn-aurora-table th[data-sort="activity"] { text-align: right; padding-right: 16px; }
+.gst-syn-aurora-table td.num { padding-right: 16px; }
 
 /* ── Badges ─────────────────────────────────────────────────────── */
 .gst-badge {
@@ -810,7 +870,11 @@
 
 .gst-flyout {
     position: fixed;
-    top: 0;
+    /* Clear the CMS shell's fixed top navigation bar; the platform reserves
+       roughly 50px at the top of the viewport for the global header (search,
+       notifications, help, account). Without the offset, the flyout's title
+       row slides under the shell chrome. */
+    top: 50px;
     right: 0;
     bottom: 0;
     width: 480px;
@@ -868,11 +932,12 @@
     padding: var(--gst-space-md) var(--gst-space-lg);
     border-top: 1px solid var(--gst-border-light);
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
     gap: var(--gst-space-sm);
     flex-shrink: 0;
     background: var(--gst-surface);
 }
+.gst-flyout__footer__spacer { flex: 1; }
 
 /* Conflict / inline notice strip — sits between the form fields and the
    footer to surface validation issues that aren't field-specific. */
@@ -890,6 +955,10 @@
 }
 .gst-flyout__notice strong { font-weight: 600; }
 .gst-flyout__notice::before { content: '⚠'; flex-shrink: 0; }
+/* Same display:flex / hidden attribute conflict as .gst-flyout-backdrop —
+   re-assert the hidden behavior with selector specificity so a JS-driven
+   `notice.hidden = true` actually conceals the warning strip. */
+.gst-flyout__notice[hidden] { display: none; }
 
 @keyframes gst-slide-in-right {
     from { opacity: 0; transform: translateX(24px); }

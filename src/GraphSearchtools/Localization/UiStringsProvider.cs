@@ -32,12 +32,11 @@ public class UiStringsProvider(LocalizationService loc)
     private string PC(string key) => loc.GetString($"/graphsearchtools/tools/pinnedCoverage/{key}");
 
     /// <summary>
-    /// Lookup for Synonym Coverage strings under
-    /// /graphsearchtools/tools/synonymCoverage/*. The Synonym Coverage JS reads
-    /// the generated-at prefix, prune/add link labels, and empty / no-logs /
-    /// load-failed copy from this section.
+    /// Lookup for Insights strings under /graphsearchtools/tools/insights/*.
+    /// The Insights JS reads coverage stat-card labels (parameterised with
+    /// %1), empty-state copy, and the load-failed message from this section.
     /// </summary>
-    private string SC(string key) => loc.GetString($"/graphsearchtools/tools/synonymCoverage/{key}");
+    private string IN(string key) => loc.GetString($"/graphsearchtools/tools/insights/{key}");
 
     public object GetAll() => new
     {
@@ -92,7 +91,19 @@ public class UiStringsProvider(LocalizationService loc)
             updated = S("pinned/updated"),
             deleted = S("pinned/deleted"),
             confirm_delete = S("pinned/confirm_delete"),
-            no_sites = S("pinned/no_sites")
+            no_sites = S("pinned/no_sites"),
+            target_unresolved = S("pinned/target_unresolved"),
+            items_count = S("pinned/items_count"),
+            empty_grid = S("pinned/empty_grid"),
+            load_failed = S("pinned/load_failed"),
+            save_failed = S("pinned/save_failed"),
+            save_progress = S("pinned/save_progress"),
+            conflict = S("pinned/conflict"),
+            target_pick = S("pinned/target_pick"),
+            state_active = S("pinned/state_active"),
+            state_inactive = S("pinned/state_inactive"),
+            state_mixed = S("pinned/state_mixed"),
+            state_expired = S("pinned/state_expired")
         },
         synonyms = new
         {
@@ -110,7 +121,9 @@ public class UiStringsProvider(LocalizationService loc)
             help_replacement_label = S("synonyms/help_replacement_label"),
             help_replacement_text = S("synonyms/help_replacement_text"),
             help_equivalent_label = S("synonyms/help_equivalent_label"),
-            help_equivalent_text = S("synonyms/help_equivalent_text")
+            help_equivalent_text = S("synonyms/help_equivalent_text"),
+            col_activity = S("synonyms/col_activity"),
+            activity_unknown = S("synonyms/activity_unknown")
         },
         health = new
         {
@@ -261,6 +274,17 @@ public class UiStringsProvider(LocalizationService loc)
             empty_body = SL("empty_body"),
             load_failed = SL("load_failed")
         },
+        insights = new
+        {
+            coverage_total = IN("coverage_total"),
+            coverage_unused = IN("coverage_unused"),
+            coverage_logs_scanned = IN("coverage_logs_scanned"),
+            coverage_no_rules = IN("coverage_no_rules"),
+            empty_phrases = IN("empty_phrases"),
+            empty_zero = IN("empty_zero"),
+            empty_activity = IN("empty_activity"),
+            load_failed = IN("load_failed")
+        },
         pinnedCoverage = new
         {
             generated_at = PC("generated_at"),
@@ -281,15 +305,6 @@ public class UiStringsProvider(LocalizationService loc)
             overlap_collections = PC("overlap_collections"),
             empty = PC("empty"),
             load_failed = PC("load_failed")
-        },
-        synonymCoverage = new
-        {
-            generated_at = SC("generated_at"),
-            prune_in_synonyms = SC("prune_in_synonyms"),
-            add_in_synonyms = SC("add_in_synonyms"),
-            empty = SC("empty"),
-            no_logs = SC("no_logs"),
-            load_failed = SC("load_failed")
         },
     };
 }
