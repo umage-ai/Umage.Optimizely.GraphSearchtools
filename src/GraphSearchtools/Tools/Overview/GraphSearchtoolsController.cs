@@ -70,21 +70,16 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Phase 4 Wave 5 — Synonym Coverage. Read-only analyzer that joins the
-    /// saved synonym blobs with the search-log table to surface unused
-    /// entries (prune candidates) and zero-result phrases that look like
-    /// missing synonyms (suggested adds).
-    /// </summary>
-    /// <summary>
-    /// Synonym Coverage was absorbed into the Synonyms tool as an "Unused"
-    /// tab. We keep this action 301-redirecting to the new home so any
-    /// bookmarked links keep working. The Synonyms page reads the #unused
-    /// fragment on load and switches to the Unused tab.
+    /// Legacy URL for the standalone Synonym Coverage view. The view is gone
+    /// — the unused-rules signal lives in the Aurora Synonyms grid's
+    /// Activity (30d) column / filter, and the "suggested adds" half is
+    /// being rebuilt as part of the per-profile insights pipeline. 301 to
+    /// the Synonyms page so bookmarked links keep working.
     /// </summary>
     [HttpGet]
     public IActionResult SynonymCoverage()
     {
-        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Synonyms#unused");
+        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Synonyms");
     }
 
     /// <summary>
