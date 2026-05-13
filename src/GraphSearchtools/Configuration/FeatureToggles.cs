@@ -15,6 +15,14 @@ public class FeatureToggles
     public bool Profiles { get; set; } = true;
 
     /// <summary>
+    /// Aurora refactor — curated marketer-facing dashboard surfacing top
+    /// phrases, zero-result candidates, synonym coverage signals, and a
+    /// recent-activity strip. Read-only; reuses SearchLogsService +
+    /// SynonymCoverageService + SearchProfileEditService data.
+    /// </summary>
+    public bool Insights { get; set; } = true;
+
+    /// <summary>
     /// Gates the public ingest beacon (<c>POST /api/telemetry/searchlog</c>).
     /// When false the endpoint returns 404 and zero events reach the sink —
     /// the analytics UIs render their empty state without further wiring.

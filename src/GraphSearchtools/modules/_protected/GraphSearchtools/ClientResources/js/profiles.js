@@ -328,7 +328,10 @@
                 });
                 if (target === 'synonyms') mountSynonyms();
                 if (target === 'insights') mountInsights();
-                if (target === 'details')  loadAudit(key);
+                // Audit lives in the Activity tab now (Aurora Phase 3C);
+                // keep loading it for `details` too so deep-links via the
+                // legacy tab name still work for at least one release.
+                if (target === 'activity' || target === 'details') loadAudit(key);
             });
         });
 
@@ -473,7 +476,13 @@
         var state = {
             window: '24h',
             inflight: null,
-            takes: { top: INITIAL_TAKE, zero: INITIAL_TAKE, lowctr: INITIAL_TAKE }
+            takes: { top: INITIAL_TAKE, zero: INITIAL_TAKE, lowctr: INITIAL_TAKE },
+            // Aurora Phase 3B: auto-fire the preview with the most-searched
+            // phrase on first paint so the marketer lands on "what people
+            // actually search for, and what they get back" rather than an
+            // empty preview pane. Only seeded once per page-load — afterwards
+            // the user's typing / row-click drives the preview.
+            previewSeeded: false
         };
 
         function resetTakes() {
@@ -585,7 +594,28 @@
                 paintLane('top',    results[0]);
                 paintLane('zero',   results[1]);
                 paintLane('lowctr', results[2]);
+                seedPreviewFromTop(results[0]);
             });
+        }
+
+        // Aurora Phase 3B — on first successful paint of the Top lane, mirror
+        // its #1 phrase into the live preview's query field if the marketer
+        // hasn't already typed something. Subsequent fetches don't re-seed
+        // (the user-driven `applyToPreview` and row-click stay authoritative).
+        function seedPreviewFromTop(topResult) {
+            if (state.previewSeeded) return;
+            if (!topResult || topResult._err) return;
+            var rows = Array.isArray(topResult) ? topResult : [];
+            if (rows.length === 0) return;
+            var input = document.getElementById('gst-pin-tryit-q');
+            // Don't overwrite a query the marketer already typed (or that
+            // was deep-linked into the page via ?q=... / saved-state).
+            if (!input || input.value && input.value.length > 0) {
+                state.previewSeeded = true;
+                return;
+            }
+            applyToPreview(rows[0].phrase);
+            state.previewSeeded = true;
         }
 
         function paintLoading(lane) {
@@ -1188,6 +1218,17 @@
 
     var _auditLoaded = false;
 
+    /**
+     * Aurora Phase 3C — write a number into the detail-page stat row. Each
+     * cell carries data-stat="pinned" / "synonyms" / "recentEdits"; the JS
+     * that loads the underlying data calls this when its rows arrive.
+     */
+    function setStat(key, value) {
+        var el = document.querySelector('.gst-prof-stat-row [data-stat="' + key + '"]');
+        if (!el) return;
+        el.textContent = (value == null) ? '—' : String(value);
+    }
+
     function loadAudit(key) {
         if (_auditLoaded) return;
         _auditLoaded = true;
@@ -1202,6 +1243,7 @@
             if (!rows || rows.length === 0) {
                 GST.showEmpty(host, s('profiles.detail.audit.empty', 'No edits recorded yet.'));
                 if (badge) badge.hidden = true;
+                setStat('recentEdits', 0);
                 return;
             }
             renderAudit(host, rows);
@@ -1209,11 +1251,25 @@
                 badge.hidden = false;
                 badge.textContent = rows.length;
             }
+            // Stat-row "Recent edits" counts everything in the last 7 days
+            // rather than the full take, so the number feels like a useful
+            // "what's been touched recently" signal rather than a paging cap.
+            var cutoff = Date.now() - 7 * 86400e3;
+            var recent = rows.filter(function (r) {
+                var t = Date.parse(r.at);
+                return !isNaN(t) && t >= cutoff;
+            }).length;
+            setStat('recentEdits', recent);
         }).catch(function(err) {
             host.innerHTML = '<p class="gst-muted">' + escHtml(s('profiles.requestFailed', 'Failed to load audit log.')) + '</p>';
             console.error('Audit log failed', err);
         });
     }
+
+    // Expose the setter so pinned.js / synonyms-grid.js can fill their
+    // respective stat cells when their data loads. Both files run after
+    // profiles.js so this is available by then.
+    GST.profilesDetailSetStat = setStat;
 
     function renderAudit(host, rows) {
         var html = '<table class="gst-table gst-prof-audit-table"><thead><tr>'

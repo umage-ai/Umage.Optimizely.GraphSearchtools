@@ -49,6 +49,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Profiles))
         };
 
+        // Aurora refactor — Insights dashboard. Sits between Profiles and the
+        // editorial Pinned/Synonyms tools: marketers can see "what's
+        // happening" before deciding what to tune.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/insights", "Insights"), BaseMenuPath + "/insights",
+            GetResourcePath("Insights/Index"))
+        {
+            SortIndex = 175,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Insights))
+        };
+
         // Editorial group: top-level Pinned + Synonyms tools — global views
         // that mirror the per-profile tabs inside Profile detail. The Pinned
         // tool also absorbs the former Pinned Coverage as an "Audit" tab.
