@@ -1,34 +1,42 @@
 /* ========================================================================
    Graph Search Tools - Design System
-   A clean, professional UI that fits within the Optimizely CMS context.
+   Mirrors the Optimizely CMS Admin SPA (Aurora) visual language so the
+   tools feel native to the surrounding shell: Inter typography, oversized
+   light page titles, generous whitespace, and a flat grid with light row
+   rules instead of card chrome.
    ======================================================================== */
 
 :root {
-    /* Colors - Neutral palette */
-    --gst-bg: #f5f6f8;
+    /* Colors - Aurora neutrals. Page sits on white; the only chrome between
+       sections is whitespace and 1px hair-rules. */
+    --gst-bg: #ffffff;
     --gst-surface: #ffffff;
-    --gst-surface-hover: #f0f1f3;
-    --gst-surface-active: #e8e9ec;
-    --gst-border: #dcdee3;
-    --gst-border-light: #ecedf0;
-    --gst-text: #1a1d23;
-    --gst-text-secondary: #5f6368;
-    --gst-text-muted: #9aa0a6;
+    --gst-surface-hover: #f5f6f8;
+    --gst-surface-active: #ebedf0;
+    --gst-border: #e2e4e9;        /* row rules, input borders */
+    --gst-border-light: #eef0f3;  /* internal dividers */
+    --gst-text: #1d1f24;          /* body text */
+    --gst-text-secondary: #595d65;/* subtitles, column headers */
+    --gst-text-muted: #8c9099;    /* placeholders, captions */
 
-    /* Colors - Accent */
-    --gst-primary: #1565c0;
-    --gst-primary-light: #e3f2fd;
-    --gst-primary-hover: #0d47a1;
+    /* Colors - Optimizely brand blue. The "Create New..." button in Aurora
+       is solid #0042FF; in-text links lean lighter (#0070EE) for contrast
+       against neutral text. */
+    --gst-primary: #0042ff;
+    --gst-primary-hover: #0032c4;
+    --gst-primary-light: #e6ecff;
+    --gst-link: #0070ee;
+    --gst-link-hover: #0055b8;
 
     /* Colors - Semantic */
-    --gst-success: #2e7d32;
-    --gst-success-light: #e8f5e9;
-    --gst-warning: #ef6c00;
-    --gst-warning-light: #fff3e0;
-    --gst-danger: #c62828;
-    --gst-danger-light: #ffebee;
-    --gst-info: #0277bd;
-    --gst-info-light: #e1f5fe;
+    --gst-success: #1b873f;
+    --gst-success-light: #e6f4ea;
+    --gst-warning: #b76e00;
+    --gst-warning-light: #fff4e0;
+    --gst-danger: #cc1f1a;
+    --gst-danger-light: #fbeaea;
+    --gst-info: #0061a8;
+    --gst-info-light: #e2f0fa;
 
     /* Spacing */
     --gst-space-xs: 4px;
@@ -36,26 +44,32 @@
     --gst-space-md: 16px;
     --gst-space-lg: 24px;
     --gst-space-xl: 32px;
+    --gst-space-2xl: 48px;
 
-    /* Typography */
-    --gst-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    /* Typography. Aurora bundles Inter via @font-face; we link the same
+       family from Google Fonts in the layout so the cascade lands on Inter
+       rather than the OS default. */
+    --gst-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --gst-font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --gst-text-xs: 11px;
     --gst-text-sm: 12px;
     --gst-text-base: 14px;
     --gst-text-lg: 16px;
     --gst-text-xl: 20px;
     --gst-text-2xl: 24px;
+    --gst-text-3xl: 32px;
+    --gst-text-4xl: 40px;
 
-    /* Borders */
-    --gst-radius: 6px;
-    --gst-radius-sm: 4px;
-    --gst-radius-lg: 8px;
+    /* Borders. Aurora uses tight 4px radii (or none) — keep things flat. */
+    --gst-radius: 4px;
+    --gst-radius-sm: 3px;
+    --gst-radius-lg: 6px;
 
-    /* Shadows */
-    --gst-shadow-sm: 0 1px 2px rgba(0,0,0,.06);
-    --gst-shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
-    --gst-shadow-lg: 0 4px 12px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
-    --gst-shadow-xl: 0 10px 25px rgba(0,0,0,.12), 0 4px 10px rgba(0,0,0,.08);
+    /* Shadows are reserved for popovers/dialogs; the page itself is flat. */
+    --gst-shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+    --gst-shadow: 0 2px 6px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --gst-shadow-lg: 0 8px 20px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+    --gst-shadow-xl: 0 16px 40px rgba(0,0,0,.14), 0 4px 10px rgba(0,0,0,.08);
 }
 
 /* ── Reset (scoped to GST views only) ──────────────────────────── */
@@ -142,136 +156,363 @@
 
 .gst-main {
     flex: 1;
-    padding: var(--gst-space-lg);
+    padding: var(--gst-space-xl) var(--gst-space-2xl);
     width: 100%;
     min-width: 0;
     position: relative;
 }
 
-/* ── Page Header ────────────────────────────────────────────────── */
+/* ── Page Header ────────────────────────────────────────────────────────
+   Aurora's title is the dominant element on the page: ~32–40px in a
+   light weight, sitting on whitespace with no card chrome. A help icon
+   anchors top-right. We support three shapes:
+
+     • bare:          <div .gst-page-header><h1/><p/></div>
+     • wrapped title: <div .gst-page-header><div .gst-page-header__title><h1/><p/></div></div>
+     • with aside:    add <a .gst-help-icon/> (or <div .gst-page-header__aside/>) as a sibling of __title
+
+   Only the with-aside case becomes a flex container (via :has) so the
+   icon floats right; the other shapes keep their natural block stacking. */
 .gst-page-header {
-    margin-bottom: var(--gst-space-lg);
+    margin-bottom: var(--gst-space-xl);
+}
+.gst-page-header:has(.gst-help-icon),
+.gst-page-header:has(.gst-page-header__aside) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--gst-space-lg);
 }
 
-.gst-page-header h1 {
-    font-size: var(--gst-text-2xl);
-    font-weight: 600;
-    margin-bottom: var(--gst-space-xs);
+.gst-page-header > h1,
+.gst-page-header__title h1 {
+    font-size: var(--gst-text-3xl);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+    margin-bottom: var(--gst-space-sm);
 }
 
-.gst-page-header p {
+.gst-page-header > p,
+.gst-page-header__title p {
     color: var(--gst-text-secondary);
     font-size: var(--gst-text-base);
+    line-height: 1.5;
+    max-width: 720px;
 }
 
-/* ── Cards ──────────────────────────────────────────────────────── */
+.gst-page-header__title { min-width: 0; flex: 1; }
+.gst-page-header__aside { flex-shrink: 0; display: flex; align-items: center; gap: var(--gst-space-sm); }
+
+/* Help icon — small "?" circle outline, gray, top-right of page header.
+   Mirrors the icon at the top-right of the Aurora Content Types page. */
+.gst-help-icon {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gst-text-secondary);
+    border: 1px solid var(--gst-border);
+    border-radius: 50%;
+    background: var(--gst-surface);
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+    text-decoration: none;
+    font-family: var(--gst-font);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1;
+}
+.gst-help-icon:hover {
+    color: var(--gst-primary);
+    border-color: var(--gst-primary);
+    background: var(--gst-primary-light);
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────
+   Aurora pages put grids and toolbars directly on the page background;
+   there is no surrounding card chrome. The base .gst-card is now flat —
+   no border, no shadow, no padding — and acts purely as a vertical
+   stacking container. Variants opt back into chrome where it adds value
+   (e.g. detail panels, dialog-like surfaces). */
 .gst-card {
     background: var(--gst-surface);
+    padding: 0;
+}
+.gst-card + .gst-card { margin-top: var(--gst-space-xl); }
+
+/* Optional elevated treatment for surfaces that aren't on the main page
+   flow (popovers anchored as cards, detail aside panels, etc.). */
+.gst-card--elevated {
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius-lg);
     box-shadow: var(--gst-shadow-sm);
-    padding: var(--gst-space-md) var(--gst-space-lg);
+    padding: var(--gst-space-lg);
 }
-.gst-card + .gst-card { margin-top: var(--gst-space-md); }
+
 /* When a card uses the optional __header/__body subdivisions, those carry
    their own padding — strip the base padding to avoid nesting it. */
 .gst-card:has(.gst-card__header),
 .gst-card:has(.gst-card__body) { padding: 0; }
 
 .gst-card__header {
-    padding: var(--gst-space-md) var(--gst-space-lg);
+    padding: var(--gst-space-md) 0;
     border-bottom: 1px solid var(--gst-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--gst-space-md);
+    margin-bottom: var(--gst-space-md);
 }
 
 .gst-card__title {
     font-size: var(--gst-text-lg);
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: -0.005em;
 }
 
 .gst-card__body {
-    padding: var(--gst-space-lg);
+    padding: 0;
 }
 
 .gst-card__body--flush { padding: 0; }
 
-/* ── Toolbar ────────────────────────────────────────────────────── */
+/* ── Toolbar ────────────────────────────────────────────────────────────
+   Aurora's grid toolbar sits above the data table with generous spacing
+   between filter controls. Search left, filter dropdowns next, spacer,
+   primary action right. */
 .gst-toolbar {
     display: flex;
-    align-items: center;
-    gap: var(--gst-space-sm);
+    align-items: flex-end;
+    gap: var(--gst-space-md);
     flex-wrap: wrap;
-    margin-bottom: var(--gst-space-md);
+    margin-bottom: var(--gst-space-xl);
 }
 
 .gst-toolbar__spacer { flex: 1; }
 
-/* ── Search ─────────────────────────────────────────────────────── */
+/* Several views (Pinned/Audit, SearchLogs) drop bare <input type="text">
+   and <select> into the toolbar without the .gst-search/.gst-select
+   wrappers. Style them so they inherit the Aurora look automatically. */
+.gst-toolbar > input[type="text"],
+.gst-toolbar > input[type="search"] {
+    width: 260px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-base);
+    font-family: var(--gst-font);
+    color: var(--gst-text);
+    background: var(--gst-surface);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.gst-toolbar > input[type="text"]:hover,
+.gst-toolbar > input[type="search"]:hover { border-color: #c8ccd2; }
+.gst-toolbar > input[type="text"]:focus,
+.gst-toolbar > input[type="search"]:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-toolbar > select {
+    height: 40px;
+    padding: 0 32px 0 14px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-base);
+    font-family: var(--gst-font);
+    color: var(--gst-text);
+    background: var(--gst-surface);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.gst-toolbar > select:hover { border-color: #c8ccd2; }
+.gst-toolbar > select:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+
+/* ── Search ─────────────────────────────────────────────────────────────
+   Aurora's search input is taller (40px) with an inset magnifier glyph
+   and a soft 1px border that brightens to brand blue on focus. */
 .gst-search {
     position: relative;
+    width: 280px;
 }
 
 .gst-search__icon {
     position: absolute;
-    left: 10px;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
     width: 16px;
     height: 16px;
     color: var(--gst-text-muted);
     pointer-events: none;
+    transition: color .15s;
 }
 
 .gst-search input {
-    padding: 6px 10px 6px 32px;
+    width: 100%;
+    height: 40px;
+    padding: 0 14px 0 38px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
-    font-size: var(--gst-text-sm);
+    font-size: var(--gst-text-base);
     font-family: var(--gst-font);
-    width: 260px;
+    color: var(--gst-text);
+    background: var(--gst-surface);
     outline: none;
     transition: border-color .15s, box-shadow .15s;
 }
+.gst-search input::placeholder { color: var(--gst-text-muted); }
+.gst-search input:hover { border-color: #c8ccd2; }
 .gst-search input:focus {
     border-color: var(--gst-primary);
     box-shadow: 0 0 0 3px var(--gst-primary-light);
 }
+.gst-search:focus-within .gst-search__icon { color: var(--gst-primary); }
 
-/* ── Table ──────────────────────────────────────────────────────── */
+/* ── Filter dropdown (label-above-value, Aurora style) ──────────────────
+   The Aurora Content Types page renders filters as a small uppercase-ish
+   label sitting above the selected value, both inside a single hit area
+   with a trailing caret. We expose this as an opt-in component because it
+   needs slightly different markup than a bare <select>:
+
+   <label class="gst-filter">
+     <span class="gst-filter__label">Content Type</span>
+     <select class="gst-filter__select">…</select>
+   </label>                                                              */
+.gst-filter {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    min-width: 168px;
+    height: 56px;
+    padding: 8px 36px 8px 14px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    background: var(--gst-surface);
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+}
+.gst-filter:hover { border-color: #c8ccd2; }
+.gst-filter:focus-within {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-filter__label {
+    display: block;
+    font-size: var(--gst-text-xs);
+    font-weight: 500;
+    color: var(--gst-text-secondary);
+    line-height: 1.2;
+    margin-bottom: 2px;
+    pointer-events: none;
+}
+.gst-filter__select {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-family: var(--gst-font);
+    font-size: var(--gst-text-base);
+    font-weight: 500;
+    color: var(--gst-text);
+    cursor: pointer;
+    outline: none;
+    width: 100%;
+    line-height: 1.2;
+}
+.gst-filter::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 10px;
+    height: 6px;
+    transform: translateY(-50%);
+    background: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+    pointer-events: none;
+}
+
+/* ── Table ──────────────────────────────────────────────────────────────
+   Aurora's data table is flat: no background tint, no zebra stripes, no
+   visible header band. Column headers are small + light-gray with a sort
+   indicator that appears on the active column. Rows are separated by a
+   single hair-line. The first column is a blue link to the detail page.
+   Hover lightens the row to surface-hover. */
 .gst-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--gst-text-sm);
+    font-size: var(--gst-text-base);
+    color: var(--gst-text);
 }
+
+.gst-table thead tr { border-bottom: 1px solid var(--gst-border); }
 
 .gst-table th {
     text-align: left;
-    padding: var(--gst-space-sm) var(--gst-space-md);
-    font-weight: 600;
+    padding: 12px 16px;
+    font-weight: 500;
+    font-size: var(--gst-text-sm);
     color: var(--gst-text-secondary);
-    background: var(--gst-bg);
-    border-bottom: 2px solid var(--gst-border);
+    background: var(--gst-surface);
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
     position: sticky;
     top: 0;
     z-index: 1;
+    letter-spacing: 0;
+    transition: color .15s;
 }
 .gst-table th:hover { color: var(--gst-text); }
-.gst-table th[data-sort-dir="asc"]::after { content: ' ▲'; font-size: 10px; }
-.gst-table th[data-sort-dir="desc"]::after { content: ' ▼'; font-size: 10px; }
+.gst-table th[data-sort-dir]::after {
+    content: '';
+    display: inline-block;
+    margin-left: 6px;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    vertical-align: middle;
+}
+.gst-table th[data-sort-dir="asc"]::after  { border-bottom: 5px solid var(--gst-text); }
+.gst-table th[data-sort-dir="desc"]::after { border-top: 5px solid var(--gst-text); }
 
 .gst-table td {
-    padding: var(--gst-space-sm) var(--gst-space-md);
+    padding: 14px 16px;
     border-bottom: 1px solid var(--gst-border-light);
     vertical-align: middle;
 }
 
-.gst-table tr:hover td { background: var(--gst-surface-hover); }
+.gst-table tbody tr { transition: background .12s; }
+.gst-table tbody tr:hover td { background: var(--gst-surface-hover); }
+
+/* First column reads as the row's "name" — render as a link the way Aurora
+   does on Content Types (display name → detail). The .gst-table__link
+   class can be applied directly, or any <a> in the first cell will pick
+   it up automatically. */
+.gst-table__link,
+.gst-table tbody tr > td:first-child a:not([class]) {
+    color: var(--gst-link);
+    text-decoration: none;
+    font-weight: 500;
+}
+.gst-table__link:hover,
+.gst-table tbody tr > td:first-child a:not([class]):hover {
+    color: var(--gst-link-hover);
+    text-decoration: underline;
+}
 
 .gst-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
@@ -279,6 +520,38 @@
 .gst-table tr.gst-row--orphaned td { background: var(--gst-danger-light); }
 .gst-table tr.gst-row--inherited td { background: var(--gst-success-light); }
 .gst-table tr.gst-row--system td { color: var(--gst-text-muted); }
+
+/* Row overflow menu — the "⋯" affordance at the end of each Aurora row.
+   Renders as a button that only reveals its background on hover. */
+.gst-rowmenu {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--gst-text-secondary);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+    padding: 0;
+}
+.gst-rowmenu:hover { background: var(--gst-surface-active); color: var(--gst-text); }
+.gst-rowmenu::before {
+    content: '';
+    width: 14px;
+    height: 4px;
+    background-image: radial-gradient(circle, currentColor 1.6px, transparent 1.8px);
+    background-size: 6px 4px;
+    background-repeat: repeat-x;
+}
+.gst-table td.gst-table__actions {
+    text-align: right;
+    width: 1%;
+    white-space: nowrap;
+    padding-right: 8px;
+}
 
 /* ── Badges ─────────────────────────────────────────────────────── */
 .gst-badge {
@@ -297,76 +570,121 @@
 .gst-badge--warning { background: var(--gst-warning-light); color: var(--gst-warning); }
 .gst-badge--danger  { background: var(--gst-danger-light);  color: var(--gst-danger); }
 
-/* ── Buttons ────────────────────────────────────────────────────── */
+/* ── Buttons ────────────────────────────────────────────────────────────
+   The "Create New..." button in Aurora is solid brand blue, ~40px tall,
+   with crisp 4px corners and no shadow at rest. Secondary buttons share
+   the same shape but with a transparent fill. */
 .gst-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 6px 14px;
+    height: 40px;
+    padding: 0 18px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     background: var(--gst-surface);
     color: var(--gst-text);
-    font-size: var(--gst-text-sm);
+    font-size: var(--gst-text-base);
     font-family: var(--gst-font);
     font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
     cursor: pointer;
-    transition: background .15s, border-color .15s;
+    transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
     text-decoration: none;
     white-space: nowrap;
 }
-.gst-btn:hover { background: var(--gst-surface-hover); border-color: var(--gst-text-muted); }
+.gst-btn:hover { background: var(--gst-surface-hover); border-color: #c8ccd2; }
 .gst-btn:active { background: var(--gst-surface-active); }
+.gst-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-primary);
+}
 
 .gst-btn--primary {
     background: var(--gst-primary);
     color: #fff;
     border-color: var(--gst-primary);
 }
-.gst-btn--primary:hover { background: var(--gst-primary-hover); }
+.gst-btn--primary:hover {
+    background: var(--gst-primary-hover);
+    border-color: var(--gst-primary-hover);
+}
+.gst-btn--primary:focus-visible {
+    box-shadow: 0 0 0 3px rgba(0, 66, 255, .22);
+    border-color: var(--gst-primary-hover);
+}
 
 .gst-btn--danger {
-    color: var(--gst-danger, #b3261e);
+    color: var(--gst-danger);
     border-color: var(--gst-border);
 }
 .gst-btn--danger:hover {
-    background: var(--gst-danger, #b3261e);
+    background: var(--gst-danger);
     color: #fff;
-    border-color: var(--gst-danger, #b3261e);
+    border-color: var(--gst-danger);
 }
 .gst-btn--danger:disabled { opacity: 0.6; cursor: default; }
 
-.gst-btn--sm { padding: 3px 8px; font-size: 11px; }
-.gst-btn--icon { padding: 4px 6px; }
+/* "Text button" — no border or background, used inline (e.g. card-header
+   actions, dialog cancel). Aurora calls this .epi-uif-text-button. */
+.gst-btn--text {
+    height: auto;
+    padding: 6px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--gst-link);
+}
+.gst-btn--text:hover {
+    background: var(--gst-primary-light);
+    border: 0;
+    color: var(--gst-link-hover);
+}
 
-.gst-btn svg { width: 14px; height: 14px; }
+.gst-btn--sm { height: 28px; padding: 0 12px; font-size: var(--gst-text-sm); }
+.gst-btn--icon { width: 32px; height: 32px; padding: 0; }
 
-/* ── Stats Row ──────────────────────────────────────────────────── */
+.gst-btn svg { width: 16px; height: 16px; }
+
+/* ── Stats Row ──────────────────────────────────────────────────────────
+   Inline stat cards above the grid. Aurora-style — flat panels stitched
+   together by a light right-rule, with a thin "highlight bar" along the
+   bottom that picks up brand blue on focus/active.  */
 .gst-stats {
     display: flex;
-    gap: var(--gst-space-md);
+    gap: 0;
     flex-wrap: wrap;
-    margin-bottom: var(--gst-space-lg);
+    margin-bottom: var(--gst-space-xl);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius-lg);
+    background: var(--gst-surface);
+    overflow: hidden;
 }
 
 .gst-stat {
     background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
-    border-radius: var(--gst-radius-lg);
     padding: var(--gst-space-md) var(--gst-space-lg);
-    min-width: 140px;
+    min-width: 160px;
+    flex: 1 1 0;
+    border-right: 1px solid var(--gst-border-light);
 }
+.gst-stat:last-child { border-right: 0; }
 
 .gst-stat__value {
     font-size: var(--gst-text-2xl);
-    font-weight: 700;
+    font-weight: 300;
+    letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
+    color: var(--gst-text);
+    line-height: 1.1;
 }
 
 .gst-stat__label {
     font-size: var(--gst-text-sm);
     color: var(--gst-text-secondary);
-    margin-top: 2px;
+    margin-top: 6px;
 }
 
 /* ── Toggle / Checkbox ──────────────────────────────────────────── */
@@ -386,25 +704,33 @@
     height: 14px;
 }
 
-/* ── Select ─────────────────────────────────────────────────────── */
+/* ── Select ─────────────────────────────────────────────────────────────
+   Bare-select variant for inline use (small dropdowns inside dialogs, row
+   inline-editors, etc.). For toolbar filter dropdowns prefer .gst-filter
+   above, which renders a label above the selected value. */
 .gst-select {
-    padding: 6px 28px 6px 10px;
+    height: 40px;
+    padding: 0 32px 0 14px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
-    font-size: var(--gst-text-sm);
+    font-size: var(--gst-text-base);
     font-family: var(--gst-font);
+    color: var(--gst-text);
     background: var(--gst-surface);
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235f6368' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 10px center;
+    background-position: right 12px center;
     cursor: pointer;
     outline: none;
+    transition: border-color .15s, box-shadow .15s;
 }
+.gst-select:hover { border-color: #c8ccd2; }
 .gst-select:focus {
     border-color: var(--gst-primary);
     box-shadow: 0 0 0 3px var(--gst-primary-light);
 }
+.gst-select--sm { height: 28px; padding: 0 26px 0 10px; font-size: var(--gst-text-sm); }
 
 /* ── Dialog / Modal ─────────────────────────────────────────────── */
 .gst-dialog-backdrop {
@@ -469,6 +795,348 @@
 
 .gst-dialog__body--flush { padding: 0; }
 
+/* ── Flyout ─────────────────────────────────────────────────────────────
+   Right-edge edit panel — the Aurora pattern Optimizely uses for
+   "edit one small thing" surfaces (Settings, scheduled publish, etc.).
+   Sized for ~5–8 fields; for richer editing graduate to a detail page. */
+.gst-flyout-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.32);
+    z-index: 1000;
+    animation: gst-fade-in .15s ease;
+}
+.gst-flyout-backdrop[hidden] { display: none; }
+
+.gst-flyout {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 480px;
+    max-width: 100vw;
+    background: var(--gst-surface);
+    box-shadow: var(--gst-shadow-xl);
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+    animation: gst-slide-in-right .22s cubic-bezier(.2,.7,.2,1);
+}
+.gst-flyout[hidden] { display: none; }
+
+.gst-flyout__header {
+    padding: var(--gst-space-md) var(--gst-space-lg);
+    border-bottom: 1px solid var(--gst-border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gst-space-md);
+    flex-shrink: 0;
+}
+
+.gst-flyout__title {
+    font-size: var(--gst-text-lg);
+    font-weight: 500;
+    letter-spacing: -0.005em;
+}
+
+.gst-flyout__close {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--gst-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s, color .12s;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+.gst-flyout__close:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+
+.gst-flyout__body {
+    padding: var(--gst-space-lg);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.gst-flyout__footer {
+    padding: var(--gst-space-md) var(--gst-space-lg);
+    border-top: 1px solid var(--gst-border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--gst-space-sm);
+    flex-shrink: 0;
+    background: var(--gst-surface);
+}
+
+/* Conflict / inline notice strip — sits between the form fields and the
+   footer to surface validation issues that aren't field-specific. */
+.gst-flyout__notice {
+    margin: var(--gst-space-md) calc(var(--gst-space-lg) * -1) 0;
+    padding: var(--gst-space-sm) var(--gst-space-lg);
+    background: var(--gst-warning-light);
+    color: #5d4037;
+    border-top: 1px solid #f1d6a3;
+    border-bottom: 1px solid #f1d6a3;
+    font-size: var(--gst-text-sm);
+    display: flex;
+    gap: 8px;
+    line-height: 1.4;
+}
+.gst-flyout__notice strong { font-weight: 600; }
+.gst-flyout__notice::before { content: '⚠'; flex-shrink: 0; }
+
+@keyframes gst-slide-in-right {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ── Form fields (used inside flyout, also reusable) ────────────────────
+   Pairs a label with a control. Stack vertically by default; group two
+   on a row with .gst-field-row. */
+.gst-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--gst-space-md); }
+.gst-field:last-child { margin-bottom: 0; }
+.gst-field__label {
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    color: var(--gst-text);
+}
+.gst-field__hint {
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-secondary);
+    margin-top: 2px;
+}
+.gst-field input[type="text"],
+.gst-field input[type="number"],
+.gst-field input[type="date"],
+.gst-field textarea,
+.gst-field select {
+    width: 100%;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    font-size: var(--gst-text-base);
+    font-family: var(--gst-font);
+    color: var(--gst-text);
+    background: var(--gst-surface);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.gst-field textarea {
+    height: auto;
+    min-height: 72px;
+    padding: 10px 14px;
+    line-height: 1.5;
+    resize: vertical;
+}
+.gst-field select {
+    appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+}
+.gst-field input:hover,
+.gst-field textarea:hover,
+.gst-field select:hover { border-color: #c8ccd2; }
+.gst-field input:focus,
+.gst-field textarea:focus,
+.gst-field select:focus {
+    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-primary-light);
+}
+.gst-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gst-space-md);
+    margin-bottom: var(--gst-space-md);
+}
+.gst-field-row > .gst-field { margin-bottom: 0; }
+
+.gst-field__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: var(--gst-text-base);
+    color: var(--gst-text);
+}
+.gst-field__checkbox input { accent-color: var(--gst-primary); width: 16px; height: 16px; }
+
+.gst-field__radio-group {
+    display: flex;
+    gap: var(--gst-space-md);
+}
+.gst-field__radio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    font-size: var(--gst-text-base);
+    color: var(--gst-text);
+}
+.gst-field__radio input { accent-color: var(--gst-primary); }
+
+/* "Content picker" surrogate — looks like an input but renders an icon +
+   label + caret to suggest it opens a modal. Used in the prototype for
+   the Target field; real implementation wires GST.contentPicker. */
+.gst-field__picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    background: var(--gst-surface);
+    color: var(--gst-text);
+    font-size: var(--gst-text-base);
+    cursor: pointer;
+    transition: border-color .15s;
+    text-align: left;
+    font-family: var(--gst-font);
+}
+.gst-field__picker:hover { border-color: #c8ccd2; }
+.gst-field__picker::after {
+    content: '';
+    margin-left: auto;
+    width: 10px;
+    height: 6px;
+    background: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+.gst-field__picker__icon { color: var(--gst-text-secondary); }
+.gst-field__picker--empty { color: var(--gst-text-muted); }
+
+/* Target list — the multi-target editor inside the pin flyout. Each row
+   is a content reference with a grip handle, name, and remove (×) affordance.
+   The "Add another target" button sits below the list as a dashed call-to-action. */
+.gst-target-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.gst-target-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 6px 0 0;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    background: var(--gst-surface);
+    transition: border-color .12s, background .12s, transform .12s, box-shadow .12s;
+}
+.gst-target-row:hover { border-color: #c8ccd2; }
+.gst-target-row.is-dragging {
+    opacity: .85;
+    box-shadow: var(--gst-shadow);
+    transform: scale(1.01);
+}
+.gst-target-row__drag {
+    flex-shrink: 0;
+    width: 28px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: var(--gst-text-muted);
+    user-select: none;
+}
+.gst-target-row__drag:active { cursor: grabbing; }
+.gst-target-row__drag::before {
+    content: '';
+    width: 6px;
+    height: 14px;
+    background-image: radial-gradient(circle, currentColor 1.2px, transparent 1.4px);
+    background-size: 4px 4px;
+}
+.gst-target-row__icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.gst-target-row__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.2;
+}
+.gst-target-row__name {
+    font-size: var(--gst-text-base);
+    color: var(--gst-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-target-row__sub {
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.gst-target-row__remove {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--gst-text-muted);
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .12s, color .12s;
+}
+.gst-target-row__remove:hover { background: var(--gst-danger-light); color: var(--gst-danger); }
+
+.gst-target-list__add {
+    height: 40px;
+    border: 1px dashed var(--gst-border);
+    border-radius: var(--gst-radius);
+    background: transparent;
+    color: var(--gst-text-secondary);
+    font-family: var(--gst-font);
+    font-size: var(--gst-text-base);
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color .15s, color .15s, background .15s;
+}
+.gst-target-list__add:hover {
+    border-color: var(--gst-primary);
+    color: var(--gst-primary);
+    background: var(--gst-primary-light);
+}
+.gst-field__count {
+    margin-left: 4px;
+    font-size: var(--gst-text-xs);
+    color: var(--gst-text-muted);
+    font-weight: 400;
+}
+
 /* ── Alert Box ──────────────────────────────────────────────────── */
 .gst-alert {
     padding: var(--gst-space-sm) var(--gst-space-md);
@@ -510,11 +1178,13 @@
     animation: gst-spin .6s linear infinite;
 }
 
-/* ── Overview Tool Cards ────────────────────────────────────────── */
+/* ── Overview Tool Cards ────────────────────────────────────────────────
+   Aurora-style tile grid. Cards are flat by default and lift on hover;
+   the brand-blue icon and tight 6px radius echo the rest of the admin. */
 .gst-tool-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--gst-space-md);
+    gap: var(--gst-space-lg);
 }
 
 .gst-tool-card {
@@ -524,36 +1194,51 @@
     padding: var(--gst-space-lg);
     text-decoration: none;
     color: var(--gst-text);
-    transition: box-shadow .15s, border-color .15s, transform .15s;
+    transition: box-shadow .18s, border-color .18s, transform .18s;
     display: flex;
     flex-direction: column;
     gap: var(--gst-space-sm);
+    position: relative;
+    overflow: hidden;
+}
+/* Subtle brand-blue accent rail on the top edge that thickens on hover. */
+.gst-tool-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    background: var(--gst-primary);
+    opacity: 0;
+    transition: opacity .18s;
 }
 .gst-tool-card:hover {
     box-shadow: var(--gst-shadow);
     border-color: var(--gst-primary);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
+.gst-tool-card:hover::before { opacity: 1; }
 .gst-tool-card.disabled {
     opacity: .45;
     pointer-events: none;
 }
 
 .gst-tool-card__icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     color: var(--gst-primary);
+    margin-bottom: var(--gst-space-xs);
 }
 
 .gst-tool-card__title {
     font-size: var(--gst-text-lg);
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: -0.005em;
 }
 
 .gst-tool-card__desc {
     font-size: var(--gst-text-sm);
     color: var(--gst-text-secondary);
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
 .gst-tool-card__status {
@@ -596,23 +1281,26 @@
     margin-left: 4px;
 }
 
-/* ── Tabs ───────────────────────────────────────────────────────── */
+/* ── Tabs ───────────────────────────────────────────────────────────────
+   Aurora tab strip — single hair-rule baseline, brand-blue indicator on
+   the active tab. */
 .gst-tabs {
     display: flex;
-    border-bottom: 2px solid var(--gst-border);
-    margin-bottom: var(--gst-space-lg);
+    border-bottom: 1px solid var(--gst-border);
+    margin-bottom: var(--gst-space-xl);
+    gap: var(--gst-space-xs);
 }
 
 .gst-tab {
-    padding: var(--gst-space-sm) var(--gst-space-md);
-    font-size: var(--gst-text-sm);
+    padding: 10px 18px;
+    font-size: var(--gst-text-base);
     font-weight: 500;
     color: var(--gst-text-secondary);
     border: none;
     background: none;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
+    margin-bottom: -1px;
     transition: color .15s, border-color .15s;
     font-family: var(--gst-font);
 }

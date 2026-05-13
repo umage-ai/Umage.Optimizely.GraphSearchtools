@@ -391,6 +391,8 @@
           <filter>
             <allLocales>All locales</allLocales>
             <allSites>All sites</allSites>
+            <labelSite>Site</labelSite>
+            <labelLocale>Locale</labelLocale>
           </filter>
           <filterPlaceholder>Filter profiles…</filterPlaceholder>
           <stats>
@@ -451,6 +453,8 @@
           <copied>Copied</copied>
           <pagerLabel>Pagination</pagerLabel>
           <pagerStatus>Page %1 of %2</pagerStatus>
+          <help>Help</help>
+          <rowActions>Row actions</rowActions>
         </shared>
         <components>
           <picker_title>Select content</picker_title>
