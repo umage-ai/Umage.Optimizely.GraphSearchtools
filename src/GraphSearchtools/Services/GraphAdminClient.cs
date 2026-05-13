@@ -58,9 +58,14 @@ public sealed class GraphAdminClient : IGraphAdminClient
         await SendNoContentAsync(request, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<PinnedItemResult>> GetItemsAsync(string collectionId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PinnedItemResult>> GetItemsAsync(string collectionId, CancellationToken cancellationToken, int offset = 0)
     {
-        using var request = CreateRequest(HttpMethod.Get, $"api/pinned/collections/{Uri.EscapeDataString(collectionId)}/items");
+        var path = $"api/pinned/collections/{Uri.EscapeDataString(collectionId)}/items";
+        if (offset > 0)
+        {
+            path += $"?offset={offset}";
+        }
+        using var request = CreateRequest(HttpMethod.Get, path);
         var result = await SendJsonAsync<List<PinnedItemResult>>(request, cancellationToken);
         return result ?? new List<PinnedItemResult>();
     }
