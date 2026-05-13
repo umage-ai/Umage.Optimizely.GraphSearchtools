@@ -30,6 +30,11 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Profiles { get; } =
         new("GraphSearchtools", "Profiles");
 
+    // Aurora refactor — Insights dashboard. Read-only over the same telemetry
+    // / synonym / audit data the other tools already touch.
+    public static PermissionType Insights { get; } =
+        new("GraphSearchtools", "Insights");
+
     // Phase 4 foundation — push search-log telemetry from host search surfaces
     // into the GraphSearchtools log table (consumed by Phase 4 Wave 5 tools).
     public static PermissionType Telemetry { get; } =

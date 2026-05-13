@@ -93,6 +93,10 @@ public static class ServiceCollectionExtensions
         // (collection → profile mapping) and ITelemetryReader 7-day window.
         services.AddScoped<PinnedCoverageService>();
 
+        // Aurora refactor: Insights dashboard. Pulls from the three services
+        // above — no new datastore. Scoped because it composes scoped deps.
+        services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Insights.InsightsService>();
+
         // Telemetry: local sink + bucket flusher + reader on by default. To
         // route telemetry through a 3rd-party backend instead (App Insights,
         // Mixpanel, Matomo …), call UseExternalTelemetryReader<T>() after

@@ -1,0 +1,112 @@
+@using EPiServer.Shell
+@inject LocalizationService Loc
+@{
+    Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
+    ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/insights/title");
+    string T(string key) => Loc.GetString($"/graphsearchtools/tools/insights/{key}");
+    string Sh(string key) => Loc.GetString($"/graphsearchtools/ui/shared/{key}");
+}
+
+<div class="gst-page-header">
+    <div class="gst-page-header__title">
+        <h1>@T("title")</h1>
+        <p>@T("description")</p>
+    </div>
+    <a class="gst-help-icon"
+       href="@Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "GraphSearchtools/About")"
+       title="@Sh("help")"
+       aria-label="@Sh("help")">?</a>
+</div>
+
+<div id="gst-alert" class="gst-alert" hidden></div>
+
+@* Window toggle — 7d default, 30d for slower-moving signals. JS keeps the
+   four panels in sync. *@
+<div class="gst-card gst-sl-toolbar-card">
+    <div class="gst-toolbar gst-sl-toolbar">
+        <div class="gst-sl-pillgroup" role="group" aria-label="@T("title")">
+            <button type="button" class="gst-sl-pill gst-sl-pill--active" data-days="7">@T("window_7d")</button>
+            <button type="button" class="gst-sl-pill" data-days="30">@T("window_30d")</button>
+        </div>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-insights-refresh" class="gst-btn">@Sh("refresh")</button>
+    </div>
+</div>
+
+<div class="gst-sl-grid">
+    @* ─────── Top phrases ─────── *@
+    <div class="gst-card gst-sl-card" data-card="top">
+        <div class="gst-sl-card__head">
+            <h2>@T("top_title")</h2>
+            <p class="gst-muted">@T("top_subtitle")</p>
+        </div>
+        <table class="gst-table gst-sl-table">
+            <thead>
+                <tr>
+                    <th>@T("col_phrase")</th>
+                    <th class="num">@T("col_count")</th>
+                    <th class="num">@T("col_zero")</th>
+                    <th>@T("col_locale")</th>
+                    <th>@T("col_profile")</th>
+                </tr>
+            </thead>
+            <tbody id="gst-insights-top"></tbody>
+        </table>
+    </div>
+
+    @* ─────── Zero-result phrases ─────── *@
+    <div class="gst-card gst-sl-card" data-card="zero">
+        <div class="gst-sl-card__head">
+            <h2>@T("zero_title")</h2>
+            <p class="gst-muted">@T("zero_subtitle")</p>
+        </div>
+        <table class="gst-table gst-sl-table">
+            <thead>
+                <tr>
+                    <th>@T("col_phrase")</th>
+                    <th class="num">@T("col_count")</th>
+                    <th>@T("col_locale")</th>
+                    <th>@T("col_profile")</th>
+                </tr>
+            </thead>
+            <tbody id="gst-insights-zero"></tbody>
+        </table>
+    </div>
+
+    @* ─────── Synonym coverage rollup ─────── *@
+    <div class="gst-card gst-sl-card" data-card="coverage">
+        <div class="gst-sl-card__head">
+            <h2>@T("coverage_title")</h2>
+            <p class="gst-muted">@T("coverage_subtitle")</p>
+        </div>
+        <div id="gst-insights-coverage" class="gst-stats">
+            @* JS renders three stat cells: total · unused · suggested *@
+        </div>
+        <p class="gst-muted gst-sl-coverage-meta" id="gst-insights-coverage-meta"></p>
+    </div>
+
+    @* ─────── Recent activity strip ─────── *@
+    <div class="gst-card gst-sl-card gst-sl-card--wide" data-card="activity">
+        <div class="gst-sl-card__head">
+            <h2>@T("activity_title")</h2>
+            <p class="gst-muted">@T("activity_subtitle")</p>
+        </div>
+        <table class="gst-table gst-sl-table">
+            <thead>
+                <tr>
+                    <th>@T("col_when")</th>
+                    <th>@T("col_profile")</th>
+                    <th>@T("col_kind")</th>
+                    <th>@T("col_action")</th>
+                    <th>@T("col_subject")</th>
+                    <th>@T("col_actor")</th>
+                </tr>
+            </thead>
+            <tbody id="gst-insights-activity"></tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/insights.js")"></script>
+}
