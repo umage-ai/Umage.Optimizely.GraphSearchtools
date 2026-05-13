@@ -6,8 +6,14 @@
 }
 
 <div class="gst-page-header">
-    <h1>@Loc.GetString("/graphsearchtools/tools/health/title")</h1>
-    <p>@Loc.GetString("/graphsearchtools/tools/health/description")</p>
+    <div class="gst-page-header__title">
+        <h1>@Loc.GetString("/graphsearchtools/tools/health/title")</h1>
+        <p>@Loc.GetString("/graphsearchtools/tools/health/description")</p>
+    </div>
+    <a class="gst-help-icon"
+       href="@Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "GraphSearchtools/About")"
+       title="@Loc.GetString("/graphsearchtools/ui/shared/help")"
+       aria-label="@Loc.GetString("/graphsearchtools/ui/shared/help")">?</a>
 </div>
 
 <div id="gst-alert" class="gst-alert" hidden></div>
