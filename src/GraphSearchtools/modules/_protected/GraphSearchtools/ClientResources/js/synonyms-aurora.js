@@ -316,17 +316,23 @@
     }
 
     // Delete the rule from its locale's blob and PUT the reduced blob back.
-    // Confirms first; reload refreshes both the grid and the Scope dropdown
-    // when the last rule in a scope goes away.
+    // One-click — no confirmation. On success, splice the rule out of local
+    // state and repaint instead of reloading the whole grid; the scope filter
+    // is rebuilt in case the deleted rule was the last one in its scope.
     function deleteRule(ruleId) {
         const r = state.rules.find(function (x) { return x.id === ruleId; });
         if (!r) return;
-        if (!window.confirm(GST.s('synonyms.confirm_delete', 'Delete this synonym rule?'))) return;
-        const remaining = state.rules.filter(function (x) {
+        const remainingRules = state.rules.filter(function (x) {
             return x.locale === r.locale && x.id !== r.id;
-        }).map(function (x) { return x.raw; });
-        saveBlob(r.locale, remaining.join('\n'))
-            .then(function () { loadAll(); })
+        });
+        const blobBody = remainingRules.map(function (x) { return x.raw; }).join('\n');
+        saveBlob(r.locale, blobBody)
+            .then(function () {
+                state.rules = state.rules.filter(function (x) { return x.id !== r.id; });
+                state.blobs[r.locale] = blobBody;
+                populateLocaleFilter();
+                renderGrid();
+            })
             .catch(function (err) {
                 console.error('Delete synonym failed', err);
                 window.alert(GST.s('synonyms.request_failed', 'Could not delete rule.'));
