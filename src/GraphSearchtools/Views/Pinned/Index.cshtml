@@ -6,84 +6,58 @@
 }
 
 <div class="gst-page-header">
-    <div class="gst-page-header__title">
-        <h1>@Loc.GetString("/graphsearchtools/tools/pinned/title")</h1>
-        <p>@Loc.GetString("/graphsearchtools/tools/pinned/description")</p>
-    </div>
-    <a class="gst-help-icon"
-       href="@Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "GraphSearchtools/About")"
-       title="@Loc.GetString("/graphsearchtools/ui/shared/help")"
-       aria-label="@Loc.GetString("/graphsearchtools/ui/shared/help")">?</a>
+    <h1>@Loc.GetString("/graphsearchtools/tools/pinned/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/tools/pinned/description")</p>
 </div>
-
-@* Page-level tabs. Pins = the editor (default), spanning every collection.
-   Audit = absorbs the former Pinned Coverage view so broken targets,
-   expired pins, overlap conflicts etc live alongside the editor. *@
-<nav class="gst-tabs" role="tablist"
-     aria-label="@Loc.GetString("/graphsearchtools/tools/pinned/title")">
-    <button type="button" class="gst-tabs__btn is-active"
-            role="tab" aria-selected="true" data-panel="pins" id="gst-pin-tab-pins">
-        @Loc.GetString("/graphsearchtools/ui/pinned/tab_pins")
-    </button>
-    <button type="button" class="gst-tabs__btn"
-            role="tab" aria-selected="false" data-panel="audit" id="gst-pin-tab-audit">
-        @Loc.GetString("/graphsearchtools/ui/pinned/tab_audit")
-    </button>
-</nav>
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-@* ─────────────── Pins panel — Aurora grid (Phase 4) ─────────────── *@
+@* ─────────────── Aurora pins grid ─────────────── *@
 @* One row per (phrase, collection, locale) group; targets are managed
    inside the flyout. The grid is read-only at this level; the ⋯ menu and
    row click open the PinFlyout for editing. *@
-<div class="gst-tabpanel" role="tabpanel" data-panel="pins"
-     aria-labelledby="gst-pin-tab-pins">
-
-    <div class="gst-toolbar">
-        <div class="gst-search">
-            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                 stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input type="text" id="gst-pin-search"
-                   placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
-        </div>
-        <label class="gst-filter">
-            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</span>
-            <select class="gst-filter__select" id="gst-pin-collection-filter">
-                <option value="">@Loc.GetString("/graphsearchtools/tools/pinned/all_sites")</option>
-            </select>
-        </label>
-        <label class="gst-filter">
-            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
-            <select class="gst-filter__select" id="gst-pin-locale-filter">
-                <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
-            </select>
-        </label>
-        <div class="gst-toolbar__spacer"></div>
-        <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
-            + @Loc.GetString("/graphsearchtools/tools/pinned/add")
-        </button>
+<div class="gst-toolbar">
+    <div class="gst-search">
+        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="gst-pin-search"
+               placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
     </div>
-
-    <table class="gst-table gst-pin-aurora-table">
-        <thead>
-            <tr>
-                <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
-                <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
-                <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
-                <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
-                <th data-sort="state">@Loc.GetString("/graphsearchtools/tools/pinned/col_state")</th>
-                <th data-sort="modified">@Loc.GetString("/graphsearchtools/tools/pinned/col_modified")</th>
-                <th aria-label="Actions"></th>
-            </tr>
-        </thead>
-        <tbody id="gst-pin-aurora-rows"></tbody>
-    </table>
+    <label class="gst-filter">
+        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</span>
+        <select class="gst-filter__select" id="gst-pin-collection-filter">
+            <option value="">@Loc.GetString("/graphsearchtools/tools/pinned/all_sites")</option>
+        </select>
+    </label>
+    <label class="gst-filter">
+        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
+        <select class="gst-filter__select" id="gst-pin-locale-filter">
+            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
+        </select>
+    </label>
+    <div class="gst-toolbar__spacer"></div>
+    <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
+        + @Loc.GetString("/graphsearchtools/tools/pinned/add")
+    </button>
 </div>
+
+<table class="gst-table gst-pin-aurora-table">
+    <thead>
+        <tr>
+            <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
+            <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
+            <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
+            <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
+            <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
+            <th aria-label="Actions"></th>
+        </tr>
+    </thead>
+    <tbody id="gst-pin-aurora-rows"></tbody>
+</table>
 
 @* Pin flyout — shared markup; the Aurora JS opens/closes it via GST.flyout.
    Use the absolute path so Razor's partial search (which expects a separate
@@ -91,91 +65,6 @@
    spurious-404. *@
 @await Html.PartialAsync("/Views/Shared/_PinFlyout.cshtml")
 
-@* ─────────────── Audit panel (absorbs Pinned Coverage) ─────────────── *@
-<div class="gst-tabpanel" role="tabpanel" data-panel="audit"
-     aria-labelledby="gst-pin-tab-audit" hidden>
-    <div class="gst-card">
-        <div class="gst-toolbar">
-            <span class="gst-pc-generated" id="pc-generated"></span>
-            <div class="gst-toolbar__spacer"></div>
-            <button type="button" id="pc-run" class="gst-btn gst-btn--primary">
-                @Loc.GetString("/graphsearchtools/tools/pinnedCoverage/run_audit")
-            </button>
-        </div>
-
-        <div class="gst-stats" id="pc-stats"></div>
-    </div>
-
-    <div class="gst-card">
-        <div class="gst-card__header">
-            <span class="gst-card__title">@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/title")</span>
-        </div>
-        <div class="gst-card__body--flush">
-            <table class="gst-table gst-pc-table">
-                <thead>
-                    <tr>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/col_kind")</th>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/col_phrase")</th>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/col_target")</th>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/col_collection")</th>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/col_detail")</th>
-                        <th class="gst-pc-fix-col" aria-hidden="true"></th>
-                    </tr>
-                </thead>
-                <tbody id="pc-grid"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="gst-card">
-        <div class="gst-card__header">
-            <span class="gst-card__title">@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/overlaps_title")</span>
-        </div>
-        <div class="gst-card__body--flush">
-            <table class="gst-table gst-pc-overlaps">
-                <thead>
-                    <tr>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/overlap_phrase")</th>
-                        <th>@Loc.GetString("/graphsearchtools/tools/pinnedCoverage/overlap_collections")</th>
-                    </tr>
-                </thead>
-                <tbody id="pc-overlaps"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-aurora.js")"></script>
-    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-coverage.js")"></script>
-    <script>
-        (function () {
-            // Page tabs. Pins = default. Audit lazy-inits its data fetch the
-            // first time the tab is opened (window.GST_PC_INIT).
-            var tabs = document.querySelectorAll('.gst-tabs .gst-tabs__btn');
-            var panels = document.querySelectorAll('.gst-tabpanel');
-            var inited = { pins: true };
-            function showPanel(name) {
-                tabs.forEach(function (t) {
-                    var on = t.dataset.panel === name;
-                    t.classList.toggle('is-active', on);
-                    t.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
-                panels.forEach(function (p) {
-                    p.hidden = p.dataset.panel !== name;
-                });
-                if (name === 'audit' && !inited.audit) {
-                    inited.audit = true;
-                    if (typeof window.GST_PC_INIT === 'function') {
-                        window.GST_PC_INIT();
-                    }
-                }
-            }
-            tabs.forEach(function (t) {
-                t.addEventListener('click', function () { showPanel(t.dataset.panel); });
-            });
-            var initial = (location.hash || '').replace(/^#/, '');
-            if (initial === 'audit') showPanel('audit');
-        })();
-    </script>
 }

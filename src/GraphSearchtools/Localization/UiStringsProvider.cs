@@ -100,10 +100,7 @@ public class UiStringsProvider(LocalizationService loc)
             save_progress = S("pinned/save_progress"),
             conflict = S("pinned/conflict"),
             target_pick = S("pinned/target_pick"),
-            state_active = S("pinned/state_active"),
-            state_inactive = S("pinned/state_inactive"),
-            state_mixed = S("pinned/state_mixed"),
-            state_expired = S("pinned/state_expired")
+            activity_unknown = S("pinned/activity_unknown")
         },
         synonyms = new
         {

@@ -135,25 +135,6 @@
 .gst-header__nav a:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
 .gst-header__nav a.active { background: var(--gst-primary-light); color: var(--gst-primary); }
 
-.gst-header__about {
-    margin-left: auto;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    font-size: var(--gst-text-sm);
-    font-weight: 500;
-    color: var(--gst-text-secondary);
-    text-decoration: none;
-    border-radius: var(--gst-radius-sm);
-    border: 1px solid var(--gst-border);
-    transition: background .15s, color .15s, border-color .15s;
-    white-space: nowrap;
-}
-.gst-header__about:hover { background: var(--gst-surface-hover); color: var(--gst-text); border-color: var(--gst-text-muted); }
-.gst-header__about svg { width: 13px; height: 13px; }
-
 .gst-main {
     flex: 1;
     padding: var(--gst-space-xl) var(--gst-space-2xl);
@@ -164,19 +145,17 @@
 
 /* ── Page Header ────────────────────────────────────────────────────────
    Aurora's title is the dominant element on the page: ~32–40px in a
-   light weight, sitting on whitespace with no card chrome. A help icon
-   anchors top-right. We support three shapes:
+   light weight, sitting on whitespace with no card chrome. We support
+   two shapes:
 
      • bare:          <div .gst-page-header><h1/><p/></div>
-     • wrapped title: <div .gst-page-header><div .gst-page-header__title><h1/><p/></div></div>
-     • with aside:    add <a .gst-help-icon/> (or <div .gst-page-header__aside/>) as a sibling of __title
+     • with aside:    <div .gst-page-header><div .gst-page-header__title><h1/><p/></div><div .gst-page-header__aside/></div>
 
    Only the with-aside case becomes a flex container (via :has) so the
-   icon floats right; the other shapes keep their natural block stacking. */
+   aside floats right; the bare shape keeps its natural block stacking. */
 .gst-page-header {
     margin-bottom: var(--gst-space-xl);
 }
-.gst-page-header:has(.gst-help-icon),
 .gst-page-header:has(.gst-page-header__aside) {
     display: flex;
     align-items: flex-start;
@@ -204,32 +183,6 @@
 
 .gst-page-header__title { min-width: 0; flex: 1; }
 .gst-page-header__aside { flex-shrink: 0; display: flex; align-items: center; gap: var(--gst-space-sm); }
-
-/* Help icon — small "?" circle outline, gray, top-right of page header.
-   Mirrors the icon at the top-right of the Aurora Content Types page. */
-.gst-help-icon {
-    width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--gst-text-secondary);
-    border: 1px solid var(--gst-border);
-    border-radius: 50%;
-    background: var(--gst-surface);
-    cursor: pointer;
-    transition: color .15s, border-color .15s, background .15s;
-    text-decoration: none;
-    font-family: var(--gst-font);
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 1;
-}
-.gst-help-icon:hover {
-    color: var(--gst-primary);
-    border-color: var(--gst-primary);
-    background: var(--gst-primary-light);
-}
 
 /* ── Cards ──────────────────────────────────────────────────────────────
    Aurora pages put grids and toolbars directly on the page background;
@@ -401,7 +354,7 @@
     position: relative;
     min-width: 168px;
     height: 56px;
-    padding: 8px 28px 8px 0;
+    padding: 8px 0;
     border: 0;
     background: transparent;
     cursor: pointer;
@@ -417,12 +370,13 @@
     line-height: 1.2;
     margin-bottom: 4px;
     pointer-events: none;
+    padding-right: 28px;
 }
 .gst-filter__select {
     appearance: none;
     border: 0;
     background: transparent;
-    padding: 0;
+    padding: 0 28px 0 0;
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
     font-weight: 500;
@@ -496,20 +450,26 @@
 
 .gst-table tbody tr { transition: background .12s; }
 .gst-table tbody tr:hover td { background: var(--gst-surface-hover); }
+/* Rows the JS makes openable (whole-row click → flyout/detail) carry
+   .is-selectable; promote the hand cursor across the entire row so it's
+   not just the first-column link that reads as clickable. */
+.gst-table tbody tr.is-selectable { cursor: pointer; }
 
 /* First column reads as the row's "name" — render as a link the way Aurora
    does on Content Types (display name → detail). The .gst-table__link
    class can be applied directly, or any <a> in the first cell will pick
-   it up automatically. */
+   it up automatically. !important is needed because the CMS Shell stylesheets
+   (ShellCore / ShellCoreLightTheme, loaded in the layout) apply a darker
+   default `a` color with higher selector specificity than a single class. */
 .gst-table__link,
 .gst-table tbody tr > td:first-child a:not([class]) {
-    color: var(--gst-link);
+    color: var(--gst-link) !important;
     text-decoration: none;
     font-weight: 500;
 }
 .gst-table__link:hover,
 .gst-table tbody tr > td:first-child a:not([class]):hover {
-    color: var(--gst-link-hover);
+    color: var(--gst-link-hover) !important;
     text-decoration: underline;
 }
 
@@ -634,6 +594,9 @@
    The "Create New..." button in Aurora is solid brand blue, ~40px tall,
    with crisp 4px corners and no shadow at rest. Secondary buttons share
    the same shape but with a transparent fill. */
+/* `display: inline-flex` below beats the user-agent default that powers
+   [hidden], so JS toggling button.hidden is a no-op without this re-assert. */
+.gst-btn[hidden] { display: none; }
 .gst-btn {
     display: inline-flex;
     align-items: center;
@@ -871,11 +834,10 @@
 
 .gst-flyout {
     position: fixed;
-    /* Clear the CMS shell's fixed top navigation bar; the platform reserves
-       roughly 50px at the top of the viewport for the global header (search,
-       notifications, help, account). Without the offset, the flyout's title
-       row slides under the shell chrome. */
-    top: 50px;
+    /* Cover the full viewport height — the flyout layers above the CMS
+       shell's top nav so editors aren't visually anchored to the platform
+       chrome while editing. */
+    top: 0;
     right: 0;
     bottom: 0;
     width: 480px;
@@ -1184,10 +1146,10 @@
 
 .gst-target-list__add {
     height: 40px;
-    border: 1px dashed var(--gst-border);
+    border: 1px dashed var(--gst-primary);
     border-radius: var(--gst-radius);
     background: transparent;
-    color: var(--gst-text-secondary);
+    color: var(--gst-primary);
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
     font-weight: 500;
@@ -1196,8 +1158,7 @@
     transition: border-color .15s, color .15s, background .15s;
 }
 .gst-target-list__add:hover {
-    border-color: var(--gst-primary);
-    color: var(--gst-primary);
+    border-style: solid;
     background: var(--gst-primary-light);
 }
 .gst-field__count {
@@ -1901,28 +1862,6 @@ td.bpe-editing select {
     max-width: 260px;
     word-break: break-word;
 }
-
-/* ===== Watermark ===== */
-.gst-watermark {
-    position: absolute;
-    top: 20px;
-    right: 24px;
-    z-index: 5;
-    opacity: 0.25;
-    transition: opacity 0.2s;
-    text-decoration: none;
-    display: block;
-    line-height: 0;
-}
-.gst-watermark:hover {
-    opacity: 0.55;
-}
-.gst-watermark svg {
-    width: 100px;
-    height: auto;
-    display: block;
-}
-
 
 /* ── Phase 1: Pinned + Synonyms ─────────────────────────────────── */
 
@@ -5602,41 +5541,3 @@ td.bpe-editing select {
     font-weight: 600;
 }
 .gst-btn.is-active { background: var(--gst-bg-soft, #eef1f6); border-color: var(--gst-primary); color: var(--gst-primary); }
-
-/* ── About page ─────────────────────────────────────────────────── */
-.gst-about dl {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    column-gap: var(--gst-space-lg);
-    row-gap: var(--gst-space-sm);
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
-    border-radius: var(--gst-radius-lg);
-    box-shadow: var(--gst-shadow-sm);
-    padding: var(--gst-space-md) var(--gst-space-lg);
-    max-width: 720px;
-}
-
-.gst-about dt {
-    color: var(--gst-text-secondary);
-    font-size: var(--gst-text-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    align-self: center;
-}
-
-.gst-about dd {
-    font-family: var(--gst-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
-    font-size: var(--gst-text-base);
-    word-break: break-all;
-}
-
-.gst-about dd a {
-    color: inherit;
-    text-decoration: none;
-    border-bottom: 1px solid var(--gst-border);
-}
-
-.gst-about dd a:hover {
-    border-bottom-color: var(--gst-text-primary);
-}

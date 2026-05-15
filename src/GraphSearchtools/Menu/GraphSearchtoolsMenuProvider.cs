@@ -103,20 +103,13 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchLogs))
         };
 
-        // Pinned Coverage absorbed into the Pinned tool as an "Audit" tab
-        // — no standalone menu entry. Legacy /pinnedcoverage URL still 301s
-        // to /Pinned#audit via GraphSearchtoolsController.PinnedCoverage.
+        // Pinned audit surfacing lives in Insights — no standalone menu
+        // entry, no Pinned sub-tab. Legacy /pinnedcoverage URL still 301s
+        // to /Pinned via GraphSearchtoolsController.PinnedCoverage.
 
         // Synonym Coverage absorbed into the Synonyms tool as an "Unused" tab
         // — no standalone menu entry. Legacy /synonymcoverage URL still 301s
         // to /synonyms#unused via GraphSearchtoolsController.SynonymCoverage.
-
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
-            GetResourcePath("GraphSearchtools/About"))
-        {
-            SortIndex = 900,
-            IsAvailable = _ => true
-        };
     }
 
     private static string GetResourcePath(string resourcePath)

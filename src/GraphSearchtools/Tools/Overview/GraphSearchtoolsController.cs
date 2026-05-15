@@ -83,21 +83,14 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Pinned Coverage was absorbed into the Pinned tool as an "Audit" tab.
-    /// We keep this action 301-redirecting so any bookmarked links keep
-    /// working. The Pinned page reads the #audit fragment on load and
-    /// switches to the Audit tab.
+    /// The Pinned Audit tab has been removed; the audit surface lives in
+    /// Insights now. Keep this action 301-redirecting old bookmarks to the
+    /// Pinned grid rather than 404-ing.
     /// </summary>
     [HttpGet]
     public IActionResult PinnedCoverage()
     {
-        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Pinned#audit");
-    }
-
-    [HttpGet]
-    public IActionResult About()
-    {
-        return View("/Views/About/Index.cshtml");
+        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Pinned");
     }
 
     /// <summary>
