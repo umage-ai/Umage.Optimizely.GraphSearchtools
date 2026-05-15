@@ -822,6 +822,7 @@
 }
 
 .gst-dialog--wide { max-width: 1100px; }
+.gst-dialog--narrow { max-width: 560px; }
 
 .gst-dialog__header {
     padding: var(--gst-space-md) var(--gst-space-lg);

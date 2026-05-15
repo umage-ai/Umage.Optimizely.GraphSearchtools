@@ -57,12 +57,13 @@ const GST = {
     openDialog(title, opts = {}) {
         const container = document.getElementById('gst-dialog-container');
         const wide = opts.wide ? ' gst-dialog--wide' : '';
+        const narrow = opts.narrow ? ' gst-dialog--narrow' : '';
         const flush = opts.flush ? ' gst-dialog__body--flush' : '';
 
         const backdrop = document.createElement('div');
         backdrop.className = 'gst-dialog-backdrop';
         backdrop.innerHTML = `
-            <div class="gst-dialog${wide}">
+            <div class="gst-dialog${wide}${narrow}">
                 <div class="gst-dialog__header">
                     <span class="gst-dialog__title">${title}</span>
                     <button class="gst-dialog__close" title="Close">
