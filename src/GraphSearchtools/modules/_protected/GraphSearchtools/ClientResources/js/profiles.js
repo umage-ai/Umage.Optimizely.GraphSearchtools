@@ -114,7 +114,7 @@
 
         var tableHost  = document.getElementById('gst-prof-table-host');
         var emptyEl    = document.getElementById('gst-prof-empty');
-        var alertEl    = document.getElementById('gst-prof-alert');
+        var alertEl    = document.getElementById('gst-alert');
         var searchEl   = document.getElementById('gst-prof-search');
         var siteEl     = document.getElementById('gst-prof-site-filter');
         var localeEl   = document.getElementById('gst-prof-locale-filter');
