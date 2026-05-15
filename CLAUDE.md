@@ -12,6 +12,7 @@ relevancy tuning). Distributed as NuGet package `UmageAI.Optimizely.GraphSearchT
 - `src/GraphSearchtools.Tests/` - xUnit tests, multi-target
 - `docs/implementation-plan.md` - phased plan, source-of-truth for what to build next
 - `docs/personas.md` - who we're designing for; read before UI/UX work
+- `docs/design-system.md` - shared UI patterns + components; read before UI work
 - `docs/research/` - Optimizely Graph research that motivated each tool
 
 ## Tech Stack
@@ -65,6 +66,10 @@ Pre-release local verification: `dotnet test` (no `--no-build`).
 - **Security**: All controllers must have `[Authorize(Policy = "codeart:graphsearchtools")]`,
   all actions must call `_accessChecker.HasAccess()`, POST/PUT/DELETE endpoints must have
   `[RequireAjax]`, error responses must not expose `ex.Message`.
+- **Design system**: Shared visual patterns live in `docs/design-system.md`. Before adding a
+  new shared partial / JS helper / `.gst-*` class, check the catalogue. **No new shared
+  component without an entry; no entry change without user confirm.** Local one-off styles
+  inside a single tool are fine.
 
 ## Localization
 
