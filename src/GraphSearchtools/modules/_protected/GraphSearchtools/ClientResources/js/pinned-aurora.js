@@ -28,8 +28,17 @@
     const PINNED_STRINGS = (window.GST_STRINGS && window.GST_STRINGS.pinned) || {};
     // Cross-profile editor — writes have no per-profile context, so attribute
     // them to the synthesised Generic profile. PinnedApi.ResolveScope 400's
-    // any write that omits profileKey once a real profile is registered.
-    const SCOPE_QS = '&profileKey=generic';
+    // any write that omits profileKey once a real profile is registered. The
+    // Profile detail view replaces this with the active profile's key via
+    // `scope.profileKey`; see `scopeQs()`.
+    const DEFAULT_SCOPE_QS = '&profileKey=generic';
+
+    function scopeQs() {
+        if (state.scope && state.scope.profileKey) {
+            return '&profileKey=' + encodeURIComponent(state.scope.profileKey);
+        }
+        return DEFAULT_SCOPE_QS;
+    }
 
     // 30-day window for the Activity column. Matches the SynonymCoverage
     // default so a marketer scanning both grids sees the same dataset.
@@ -41,6 +50,14 @@
 
     // ── Page state ─────────────────────────────────────────────────────
     const state = {
+        initialized: false,
+        // Optional profile-scoping: when set, the grid limits itself to the
+        // profile's collection (`scope.collectionId`) and locales
+        // (`scope.locales`), and skips the unscoped collection filter. The
+        // Profile detail page wires this; the top-level Pinned page leaves
+        // it null. `scope.profileKey` is appended to write URLs so the
+        // PinnedApi can resolve the profile context for auditing.
+        scope: null,
         collections: [],
         items: [],          // flat list of every pinned item, normalised
         groups: [],         // aggregated rows
@@ -55,9 +72,20 @@
         editing: null       // current group being edited in the flyout
     };
 
-    document.addEventListener('DOMContentLoaded', init);
+    // Auto-init for the top-level Pinned page. The Profile detail page calls
+    // `GST.pinned.aurora.init({ scope })` from its own JS before DOMContentLoaded
+    // fires, so the auto-init below is a no-op there (idempotent).
+    document.addEventListener('DOMContentLoaded', function () {
+        if (state.initialized) return;
+        if (!document.getElementById('gst-pin-aurora-rows')) return;
+        init();
+    });
 
-    function init() {
+    function init(opts) {
+        if (state.initialized) return;
+        state.initialized = true;
+        opts = opts || {};
+        state.scope = opts.scope || null;
         // Toolbar wiring
         const search = document.getElementById('gst-pin-search');
         if (search) search.addEventListener('input', function () {
@@ -120,7 +148,16 @@
 
         GST.fetchJson(API + '/Collections')
             .then(function (collections) {
-                state.collections = collections || [];
+                let all = collections || [];
+                // Profile-scoped: narrow the collection set to just the
+                // profile's pinned collection so AllItems isn't walked for
+                // every other collection on the tenant. When the profile is
+                // generic (collectionId not yet resolved), show every
+                // collection — matches the unscoped behaviour.
+                if (state.scope && state.scope.collectionId) {
+                    all = all.filter(function (c) { return c.id === state.scope.collectionId; });
+                }
+                state.collections = all;
                 populateCollectionFilter();
                 return Promise.all(state.collections.map(function (col) {
                     return GST.fetchJson(API + '/AllItems?collectionId=' + encodeURIComponent(col.id))
@@ -272,6 +309,12 @@
     function populateCollectionFilter() {
         const sel = document.getElementById('gst-pin-collection-filter');
         if (!sel) return;
+        // Profile-scoped view hides the site/collection filter container
+        // upstream (it doesn't apply when the grid is locked to one
+        // collection), but the <select> may still exist as a hidden
+        // sentinel — leave it untouched so a future re-open of the panel
+        // doesn't see a stale dropdown.
+        if (state.scope) return;
         // Keep the "All" option then append one per collection.
         state.collections.forEach(function (c) {
             const opt = document.createElement('option');
@@ -286,10 +329,20 @@
         if (!sel) return;
         const seen = {};
         const locales = [];
-        state.groups.forEach(function (g) {
-            const l = g.locale || '';
-            if (l && !seen[l]) { seen[l] = true; locales.push(l); }
-        });
+        // When the profile declares a fixed set of locales, surface those —
+        // even if no pin exists in that locale yet — so the filter matches
+        // the profile's declared scope rather than the (possibly empty)
+        // intersection with the current pin set.
+        if (state.scope && Array.isArray(state.scope.locales) && state.scope.locales.length) {
+            state.scope.locales.forEach(function (l) {
+                if (l && !seen[l]) { seen[l] = true; locales.push(l); }
+            });
+        } else {
+            state.groups.forEach(function (g) {
+                const l = g.locale || '';
+                if (l && !seen[l]) { seen[l] = true; locales.push(l); }
+            });
+        }
         locales.sort();
         locales.forEach(function (l) {
             const opt = document.createElement('option');
@@ -838,10 +891,10 @@
             btn.textContent = saveTmpl.replace('%1', done).replace('%2', ops.length);
             switch (op.kind) {
                 case 'create':
-                    return GST.postJson(API + '/CreateItem?collectionId=' + encodeURIComponent(op.collectionId) + SCOPE_QS, op.payload);
+                    return GST.postJson(API + '/CreateItem?collectionId=' + encodeURIComponent(op.collectionId) + scopeQs(), op.payload);
                 case 'update':
                     return fetch(API + '/UpdateItem?collectionId=' + encodeURIComponent(op.collectionId) +
-                        '&id=' + encodeURIComponent(op.id) + SCOPE_QS, {
+                        '&id=' + encodeURIComponent(op.id) + scopeQs(), {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                         body: JSON.stringify(op.payload)
@@ -851,7 +904,7 @@
                     });
                 case 'delete':
                     return fetch(API + '/DeleteItem?collectionId=' + encodeURIComponent(op.collectionId) +
-                        '&id=' + encodeURIComponent(op.id) + SCOPE_QS, {
+                        '&id=' + encodeURIComponent(op.id) + scopeQs(), {
                         method: 'DELETE',
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     }).then(function (r) {
@@ -883,4 +936,12 @@
             return errors;
         });
     }
+
+    // Expose `init` so the Profile detail view can mount a scoped instance
+    // before DOMContentLoaded fires. The auto-init handler above bails when
+    // `state.initialized` is already true, so calling `init({ scope })`
+    // pre-empts the unscoped default.
+    window.GST = window.GST || {};
+    window.GST.pinned = window.GST.pinned || {};
+    window.GST.pinned.aurora = { init: init };
 })();
