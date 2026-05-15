@@ -1,0 +1,50 @@
+@inject LocalizationService Loc
+@{
+    string F(string key) => Loc.GetString($"/graphsearchtools/ui/synFlyout/{key}");
+    string Sh(string key) => Loc.GetString($"/graphsearchtools/ui/shared/{key}");
+}
+@*
+    Aurora right-edge edit panel for synonym rules. Markup-only — the JS that
+    opens the panel, parses+validates the rule string, and saves lives in
+    synonyms-aurora.js (Phase 5). Conventions: id="gst-flyout-syn",
+    id="gst-flyout-syn-backdrop", closing buttons carry data-flyout-close="syn",
+    save buttons carry data-flyout-save="syn", inputs use gst-synfly-* IDs.
+
+    Synonyms are tenant-global in Optimizely Graph — the locale dropdown
+    selects which language pool the rule lives in.
+*@
+<div id="gst-flyout-syn-backdrop" class="gst-flyout-backdrop" hidden></div>
+<aside id="gst-flyout-syn" class="gst-flyout" hidden role="dialog"
+       aria-modal="true" aria-labelledby="gst-flyout-syn-title">
+    <header class="gst-flyout__header">
+        <h2 id="gst-flyout-syn-title" class="gst-flyout__title">@F("editTitle")</h2>
+        <button type="button" class="gst-flyout__close"
+                data-flyout-close="syn" aria-label="@Sh("close")">×</button>
+    </header>
+    <div class="gst-flyout__body">
+        <div class="gst-field">
+            <label class="gst-field__label" for="gst-synfly-rule">@F("ruleLabel")</label>
+            <input type="text" id="gst-synfly-rule" name="rule" autocomplete="off" />
+            <span class="gst-field__hint">
+                @F("ruleHintEquiv") &nbsp;·&nbsp; @F("ruleHintRepl")
+            </span>
+            <span class="gst-field__hint" id="gst-synfly-parse" aria-live="polite"></span>
+        </div>
+
+        <div class="gst-field">
+            <label class="gst-field__label" for="gst-synfly-locale">@F("localeLabel")</label>
+            <select id="gst-synfly-locale" name="locale"></select>
+        </div>
+    </div>
+    <footer class="gst-flyout__footer">
+        @* Aurora pattern — destructive action anchored left; primary on the
+           right. Hidden in create mode, revealed by the Aurora JS when
+           editing an existing rule. *@
+        <button type="button" class="gst-btn gst-btn--danger" id="gst-synfly-delete" hidden>
+            @Loc.GetString("/graphsearchtools/ui/shared/delete")
+        </button>
+        <div class="gst-flyout__footer__spacer"></div>
+        <button type="button" class="gst-btn" data-flyout-close="syn">@F("cancel")</button>
+        <button type="button" class="gst-btn gst-btn--primary" data-flyout-save="syn">@F("save")</button>
+    </footer>
+</aside>

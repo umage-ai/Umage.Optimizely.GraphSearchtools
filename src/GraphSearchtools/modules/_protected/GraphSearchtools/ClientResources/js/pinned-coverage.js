@@ -211,10 +211,18 @@
             .then(function () { setLoading(false); });
     }
 
-    if (runBtn) runBtn.addEventListener('click', load);
+    // Lazy init: this script is included on the Pinned page (Pins tab is the
+    // landing surface), but the audit fetch should only happen when the
+    // marketer actually opens the Audit tab. The merged Pinned view calls
+    // window.GST_PC_INIT on first tab switch.
+    function init() {
+        if (init._done) return;
+        init._done = true;
+        if (runBtn) runBtn.addEventListener('click', load);
+        load();
+    }
+    window.GST_PC_INIT = init;
 
     // Expose for tests / probes.
     GST.pinnedCoverage.reload = load;
-
-    load();
 })();

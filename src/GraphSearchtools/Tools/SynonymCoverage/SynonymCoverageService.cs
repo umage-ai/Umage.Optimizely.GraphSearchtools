@@ -1,5 +1,5 @@
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Helpers;
-using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage.Models;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 
@@ -25,32 +25,24 @@ public sealed class SynonymCoverageService
     /// <summary>Default look-back when callers omit a window.</summary>
     public static readonly TimeSpan DefaultWindow = TimeSpan.FromDays(30);
 
-    /// <summary>Cap on suggested-adds rows; keeps the UI card scannable.</summary>
-    private const int MaxSuggestedAdds = 50;
-
-    /// <summary>Cap on zero-result rows pulled before similarity scoring.</summary>
-    private const int ZeroResultPullSize = 100;
-
-    /// <summary>Cap on top-result phrases used to seed the indexed-term sample.</summary>
-    private const int IndexedTermSampleSize = 200;
-
-    /// <summary>Levenshtein cut-off for "close enough to be a typo".</summary>
-    private const int LevenshteinThreshold = 2;
-
-    /// <summary>n-gram length for the secondary similarity check.</summary>
-    private const int NGramLength = 4;
+    /// <summary>
+    /// Cap on the phrase enumeration used to answer "did this synonym ever fire?".
+    /// We deliberately ask for far more than the UI cards display so the unused-
+    /// detection pass sees the long tail, not just the head.
+    /// </summary>
+    private const int LoggedPhraseEnumerationSize = 5000;
 
     private readonly SynonymsService _synonyms;
-    private readonly SearchLogService _logs;
+    private readonly ITelemetryReader _reader;
     private readonly LanguageSiteEnumerator? _languageSites;
 
     public SynonymCoverageService(
         SynonymsService synonyms,
-        SearchLogService logs,
+        ITelemetryReader reader,
         LanguageSiteEnumerator? languageSites = null)
     {
         _synonyms = synonyms;
-        _logs = logs;
+        _reader = reader;
         _languageSites = languageSites;
     }
 
@@ -73,35 +65,63 @@ public sealed class SynonymCoverageService
         // 1. Pull every synonym entry across all configured languages + Global.
         var entries = await CollectSynonymEntriesAsync(cancellationToken);
 
-        // 2. Pull recent log rows so we can answer "did this rule ever fire?"
-        //    SearchLogService.ListSince clamps take to [1, 50000]; we ask for
-        //    that cap because the analyzer's whole point is to look at every
-        //    captured query.
-        var logRows = _logs.ListSince(since, take: 50000).ToList();
+        // 2. Enumerate the phrase set the window has actually seen. Under the
+        //    aggregate-first design we ask the reader for the long-tail head —
+        //    each PhraseAggregate counts as "this phrase fired N times".
+        //    LoggedPhraseEnumerationSize is generous because the unused-
+        //    detection pass cares about the tail, not the head.
+        var phraseAggregates = await _reader.TopPhrasesAsync(
+            new TelemetryQuery(since, now, LoggedPhraseEnumerationSize),
+            cancellationToken);
 
-        // 3. Build a deduped, lower-cased set of phrase tokens we've actually
-        //    observed in the window. The synonym-vs-logs join is membership-only;
-        //    we don't need per-row counts.
-        var loggedPhrases = logRows
-            .Where(r => !string.IsNullOrWhiteSpace(r.Phrase))
-            .Select(r => r.Phrase.Trim().ToLowerInvariant())
-            .ToHashSet();
+        // 3. Build the deduped, lower-cased set used for synonym membership,
+        //    plus a phrase→hits map for the per-rule activity rollup. The set
+        //    powers the (legacy) unused-detection pass; the map turns "did
+        //    this rule fire?" into "how many times?" without an extra reader
+        //    round-trip.
+        var loggedPhrases = new HashSet<string>();
+        var hitsByPhrase = new Dictionary<string, long>(StringComparer.Ordinal);
+        foreach (var p in phraseAggregates)
+        {
+            if (string.IsNullOrWhiteSpace(p.Phrase)) continue;
+            var key = p.Phrase.Trim().ToLowerInvariant();
+            if (key.Length == 0) continue;
+            loggedPhrases.Add(key);
+            // Same phrase can arrive multiple times with different locale /
+            // profile splits — accumulate rather than overwrite.
+            hitsByPhrase.TryGetValue(key, out var prev);
+            hitsByPhrase[key] = prev + p.Hits;
+        }
 
-        // 4. Pruning candidates: synonym entries whose trigger terms are all
-        //    absent from the log set.
+        var totalEvents = phraseAggregates.Sum(p => p.Hits);
+
+        // Pruning candidates: synonym entries whose trigger terms are all
+        // absent from the log set. The former "suggested adds" pass (zero-
+        // result phrases that look like missing synonyms) belongs in the
+        // per-profile insights pipeline rather than the global synonyms tool
+        // — dropped from this analyzer along with the standalone UI.
         var unused = FindUnusedEntries(entries, loggedPhrases);
 
-        // 5. Suggested adds: zero-result phrases not already covered, optionally
-        //    enriched with a closest-indexed-term hint.
-        var suggested = FindSuggestedAdds(entries, since);
+        // Per-rule hit totals. For each rule, sum the hits of every trigger
+        // term that appears in the window. A rule like `phone, mobile` with
+        // phone=50 and mobile=30 reads as 80. Hits=0 falls out naturally for
+        // rules whose triggers never showed up.
+        var activity = entries
+            .Select(e => new RuleActivityRow(
+                Language: e.Language,
+                Entry: e.Rule,
+                Hits: e.TriggerTerms.Sum(t =>
+                    hitsByPhrase.TryGetValue(t, out var h) ? h : 0L)))
+            .ToList();
 
         return new SynonymCoverageResult
         {
             GeneratedAt = now,
             WindowStart = since,
-            LogsScanned = logRows.Count,
+            LogsScanned = totalEvents,
+            TotalRules = entries.Count,
             UnusedEntries = unused,
-            SuggestedAdds = suggested
+            RuleActivity = activity
         };
     }
 
@@ -153,6 +173,13 @@ public sealed class SynonymCoverageService
             }
 
             if (string.IsNullOrWhiteSpace(content)) continue;
+            // Optimizely Graph returns the synonym body as a JSON-quoted
+            // string for some tenants (leading `"`, escaped `\n` between
+            // rules) and as a plain newline-separated blob for others.
+            // Match the JS parser's defensive normalisation — without this
+            // the analyzer treats the entire blob as one rule and the unused
+            // / activity counts come out as nonsense.
+            content = UnwrapIfJsonString(content);
             var label = string.IsNullOrEmpty(language) ? "Global" : language!;
             foreach (var line in content.Split('\n'))
             {
@@ -212,150 +239,25 @@ public sealed class SynonymCoverageService
         return unused;
     }
 
-    // ── Suggested adds ──────────────────────────────────────────────────
-
-    private IReadOnlyList<SuggestedSynonym> FindSuggestedAdds(
-        IReadOnlyList<ParsedSynonymEntry> entries,
-        DateTime since)
-    {
-        // Already-covered triggers — case-insensitive set so we filter zero-
-        // result phrases that the existing synonym set already addresses.
-        var covered = entries
-            .SelectMany(e => e.TriggerTerms)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        var zeros = _logs.ZeroResultPhrases(since, take: ZeroResultPullSize)
-            .Where(z => !string.IsNullOrWhiteSpace(z.Phrase))
-            .Where(z => !covered.Contains(z.Phrase.Trim().ToLowerInvariant()))
-            .ToList();
-
-        if (zeros.Count == 0) return Array.Empty<SuggestedSynonym>();
-
-        // Build the indexed-term sample from top phrases that returned at
-        // least some results — those are the strings actually present in the
-        // index. Phrases whose every session was zero-result aren't indexed
-        // terms by definition; including them would let the analyzer "fuzzy
-        // match" zero-result phrases against each other and produce
-        // misleading hints. When the sample is empty (a brand-new tenant),
-        // we degrade to the fall-back behaviour: list zero-result phrases
-        // without a closest-term annotation.
-        var indexedSample = _logs
-            .TopPhrases(since, take: IndexedTermSampleSize)
-            .Where(p => p.ZeroResultRate < 1d)
-            .Select(p => p.Phrase.Trim().ToLowerInvariant())
-            .Where(p => !string.IsNullOrEmpty(p))
-            .Distinct()
-            .ToList();
-
-        var rows = new List<SuggestedSynonym>(Math.Min(MaxSuggestedAdds, zeros.Count));
-        foreach (var z in zeros.Take(MaxSuggestedAdds))
-        {
-            var (closest, distance) = FindClosestIndexedTerm(z.Phrase, indexedSample);
-            rows.Add(new SuggestedSynonym(
-                Phrase: z.Phrase,
-                Locale: z.Locale ?? string.Empty,
-                Hits: z.Hits,
-                ClosestIndexedTerm: closest,
-                Similarity: distance));
-        }
-        return rows;
-    }
-
     /// <summary>
-    /// Finds the indexed term that's most similar to <paramref name="phrase"/>.
-    /// Returns <c>(null, null)</c> when no candidate clears the threshold —
-    /// the row still surfaces in fall-back mode, just without a hint.
+    /// Unwraps a synonym blob that was returned as a JSON-encoded string.
+    /// Leaves plain newline-separated content untouched. Mirrors the
+    /// normalisation step in synonyms-grid.js / synonyms-aurora.js so the
+    /// server-side analyzer sees the same per-line view as the editor.
     /// </summary>
-    private static (string? Term, int? Distance) FindClosestIndexedTerm(
-        string phrase, IReadOnlyList<string> indexedTerms)
+    private static string UnwrapIfJsonString(string content)
     {
-        if (indexedTerms.Count == 0) return (null, null);
-        var lower = phrase.Trim().ToLowerInvariant();
-        if (string.IsNullOrEmpty(lower)) return (null, null);
-
-        string? bestTerm = null;
-        var bestDistance = int.MaxValue;
-
-        var phraseGrams = NGrams(lower, NGramLength);
-
-        foreach (var candidate in indexedTerms)
+        if (content.Length < 2) return content;
+        if (content[0] != '"' || content[^1] != '"') return content;
+        try
         {
-            // Exact match never makes for a useful synonym suggestion.
-            if (string.Equals(candidate, lower, StringComparison.Ordinal)) continue;
-
-            var distance = LevenshteinBounded(lower, candidate, LevenshteinThreshold + 1);
-            if (distance >= 1 && distance <= LevenshteinThreshold)
-            {
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    bestTerm = candidate;
-                }
-                continue;
-            }
-
-            // Levenshtein bailed; try the n-gram check. We only accept the
-            // n-gram match when no Levenshtein candidate has been found yet —
-            // a typo wins over a substring overlap.
-            if (bestTerm == null && phraseGrams.Count > 0)
-            {
-                var candidateGrams = NGrams(candidate, NGramLength);
-                if (phraseGrams.Overlaps(candidateGrams))
-                {
-                    bestTerm = candidate;
-                    bestDistance = distance == int.MaxValue ? LevenshteinThreshold + 1 : distance;
-                }
-            }
+            var unwrapped = System.Text.Json.JsonSerializer.Deserialize<string>(content);
+            return unwrapped ?? content;
         }
-
-        return bestTerm == null ? (null, null) : (bestTerm, bestDistance);
-    }
-
-    /// <summary>
-    /// Bounded Levenshtein — bails out as soon as the running distance exceeds
-    /// <paramref name="ceiling"/>. Lets us scan a few hundred candidates in
-    /// the background without blowing the request budget.
-    /// </summary>
-    private static int LevenshteinBounded(string a, string b, int ceiling)
-    {
-        if (string.IsNullOrEmpty(a)) return b?.Length ?? 0;
-        if (string.IsNullOrEmpty(b)) return a.Length;
-
-        // Cheap length-prune — if the lengths differ by more than the ceiling
-        // we know up front the distance will too.
-        if (Math.Abs(a.Length - b.Length) >= ceiling) return ceiling;
-
-        var prev = new int[b.Length + 1];
-        var curr = new int[b.Length + 1];
-        for (var j = 0; j <= b.Length; j++) prev[j] = j;
-
-        for (var i = 1; i <= a.Length; i++)
+        catch
         {
-            curr[0] = i;
-            var rowMin = curr[0];
-            for (var j = 1; j <= b.Length; j++)
-            {
-                var cost = a[i - 1] == b[j - 1] ? 0 : 1;
-                curr[j] = Math.Min(
-                    Math.Min(curr[j - 1] + 1, prev[j] + 1),
-                    prev[j - 1] + cost);
-                if (curr[j] < rowMin) rowMin = curr[j];
-            }
-            if (rowMin >= ceiling) return ceiling;
-            (prev, curr) = (curr, prev);
+            return content;
         }
-        return prev[b.Length];
-    }
-
-    private static HashSet<string> NGrams(string s, int n)
-    {
-        var grams = new HashSet<string>(StringComparer.Ordinal);
-        if (string.IsNullOrEmpty(s) || s.Length < n) return grams;
-        for (var i = 0; i + n <= s.Length; i++)
-        {
-            grams.Add(s.Substring(i, n));
-        }
-        return grams;
     }
 
     private static TimeSpan ClampWindow(TimeSpan window)

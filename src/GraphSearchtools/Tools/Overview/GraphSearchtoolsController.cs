@@ -31,15 +31,18 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Phase 2.5 §4.1: Pinned no longer has a standalone page. Marketers edit
-    /// pinned results via Profiles → {profile} → Pinned tab. We keep this
-    /// action for hosts that linked directly to <c>/pinned</c> and 301-redirect
-    /// to the Profiles index — they'll click into whichever profile they need.
+    /// Global Pinned tool — the cross-collection editor. Renders the merged
+    /// view with Pins (default) and Audit tabs; Audit absorbs the former
+    /// Pinned Coverage view. Phase 2.5 §4.1 originally redirected this to
+    /// Profiles, but a global pin-management surface (matching the global
+    /// Synonyms tool) is the right home for "see all my pins" workflows.
     /// </summary>
     [HttpGet]
     public IActionResult Pinned()
     {
-        return RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
+        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Pinned), GraphSearchtoolsPermissions.Pinned))
+            return Forbid();
+        return View("/Views/Pinned/Index.cshtml");
     }
 
     [HttpGet]
@@ -66,76 +69,28 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Autocomplete/Index.cshtml");
     }
 
-    [HttpGet]
-    public IActionResult Webhooks()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Webhooks), GraphSearchtoolsPermissions.Webhooks))
-            return Forbid();
-        return View("/Views/Webhooks/Index.cshtml");
-    }
-
     /// <summary>
-    /// Phase 3 — Semantic Weight Tuner. The dedicated
-    /// <c>SemanticTunerController</c> hosts the canonical menu URL; this
-    /// action preserves the per-tool action pattern shared with Webhooks so
-    /// direct links to
-    /// <c>/cms/graphsearchtools/GraphSearchtools/SemanticTuner</c> resolve too.
-    /// </summary>
-    [HttpGet]
-    public IActionResult SemanticTuner()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SemanticTuner), GraphSearchtoolsPermissions.SemanticTuner))
-            return Forbid();
-        return View("/Views/SemanticTuner/Index.cshtml");
-    }
-
-    /// <summary>
-    /// Phase 4 Wave 5 — Synonym Coverage. Read-only analyzer that joins the
-    /// saved synonym blobs with the search-log table to surface unused
-    /// entries (prune candidates) and zero-result phrases that look like
-    /// missing synonyms (suggested adds).
+    /// Legacy URL for the standalone Synonym Coverage view. The view is gone
+    /// — the unused-rules signal lives in the Aurora Synonyms grid's
+    /// Activity (30d) column / filter, and the "suggested adds" half is
+    /// being rebuilt as part of the per-profile insights pipeline. 301 to
+    /// the Synonyms page so bookmarked links keep working.
     /// </summary>
     [HttpGet]
     public IActionResult SynonymCoverage()
     {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.SynonymCoverage), GraphSearchtoolsPermissions.SynonymCoverage))
-            return Forbid();
-        return View("/Views/SynonymCoverage/Index.cshtml");
+        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Synonyms");
     }
 
     /// <summary>
-    /// Phase 4 Wave 5 §6 — Pinned Result Coverage audit. Joins Graph pinned
-    /// data with CMS content state and the 7-day search-log window to surface
-    /// broken targets (unpublished/deleted), expired pins, low-CTR pins,
-    /// no-activity pins, and overlap conflicts.
+    /// The Pinned Audit tab has been removed; the audit surface lives in
+    /// Insights now. Keep this action 301-redirecting old bookmarks to the
+    /// Pinned grid rather than 404-ing.
     /// </summary>
     [HttpGet]
     public IActionResult PinnedCoverage()
     {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.PinnedCoverage), GraphSearchtoolsPermissions.PinnedCoverage))
-            return Forbid();
-        return View("/Views/PinnedCoverage/Index.cshtml");
-    }
-
-    /// <summary>
-    /// Phase 4 Wave 5 §6 — Content Searchability Audit. Renders the runner
-    /// page; the actual scan kicks off via
-    /// <c>POST /ContentSearchabilityAuditApi/Run</c>. The view is gated on the
-    /// matching feature toggle + EPiServer permission so direct URL hits respect
-    /// the same access checks the menu does.
-    /// </summary>
-    [HttpGet]
-    public IActionResult ContentSearchabilityAudit()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.ContentSearchabilityAudit), GraphSearchtoolsPermissions.ContentSearchabilityAudit))
-            return Forbid();
-        return View("/Views/ContentSearchabilityAudit/Index.cshtml");
-    }
-
-    [HttpGet]
-    public IActionResult About()
-    {
-        return View("/Views/About/Index.cshtml");
+        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Pinned");
     }
 
     /// <summary>

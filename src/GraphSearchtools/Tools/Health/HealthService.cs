@@ -24,11 +24,13 @@ public sealed class HealthService
 {
     private readonly HttpClient _http;
     private readonly IGraphCredentialsResolver _credentials;
+    private readonly ITelemetryMetrics? _telemetryMetrics;
 
-    public HealthService(HttpClient http, IGraphCredentialsResolver credentials)
+    public HealthService(HttpClient http, IGraphCredentialsResolver credentials, ITelemetryMetrics? telemetryMetrics = null)
     {
         _http = http;
         _credentials = credentials;
+        _telemetryMetrics = telemetryMetrics;
     }
 
     public async Task<HealthResult> CheckAsync(CancellationToken cancellationToken)
@@ -61,8 +63,38 @@ public sealed class HealthService
             probes.Add(new HealthProbeResult("Index population", HealthStatus.Unknown, "Skipped — SingleKey is required.", QueryTarget(creds), 0));
         }
 
+        if (_telemetryMetrics != null)
+        {
+            probes.Add(BuildTelemetryProbe(_telemetryMetrics));
+        }
+
         overall.Stop();
         return Build(creds, probes, overall.ElapsedMilliseconds);
+    }
+
+    /// <summary>
+    /// Surfaces local-sink backpressure as a probe so editors see the queue
+    /// filling up before users do. Amber at ≥ 80% depth (channel is keeping
+    /// up but the flusher is behind), red the moment we observe drops or the
+    /// queue is at cap.
+    /// </summary>
+    private static HealthProbeResult BuildTelemetryProbe(ITelemetryMetrics metrics)
+    {
+        var depth = metrics.ApproximateQueueDepth;
+        var capacity = metrics.QueueCapacity;
+        var dropped = metrics.ApproximateDroppedTotal;
+        var pct = capacity == 0 ? 0 : depth * 100.0 / capacity;
+        var target = $"queue {depth:N0}/{capacity:N0} ({pct:F0}%); dropped {dropped:N0}";
+
+        if (dropped > 0 || depth >= capacity)
+        {
+            return new HealthProbeResult("Telemetry queue", HealthStatus.Red, "Sink is dropping events — flusher cannot keep up.", target, 0);
+        }
+        if (pct >= 80)
+        {
+            return new HealthProbeResult("Telemetry queue", HealthStatus.Amber, "Queue is filling — flusher falling behind.", target, 0);
+        }
+        return new HealthProbeResult("Telemetry queue", HealthStatus.Green, "Sink steady; no drops.", target, 0);
     }
 
     private async Task<HealthProbeResult> ProbeGatewayAsync(string gatewayAddress, CancellationToken ct)

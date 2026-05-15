@@ -13,22 +13,26 @@ public class FeatureToggles
     public bool Health { get; set; } = true;
     public bool Autocomplete { get; set; } = true;
     public bool Profiles { get; set; } = true;
-    public bool SemanticTuner { get; set; } = true;
-    public bool Webhooks { get; set; } = true;
 
     /// <summary>
-    /// Phase 4 foundation — gates the telemetry ingest endpoints
-    /// (<c>POST /TelemetryApi/SearchLog</c>, <c>POST /TelemetryApi/SearchLogBatch</c>).
-    /// Phase 4 Wave 5 analytics tools (Search Logs UI, Pinned Result Coverage,
-    /// Synonym Coverage) consume the data this captures.
+    /// Aurora refactor — curated marketer-facing dashboard surfacing top
+    /// phrases, zero-result candidates, synonym coverage signals, and a
+    /// recent-activity strip. Read-only; reuses SearchLogsService +
+    /// SynonymCoverageService + SearchProfileEditService data.
+    /// </summary>
+    public bool Insights { get; set; } = true;
+
+    /// <summary>
+    /// Gates the public ingest beacon (<c>POST /api/telemetry/searchlog</c>).
+    /// When false the endpoint returns 404 and zero events reach the sink —
+    /// the analytics UIs render their empty state without further wiring.
     /// </summary>
     public bool Telemetry { get; set; } = true;
 
     /// <summary>
-    /// Phase 4 Wave 5 — Search Logs UI. Read-only surface over the
-    /// <see cref="UmageAI.Optimizely.GraphSearchTools.Services.SearchLogService"/>
-    /// table: top phrases, zero-result phrases, low-CTR phrases, and a
-    /// recent-events live tail. Synonym-mining starts here.
+    /// Search Logs UI. Read-only surface over <c>ITelemetryReader</c>: top
+    /// phrases, zero-result phrases, low-CTR phrases, and a forensic-ring
+    /// recent-events tail. Synonym-mining starts here.
     /// </summary>
     public bool SearchLogs { get; set; } = true;
 
@@ -47,20 +51,4 @@ public class FeatureToggles
     /// collections.
     /// </summary>
     public bool PinnedCoverage { get; set; } = true;
-
-    /// <summary>
-    /// Phase 4 Wave 5 — local CMS scan that flags pages with empty <c>Name</c>,
-    /// missing <c>MainBody</c>-style body fields, no <c>Tags</c>, and string
-    /// properties exceeding Optimizely Graph's 1024-character sortable-field
-    /// limit (per <c>optimizely-graph-site-search.md</c> §3 caveat). Scan is
-    /// on-demand only because it walks every published page under every site.
-    /// </summary>
-    public bool ContentSearchabilityAudit { get; set; } = true;
-
-    /// <summary>
-    /// Phase 5 — Relevancy Lab. CRUD for golden query sets, run engine
-    /// (NDCG@10 + MRR scoring), DDS-persisted run history, two-config
-    /// side-by-side comparison, and CSV export.
-    /// </summary>
-    public bool RelevancyLab { get; set; } = true;
 }

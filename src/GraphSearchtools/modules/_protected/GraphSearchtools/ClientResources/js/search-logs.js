@@ -111,19 +111,18 @@
     }
 
     function statusBadge(row) {
-        // Raw row status is derived from result count + click rank — there's
-        // no upstream "status" field, but encoding it here keeps the UI honest
-        // about the row's outcome.
+        // The aggregate-first ingest models search and click as two distinct
+        // events, not one merged row, so the badge maps cleanly off `kind`.
+        if (row.kind === 'click') {
+            if (row.clickRank && row.clickRank >= 1 && row.clickRank <= 3) {
+                return '<span class="gst-badge gst-badge--success">' + escHtml(STRINGS.status_clicked || 'click') + '</span>';
+            }
+            return '<span class="gst-badge gst-badge--default">' + escHtml(STRINGS.status_no_click || 'click rank ' + (row.clickRank || '—')) + '</span>';
+        }
         if (row.resultCount === 0) {
             return '<span class="gst-badge gst-badge--warning">' + escHtml(STRINGS.status_zero || '0 hits') + '</span>';
         }
-        if (row.topResultRank && row.topResultRank >= 1 && row.topResultRank <= 3) {
-            return '<span class="gst-badge gst-badge--success">' + escHtml(STRINGS.status_clicked || 'click') + '</span>';
-        }
-        if (row.topResultRank) {
-            return '<span class="gst-badge gst-badge--default">' + escHtml(STRINGS.status_no_click || 'no top click') + '</span>';
-        }
-        return '<span class="gst-badge gst-badge--default">' + escHtml(row.source || '—') + '</span>';
+        return '<span class="gst-badge gst-badge--default">' + escHtml(STRINGS.status_search || 'search') + '</span>';
     }
 
     // ── Render helpers ───────────────────────────────────────────
@@ -198,22 +197,22 @@
 
     function renderRaw(rows) {
         if (!rows || rows.length === 0) {
-            renderEmptyRow(grids.raw, 7, STRINGS.no_raw || STRINGS.empty_card || 'No recent events in this window.');
+            renderEmptyRow(grids.raw, 6, STRINGS.no_raw || STRINGS.empty_card || 'No recent events in this window.');
             return;
         }
         var html = '';
         for (var i = 0; i < rows.length; i++) {
             var r = rows[i];
-            var topResult = r.topResultRank
-                ? '#' + r.topResultRank + (r.topResultId ? ' (' + escHtml(r.topResultId) + ')' : '')
-                : '—';
+            // Per-event detail: result count for searches, click rank for clicks.
+            var detail = r.kind === 'click'
+                ? (r.clickRank ? '#' + r.clickRank : '—')
+                : (r.resultCount != null ? r.resultCount + ' hits' : '—');
             html += '<tr>' +
                 '<td title="' + escHtml(r.at) + '">' + escHtml(relTime(r.at)) + '</td>' +
                 '<td><code>' + escHtml(r.phrase || '—') + '</code></td>' +
                 '<td>' + (r.locale ? escHtml(r.locale) : '<span class="gst-rl-dim">—</span>') + '</td>' +
                 '<td>' + (r.profileKey ? '<code>' + escHtml(r.profileKey) + '</code>' : '<span class="gst-rl-dim">—</span>') + '</td>' +
-                '<td class="num">' + (r.topResultRank ? topResult : '<span class="gst-rl-dim">—</span>') + '</td>' +
-                '<td class="num">' + escHtml(r.durationMs != null ? r.durationMs + ' ms' : '—') + '</td>' +
+                '<td class="num">' + escHtml(detail) + '</td>' +
                 '<td>' + statusBadge(r) + '</td>' +
                 '</tr>';
         }

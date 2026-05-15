@@ -42,22 +42,33 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // Phase 2.5 — Search Profiles top-level surface. Sits between Overview
         // and the editorial tools so marketers land on the per-surface tuning
         // index before drilling into individual data shapes.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/profiles", "Profiles"), BaseMenuPath + "/profiles",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/profiles", "Search profiles"), BaseMenuPath + "/profiles",
             "/EPiServer/cms/graphsearchtools/profiles")
         {
             SortIndex = 150,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Profiles))
         };
 
-        // Phase 2.5 §4.1: Pinned no longer has a top-level menu entry — pinned
-        // results are always profile-scoped (Graph keys them per collection),
-        // so marketers reach the editor via Profiles → {profile} → Pinned tab.
-        // The legacy /pinned URL still serves a 301 redirect for hosts that
-        // bookmark it (see GraphSearchtoolsController.Pinned). The Pinned
-        // FeatureToggle now gates the in-profile tab instead.
+        // Aurora refactor — Insights dashboard. Sits between Profiles and the
+        // editorial Pinned/Synonyms tools: marketers can see "what's
+        // happening" before deciding what to tune.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/insights", "Insights"), BaseMenuPath + "/insights",
+            GetResourcePath("Insights/Index"))
+        {
+            SortIndex = 175,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Insights))
+        };
 
-        // Editorial group (Phase 1): Synonyms keeps its top-level entry
-        // because Graph's Global synonym slot needs a tenant-level surface.
+        // Editorial group: top-level Pinned + Synonyms tools — global views
+        // that mirror the per-profile tabs inside Profile detail. The Pinned
+        // tool also absorbs the former Pinned Coverage as an "Audit" tab.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned"), BaseMenuPath + "/pinned",
+            GetResourcePath("GraphSearchtools/Pinned"))
+        {
+            SortIndex = 200,
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Pinned))
+        };
+
         yield return new UrlMenuItem(L("/graphsearchtools/menu/synonyms", "Synonyms"), BaseMenuPath + "/synonyms",
             GetResourcePath("GraphSearchtools/Synonyms"))
         {
@@ -74,98 +85,31 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Health))
         };
 
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/autocomplete", "Autocomplete"), BaseMenuPath + "/autocomplete",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/autocomplete", "Autocomplete check"), BaseMenuPath + "/autocomplete",
             GetResourcePath("GraphSearchtools/Autocomplete"))
         {
             SortIndex = 310,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
         };
 
-        // Webhooks (Phase 3) — list/create/delete Graph webhooks. Edits are
-        // delete + recreate per the upstream constraint; the page surfaces
-        // that honestly via an info banner.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/webhooks", "Webhooks"), BaseMenuPath + "/webhooks",
-            GetResourcePath("GraphSearchtools/Webhooks"))
-        {
-            SortIndex = 420,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Webhooks))
-        };
-
-        // Semantic Weight Tuner (Phase 3) — token-count-tiered ranking policy
-        // editor. Pure client + tiny persistence layer; emits an
-        // appsettings.json snippet alongside the saved DDS row.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/semanticTuner", "Semantic Weight Tuner"), BaseMenuPath + "/semantictuner",
-            GetResourcePath("SemanticTuner/Index"))
-        {
-            SortIndex = 450,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SemanticTuner))
-        };
-
         // Analytics & audits group (Phase 4 Wave 5). Search Logs leads the
         // group because it's the synonym-mining surface every other Wave 5
         // tool feeds off: top phrases, zero-result phrases, low-CTR phrases,
         // recent raw events.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search Logs"), BaseMenuPath + "/searchlogs",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search insights"), BaseMenuPath + "/searchlogs",
             GetResourcePath("SearchLogs/Index"))
         {
             SortIndex = 510,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchLogs))
         };
 
-        // Pinned Result Coverage (Phase 4 Wave 5 §6) — read-only audit that
-        // joins Graph pinned data with CMS content state and the 7-day
-        // search-log window. Surfaces broken targets (unpublished/deleted),
-        // expired pins, low-CTR pins, no-activity pins, and overlap conflicts
-        // (same phrase pinned in multiple collections).
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinnedCoverage", "Pinned Coverage"), BaseMenuPath + "/pinnedcoverage",
-            GetResourcePath("GraphSearchtools/PinnedCoverage"))
-        {
-            SortIndex = 520,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.PinnedCoverage))
-        };
+        // Pinned audit surfacing lives in Insights — no standalone menu
+        // entry, no Pinned sub-tab. Legacy /pinnedcoverage URL still 301s
+        // to /Pinned via GraphSearchtoolsController.PinnedCoverage.
 
-        // Synonym Coverage (Phase 4 Wave 5) — joins the saved synonym blobs
-        // with the search-log table to surface unused entries (prune
-        // candidates) and zero-result phrases that look like missing synonyms
-        // (suggested adds). Read-only; both tables deep-link into the
-        // Synonyms editor.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/synonymCoverage", "Synonym Coverage"), BaseMenuPath + "/synonymcoverage",
-            GetResourcePath("GraphSearchtools/SynonymCoverage"))
-        {
-            SortIndex = 530,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SynonymCoverage))
-        };
-
-        // Content Searchability Audit (Phase 4 Wave 5 §6) — local CMS scan
-        // that flags pages whose editorial fields will trip Graph's relevance
-        // (empty Name / MainBody / Tags) or its 1024-char sortable-field
-        // limit. On-demand only because the scan walks every published page
-        // under every site root.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/contentSearchabilityAudit", "Content Searchability Audit"), BaseMenuPath + "/contentsearchabilityaudit",
-            GetResourcePath("GraphSearchtools/ContentSearchabilityAudit"))
-        {
-            SortIndex = 540,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.ContentSearchabilityAudit))
-        };
-
-        // Relevancy Lab (Phase 5) — golden query sets, NDCG@10 + MRR scoring,
-        // run history, two-config side-by-side comparison, CSV export. Sits
-        // after the Wave 5 audits because it builds on top of them: tune via
-        // Decay/SemanticTuner, observe coverage via the audits, then validate
-        // changes here against a curated golden set.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/relevancyLab", "Relevancy Lab"), BaseMenuPath + "/relevancylab",
-            GetResourcePath("RelevancyLab/Index"))
-        {
-            SortIndex = 600,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.RelevancyLab))
-        };
-
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
-            GetResourcePath("GraphSearchtools/About"))
-        {
-            SortIndex = 900,
-            IsAvailable = _ => true
-        };
+        // Synonym Coverage absorbed into the Synonyms tool as an "Unused" tab
+        // — no standalone menu entry. Legacy /synonymcoverage URL still 301s
+        // to /synonyms#unused via GraphSearchtoolsController.SynonymCoverage.
     }
 
     private static string GetResourcePath(string resourcePath)

@@ -104,6 +104,44 @@ public class GraphAdminClientTests
     }
 
     [Fact]
+    public async Task GetItemsAsync_OmitsOffsetQueryWhenZero()
+    {
+        HttpRequestMessage? captured = null;
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            captured = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", Encoding.UTF8, "application/json")
+            };
+        });
+        var client = new GraphAdminClient(new HttpClient(handler), CredentialsResolver());
+
+        await client.GetItemsAsync("my-collection", CancellationToken.None);
+
+        captured!.RequestUri!.PathAndQuery.Should().Be("/api/pinned/collections/my-collection/items");
+    }
+
+    [Fact]
+    public async Task GetItemsAsync_ForwardsOffsetQuery()
+    {
+        HttpRequestMessage? captured = null;
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            captured = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", Encoding.UTF8, "application/json")
+            };
+        });
+        var client = new GraphAdminClient(new HttpClient(handler), CredentialsResolver());
+
+        await client.GetItemsAsync("my-collection", CancellationToken.None, 40);
+
+        captured!.RequestUri!.PathAndQuery.Should().Be("/api/pinned/collections/my-collection/items?offset=40");
+    }
+
+    [Fact]
     public async Task GetGraphLocalesAsync_ReturnsEmptyWhenSchemaHasNoLocalesType()
     {
         var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)

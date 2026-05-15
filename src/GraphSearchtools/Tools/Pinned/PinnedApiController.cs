@@ -118,13 +118,38 @@ public class PinnedApiController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Items(string collectionId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Items(
+        string collectionId,
+        [FromQuery] int offset,
+        CancellationToken cancellationToken)
+    {
+        if (!HasAccess()) return Forbid();
+        if (string.IsNullOrWhiteSpace(collectionId)) return BadRequest(new { message = "collectionId is required." });
+        if (offset < 0) return BadRequest(new { message = "offset must be >= 0." });
+        try
+        {
+            return Ok(await _service.GetItemsAsync(collectionId, cancellationToken, offset));
+        }
+        catch (Exception ex)
+        {
+            return HandleError(ex);
+        }
+    }
+
+    /// <summary>
+    /// Walks ContentGraph's 20-item pages and returns the full pin list with
+    /// a real total. The Aurora grid calls this on tab open so client-side
+    /// search/filter/paging has the whole dataset to work with.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> AllItems(string collectionId, CancellationToken cancellationToken)
     {
         if (!HasAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(collectionId)) return BadRequest(new { message = "collectionId is required." });
         try
         {
-            return Ok(await _service.GetItemsAsync(collectionId, cancellationToken));
+            var items = await _service.LoadAllItemsAsync(collectionId, cancellationToken);
+            return Ok(new { items, total = items.Count });
         }
         catch (Exception ex)
         {
@@ -299,6 +324,11 @@ public class PinnedApiController : Controller
             // Don't leak the upstream response body — log it and return a generic error.
             _logger.LogWarning(apiException, "Graph API request failed with status {StatusCode}.", apiException.StatusCode);
             return StatusCode(apiException.StatusCode, new { message = "Graph API request failed." });
+        }
+        if (exception is BulkLoadCapExceededException cap)
+        {
+            _logger.LogWarning(cap, "Bulk load cap exceeded for collection {CollectionId}.", cap.CollectionId);
+            return StatusCode(503, new { message = "Collection too large to load in one request.", cap = cap.Cap });
         }
         if (exception is InvalidOperationException invalidOp)
         {

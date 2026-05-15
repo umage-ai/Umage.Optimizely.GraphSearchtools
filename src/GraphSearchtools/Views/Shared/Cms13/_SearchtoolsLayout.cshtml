@@ -19,6 +19,12 @@
     @ClientResources.RenderResources("ShellCore")
     @ClientResources.RenderResources("ShellCoreLightTheme")
 
+    @* Inter mirrors the typeface used by the Optimizely admin SPA (Aurora).
+       Fetched by the user's browser at view time, not by the server. *@
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+
     <link rel="stylesheet" href="@ClientResource("ClientResources/css/graphsearchtools.css")" />
     @RenderSection("Styles", required: false)
 </head>
@@ -39,15 +45,8 @@
                 <nav class="gst-header__nav">
                     @RenderSection("NavItems", required: false)
                 </nav>
-                <a href="@ActionPath("GraphSearchtools/About")" class="gst-header__about">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    @Loc.GetString("/graphsearchtools/menu/about")
-                </a>
             </header>
             <main class="gst-main">
-                <a class="gst-watermark" href="https://umage.ai/?utm_source=graphsearchtools" target="_blank" rel="noopener" title="Powered by umage.ai">
-                    Powered by umage.ai
-                </a>
                 @RenderBody()
             </main>
         </div>

@@ -44,6 +44,24 @@
 
 <div id="gst-prof-detail-alert" class="gst-alert" hidden></div>
 
+@* Aurora Phase 3C — stat row at a glance. Counts are filled in by JS as
+   each tab loads; the placeholder "—" stays until then. Locale-friendly:
+   `data-stat` keys let the JS update values without re-rendering labels. *@
+<div class="gst-stats gst-prof-stat-row" aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/statRow/label")">
+    <div class="gst-stat">
+        <div class="gst-stat__value" data-stat="pinned">—</div>
+        <div class="gst-stat__label">@Loc.GetString("/graphsearchtools/profiles/detail/statRow/pinnedLabel")</div>
+    </div>
+    <div class="gst-stat">
+        <div class="gst-stat__value" data-stat="synonyms">—</div>
+        <div class="gst-stat__label">@Loc.GetString("/graphsearchtools/profiles/detail/statRow/synonymsLabel")</div>
+    </div>
+    <div class="gst-stat">
+        <div class="gst-stat__value" data-stat="recentEdits">—</div>
+        <div class="gst-stat__label">@Loc.GetString("/graphsearchtools/profiles/detail/statRow/recentLabel")</div>
+    </div>
+</div>
+
 <div class="gst-prof-workspace" data-profile-key="@Model.Key">
 
     @* ───────── LEFT: live preview workshop ───────── *@
@@ -211,6 +229,20 @@
                 </span>
                 <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/synonyms")</span>
             </button>
+            @* Aurora Phase 3C — split former "Details" tab into Activity
+               (audit log) + Settings (metadata + GraphQL doc). Keeps
+               `details` as the legacy data-panel value used by Settings so
+               existing profiles.js wiring keeps working. *@
+            <button type="button" class="gst-prof-switcher__btn"
+                    role="tab" aria-selected="false" data-panel="activity" id="gst-prof-tab-activity">
+                <span class="gst-prof-switcher__icon" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+                        <circle cx="8" cy="8" r="6"/>
+                        <path d="M8 5 L8 8 L10.5 9.5"/>
+                    </svg>
+                </span>
+                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/activity")</span>
+            </button>
             <button type="button" class="gst-prof-switcher__btn"
                     role="tab" aria-selected="false" data-panel="details" id="gst-prof-tab-details">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
@@ -219,7 +251,7 @@
                         <path d="M5 6 H11 M5 8.5 H11 M5 11 H8.5"/>
                     </svg>
                 </span>
-                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/details")</span>
+                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/settings")</span>
             </button>
         </nav>
 
@@ -715,6 +747,13 @@
                 }
             </section>
 
+        </article>
+
+        @* Activity panel — Aurora Phase 3C: audit log lives in its own tab
+           rather than buried at the bottom of Settings. Same host element
+           (#gst-prof-audit-host) so profiles.js keeps populating it. *@
+        <article class="gst-prof-panel" data-panel="activity" hidden
+                 role="tabpanel" aria-labelledby="gst-prof-tab-activity">
             <section class="gst-prof-details__section">
                 <h3 class="gst-prof-details__title">
                     @Loc.GetString("/graphsearchtools/profiles/detail/details/auditTitle")
