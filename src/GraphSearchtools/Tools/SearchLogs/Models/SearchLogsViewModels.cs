@@ -3,10 +3,9 @@ using System.Text.Json.Serialization;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs.Models;
 
 /// <summary>
-/// Camel-cased projection of <see cref="UmageAI.Optimizely.GraphSearchTools.Services.SearchLogAggregateRow"/>
-/// for the three phrase-level cards (top, zero-result, low-CTR). The wire-shape
-/// stays decoupled from the DDS-side record so we can evolve the analytics
-/// surface without touching the foundation service.
+/// Camel-cased projection of the reader's <c>PhraseAggregate</c> for the three
+/// phrase-level cards (top, zero-result, low-CTR). Decoupled from the reader
+/// type so the wire shape can evolve independently.
 /// </summary>
 public sealed record SearchLogPhraseRow
 {
@@ -20,7 +19,7 @@ public sealed record SearchLogPhraseRow
     [JsonPropertyName("zeroResultRate")]
     public double ZeroResultRate { get; init; }
 
-    /// <summary>Click-through rate — sessions with TopResultRank ≤ 3 over total; in <c>[0, 1]</c>.</summary>
+    /// <summary>Click-through rate — sessions with a click at rank 1..3 over total; in <c>[0, 1]</c>.</summary>
     [JsonPropertyName("ctr")]
     public double Ctr { get; init; }
 
@@ -32,14 +31,24 @@ public sealed record SearchLogPhraseRow
 }
 
 /// <summary>
-/// Camel-cased projection of <see cref="UmageAI.Optimizely.GraphSearchTools.Services.SearchLogEntry"/>
-/// for the recent-raw-events card. <c>Id</c> is omitted — the UI doesn't need it
-/// and exposing the DDS Identity isn't useful to a client.
+/// Camel-cased projection of one row from the per-instance forensic ring,
+/// used by the live-tail card.
 /// </summary>
+/// <remarks>
+/// The aggregate-first design (v0.5) drops several columns the legacy raw
+/// table carried — <c>Site</c>, <c>TopResultId</c>, <c>DurationMs</c>,
+/// <c>Ranking</c>, <c>Source</c> — because the new ingest beacon doesn't
+/// require the host to send them. The card now shows search vs click as
+/// distinct rows (<c>Kind</c>) and the click rank when present.
+/// </remarks>
 public sealed record SearchLogRawRow
 {
     [JsonPropertyName("at")]
     public DateTime At { get; init; }
+
+    /// <summary>"search" or "click".</summary>
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = string.Empty;
 
     [JsonPropertyName("phrase")]
     public string Phrase { get; init; } = string.Empty;
@@ -47,27 +56,18 @@ public sealed record SearchLogRawRow
     [JsonPropertyName("locale")]
     public string Locale { get; init; } = string.Empty;
 
-    [JsonPropertyName("site")]
-    public string Site { get; init; } = string.Empty;
-
     [JsonPropertyName("profileKey")]
     public string ProfileKey { get; init; } = string.Empty;
 
+    /// <summary>Set on search events; null on click events.</summary>
     [JsonPropertyName("resultCount")]
-    public int ResultCount { get; init; }
+    public int? ResultCount { get; init; }
 
-    [JsonPropertyName("topResultRank")]
-    public int? TopResultRank { get; init; }
+    /// <summary>Set on click events (1-based rank); null on search events.</summary>
+    [JsonPropertyName("clickRank")]
+    public int? ClickRank { get; init; }
 
-    [JsonPropertyName("topResultId")]
-    public string TopResultId { get; init; } = string.Empty;
-
-    [JsonPropertyName("durationMs")]
-    public int DurationMs { get; init; }
-
-    [JsonPropertyName("ranking")]
-    public string Ranking { get; init; } = string.Empty;
-
-    [JsonPropertyName("source")]
-    public string Source { get; init; } = string.Empty;
+    /// <summary>Originating instance — useful when scaling out to multiple nodes.</summary>
+    [JsonPropertyName("nodeId")]
+    public string NodeId { get; init; } = string.Empty;
 }

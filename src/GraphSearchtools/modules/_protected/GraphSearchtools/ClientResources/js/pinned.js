@@ -475,7 +475,6 @@
             renderGrid();
             return;
         }
-        if (!confirm(STRINGS.confirm_delete || 'Delete this pinned item?')) return;
         ajax(BASE + '/PinnedApi/DeleteItem?collectionId=' + encodeURIComponent(row.collectionId) + '&id=' + encodeURIComponent(row.id), {
             method: 'DELETE'
         }).then(function () {
@@ -673,6 +672,10 @@
             // Persistent UI state across renders
             sort: { field: 'phrases', dir: 'asc' },
             global: '',
+            // Per-column substring filters layered on top of the global one
+            // so a marketer can narrow by phrase OR target independently.
+            // Keyed by row field; '' means the column has no active filter.
+            colFilters: { phrases: '', contentName: '' },
             page: 1,
             activeTypeahead: null
         };
@@ -720,6 +723,17 @@
                 rows = rows.filter(function (r) {
                     return [r.phrases, r.contentName, r.targetKey, r.contentType, r.language]
                         .some(function (v) { return (v || '').toLowerCase().indexOf(g) !== -1; });
+                });
+            }
+            // Per-column filters AND against the global filter — both need
+            // to match for a row to render. Empty colFilters values are
+            // no-ops, so an unused column doesn't constrain anything.
+            var cf = state.colFilters || {};
+            if (cf.phrases || cf.contentName) {
+                rows = rows.filter(function (r) {
+                    if (cf.phrases && (r.phrases || '').toLowerCase().indexOf(cf.phrases) === -1) return false;
+                    if (cf.contentName && (r.contentName || '').toLowerCase().indexOf(cf.contentName) === -1) return false;
+                    return true;
                 });
             }
             var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
@@ -833,11 +847,14 @@
             buildTargetCell(row, tr, targetCell);
             tr.appendChild(targetCell);
 
-            // Actions — Save + Delete with status-aware coloring.
+            // Actions — Save + Delete. The Save button is rendered for every
+            // row but CSS-hidden until the row's `is-dirty` class flips on,
+            // matching the synonyms editor so both surfaces show the same
+            // per-row save affordance on the same trigger.
             var actCell = document.createElement('td');
             actCell.className = 'gst-pinedit__cell gst-pinedit__cell--actions';
-            actCell.appendChild(buildActionBtn('save', row, tr, function () { saveRow(row, tr); }));
-            actCell.appendChild(buildActionBtn('delete', row, tr, function () { deleteRow(row); }));
+            actCell.appendChild(buildSaveBtn(function () { saveRow(row, tr); }));
+            actCell.appendChild(buildDeleteBtn(function () { deleteRow(row); }));
             tr.appendChild(actCell);
 
             return tr;
@@ -991,18 +1008,22 @@
                 .catch(function () { dropdown.style.display = 'none'; });
         }
 
-        function buildActionBtn(kind, row, tr, onClick) {
+        function buildSaveBtn(onClick) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            if (kind === 'save') {
-                btn.className = 'gst-pinedit__action gst-pinedit__action--save' + (row._dirty ? ' is-dirty' : '');
-                btn.innerHTML = '<span aria-hidden="true">✓</span>';
-                btn.title = STRINGS.action_save || 'Save';
-            } else {
-                btn.className = 'gst-pinedit__action gst-pinedit__action--delete';
-                btn.innerHTML = '<span aria-hidden="true">×</span>';
-                btn.title = STRINGS.action_delete || 'Delete';
-            }
+            btn.className = 'gst-pinedit__action gst-pinedit__action--save';
+            btn.innerHTML = '<span aria-hidden="true">✓</span>';
+            btn.title = STRINGS.action_save || 'Save';
+            btn.addEventListener('click', onClick);
+            return btn;
+        }
+
+        function buildDeleteBtn(onClick) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'gst-pinedit__action gst-pinedit__action--delete';
+            btn.innerHTML = '<span aria-hidden="true">×</span>';
+            btn.title = STRINGS.action_delete || 'Delete';
             btn.addEventListener('click', onClick);
             return btn;
         }
@@ -1010,8 +1031,6 @@
         function markDirty(row, tr) {
             row._dirty = true;
             tr.classList.add('is-dirty');
-            var saveBtn = tr.querySelector('.gst-pinedit__action--save');
-            if (saveBtn) saveBtn.classList.add('is-dirty');
             refreshChrome();
         }
 
@@ -1036,15 +1055,33 @@
             };
         }
 
+        // The first loadRows() promise — exposed via whenReady() so callers
+        // (e.g. the Insights tab's inline pin editor) can defer their
+        // canCreatePins check until state.pinnedKey is resolved instead of
+        // racing the initial fetch.
+        var initialLoad = null;
+
         function loadRows() {
             setAlert(null);
             // Switching site / locale gives a different rowset entirely; the
             // previous page index is meaningless in the new context.
             state.page = 1;
+            // Replace stale rows with a loading row immediately so the user
+            // sees the grid reacting to the site/locale switch instead of
+            // staring at the previous scope's data while Graph responds.
+            // renderRows() clears the tbody on success / failure.
+            if (rowsTbody) {
+                rowsTbody.innerHTML = '<tr class="gst-pinedit__loading"><td colspan="3">'
+                    + '<span class="gst-pinedit__loading__spinner" aria-hidden="true"></span>'
+                    + '<span class="gst-pinedit__loading__label">'
+                    + escHtml(s('profiles.detail.pinned.loading', 'Loading pinned items…'))
+                    + '</span></td></tr>';
+            }
+            if (emptyEl) emptyEl.hidden = true;
             var url = PROFILE_API + '/' + encodeURIComponent(profileKey)
                 + '/pinned?site=' + encodeURIComponent(state.site || '')
                 + '&locale=' + encodeURIComponent(state.locale || '');
-            ajax(url).then(function (resp) {
+            var p = ajax(url).then(function (resp) {
                 resp = resp || {};
                 state.collectionId = resp.collectionId || null;
                 state.pinnedKey = resp.pinnedKey || null;
@@ -1056,6 +1093,8 @@
             }).catch(function (err) {
                 setAlert(err.message, true);
             });
+            if (!initialLoad) initialLoad = p;
+            return p;
         }
 
         function buildPayload(row) {
@@ -1141,7 +1180,6 @@
                 renderRows();
                 return;
             }
-            if (!confirm(STRINGS.confirm_delete || 'Delete this pinned item?')) return;
             var qs = '?collectionId=' + encodeURIComponent(state.collectionId)
                 + '&id=' + encodeURIComponent(row.id)
                 + '&profileKey=' + encodeURIComponent(profileKey)
@@ -1776,6 +1814,40 @@
             });
         }
 
+        // Per-column filter row — injected into the existing <thead> below
+        // the sort row so each text column gets its own substring filter.
+        // We render in JS rather than Razor so this single setup covers any
+        // surface that hosts the same `gst-pinedit__grid` table without
+        // having to keep two view templates in lockstep.
+        (function wireColumnFilters() {
+            if (!rowsTbody) return;
+            var thead = rowsTbody.parentNode && rowsTbody.parentNode.querySelector
+                ? rowsTbody.parentNode.querySelector('thead')
+                : null;
+            if (!thead || thead.querySelector('.gst-pinedit__head-filter')) return;
+            var tr = document.createElement('tr');
+            tr.className = 'gst-pinedit__head-filter';
+            var phrasePh = s('profiles.detail.pinned.colFilterPhrase', 'Filter phrase…');
+            var targetPh = s('profiles.detail.pinned.colFilterTarget', 'Filter content…');
+            tr.innerHTML =
+                '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="phrases" autocomplete="off" placeholder="' + escHtml(phrasePh) + '"></th>' +
+                '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="contentName" autocomplete="off" placeholder="' + escHtml(targetPh) + '"></th>' +
+                '<th class="gst-pinedit__col" aria-hidden="true"></th>';
+            thead.appendChild(tr);
+            var debounces = {};
+            tr.querySelectorAll('.gst-pinedit__colfilter').forEach(function (input) {
+                var col = input.dataset.col;
+                input.addEventListener('input', function () {
+                    clearTimeout(debounces[col]);
+                    debounces[col] = setTimeout(function () {
+                        state.colFilters[col] = (input.value || '').toLowerCase().trim();
+                        state.page = 1;
+                        renderRows();
+                    }, 120);
+                });
+            });
+        })();
+
         GST.editGrid.wireSortHeaders(sortBtns, state.sort, function () {
             state.page = 1;
             renderRows();
@@ -1805,6 +1877,109 @@
 
         return {
             reload: loadRows,
+
+            /**
+             * Resolves when the first loadRows() settles, so callers can
+             * defer state.pinnedKey-dependent checks (canCreatePins) until
+             * the editor has actually fetched its config. Always returns a
+             * promise — never rejects — so callers can just `.then(...)`.
+             */
+            whenReady: function () { return initialLoad || Promise.resolve(); },
+
+            /**
+             * Look up content by free-text query against the pinned editor's
+             * existing typeahead endpoint. Used by the Insights tab inline
+             * pin editor so callers can rely on the same matching rules /
+             * locale scoping that the typeahead in the table cell uses.
+             */
+            lookupContent: function (query) {
+                var locale = state.locale ? '&locale=' + encodeURIComponent(state.locale) : '';
+                return ajax(BASE + '/ContentLookupApi/Search?q=' + encodeURIComponent(query) + locale);
+            },
+
+            /**
+             * Whether the editor is in a state where new pins can be created
+             * (collection key resolved, profile actually applies pinned).
+             * The Insights inline editor disables its save button against this.
+             */
+            canCreatePins: function () {
+                return !!state.pinnedKey && !!opts.queryAppliesPinned;
+            },
+
+            /**
+             * Create-and-save a pinned item for `phrase` against `target`.
+             * Skips the table-edit flow used by draftPhrase — the inline
+             * Insights editor already collected the target so we go straight
+             * to the wire. Adds the saved row to the table state on success
+             * so opening the Pinned tab shows it without a reload.
+             */
+            createPin: function (phrase, target) {
+                if (!phrase || !target || !target.targetKey) {
+                    return Promise.reject(new Error('phrase and target are required'));
+                }
+                var row = {
+                    id: null,
+                    collectionId: state.collectionId,
+                    collectionKey: state.pinnedKey,
+                    phrases: phrase,
+                    targetKey: target.targetKey,
+                    contentName: target.contentName || '',
+                    contentType: target.contentType || '',
+                    language: state.locale || null,
+                    priority: 1000,
+                    isActive: true,
+                    _dirty: true,
+                    _isNew: true
+                };
+                state.rows.push(row);
+                return saveRow(row).then(function () {
+                    renderRows();
+                    return row;
+                });
+            },
+
+            /**
+             * Find an existing pinned row in the current (site, locale)
+             * collection whose phrase matches `phrase` (case-insensitive,
+             * comma-tokenized — the same matching the storefront applies).
+             * Returns the row object or null. The Insights inline editor
+             * uses this to prefill itself so re-pinning the same phrase
+             * updates the existing pin instead of creating a duplicate.
+             */
+            findPinForPhrase: function (phrase) {
+                if (!phrase || !state.rows.length) return null;
+                var lower = phrase.trim().toLowerCase();
+                for (var i = 0; i < state.rows.length; i++) {
+                    var r = state.rows[i];
+                    if (!r.phrases) continue;
+                    var tokens = r.phrases.split(',');
+                    for (var j = 0; j < tokens.length; j++) {
+                        if (tokens[j].trim().toLowerCase() === lower) return r;
+                    }
+                }
+                return null;
+            },
+
+            /**
+             * Replace `existingRow`'s target with `target` and PUT. Marks
+             * the row dirty so saveRow takes the update path (PUT, not
+             * POST). Paired with findPinForPhrase() so the inline editor
+             * can edit an existing pin's target rather than stacking a
+             * second item with the same phrase.
+             */
+            updatePin: function (existingRow, target) {
+                if (!existingRow || !target || !target.targetKey) {
+                    return Promise.reject(new Error('row and target are required'));
+                }
+                existingRow.targetKey = target.targetKey;
+                existingRow.contentName = target.contentName || '';
+                existingRow.contentType = target.contentType || '';
+                existingRow._dirty = true;
+                return saveRow(existingRow).then(function () {
+                    renderRows();
+                    return existingRow;
+                });
+            },
 
             /**
              * Seed a new draft pin row pre-filled with `phrase` and focus the

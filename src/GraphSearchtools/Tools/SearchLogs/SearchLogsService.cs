@@ -1,18 +1,17 @@
-using UmageAI.Optimizely.GraphSearchTools.Services;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs.Models;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 
 /// <summary>
-/// Thin wrapper around the foundation <see cref="SearchLogService"/> for the
-/// Phase 4 Wave 5 Search Logs UI. Owns three contracts the controller leans on:
+/// Read-side wrapper for the Phase 4 Wave 5 Search Logs UI. Owns three
+/// contracts the controller leans on:
 /// <list type="number">
 ///   <item>Default the time window to 24h when the caller omits <c>since</c>.</item>
 ///   <item>Clamp <c>take</c> to <c>[1, MaxTake]</c> so the UI can't pull more
-///   rows than DDS will happily aggregate in-process.</item>
-///   <item>Project the DDS-side <see cref="SearchLogAggregateRow"/> /
-///   <see cref="SearchLogEntry"/> to camelCase wire shapes so the Razor JS sees
-///   a stable surface.</item>
+///   rows than the reader is willing to materialise.</item>
+///   <item>Project <see cref="PhraseAggregate"/> / <see cref="RawEvent"/> to
+///   camelCase wire shapes so the Razor JS sees a stable surface.</item>
 /// </list>
 /// All four list operations (top / zero-result / low-CTR / raw) flow through
 /// this single service to keep the windowing and clamping policy in one place.
@@ -28,66 +27,66 @@ public sealed class SearchLogsService
     /// <summary>Default <c>since</c> window when the caller omits the parameter.</summary>
     public static readonly TimeSpan DefaultWindow = TimeSpan.FromHours(24);
 
-    private readonly SearchLogService _logs;
+    private readonly ITelemetryReader _reader;
 
-    public SearchLogsService(SearchLogService logs)
+    public SearchLogsService(ITelemetryReader reader)
     {
-        _logs = logs;
+        _reader = reader;
     }
 
     /// <summary>
     /// Top phrases by hit count in the window. Returns most-frequent first.
     /// When <paramref name="profileKey"/> is supplied, only sessions that ran
-    /// against that profile are counted — the Profiles detail page passes the
-    /// active profile key here.
+    /// against that profile are counted; <paramref name="locale"/> further
+    /// narrows to one language branch — the Profile detail page passes both
+    /// so each lane reflects exactly the preview the editor is staring at.
     /// </summary>
-    public IReadOnlyList<SearchLogPhraseRow> TopPhrases(DateTime? since, int? take, string? profileKey = null)
+    public async Task<IReadOnlyList<SearchLogPhraseRow>> TopPhrasesAsync(
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
     {
-        var (sinceUtc, clampedTake) = Normalise(since, take);
-        var rows = string.IsNullOrEmpty(profileKey)
-            ? _logs.TopPhrases(sinceUtc, clampedTake)
-            : _logs.TopPhrasesForProfile(sinceUtc, clampedTake, profileKey);
+        var query = BuildQuery(since, take, profileKey, locale);
+        var rows = await _reader.TopPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>
-    /// Phrases whose sessions all returned zero hits. Most-frequent first;
-    /// these are the strongest synonym-mining candidates. Profile-scoped when
-    /// <paramref name="profileKey"/> is supplied.
+    /// Phrases whose sessions returned zero hits. Most-frequent first;
+    /// these are the strongest synonym-mining candidates. Profile- and
+    /// locale-scoped when those are supplied.
     /// </summary>
-    public IReadOnlyList<SearchLogPhraseRow> ZeroResultPhrases(DateTime? since, int? take, string? profileKey = null)
+    public async Task<IReadOnlyList<SearchLogPhraseRow>> ZeroResultPhrasesAsync(
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
     {
-        var (sinceUtc, clampedTake) = Normalise(since, take);
-        var rows = string.IsNullOrEmpty(profileKey)
-            ? _logs.ZeroResultPhrases(sinceUtc, clampedTake)
-            : _logs.ZeroResultPhrasesForProfile(sinceUtc, clampedTake, profileKey);
+        var query = BuildQuery(since, take, profileKey, locale);
+        var rows = await _reader.ZeroResultPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>
-    /// Phrases with the lowest click-through rate in the window. The underlying
-    /// service excludes phrases with fewer than 5 sessions (3 in profile-scoped
-    /// mode) to keep the list actionable.
+    /// Phrases with the lowest click-through rate in the window. The reader
+    /// excludes phrases with too few hits to score honestly.
     /// </summary>
-    public IReadOnlyList<SearchLogPhraseRow> LowCtrPhrases(DateTime? since, int? take, string? profileKey = null)
+    public async Task<IReadOnlyList<SearchLogPhraseRow>> LowCtrPhrasesAsync(
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
     {
-        var (sinceUtc, clampedTake) = Normalise(since, take);
-        var rows = string.IsNullOrEmpty(profileKey)
-            ? _logs.LowCtrPhrases(sinceUtc, clampedTake)
-            : _logs.LowCtrPhrasesForProfile(sinceUtc, clampedTake, profileKey);
+        var query = BuildQuery(since, take, profileKey, locale);
+        var rows = await _reader.LowCtrPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
 
     /// <summary>
-    /// Most-recent raw entries in the window. Backs the live-tail card; the JS
-    /// polls this every 30s.
+    /// Most-recent raw events from the per-instance forensic ring. Backs the
+    /// live-tail card; the JS polls every 30s. Note: under the v0.5 aggregate-
+    /// first design, this is a reservoir sample — events are persisted with
+    /// uniform-random selection over the flush interval, not contiguously.
+    /// Cross-node forensics is a non-goal; rows here come from one node's ring.
     /// </summary>
-    public IReadOnlyList<SearchLogRawRow> RecentEntries(DateTime? since, int? take)
+    public async Task<IReadOnlyList<SearchLogRawRow>> RecentEntriesAsync(
+        DateTime? since, int? take, CancellationToken cancellationToken = default)
     {
-        var (sinceUtc, clampedTake) = Normalise(since, take);
-        return _logs.ListSince(sinceUtc, clampedTake)
-            .Select(ToRawRow)
-            .ToList();
+        var query = BuildQuery(since, take, profileKey: null, locale: null);
+        var rows = await _reader.RecentRawAsync(query, cancellationToken);
+        return rows.Select(ToRawRow).ToList();
     }
 
     /// <summary>
@@ -97,7 +96,7 @@ public sealed class SearchLogsService
     /// Future-dated <c>since</c> values are clamped to "now" so a clock-skewed
     /// caller can't accidentally request the empty set.
     /// </summary>
-    internal static (DateTime SinceUtc, int Take) Normalise(DateTime? since, int? take)
+    internal static TelemetryQuery BuildQuery(DateTime? since, int? take, string? profileKey, string? locale)
     {
         var now = DateTime.UtcNow;
         DateTime sinceUtc;
@@ -114,10 +113,12 @@ public sealed class SearchLogsService
         }
 
         var clamped = Math.Clamp(take ?? DefaultTake, 1, MaxTake);
-        return (sinceUtc, clamped);
+        var profile = string.IsNullOrWhiteSpace(profileKey) ? null : profileKey;
+        var loc = string.IsNullOrWhiteSpace(locale) ? null : locale;
+        return new TelemetryQuery(sinceUtc, now, clamped, profile, loc);
     }
 
-    private static SearchLogPhraseRow ToPhraseRow(SearchLogAggregateRow row) => new()
+    private static SearchLogPhraseRow ToPhraseRow(PhraseAggregate row) => new()
     {
         Phrase = row.Phrase,
         Hits = row.Hits,
@@ -127,18 +128,15 @@ public sealed class SearchLogsService
         ProfileKey = row.ProfileKey
     };
 
-    private static SearchLogRawRow ToRawRow(SearchLogEntry e) => new()
+    private static SearchLogRawRow ToRawRow(RawEvent e) => new()
     {
-        At = e.At,
+        At = e.TimestampUtc,
+        Kind = e.Kind,
         Phrase = e.Phrase,
         Locale = e.Locale,
-        Site = e.Site,
         ProfileKey = e.ProfileKey,
         ResultCount = e.ResultCount,
-        TopResultRank = e.TopResultRank,
-        TopResultId = e.TopResultId,
-        DurationMs = e.DurationMs,
-        Ranking = e.Ranking,
-        Source = e.Source
+        ClickRank = e.ClickRank,
+        NodeId = e.NodeId
     };
 }

@@ -6,10 +6,8 @@
 }
 
 <div class="gst-page-header">
-    <div class="gst-page-header__title">
-        <h1>@Loc.GetString("/graphsearchtools/profiles/index/title")</h1>
-        <p>@Loc.GetString("/graphsearchtools/profiles/index/subtitle")</p>
-    </div>
+    <h1>@Loc.GetString("/graphsearchtools/profiles/index/title")</h1>
+    <p>@Loc.GetString("/graphsearchtools/profiles/index/subtitle")</p>
 </div>
 
 <div id="gst-prof-alert" class="gst-alert" hidden></div>
@@ -48,12 +46,18 @@
             <input type="text" id="gst-prof-search"
                    placeholder="@Loc.GetString("/graphsearchtools/profiles/index/filterPlaceholder")" />
         </div>
-        <select id="gst-prof-site-filter" class="gst-select">
-            <option value="">@Loc.GetString("/graphsearchtools/profiles/index/filter/allSites")</option>
-        </select>
-        <select id="gst-prof-locale-filter" class="gst-select">
-            <option value="">@Loc.GetString("/graphsearchtools/profiles/index/filter/allLocales")</option>
-        </select>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/index/filter/labelSite")</span>
+            <select id="gst-prof-site-filter" class="gst-filter__select">
+                <option value="">@Loc.GetString("/graphsearchtools/profiles/index/filter/allSites")</option>
+            </select>
+        </label>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/index/filter/labelLocale")</span>
+            <select id="gst-prof-locale-filter" class="gst-filter__select">
+                <option value="">@Loc.GetString("/graphsearchtools/profiles/index/filter/allLocales")</option>
+            </select>
+        </label>
         <div class="gst-toolbar__spacer"></div>
         <span id="gst-prof-count" class="gst-muted">&nbsp;</span>
     </div>

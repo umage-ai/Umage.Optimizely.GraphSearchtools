@@ -1,0 +1,80 @@
+@inject LocalizationService Loc
+@{
+    string F(string key) => Loc.GetString($"/graphsearchtools/ui/pinFlyout/{key}");
+    string Sh(string key) => Loc.GetString($"/graphsearchtools/ui/shared/{key}");
+}
+@*
+    Aurora right-edge edit panel for pins. Markup-only — the JS that opens
+    the panel, populates fields, validates, and saves lives in pinned-aurora.js
+    (Phase 4). Conventions: id="gst-flyout-pin", id="gst-flyout-pin-backdrop",
+    closing buttons carry data-flyout-close="pin", save buttons carry
+    data-flyout-save="pin", and inner inputs use gst-pinfly-* IDs.
+
+    Locale and target rows are rendered dynamically by JS — the partial
+    ships with an empty <div class="gst-target-list"> and an empty <select>.
+*@
+<div id="gst-flyout-pin-backdrop" class="gst-flyout-backdrop" hidden></div>
+<aside id="gst-flyout-pin" class="gst-flyout" hidden role="dialog"
+       aria-modal="true" aria-labelledby="gst-flyout-pin-title">
+    <header class="gst-flyout__header">
+        <h2 id="gst-flyout-pin-title" class="gst-flyout__title">@F("editTitle")</h2>
+        <button type="button" class="gst-flyout__close"
+                data-flyout-close="pin" aria-label="@Sh("close")">×</button>
+    </header>
+    <div class="gst-flyout__body">
+        <div class="gst-field">
+            <label class="gst-field__label" for="gst-pinfly-phrase">@F("phraseLabel")</label>
+            <textarea id="gst-pinfly-phrase" name="phrase" rows="2"></textarea>
+            <span class="gst-field__hint">@F("phraseHint")</span>
+        </div>
+
+        <div class="gst-field">
+            <label class="gst-field__label" for="gst-pinfly-targets">
+                @F("targetsLabel") <span class="gst-field__count" id="gst-pinfly-targets-count"></span>
+            </label>
+            <div class="gst-target-list" id="gst-pinfly-targets"></div>
+            <button type="button" class="gst-target-list__add" id="gst-pinfly-add-target">
+                @F("targetsAdd")
+            </button>
+            <span class="gst-field__hint">@F("targetsHint")</span>
+        </div>
+
+        <div class="gst-field-row">
+            <div class="gst-field">
+                <label class="gst-field__label" for="gst-pinfly-locale">@F("localeLabel")</label>
+                <select id="gst-pinfly-locale" name="locale"></select>
+            </div>
+            <div class="gst-field">
+                <label class="gst-field__label" for="gst-pinfly-effective">@F("effectiveLabel")</label>
+                <input id="gst-pinfly-effective" name="effectiveTo" type="date" />
+                <span class="gst-field__hint">@F("effectiveHint")</span>
+            </div>
+        </div>
+
+        @* Activate/Deactivate is a CTA, not a passive checkbox — the button
+           label inverts the current state ("Deactivate" when on, "Activate"
+           when off) and toggling here only updates the in-memory edit; the
+           change is persisted by Save. *@
+        <div class="gst-field">
+            <button type="button" class="gst-btn" id="gst-pinfly-toggle-active"></button>
+        </div>
+
+        <div id="gst-pinfly-conflict" class="gst-flyout__notice" hidden>
+            <span>
+                <strong id="gst-pinfly-conflict-prefix">@F("conflictPrefix")</strong>
+                <span id="gst-pinfly-conflict-body"></span>
+            </span>
+        </div>
+    </div>
+    <footer class="gst-flyout__footer">
+        @* Delete is left-aligned (destructive secondary), hidden in create mode
+           by the Aurora JS — the row's overflow ⋯ menu and this button are
+           the two paths to remove a pin group. *@
+        <button type="button" class="gst-btn gst-btn--danger" id="gst-pinfly-delete" hidden>
+            @Loc.GetString("/graphsearchtools/ui/shared/delete")
+        </button>
+        <div class="gst-flyout__footer__spacer"></div>
+        <button type="button" class="gst-btn" data-flyout-close="pin">@F("cancel")</button>
+        <button type="button" class="gst-btn gst-btn--primary" data-flyout-save="pin">@F("save")</button>
+    </footer>
+</aside>

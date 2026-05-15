@@ -48,7 +48,7 @@
     }
 
     function mountGrid() {
-        return GST.synonymsGrid.mount({
+        var handle = GST.synonymsGrid.mount({
             slot: 'one',
             mergeWithGlobal: false,
             getLang: function () { return langSelect.value; },
@@ -74,6 +74,11 @@
                 sortBtns: document.querySelectorAll('#gst-syn .gst-pinedit__sortbtn')
             }
         });
+        // Expose the editor handle so siblings on the same page (the
+        // Suggested-adds inline editor inside the Unused tab) can append
+        // or update a rule without spawning a second mount.
+        GST.synonymsEditor = handle;
+        return handle;
     }
 
     // Pull locale options from Graph's schema introspection rather than the

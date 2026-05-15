@@ -22,7 +22,7 @@
  *                       drawerEl?, drawerCount?, sortBtns? (NodeList).
  *   pageSize          — defaults to 20.
  *
- * Returns { draftRule(rule): bool, reload(): Promise }.
+ * Returns { draftRule, appendRule, updateRule, findRuleForPhrase, whenReady, reload }.
  */
 (function () {
     'use strict';
@@ -148,6 +148,11 @@
                 lang: getLang(),
                 rows: [],
                 filter: '',
+                // Per-column substring filters layered on top of the global
+                // filter (same model as the pinned grid). Empty values are
+                // no-ops; scope strings match against the scope label, e.g.
+                // 'lang' or 'global'.
+                colFilters: { rule: '', scope: '' },
                 page: 1,
                 sort: { field: 'rule', dir: 'asc' },
                 snapshots: { lang: '', global: '' }
@@ -179,6 +184,17 @@
                 if (q) {
                     rows = rows.filter(function (r) {
                         return (r.rule || '').toLowerCase().indexOf(q) !== -1;
+                    });
+                }
+                // Per-column filters AND against the global one. Scope is
+                // stored as 'lang'/'global'; matching against that token
+                // lets the user type either to narrow.
+                var cf = state.colFilters || {};
+                if (cf.rule || cf.scope) {
+                    rows = rows.filter(function (r) {
+                        if (cf.rule && (r.rule || '').toLowerCase().indexOf(cf.rule) === -1) return false;
+                        if (cf.scope && (r.scope || '').toLowerCase().indexOf(cf.scope) === -1) return false;
+                        return true;
                     });
                 }
                 var f = state.sort.field, d = state.sort.dir === 'desc' ? -1 : 1;
@@ -331,11 +347,23 @@
                 scopeCell.appendChild(scopeChip);
                 tr.appendChild(scopeCell);
 
-                // Actions cell — delete only (synonyms saves the whole blob,
-                // so per-row Save would be misleading; the drawer handles it).
+                // Actions cell — Save + Delete, matching the pinned editor.
+                // Save persists the full blob (no partial-save API exists),
+                // which also clears every dirty row — so per-row Save here is
+                // effectively a shortcut for the drawer's "Save all". CSS
+                // hides the Save button until the row is dirty, so it only
+                // shows up when there's something to write.
                 var actCell = document.createElement('td');
                 actCell.className = 'gst-pinedit__cell gst-pinedit__cell--actions';
                 if (!isGlobalReadOnly) {
+                    var rowSave = document.createElement('button');
+                    rowSave.type = 'button';
+                    rowSave.className = 'gst-pinedit__action gst-pinedit__action--save';
+                    rowSave.innerHTML = '<span aria-hidden="true">✓</span>';
+                    rowSave.title = s('synonyms.action_save', 'Save');
+                    rowSave.addEventListener('click', function () { save(); });
+                    actCell.appendChild(rowSave);
+
                     var del = document.createElement('button');
                     del.type = 'button';
                     del.className = 'gst-pinedit__action gst-pinedit__action--delete';
@@ -374,6 +402,19 @@
 
             function loadForLang(lang) {
                 setAlert(null);
+                // Replace any stale rows with a loading row so the user sees
+                // the grid reacting to the locale switch / initial mount
+                // instead of staring at the previous scope's data while the
+                // synonyms blobs fetch. renderRows() clears the tbody on
+                // success / failure.
+                if (rowsHost) {
+                    rowsHost.innerHTML = '<tr class="gst-pinedit__loading"><td colspan="4">'
+                        + '<span class="gst-pinedit__loading__spinner" aria-hidden="true"></span>'
+                        + '<span class="gst-pinedit__loading__label">'
+                        + escHtml(s('profiles.detail.synonyms.loading', 'Loading synonym rules…'))
+                        + '</span></td></tr>';
+                }
+                if (emptyEl) emptyEl.hidden = true;
                 // In merge mode, fetch lang AND global in parallel so the
                 // active locale view shows every rule that applies to it.
                 // Outside merge mode, fetch only the scope the picker chose.
@@ -509,6 +550,40 @@
                 });
             }
 
+            // Per-column filter row — injected into <thead> below the sort
+            // row. Rendered in JS rather than the Razor template so both
+            // surfaces that mount the synonyms grid (the standalone tool
+            // and the Profile detail tab) pick it up from one place.
+            (function wireColumnFilters() {
+                if (!rowsHost) return;
+                var thead = rowsHost.parentNode && rowsHost.parentNode.querySelector
+                    ? rowsHost.parentNode.querySelector('thead')
+                    : null;
+                if (!thead || thead.querySelector('.gst-pinedit__head-filter')) return;
+                var tr = document.createElement('tr');
+                tr.className = 'gst-pinedit__head-filter';
+                var rulePh = s('profiles.detail.synonyms.colFilterRule', 'Filter rule…');
+                var scopePh = s('profiles.detail.synonyms.colFilterScope', 'Filter scope…');
+                tr.innerHTML =
+                    '<th class="gst-pinedit__col" aria-hidden="true"></th>' +
+                    '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="rule" autocomplete="off" placeholder="' + escHtml(rulePh) + '"></th>' +
+                    '<th class="gst-pinedit__col"><input type="search" class="gst-pinedit__colfilter" data-col="scope" autocomplete="off" placeholder="' + escHtml(scopePh) + '"></th>' +
+                    '<th class="gst-pinedit__col" aria-hidden="true"></th>';
+                thead.appendChild(tr);
+                var debounces = {};
+                tr.querySelectorAll('.gst-pinedit__colfilter').forEach(function (input) {
+                    var col = input.dataset.col;
+                    input.addEventListener('input', function () {
+                        clearTimeout(debounces[col]);
+                        debounces[col] = setTimeout(function () {
+                            state.colFilters[col] = (input.value || '').toLowerCase().trim();
+                            state.page = 1;
+                            renderRows();
+                        }, 120);
+                    });
+                });
+            })();
+
             if (sortBtns && sortBtns.length) {
                 GST.editGrid.wireSortHeaders(sortBtns, state.sort, function () {
                     state.page = 1;
@@ -561,6 +636,100 @@
                     initialLoad.then(seed, seed);
                     return true;
                 },
+
+                /**
+                 * Append a single replacement rule (`lhs => rhs`) to the
+                 * active scope and persist it directly. Used by the
+                 * Profile Insights inline synonym editor so a marketer
+                 * doesn't have to switch tabs to complete a one-line edit.
+                 *
+                 * Scope: when a locale is active, write to that locale's
+                 * blob; otherwise write to the global blob — same policy
+                 * the drawer Save uses. Returns the underlying PUT promise.
+                 */
+                appendRule: function (lhs, rhs) {
+                    if (!lhs || !rhs) return Promise.reject(new Error('lhs and rhs are required'));
+                    return initialLoad.then(function () {
+                        var scope = state.lang ? 'lang' : 'global';
+                        var rule = lhs.trim() + ' => ' + rhs.trim();
+                        state.rows.push({ rule: rule, scope: scope });
+                        var content = joinedScopeContent(scope);
+                        return writeScope(scope, content).then(function () {
+                            state.snapshots[scope] = content;
+                            renderRows();
+                            // Mirror save()'s broadcast so the live preview
+                            // drops its cached synonym rules for this lang.
+                            window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
+                                detail: { lang: scope === 'lang' ? state.lang : '' }
+                            }));
+                        });
+                    });
+                },
+
+                /**
+                 * Resolves when the first loadForLang() settles. The Insights
+                 * inline editor uses this to wait for state.rows to populate
+                 * before looking for an existing rule to prefill, instead of
+                 * racing the initial fetch and seeing an empty rowset.
+                 */
+                whenReady: function () { return initialLoad || Promise.resolve(); },
+
+                /**
+                 * Find an existing replacement rule whose LHS matches `phrase`
+                 * (case-insensitive, trimmed) within the scope appendRule
+                 * would write to (lang when lang is set, else global). Returns
+                 * { ruleObj, lhs, rhs } or null. Inline editors call this to
+                 * prefill themselves so editing the existing rule writes back
+                 * instead of stacking a duplicate.
+                 */
+                findRuleForPhrase: function (phrase) {
+                    if (!phrase) return null;
+                    var lhsLower = phrase.trim().toLowerCase();
+                    var scope = state.lang ? 'lang' : 'global';
+                    for (var i = 0; i < state.rows.length; i++) {
+                        var r = state.rows[i];
+                        if (r.scope !== scope) continue;
+                        var idx = (r.rule || '').indexOf('=>');
+                        if (idx < 0) continue;
+                        var lhs = r.rule.slice(0, idx).trim();
+                        if (lhs.toLowerCase() === lhsLower) {
+                            return { ruleObj: r, lhs: lhs, rhs: r.rule.slice(idx + 2).trim() };
+                        }
+                    }
+                    return null;
+                },
+
+                /**
+                 * Replace `existingRuleObj`'s rule string with `lhs => rhs` and
+                 * persist the blob. Paired with findRuleForPhrase() so the
+                 * inline editor can update a rule in place rather than push
+                 * a parallel one with the same source phrase.
+                 */
+                updateRule: function (existingRuleObj, lhs, rhs) {
+                    if (!existingRuleObj || !lhs || !rhs) {
+                        return Promise.reject(new Error('existing row, lhs, and rhs are required'));
+                    }
+                    return initialLoad.then(function () {
+                        if (state.rows.indexOf(existingRuleObj) < 0) {
+                            // Reloaded out from under us — fall back to append
+                            // so the marketer's edit isn't lost.
+                            state.rows.push({ rule: lhs.trim() + ' => ' + rhs.trim(),
+                                              scope: state.lang ? 'lang' : 'global' });
+                        } else {
+                            existingRuleObj.rule = lhs.trim() + ' => ' + rhs.trim();
+                        }
+                        var scope = state.lang ? 'lang' : 'global';
+                        var content = joinedScopeContent(scope);
+                        return writeScope(scope, content).then(function () {
+                            state.snapshots[scope] = content;
+                            renderRows();
+                            window.dispatchEvent(new CustomEvent('gst:synonyms-changed', {
+                                detail: { lang: scope === 'lang' ? state.lang : '' }
+                            }));
+                        });
+                    });
+                },
+
                 reload: function () { return loadForLang(state.lang); }
             };
         }

@@ -126,6 +126,11 @@ public class ComponentsApiController : Controller
         return new
         {
             Id = content.ContentLink.ID,
+            // Pinned items in Optimizely Graph key off ContentGuid, not the
+            // numeric ContentLink.ID — so the picker must surface it for the
+            // Pinned flyout's "Add target" path. Lower-cased to match how the
+            // pinned-aurora.js target-name resolver keys its name lookup.
+            ContentGuid = content.ContentGuid.ToString(),
             content.Name,
             TypeName = contentType?.DisplayName ?? contentType?.Name ?? "Unknown",
             HasChildren = hasChildren

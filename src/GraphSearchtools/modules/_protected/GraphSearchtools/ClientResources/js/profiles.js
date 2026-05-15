@@ -328,7 +328,10 @@
                 });
                 if (target === 'synonyms') mountSynonyms();
                 if (target === 'insights') mountInsights();
-                if (target === 'details')  loadAudit(key);
+                // Audit lives in the Activity tab now (Aurora Phase 3C);
+                // keep loading it for `details` too so deep-links via the
+                // legacy tab name still work for at least one release.
+                if (target === 'activity' || target === 'details') loadAudit(key);
             });
         });
 
@@ -347,7 +350,8 @@
                 locales: opts.locales || [],
                 isGeneric: !!opts.isGeneric,
                 isSiteShared: !!opts.isSiteShared,
-                hasGraphQLDoc: !!opts.hasGraphQLDoc
+                hasGraphQLDoc: !!opts.hasGraphQLDoc,
+                queryAppliesPinned: !!opts.queryAppliesPinned
             });
         }
 
@@ -454,10 +458,47 @@
         // recomputed at fetch time so the window is always anchored to "now"
         // rather than going stale across long-lived sessions.
         var WINDOWS = { '1h': 3600e3, '24h': 86400e3, '7d': 7 * 86400e3, '30d': 30 * 86400e3 };
+
+        // Lane-local state. Each lane starts at INITIAL_TAKE rows and grows
+        // by SHOW_MORE_STEP per "show more" click. Resets back to INITIAL_TAKE
+        // whenever the window or locale changes — a fresh slice is a fresh
+        // surface, no point preserving an expanded view across a context flip.
+        var INITIAL_TAKE = 5;
+        var SHOW_MORE_STEP = 10;
+        var LANES = ['top', 'zero', 'lowctr'];
+        var LANE_API = { top: 'Top', zero: 'ZeroResults', lowctr: 'LowCtr' };
+        var LANE_DOM = {
+            top:    { listId: 'gst-prof-ins-top',    countId: 'gst-prof-ins-top-count' },
+            zero:   { listId: 'gst-prof-ins-zero',   countId: 'gst-prof-ins-zero-count' },
+            lowctr: { listId: 'gst-prof-ins-lowctr', countId: 'gst-prof-ins-lowctr-count' }
+        };
+
         var state = {
             window: '24h',
-            inflight: null
+            inflight: null,
+            takes: { top: INITIAL_TAKE, zero: INITIAL_TAKE, lowctr: INITIAL_TAKE },
+            // Aurora Phase 3B: auto-fire the preview with the most-searched
+            // phrase on first paint so the marketer lands on "what people
+            // actually search for, and what they get back" rather than an
+            // empty preview pane. Only seeded once per page-load — afterwards
+            // the user's typing / row-click drives the preview.
+            previewSeeded: false
         };
+
+        function resetTakes() {
+            LANES.forEach(function (l) { state.takes[l] = INITIAL_TAKE; });
+        }
+
+        // The Pinned editor's locale chip (`#gst-pin-locale`) is the page's
+        // single source of truth for which language branch the editor is
+        // looking at. Mirroring it here means a marketer who narrows the
+        // preview to "sv" sees only Swedish search activity in the lanes,
+        // and switching back to "en" reflects English-only data without a
+        // separate pill on the Insights surface.
+        var localeSel = document.getElementById('gst-pin-locale');
+        function activeLocale() {
+            return (localeSel && !localeSel.disabled) ? (localeSel.value || '') : '';
+        }
 
         function activeWindowMs() {
             return WINDOWS[state.window] || WINDOWS['24h'];
@@ -471,30 +512,65 @@
             alertEl.classList.add('gst-alert--danger');
         }
 
-        // Window pill click → state change → refetch.
+        // Window pill click → state change → refetch. Reset per-lane takes
+        // so a fresh window opens compact rather than carrying over a
+        // previously-expanded row count.
         pillEls.forEach(function (pill) {
             pill.addEventListener('click', function () {
                 if (pill.classList.contains('is-active')) return;
                 pillEls.forEach(function (p) { p.classList.remove('is-active'); });
                 pill.classList.add('is-active');
                 state.window = pill.dataset.window || '24h';
+                resetTakes();
                 fetchAll();
             });
         });
 
         if (refreshBtn) {
             refreshBtn.addEventListener('click', function () {
+                resetTakes();
                 fetchAll();
             });
         }
 
-        function fetchLane(slug) {
+        // Locale switch on the Pinned editor → re-fetch insights for the new
+        // branch. Pinned listens to the same event to reload its rows; both
+        // mutations land on the page in lockstep so the preview, the pinned
+        // table, and the analytics lanes always agree on which locale is
+        // being inspected.
+        if (localeSel) {
+            localeSel.addEventListener('change', function () {
+                resetTakes();
+                fetchAll();
+            });
+        }
+
+        function fetchLane(lane) {
             var since = new Date(Date.now() - activeWindowMs()).toISOString();
-            var url = SEARCHLOGS_API + '/' + slug
+            var url = SEARCHLOGS_API + '/' + LANE_API[lane]
                 + '?since=' + encodeURIComponent(since)
-                + '&take=10'
+                + '&take=' + state.takes[lane]
                 + '&profileKey=' + encodeURIComponent(profileKey);
+            var loc = activeLocale();
+            if (loc) url += '&locale=' + encodeURIComponent(loc);
             return GST.fetchJson(url);
+        }
+
+        // Show-more bumps just one lane's take and re-renders that lane.
+        // The reader caches the underlying aggregate per (window, profile,
+        // locale) for 30s, so the bigger take re-runs only the in-memory
+        // sort-and-take — no DB roundtrip on the hot path.
+        function showMore(lane) {
+            state.takes[lane] += SHOW_MORE_STEP;
+            paintLoading(lane);
+            var stamp = state.inflight = {};
+            fetchLane(lane).then(function (rows) {
+                if (state.inflight !== stamp) return;
+                paintLane(lane, rows);
+            }).catch(function (err) {
+                if (state.inflight !== stamp) return;
+                paintLane(lane, { _err: err });
+            });
         }
 
         function fetchAll() {
@@ -509,31 +585,58 @@
             paintLoading('lowctr');
 
             Promise.all([
-                fetchLane('Top').catch(function (e) { return { _err: e }; }),
-                fetchLane('ZeroResults').catch(function (e) { return { _err: e }; }),
-                fetchLane('LowCtr').catch(function (e) { return { _err: e }; })
+                fetchLane('top').catch(function (e) { return { _err: e }; }),
+                fetchLane('zero').catch(function (e) { return { _err: e }; }),
+                fetchLane('lowctr').catch(function (e) { return { _err: e }; })
             ]).then(function (results) {
                 if (state.inflight !== stamp) return;
                 if (refreshBtn) refreshBtn.classList.remove('is-spinning');
-                paintLane('top',    results[0], 'gst-prof-ins-top',    'gst-prof-ins-top-count');
-                paintLane('zero',   results[1], 'gst-prof-ins-zero',   'gst-prof-ins-zero-count');
-                paintLane('lowctr', results[2], 'gst-prof-ins-lowctr', 'gst-prof-ins-lowctr-count');
+                paintLane('top',    results[0]);
+                paintLane('zero',   results[1]);
+                paintLane('lowctr', results[2]);
+                seedPreviewFromTop(results[0]);
             });
         }
 
+        // Aurora Phase 3B — on first successful paint of the Top lane, mirror
+        // its #1 phrase into the live preview's query field if the marketer
+        // hasn't already typed something. Subsequent fetches don't re-seed
+        // (the user-driven `applyToPreview` and row-click stay authoritative).
+        function seedPreviewFromTop(topResult) {
+            if (state.previewSeeded) return;
+            if (!topResult || topResult._err) return;
+            var rows = Array.isArray(topResult) ? topResult : [];
+            if (rows.length === 0) return;
+            var input = document.getElementById('gst-pin-tryit-q');
+            // Don't overwrite a query the marketer already typed (or that
+            // was deep-linked into the page via ?q=... / saved-state).
+            if (!input || input.value && input.value.length > 0) {
+                state.previewSeeded = true;
+                return;
+            }
+            applyToPreview(rows[0].phrase);
+            state.previewSeeded = true;
+        }
+
         function paintLoading(lane) {
-            var listId = lane === 'top' ? 'gst-prof-ins-top'
-                : lane === 'zero' ? 'gst-prof-ins-zero' : 'gst-prof-ins-lowctr';
-            var listEl = document.getElementById(listId);
+            var listEl = document.getElementById(LANE_DOM[lane].listId);
             if (!listEl) return;
+            removeShowMore(lane);
             // Skeleton lives inside an <li> so the <ol> stays valid.
             listEl.innerHTML = '<li class="gst-prof-ins-lane__loading"><span></span></li>';
         }
 
-        function paintLane(lane, payload, listId, countId) {
-            var listEl = document.getElementById(listId);
-            var countEl = document.getElementById(countId);
+        function removeShowMore(lane) {
+            var btn = document.getElementById('gst-prof-ins-' + lane + '-more');
+            if (btn) btn.remove();
+        }
+
+        function paintLane(lane, payload) {
+            var dom = LANE_DOM[lane];
+            var listEl = document.getElementById(dom.listId);
+            var countEl = document.getElementById(dom.countId);
             if (!listEl) return;
+            removeShowMore(lane);
 
             if (payload && payload._err) {
                 listEl.innerHTML = '<li class="gst-prof-ins-lane__error">'
@@ -575,6 +678,28 @@
                 frag.appendChild(buildRow(lane, row, maxHits));
             });
             listEl.appendChild(frag);
+
+            // "Show more" only when the lane returned exactly its requested
+            // take — that's the signal there might be additional rows. When
+            // the server returns fewer than asked for, we've reached the end
+            // of the available data and the button stays hidden.
+            if (rows.length >= state.takes[lane]) {
+                appendShowMore(lane, listEl);
+            }
+        }
+
+        function appendShowMore(lane, listEl) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = 'gst-prof-ins-' + lane + '-more';
+            btn.className = 'gst-prof-ins-lane__more';
+            btn.textContent = s('profiles.detail.insights.showMore', 'Show more');
+            btn.addEventListener('click', function () {
+                showMore(lane);
+            });
+            // Drop the button after the <ol>; it sits in the lane's flow but
+            // outside the list so screen readers don't announce it as an item.
+            listEl.parentNode.appendChild(btn);
         }
 
         function buildRow(lane, row, maxHits) {
@@ -621,50 +746,42 @@
                 + '<small>' + escHtml(s('profiles.detail.insights.hitsLabel', 'hits')) + '</small>';
             li.appendChild(countEl);
 
-            // 4: locale chip
-            var locEl = document.createElement('span');
-            locEl.className = 'gst-prof-ins-row__locale';
-            if (row.locale) {
-                locEl.textContent = row.locale;
-            } else {
-                locEl.hidden = true;
-            }
-            li.appendChild(locEl);
-
-            // 5: actions
+            // 4: actions — three icon buttons (preview / pin / synonym) on
+            //    every row regardless of lane. Pin and synonym are disabled
+            //    when the active profile's GraphQL doc doesn't apply them
+            //    (so the buttons are still visible for affordance, but a
+            //    tooltip explains why they can't be used here).
             var actEl = document.createElement('span');
             actEl.className = 'gst-prof-ins-row__actions';
-            // Preview button is always offered.
-            actEl.appendChild(makeCta(s('profiles.detail.insights.ctaPreview', 'Preview'), false, function (ev) {
-                ev.stopPropagation();
-                applyToPreview(row.phrase);
-            }));
-            // The "draft" CTA depends on lane type:
-            //  - top / low-CTR → draft pin (these phrases get traffic; pin
-            //    candidate is the right next step)
-            //  - zero-result → draft synonym (the goal is to map them into
-            //    something Graph already finds)
-            if (lane === 'zero') {
-                if (opts.queryAppliesSynonyms) {
-                    var synBtn = makeCta(s('profiles.detail.insights.ctaSynonym', 'Draft synonym'), true, function (ev) {
-                        ev.stopPropagation();
-                        if (draftSynonymFor(row.phrase)) {
-                            markCtaDrafted(synBtn, s('profiles.detail.insights.ctaDrafted', '✓ Drafted'));
-                        }
-                    });
-                    actEl.appendChild(synBtn);
-                }
-            } else {
-                if (opts.queryAppliesPinned) {
-                    var pinBtn = makeCta(s('profiles.detail.insights.ctaPin', 'Draft pin'), true, function (ev) {
-                        ev.stopPropagation();
-                        if (draftPinFor(row.phrase)) {
-                            markCtaDrafted(pinBtn, s('profiles.detail.insights.ctaDrafted', '✓ Drafted'));
-                        }
-                    });
-                    actEl.appendChild(pinBtn);
-                }
-            }
+
+            actEl.appendChild(makeIconButton(
+                'preview',
+                GST.icons.search,
+                s('profiles.detail.insights.actionPreview', 'Preview this phrase'),
+                false,
+                function (ev) { ev.stopPropagation(); applyToPreview(row.phrase); }
+            ));
+
+            actEl.appendChild(makeIconButton(
+                'pin',
+                GST.icons.pin,
+                opts.queryAppliesPinned
+                    ? s('profiles.detail.insights.actionPin', 'Pin a result for this phrase')
+                    : s('profiles.detail.insights.actionPinDisabled', 'This profile doesn\'t apply pinned results.'),
+                !opts.queryAppliesPinned,
+                function (ev) { ev.stopPropagation(); toggleInlineEditor(li, row, 'pin'); }
+            ));
+
+            actEl.appendChild(makeIconButton(
+                'synonym',
+                GST.icons.synonym,
+                opts.queryAppliesSynonyms
+                    ? s('profiles.detail.insights.actionSynonym', 'Add a synonym for this phrase')
+                    : s('profiles.detail.insights.actionSynonymDisabled', 'This profile doesn\'t apply synonyms.'),
+                !opts.queryAppliesSynonyms,
+                function (ev) { ev.stopPropagation(); toggleInlineEditor(li, row, 'synonym'); }
+            ));
+
             li.appendChild(actEl);
 
             // Whole row is the click target → loads into preview.
@@ -681,26 +798,362 @@
             return li;
         }
 
-        function makeCta(label, isPrimary, onClick) {
+        function makeIconButton(kind, svg, title, disabled, onClick) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'gst-prof-ins-row__cta'
-                + (isPrimary ? ' gst-prof-ins-row__cta--primary' : '');
-            btn.textContent = label;
+            btn.className = 'gst-prof-ins-row__icon gst-prof-ins-row__icon--' + kind;
+            btn.title = title;
+            btn.setAttribute('aria-label', title);
+            btn.disabled = !!disabled;
+            btn.innerHTML = svg;
             btn.addEventListener('click', onClick);
             return btn;
         }
 
-        // Swap a draft CTA into a non-clickable confirmation chip so the user
-        // can see the action took. The button stays in the DOM (so layout
-        // doesn't jitter) but disables itself and visually demotes — the
-        // toast handles the "what next" guidance.
-        function markCtaDrafted(btn, label) {
-            if (!btn) return;
-            btn.textContent = label;
-            btn.disabled = true;
-            btn.classList.remove('gst-prof-ins-row__cta--primary');
-            btn.classList.add('gst-prof-ins-row__cta--drafted');
+        // Toggle the inline pin/synonym editor below `rowEl`. The panel is
+        // sibling to the row (inside the same <ol>) so its hover / focus
+        // state stays bounded to the row context. Closing one variant always
+        // collapses the other so only one inline form is open per row.
+        function toggleInlineEditor(rowEl, row, kind) {
+            var existing = rowEl.nextElementSibling;
+            if (existing && existing.classList && existing.classList.contains('gst-prof-ins-edit')) {
+                var sameKind = existing.dataset.kind === kind;
+                existing.remove();
+                if (sameKind) return; // second click on same icon → toggle off
+            }
+            // Synonyms editor is lazy-mounted; force-mount before opening
+            // its inline editor so the helper handle is available.
+            if (kind === 'synonym' && opts.ensureSynonymsMounted) {
+                opts.ensureSynonymsMounted();
+            }
+            var panel = kind === 'pin'
+                ? buildInlinePinEditor(row)
+                : buildInlineSynonymEditor(row);
+            if (!panel) return;
+            panel.dataset.kind = kind;
+            // Insert as a sibling <li> after the row so the <ol> stays valid.
+            rowEl.parentNode.insertBefore(panel, rowEl.nextSibling);
+            // Mirror the row's phrase into the live preview so the marketer
+            // sees the current SERP while picking a target / typing a rule.
+            applyToPreview(row.phrase);
+            // Move keyboard focus into the panel for fast keyboard completion.
+            var firstField = panel.querySelector('input, button:not([disabled])');
+            if (firstField) firstField.focus();
+        }
+
+        // Re-fire the preview query for `phrase` so the SERP reflects an edit
+        // that just landed (new pin, new synonym rule). Bypasses lastQuery
+        // staleness because dispatching `input` always reschedules run().
+        function refreshPreview(phrase) {
+            var input = document.getElementById('gst-pin-tryit-q');
+            if (!input) return;
+            if (phrase && input.value !== phrase) input.value = phrase;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function buildInlinePinEditor(row) {
+            var ed = (opts.getEditors() || {}).pinned;
+            var panel = document.createElement('li');
+            panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--pin';
+
+            // Phrase chip — read-only — the picker fills the right side.
+            var phraseChip = document.createElement('span');
+            phraseChip.className = 'gst-prof-ins-edit__chip';
+            phraseChip.textContent = row.phrase;
+            panel.appendChild(phraseChip);
+
+            var arrow = document.createElement('span');
+            arrow.className = 'gst-prof-ins-edit__arrow';
+            arrow.textContent = '→';
+            panel.appendChild(arrow);
+
+            // Content typeahead box. Reuses pinned editor's lookup endpoint
+            // (locale-scoped) so the suggestions match the table's typeahead.
+            var pickerWrap = document.createElement('span');
+            pickerWrap.className = 'gst-prof-ins-edit__picker';
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'gst-prof-ins-edit__input';
+            input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder', 'Search content…');
+            pickerWrap.appendChild(input);
+            var dropdown = document.createElement('div');
+            dropdown.className = 'gst-prof-ins-edit__dropdown';
+            dropdown.hidden = true;
+            pickerWrap.appendChild(dropdown);
+            panel.appendChild(pickerWrap);
+
+            var saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'gst-prof-ins-edit__save';
+            saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+            saveBtn.disabled = true;
+            panel.appendChild(saveBtn);
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'gst-prof-ins-edit__cancel';
+            cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
+            panel.appendChild(cancelBtn);
+
+            cancelBtn.addEventListener('click', function () { panel.remove(); });
+
+            // No pinned editor at all (e.g. its host DOM wasn't rendered
+            // because the profile doesn't apply pinned) → permanently
+            // disabled state with an explanatory placeholder.
+            if (!ed || typeof ed.canCreatePins !== 'function') {
+                input.disabled = true;
+                input.placeholder = s('profiles.detail.insights.pinUnavailable',
+                    'Pinned results not configured for this profile.');
+                return panel;
+            }
+
+            // The pinned key is loaded async by pinned.js — if the user
+            // clicked the pin icon before that fetch settles, canCreatePins
+            // is still false. Show a spinner and re-check once the editor
+            // reports ready, instead of permanently locking the panel on a
+            // race. After ready we also look up an existing pin for this
+            // phrase and prefill if one exists so the save path edits
+            // instead of stacking a duplicate.
+            var picked = null;
+            var debounceT = null;
+            var existingPin = null;
+            var spinner = makeSpinner();
+            input.disabled = true;
+            pickerWrap.appendChild(spinner);
+
+            var whenReady = typeof ed.whenReady === 'function'
+                ? ed.whenReady()
+                : Promise.resolve();
+            whenReady.then(function () {
+                if (!panel.isConnected) return; // user closed it
+                spinner.remove();
+                if (!ed.canCreatePins()) {
+                    input.placeholder = s('profiles.detail.insights.pinUnavailable',
+                        'Pinned results not configured for this profile.');
+                    return;
+                }
+                input.disabled = false;
+                input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder',
+                    'Search content…');
+                existingPin = typeof ed.findPinForPhrase === 'function'
+                    ? ed.findPinForPhrase(row.phrase)
+                    : null;
+                if (existingPin) {
+                    picked = {
+                        targetKey: existingPin.targetKey,
+                        contentName: existingPin.contentName,
+                        contentType: existingPin.contentType
+                    };
+                    input.value = existingPin.contentName || '';
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = s('profiles.detail.insights.editUpdate', 'Update');
+                } else {
+                    input.focus();
+                }
+            });
+
+            input.addEventListener('input', function () {
+                picked = null;
+                saveBtn.disabled = true;
+                clearTimeout(debounceT);
+                var q = input.value.trim();
+                if (q.length < 2) { dropdown.hidden = true; dropdown.innerHTML = ''; return; }
+                debounceT = setTimeout(function () { runLookup(q); }, 250);
+            });
+
+            function runLookup(q) {
+                ed.lookupContent(q).then(function (hits) {
+                    dropdown.innerHTML = '';
+                    hits = hits || [];
+                    if (!hits.length) {
+                        dropdown.hidden = true;
+                        return;
+                    }
+                    hits.slice(0, 8).forEach(function (hit) {
+                        var hitEl = document.createElement('div');
+                        hitEl.className = 'gst-prof-ins-edit__hit';
+                        hitEl.innerHTML = '<strong>' + escHtml(hit.name || '') + '</strong>'
+                            + '<small>' + escHtml((hit.contentType || '') + ' · ' + (hit.language || '')) + '</small>';
+                        hitEl.addEventListener('click', function () {
+                            picked = {
+                                targetKey: hit.contentGuid,
+                                contentName: hit.name,
+                                contentType: hit.contentType
+                            };
+                            input.value = hit.name || '';
+                            dropdown.hidden = true;
+                            saveBtn.disabled = false;
+                            saveBtn.focus();
+                        });
+                        dropdown.appendChild(hitEl);
+                    });
+                    dropdown.hidden = false;
+                }).catch(function () {
+                    dropdown.hidden = true;
+                });
+            }
+
+            saveBtn.addEventListener('click', function () {
+                if (!picked) return;
+                var saveLabel = saveBtn.textContent;
+                saveBtn.disabled = true;
+                saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
+                var saveCall = existingPin && typeof ed.updatePin === 'function'
+                    ? ed.updatePin(existingPin, picked)
+                    : ed.createPin(row.phrase, picked);
+                saveCall.then(function () {
+                    panel.classList.add('is-saved');
+                    panel.innerHTML = '';
+                    var ok = document.createElement('span');
+                    ok.className = 'gst-prof-ins-edit__ok';
+                    ok.textContent = s('profiles.detail.insights.editPinSaved',
+                        '✓ Pinned — open the Pinned tab to refine.');
+                    panel.appendChild(ok);
+                    refreshPreview(row.phrase);
+                    setTimeout(function () { if (panel.parentNode) panel.remove(); }, 2200);
+                }).catch(function (err) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = saveLabel;
+                    flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
+                });
+            });
+
+            return panel;
+        }
+
+        function buildInlineSynonymEditor(row) {
+            var ed = (opts.getEditors() || {}).synonyms;
+            var panel = document.createElement('li');
+            panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--synonym';
+
+            // Single rule input. While the synonyms blob is loading, we show
+            // a spinner and disable the input — once ready we either prefill
+            // with an existing rule for this phrase (so the save path edits
+            // the row in place) or with "<phrase> => " (so the marketer only
+            // types the replacement side).
+            var ruleInput = document.createElement('input');
+            ruleInput.type = 'text';
+            ruleInput.className = 'gst-prof-ins-edit__input gst-prof-ins-edit__input--rule';
+            var prefix = row.phrase + ' => ';
+            ruleInput.placeholder = s('profiles.detail.insights.synRulePlaceholder',
+                'phrase => replacement');
+            ruleInput.disabled = true;
+            panel.appendChild(ruleInput);
+
+            var spinner = makeSpinner();
+            panel.appendChild(spinner);
+
+            var saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'gst-prof-ins-edit__save';
+            saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
+            saveBtn.disabled = true;
+            panel.appendChild(saveBtn);
+
+            var cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'gst-prof-ins-edit__cancel';
+            cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
+            panel.appendChild(cancelBtn);
+
+            var tip = document.createElement('span');
+            tip.className = 'gst-prof-ins-edit__tip';
+            tip.textContent = s('profiles.detail.insights.synRuleTip',
+                'Format: original => replacement. Queries for "original" are rewritten to "replacement" at search time.');
+            panel.appendChild(tip);
+
+            cancelBtn.addEventListener('click', function () { panel.remove(); });
+
+            if (!ed || typeof ed.appendRule !== 'function') {
+                spinner.remove();
+                ruleInput.placeholder = s('profiles.detail.insights.synUnavailable',
+                    'Synonyms not loaded yet — open the Synonyms tab once.');
+                return panel;
+            }
+
+            function parseRule() {
+                var v = (ruleInput.value || '').trim();
+                var idx = v.indexOf('=>');
+                if (idx < 0) return null;
+                var lhs = v.slice(0, idx).trim();
+                var rhs = v.slice(idx + 2).trim();
+                if (!lhs || !rhs) return null;
+                return { lhs: lhs, rhs: rhs };
+            }
+
+            var existingRule = null;
+            var whenReady = typeof ed.whenReady === 'function'
+                ? ed.whenReady()
+                : Promise.resolve();
+            whenReady.then(function () {
+                if (!panel.isConnected) return;
+                spinner.remove();
+                ruleInput.disabled = false;
+                existingRule = typeof ed.findRuleForPhrase === 'function'
+                    ? ed.findRuleForPhrase(row.phrase)
+                    : null;
+                if (existingRule) {
+                    ruleInput.value = existingRule.ruleObj.rule;
+                    saveBtn.disabled = !parseRule();
+                    saveBtn.textContent = s('profiles.detail.insights.editUpdate', 'Update');
+                } else {
+                    ruleInput.value = prefix;
+                }
+                // Place caret at the end so the marketer continues typing the
+                // RHS rather than selecting / deleting the phrase.
+                try { ruleInput.setSelectionRange(ruleInput.value.length, ruleInput.value.length); }
+                catch (e) { /* type=text on some browsers refuses setSelectionRange */ }
+                ruleInput.focus();
+            });
+
+            ruleInput.addEventListener('input', function () {
+                saveBtn.disabled = !parseRule();
+            });
+            ruleInput.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' && !saveBtn.disabled) {
+                    ev.preventDefault();
+                    saveBtn.click();
+                }
+            });
+
+            saveBtn.addEventListener('click', function () {
+                var parsed = parseRule();
+                if (!parsed) return;
+                var saveLabel = saveBtn.textContent;
+                saveBtn.disabled = true;
+                saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
+                var saveCall = existingRule && typeof ed.updateRule === 'function'
+                    ? ed.updateRule(existingRule.ruleObj, parsed.lhs, parsed.rhs)
+                    : ed.appendRule(parsed.lhs, parsed.rhs);
+                saveCall.then(function () {
+                    panel.classList.add('is-saved');
+                    panel.innerHTML = '';
+                    var ok = document.createElement('span');
+                    ok.className = 'gst-prof-ins-edit__ok';
+                    ok.textContent = s('profiles.detail.insights.editSynSaved',
+                        '✓ Synonym added.');
+                    panel.appendChild(ok);
+                    refreshPreview(row.phrase);
+                    setTimeout(function () { if (panel.parentNode) panel.remove(); }, 1800);
+                }).catch(function (err) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = saveLabel;
+                    flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
+                });
+            });
+
+            return panel;
+        }
+
+        // Tiny inline spinner element used while either editor is waiting on
+        // its source data to load. Kept as a helper because both inline
+        // editors mount it the same way (append, then remove on ready).
+        function makeSpinner() {
+            var el = document.createElement('span');
+            el.className = 'gst-prof-ins-edit__spinner';
+            el.setAttribute('role', 'progressbar');
+            el.setAttribute('aria-label', s('shared.loading', 'Loading…'));
+            return el;
         }
 
         function applyToPreview(phrase) {
@@ -722,33 +1175,6 @@
             input.dispatchEvent(new Event('input', { bubbles: true }));
             // Don't steal focus; leaving focus inside the row keeps keyboard
             // navigation working.
-        }
-
-        function draftPinFor(phrase) {
-            if (!phrase) return false;
-            opts.activateTab('pinned');
-            // After tab activation the Pinned panel is visible; seed via the
-            // editor handle the detail() function captured at mount.
-            var editors = opts.getEditors();
-            var ed = editors.pinned;
-            var ok = ed && typeof ed.draftPhrase === 'function' && ed.draftPhrase(phrase);
-            if (ok) flash(s('profiles.detail.insights.draftedPin', 'Drafted in Pinned tab — fill in a target.'));
-            return !!ok;
-        }
-
-        function draftSynonymFor(phrase) {
-            if (!phrase) return false;
-            // Synonym tab needs to be mounted before we can seed it.
-            opts.ensureSynonymsMounted();
-            opts.activateTab('synonyms');
-            var editors = opts.getEditors();
-            var ed = editors.synonyms;
-            // Replacement-style template — matches the most common synonym
-            // mining shape ("offending phrase => something Graph already finds").
-            var rule = phrase + ' => ';
-            var ok = ed && typeof ed.draftRule === 'function' && ed.draftRule(rule);
-            if (ok) flash(s('profiles.detail.insights.draftedSynonym', 'Drafted in Synonyms tab — finish the rule.'));
-            return !!ok;
         }
 
         var flashTimer = null;
@@ -792,6 +1218,17 @@
 
     var _auditLoaded = false;
 
+    /**
+     * Aurora Phase 3C — write a number into the detail-page stat row. Each
+     * cell carries data-stat="pinned" / "synonyms" / "recentEdits"; the JS
+     * that loads the underlying data calls this when its rows arrive.
+     */
+    function setStat(key, value) {
+        var el = document.querySelector('.gst-prof-stat-row [data-stat="' + key + '"]');
+        if (!el) return;
+        el.textContent = (value == null) ? '—' : String(value);
+    }
+
     function loadAudit(key) {
         if (_auditLoaded) return;
         _auditLoaded = true;
@@ -806,6 +1243,7 @@
             if (!rows || rows.length === 0) {
                 GST.showEmpty(host, s('profiles.detail.audit.empty', 'No edits recorded yet.'));
                 if (badge) badge.hidden = true;
+                setStat('recentEdits', 0);
                 return;
             }
             renderAudit(host, rows);
@@ -813,11 +1251,25 @@
                 badge.hidden = false;
                 badge.textContent = rows.length;
             }
+            // Stat-row "Recent edits" counts everything in the last 7 days
+            // rather than the full take, so the number feels like a useful
+            // "what's been touched recently" signal rather than a paging cap.
+            var cutoff = Date.now() - 7 * 86400e3;
+            var recent = rows.filter(function (r) {
+                var t = Date.parse(r.at);
+                return !isNaN(t) && t >= cutoff;
+            }).length;
+            setStat('recentEdits', recent);
         }).catch(function(err) {
             host.innerHTML = '<p class="gst-muted">' + escHtml(s('profiles.requestFailed', 'Failed to load audit log.')) + '</p>';
             console.error('Audit log failed', err);
         });
     }
+
+    // Expose the setter so pinned.js / synonyms-grid.js can fill their
+    // respective stat cells when their data loads. Both files run after
+    // profiles.js so this is available by then.
+    GST.profilesDetailSetStat = setStat;
 
     function renderAudit(host, rows) {
         var html = '<table class="gst-table gst-prof-audit-table"><thead><tr>'

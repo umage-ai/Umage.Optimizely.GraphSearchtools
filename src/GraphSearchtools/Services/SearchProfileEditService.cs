@@ -47,6 +47,24 @@ public class SearchProfileEditService
     }
 
     /// <summary>
+    /// List the most recent edits across every profile, newest-first. Backs
+    /// the Insights "activity strip" panel. <paramref name="take"/> is clamped
+    /// to <c>[1, 200]</c> so the dashboard can't accidentally pull the whole
+    /// audit log.
+    /// </summary>
+    public virtual IEnumerable<SearchProfileEdit> ListRecent(int take = 20)
+    {
+        var store = TryGetStore();
+        if (store == null) return Array.Empty<SearchProfileEdit>();
+
+        var clamped = Math.Clamp(take, 1, 200);
+        return store.Items<SearchProfileEdit>()
+            .OrderByDescending(e => e.At)
+            .Take(clamped)
+            .ToList();
+    }
+
+    /// <summary>
     /// Most recent edit for a profile, or <c>null</c> when none exists. Drives
     /// the Profiles index "Last edited" column.
     /// </summary>

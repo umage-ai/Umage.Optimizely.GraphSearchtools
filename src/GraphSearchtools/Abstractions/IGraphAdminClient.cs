@@ -14,7 +14,13 @@ public interface IGraphAdminClient
     Task<PinnedCollectionResult> UpdateCollectionAsync(string collectionId, PinnedCollectionUpdatePayload payload, CancellationToken cancellationToken);
     Task DeleteCollectionAsync(string collectionId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<PinnedItemResult>> GetItemsAsync(string collectionId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Reads one page of pinned items from a collection. ContentGraph caps a
+    /// page at 20 items regardless of any client-side limit; pass
+    /// <paramref name="offset"/> to walk past the cap. The default 0 reads
+    /// from the start.
+    /// </summary>
+    Task<IReadOnlyList<PinnedItemResult>> GetItemsAsync(string collectionId, CancellationToken cancellationToken, int offset = 0);
     Task<PinnedItemResult> CreateItemAsync(string collectionId, PinnedItemPayload payload, CancellationToken cancellationToken);
     Task<PinnedItemResult> UpdateItemAsync(string collectionId, string id, PinnedItemPayload payload, CancellationToken cancellationToken);
     Task DeleteItemAsync(string collectionId, string id, CancellationToken cancellationToken);
@@ -51,14 +57,6 @@ public interface IGraphAdminClient
     /// CMS has configured. Returns an empty list if the enum is missing.
     /// </summary>
     Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken);
-
-    // ── Webhooks (Phase 3) ───────────────────────────────────────────────
-    // Graph's webhooks admin API exposes only list / create / delete — no
-    // PATCH/PUT — so the Webhooks tool models "edit" as delete + recreate.
-
-    Task<IReadOnlyList<WebhookResult>> GetWebhooksAsync(CancellationToken cancellationToken);
-    Task<WebhookResult> CreateWebhookAsync(WebhookPayload payload, CancellationToken cancellationToken);
-    Task DeleteWebhookAsync(string id, CancellationToken cancellationToken);
 }
 
 public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);

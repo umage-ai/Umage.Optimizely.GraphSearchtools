@@ -17,19 +17,6 @@ public class UiStringsProvider(LocalizationService loc)
     private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
 
     /// <summary>
-    /// Lookup for Webhooks strings under /graphsearchtools/tools/webhooks/*.
-    /// Webhooks JS reads inline confirm/empty/save messages from this section.
-    /// </summary>
-    private string W(string key) => loc.GetString($"/graphsearchtools/tools/webhooks/{key}");
-
-    /// <summary>
-    /// Lookup for Semantic Weight Tuner strings under
-    /// /graphsearchtools/tools/semanticTuner/*. The page is a thin client; all
-    /// labels and toast messages route through this section.
-    /// </summary>
-    private string ST(string key) => loc.GetString($"/graphsearchtools/tools/semanticTuner/{key}");
-
-    /// <summary>
     /// Lookup for Search Logs strings under /graphsearchtools/tools/searchLogs/*.
     /// The Search Logs JS reads inline empty-card / status-badge / link / load-
     /// failed messages from this section.
@@ -45,20 +32,11 @@ public class UiStringsProvider(LocalizationService loc)
     private string PC(string key) => loc.GetString($"/graphsearchtools/tools/pinnedCoverage/{key}");
 
     /// <summary>
-    /// Lookup for Synonym Coverage strings under
-    /// /graphsearchtools/tools/synonymCoverage/*. The Synonym Coverage JS reads
-    /// the generated-at prefix, prune/add link labels, and empty / no-logs /
-    /// load-failed copy from this section.
+    /// Lookup for Insights strings under /graphsearchtools/tools/insights/*.
+    /// The Insights JS reads coverage stat-card labels (parameterised with
+    /// %1), empty-state copy, and the load-failed message from this section.
     /// </summary>
-    private string SC(string key) => loc.GetString($"/graphsearchtools/tools/synonymCoverage/{key}");
-
-    /// <summary>
-    /// Lookup for Content Searchability Audit strings under
-    /// /graphsearchtools/tools/contentSearchabilityAudit/*. The audit JS reads
-    /// the kind labels, stat labels, run/running button text, table column
-    /// headers, and empty / run-failed copy from this section.
-    /// </summary>
-    private string CSA(string key) => loc.GetString($"/graphsearchtools/tools/contentSearchabilityAudit/{key}");
+    private string IN(string key) => loc.GetString($"/graphsearchtools/tools/insights/{key}");
 
     public object GetAll() => new
     {
@@ -113,7 +91,16 @@ public class UiStringsProvider(LocalizationService loc)
             updated = S("pinned/updated"),
             deleted = S("pinned/deleted"),
             confirm_delete = S("pinned/confirm_delete"),
-            no_sites = S("pinned/no_sites")
+            no_sites = S("pinned/no_sites"),
+            target_unresolved = S("pinned/target_unresolved"),
+            items_count = S("pinned/items_count"),
+            empty_grid = S("pinned/empty_grid"),
+            load_failed = S("pinned/load_failed"),
+            save_failed = S("pinned/save_failed"),
+            save_progress = S("pinned/save_progress"),
+            conflict = S("pinned/conflict"),
+            target_pick = S("pinned/target_pick"),
+            activity_unknown = S("pinned/activity_unknown")
         },
         synonyms = new
         {
@@ -131,7 +118,9 @@ public class UiStringsProvider(LocalizationService loc)
             help_replacement_label = S("synonyms/help_replacement_label"),
             help_replacement_text = S("synonyms/help_replacement_text"),
             help_equivalent_label = S("synonyms/help_equivalent_label"),
-            help_equivalent_text = S("synonyms/help_equivalent_text")
+            help_equivalent_text = S("synonyms/help_equivalent_text"),
+            col_activity = S("synonyms/col_activity"),
+            activity_unknown = S("synonyms/activity_unknown")
         },
         health = new
         {
@@ -228,6 +217,18 @@ public class UiStringsProvider(LocalizationService loc)
                         locale = P("detail/audit/col/locale")
                     }
                 },
+                pinned = new
+                {
+                    loading = P("detail/pinned/loading"),
+                    colFilterPhrase = P("detail/pinned/colFilterPhrase"),
+                    colFilterTarget = P("detail/pinned/colFilterTarget")
+                },
+                synonyms = new
+                {
+                    loading = P("detail/synonyms/loading"),
+                    colFilterRule = P("detail/synonyms/colFilterRule"),
+                    colFilterScope = P("detail/synonyms/colFilterScope")
+                },
                 insights = new
                 {
                     topTitle = P("detail/insights/topTitle"),
@@ -238,51 +239,29 @@ public class UiStringsProvider(LocalizationService loc)
                     emptyZero = P("detail/insights/emptyZero"),
                     emptyLowCtr = P("detail/insights/emptyLowCtr"),
                     loadFailed = P("detail/insights/loadFailed"),
-                    ctaPreview = P("detail/insights/ctaPreview"),
-                    ctaPin = P("detail/insights/ctaPin"),
-                    ctaSynonym = P("detail/insights/ctaSynonym"),
-                    ctaDrafted = P("detail/insights/ctaDrafted"),
-                    draftedPin = P("detail/insights/draftedPin"),
-                    draftedSynonym = P("detail/insights/draftedSynonym"),
+                    showMore = P("detail/insights/showMore"),
+                    actionPreview = P("detail/insights/actionPreview"),
+                    actionPin = P("detail/insights/actionPin"),
+                    actionPinDisabled = P("detail/insights/actionPinDisabled"),
+                    actionSynonym = P("detail/insights/actionSynonym"),
+                    actionSynonymDisabled = P("detail/insights/actionSynonymDisabled"),
+                    pinPickerPlaceholder = P("detail/insights/pinPickerPlaceholder"),
+                    pinUnavailable = P("detail/insights/pinUnavailable"),
+                    pinLoading = P("detail/insights/pinLoading"),
+                    synRulePlaceholder = P("detail/insights/synRulePlaceholder"),
+                    synRuleTip = P("detail/insights/synRuleTip"),
+                    synUnavailable = P("detail/insights/synUnavailable"),
+                    editSave = P("detail/insights/editSave"),
+                    editUpdate = P("detail/insights/editUpdate"),
+                    editSaving = P("detail/insights/editSaving"),
+                    editCancel = P("detail/insights/editCancel"),
+                    editPinSaved = P("detail/insights/editPinSaved"),
+                    editSynSaved = P("detail/insights/editSynSaved"),
+                    editFailed = P("detail/insights/editFailed"),
                     ctrLabel = P("detail/insights/ctrLabel"),
                     hitsLabel = P("detail/insights/hitsLabel")
                 }
             }
-        },
-        webhooks = new
-        {
-            empty = W("empty"),
-            status_active = W("status_active"),
-            status_disabled = W("status_disabled"),
-            delete = W("delete"),
-            delete_confirm = W("delete_confirm"),
-            save_failed = W("save_failed"),
-            delete_failed = W("delete_failed"),
-            load_failed = W("load_failed")
-        },
-        semanticTuner = new
-        {
-            tier_min_tokens = ST("tier_min_tokens"),
-            tier_max_tokens = ST("tier_max_tokens"),
-            tier_max_unbounded = ST("tier_max_unbounded"),
-            tier_ranking = ST("tier_ranking"),
-            tier_weight = ST("tier_weight"),
-            tier_description = ST("tier_description"),
-            add_tier = ST("add_tier"),
-            remove_tier = ST("remove_tier"),
-            save = ST("save"),
-            saved = ST("saved"),
-            save_failed = ST("save_failed"),
-            load_failed = ST("load_failed"),
-            snippet_label = ST("snippet_label"),
-            snippet_help = ST("snippet_help"),
-            copy = ST("copy"),
-            copied = ST("copied"),
-            empty = ST("empty"),
-            ranking_relevance = ST("ranking_relevance"),
-            ranking_semantic = ST("ranking_semantic"),
-            ranking_boostonly = ST("ranking_boostonly"),
-            ranking_doc = ST("ranking_doc")
         },
         searchLogs = new
         {
@@ -291,6 +270,17 @@ public class UiStringsProvider(LocalizationService loc)
             empty_title = SL("empty_title"),
             empty_body = SL("empty_body"),
             load_failed = SL("load_failed")
+        },
+        insights = new
+        {
+            coverage_total = IN("coverage_total"),
+            coverage_unused = IN("coverage_unused"),
+            coverage_logs_scanned = IN("coverage_logs_scanned"),
+            coverage_no_rules = IN("coverage_no_rules"),
+            empty_phrases = IN("empty_phrases"),
+            empty_zero = IN("empty_zero"),
+            empty_activity = IN("empty_activity"),
+            load_failed = IN("load_failed")
         },
         pinnedCoverage = new
         {
@@ -313,35 +303,5 @@ public class UiStringsProvider(LocalizationService loc)
             empty = PC("empty"),
             load_failed = PC("load_failed")
         },
-        synonymCoverage = new
-        {
-            generated_at = SC("generated_at"),
-            prune_in_synonyms = SC("prune_in_synonyms"),
-            add_in_synonyms = SC("add_in_synonyms"),
-            empty = SC("empty"),
-            no_logs = SC("no_logs"),
-            load_failed = SC("load_failed")
-        },
-        contentAudit = new
-        {
-            run = CSA("run"),
-            running = CSA("running"),
-            scanned_at = CSA("scanned_at"),
-            items_scanned = CSA("items_scanned"),
-            issues_total = CSA("issues_total"),
-            kind_missing_name = CSA("kind_missing_name"),
-            kind_missing_main_body = CSA("kind_missing_main_body"),
-            kind_no_tags = CSA("kind_no_tags"),
-            kind_oversize_sort = CSA("kind_oversize_sort"),
-            col_kind = CSA("col_kind"),
-            col_name = CSA("col_name"),
-            col_type = CSA("col_type"),
-            col_detail = CSA("col_detail"),
-            col_edit = CSA("col_edit"),
-            edit = CSA("edit"),
-            empty = CSA("empty"),
-            load_failed = CSA("load_failed"),
-            run_failed = CSA("run_failed")
-        }
     };
 }

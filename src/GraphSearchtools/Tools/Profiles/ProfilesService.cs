@@ -336,7 +336,36 @@ public sealed class ProfilesService
             query = UsePinnedRegex.Replace(query, string.Empty);
         }
 
+        // Graph keys its query cache by the raw JSON bytes of the request — two
+        // logically-identical queries with the same bytes share a cache entry.
+        // For the admin preview that's the wrong default: a marketer who just
+        // saved a pin or synonym re-runs the same phrase and expects to see the
+        // edit reflected, but Graph happily serves the pre-edit response from
+        // cache (we've seen empty results persist for minutes even though the
+        // pin lives in the collection). Appending a per-call nonce comment
+        // forces a cache miss so every preview hits live data. The comment is
+        // a no-op for GraphQL semantics — it changes only the request bytes.
+        query += "\n# preview-nonce-" + Guid.NewGuid().ToString("N");
+
         var result = await _runner.RunRawAsync(query, variables: null, cancellationToken);
+
+        // Graph's `usePinned` argument bypasses the language clause in the
+        // where filter — a pin in collection "alloy-en" surfaces in BOTH the
+        // en AND sv response branches when the preview asks for locale=en
+        // (probed empirically against cg.optimizely.com). Drop hits whose
+        // Language.Name doesn't match the requested locale so the SERP shows
+        // a single branch even when pinned items spill across locales.
+        if (!string.IsNullOrEmpty(locale) && result.Hits.Count > 0)
+        {
+            var filtered = result.Hits
+                .Where(h => string.IsNullOrEmpty(h.Language)
+                    || string.Equals(h.Language, locale, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (filtered.Count != result.Hits.Count)
+            {
+                result = result with { Hits = filtered, TotalCount = filtered.Count };
+            }
+        }
 
         // Mark which hits Graph would have pinned for this phrase. Mirrors
         // Graph's usePinned semantics on the server: load the collection's
