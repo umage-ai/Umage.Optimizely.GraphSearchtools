@@ -10,6 +10,8 @@
     <p>@Loc.GetString("/graphsearchtools/tools/synonyms/description")</p>
 </div>
 
+<div id="gst-alert" class="gst-alert" hidden></div>
+
 @* Aurora Rules grid. The former "Unused" tab was rolled into the Activity
    (30d) column + an Activity filter — same data, surfaced inline instead
    of behind a tab switch so marketers see used-vs-unused at a glance. *@
@@ -47,8 +49,6 @@
     </thead>
     <tbody id="gst-syn-aurora-rows"></tbody>
 </table>
-
-<div id="gst-syn-alert" class="gst-alert" hidden></div>
 
 @* Synonym flyout — shared markup; the Aurora JS opens/closes it via GST.flyout.
    Use the absolute path so Razor's partial search doesn't spurious-404 against
