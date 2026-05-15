@@ -24,7 +24,20 @@
 (function () {
     const API = window.GST_BASE_URL + '/PinnedApi';
     const LOOKUP_API = window.GST_BASE_URL + '/ContentLookupApi';
+    const INSIGHTS_API = window.GST_BASE_URL + '/InsightsApi';
     const PINNED_STRINGS = (window.GST_STRINGS && window.GST_STRINGS.pinned) || {};
+    // Cross-profile editor — writes have no per-profile context, so attribute
+    // them to the synthesised Generic profile. PinnedApi.ResolveScope 400's
+    // any write that omits profileKey once a real profile is registered.
+    const SCOPE_QS = '&profileKey=generic';
+
+    // 30-day window for the Activity column. Matches the SynonymCoverage
+    // default so a marketer scanning both grids sees the same dataset.
+    const ACTIVITY_DAYS = 30;
+    // Long-tail head pulled from the telemetry reader. Pinned phrases tend
+    // to be brand / category terms that live well above the noise floor,
+    // so 5000 is generous; tenants with no logged traffic just see "—".
+    const ACTIVITY_TAKE = 5000;
 
     // ── Page state ─────────────────────────────────────────────────────
     const state = {
@@ -32,7 +45,12 @@
         items: [],          // flat list of every pinned item, normalised
         groups: [],         // aggregated rows
         targetNames: {},    // guidLower → name
-        sort: { key: 'modified', dir: 'desc' },
+        // Activity (30d) — populated by InsightsApi.TopPhrases. Per-group
+        // hit count, or `null` when telemetry hasn't loaded / failed / the
+        // window has zero logs (rendered as "—" rather than libellously
+        // "0" against a fresh tenant — same convention as Synonyms).
+        coverage: { loaded: false, hitsByPhrase: {}, totalHits: 0 },
+        sort: { key: 'activity', dir: 'desc' },
         filters: { q: '', collectionId: '', locale: '' },
         editing: null       // current group being edited in the flyout
     };
@@ -80,6 +98,13 @@
         // Add-target button inside flyout
         const addTargetBtn = document.getElementById('gst-pinfly-add-target');
         if (addTargetBtn) addTargetBtn.addEventListener('click', onAddTarget);
+        // Activate/Deactivate CTA — flips state.editing.isActive and re-renders.
+        const toggleActiveBtn = document.getElementById('gst-pinfly-toggle-active');
+        if (toggleActiveBtn) toggleActiveBtn.addEventListener('click', function () {
+            if (!state.editing) return;
+            state.editing.isActive = !state.editing.isActive;
+            renderActiveButton();
+        });
         // Delete button — only visible in edit mode (toggled in populateFlyout).
         const deleteBtn = document.getElementById('gst-pinfly-delete');
         if (deleteBtn) deleteBtn.addEventListener('click', onDelete);
@@ -127,15 +152,71 @@
             .then(function () {
                 aggregate();
                 populateLocaleFilter();
+                // Paint immediately with activity=unknown so the grid doesn't
+                // wait on the telemetry call (it can be slow on tenants with
+                // large logs). Then refresh once coverage lands.
+                renderGrid();
+                return loadCoverage();
+            })
+            .then(function () {
+                applyCoverage();
                 renderGrid();
             })
             .catch(function (err) {
                 console.error('Aurora pinned load failed', err);
                 const tbody = document.getElementById('gst-pin-aurora-rows');
-                tbody.innerHTML = '<tr><td colspan="7" class="gst-empty"><p>' +
+                tbody.innerHTML = '<tr><td colspan="6" class="gst-empty"><p>' +
                     GST.escHtml(GST.s('pinned.load_failed', 'Could not load pinned items.')) +
                     '</p></td></tr>';
             });
+    }
+
+    // Pulls the 30-day TopPhrases head and folds it into a phrase→hits
+    // map. Pinned phrases live in a `phrases` field that's free-form
+    // comma-joined ("warranty, returns") so we lower-case + trim every
+    // token at lookup time rather than at index time.
+    function loadCoverage() {
+        return GST.fetchJson(INSIGHTS_API + '/TopPhrases?days=' + ACTIVITY_DAYS + '&take=' + ACTIVITY_TAKE)
+            .then(function (rows) {
+                const map = {};
+                let total = 0;
+                (rows || []).forEach(function (r) {
+                    const phrase = (r.phrase || '').trim().toLowerCase();
+                    if (!phrase) return;
+                    const hits = (typeof r.count === 'number') ? r.count : 0;
+                    // Same phrase can land multiple times under different
+                    // profile/locale splits — accumulate rather than
+                    // overwrite, matching the SynonymCoverage roll-up.
+                    map[phrase] = (map[phrase] || 0) + hits;
+                    total += hits;
+                });
+                state.coverage.hitsByPhrase = map;
+                state.coverage.totalHits = total;
+                state.coverage.loaded = true;
+            })
+            .catch(function () {
+                state.coverage.loaded = false;
+                state.coverage.hitsByPhrase = {};
+                state.coverage.totalHits = 0;
+            });
+    }
+
+    function applyCoverage() {
+        const noLogs = state.coverage.loaded && state.coverage.totalHits === 0;
+        state.groups.forEach(function (g) {
+            if (!state.coverage.loaded || noLogs) { g.hits = null; return; }
+            // Phrase aliases ("warranty, returns") count as one pin but
+            // each alias can earn its own hits — sum the comma-split
+            // tokens so the column reflects total reach.
+            let sum = 0;
+            (g.phrase || '').split(',').forEach(function (p) {
+                const key = p.trim().toLowerCase();
+                if (!key) return;
+                const h = state.coverage.hitsByPhrase[key];
+                if (typeof h === 'number') sum += h;
+            });
+            g.hits = sum;
+        });
     }
 
     function resolveTargetNames(items) {
@@ -174,34 +255,18 @@
                     collectionKey: it.collectionKey,
                     locale: it.language || '',
                     items: [],
-                    modified: ''
+                    hits: null
                 };
             }
             const g = groups[key];
             g.items.push(it);
-            if (it.updatedAt && it.updatedAt > g.modified) g.modified = it.updatedAt;
         });
         state.groups = Object.keys(groups).map(function (k) {
             const g = groups[k];
             g.items.sort(function (a, b) { return (a.priority || 0) - (b.priority || 0); });
             g.activeCount = g.items.filter(function (i) { return i.isActive; }).length;
-            g.state = computeState(g);
             return g;
         });
-    }
-
-    function computeState(g) {
-        // Past effective-to on any item → Expired; otherwise Mixed/Active/Inactive.
-        const now = new Date();
-        const expired = g.items.some(function (i) {
-            if (!i.effectiveTo) return false;
-            const t = new Date(i.effectiveTo);
-            return !isNaN(t.getTime()) && t < now;
-        });
-        if (expired) return 'expired';
-        if (g.activeCount === g.items.length) return 'active';
-        if (g.activeCount === 0) return 'inactive';
-        return 'mixed';
     }
 
     function populateCollectionFilter() {
@@ -238,7 +303,7 @@
 
     function renderLoading(tbody) {
         const msg = GST.s('shared.loading', 'Loading…');
-        tbody.innerHTML = '<tr><td colspan="7" class="gst-muted">' + GST.escHtml(msg) + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="gst-muted">' + GST.escHtml(msg) + '</td></tr>';
     }
 
     function renderGrid() {
@@ -259,7 +324,7 @@
         const sorted = sortGroups(filtered);
 
         if (sorted.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="gst-empty"><p>' +
+            tbody.innerHTML = '<tr><td colspan="6" class="gst-empty"><p>' +
                 GST.escHtml(GST.s('pinned.empty_grid', 'No pinned items yet. Click "Add" to create one.')) +
                 '</p></td></tr>';
             return;
@@ -274,10 +339,9 @@
             return '<tr class="is-selectable" data-group-key="' + GST.escHtml(g.key) + '">' +
                 '<td><a href="#" class="gst-table__link" data-row-link>' + GST.escHtml(g.phrase || '(empty)') + '</a></td>' +
                 '<td>' + GST.escHtml(g.collectionKey || '') + '</td>' +
-                '<td>' + GST.escHtml(g.locale || '') + '</td>' +
+                '<td>' + renderLocaleCell(g.locale) + '</td>' +
                 '<td>' + GST.escHtml(itemsTmpl.replace('%1', g.items.length)) + '</td>' +
-                '<td>' + renderStateBadge(g.state) + '</td>' +
-                '<td>' + GST.escHtml(formatWhen(g.modified)) + '</td>' +
+                '<td>' + renderActivityCell(g.hits) + '</td>' +
                 '<td class="gst-table__actions">' +
                 '<button class="gst-rowdelete" data-row-delete title="' + GST.escHtml(deleteLabel) + '" aria-label="' + GST.escHtml(deleteLabel) + '">' + trash + '</button>' +
                 '</td>' +
@@ -304,11 +368,11 @@
 
     // Delete every item in the group via N sequential DELETEs. Used by the
     // row-menu's Delete action (and shares plumbing with the flyout's own
-    // Delete button via onDelete). Confirms before issuing the requests.
+    // Delete button via onDelete). One-click — no confirmation; partial
+    // failures fall back to a full reload so the grid can't go out of sync.
     function deleteGroup(groupKey) {
         const g = state.groups.find(function (x) { return x.key === groupKey; });
         if (!g) return;
-        if (!window.confirm(GST.s('pinned.confirm_delete', 'Delete this pinned item?'))) return;
         const ops = g.items.map(function (it) {
             return { kind: 'delete', id: it.id, collectionId: it.collectionId };
         });
@@ -320,9 +384,41 @@
             if (errors > 0) {
                 window.alert(GST.s('pinned.save_failed', '%1 of %2 changes failed.')
                     .replace('%1', errors).replace('%2', ops.length));
+                loadAll();
+                return;
             }
-            loadAll();
+            removeItemsLocally(g.items);
         });
+    }
+
+    // Drops the given items from state.items, re-aggregates the groups, and
+    // repaints the grid — avoids a network round-trip on the happy path.
+    // Only id-bearing items are matched; an item with no id (a never-saved
+    // create that shouldn't reach this path anyway) would otherwise key the
+    // ids set on undefined and purge every other unsaved item with it.
+    function removeItemsLocally(items) {
+        const ids = {};
+        let expected = 0;
+        items.forEach(function (it) {
+            if (it && it.id) { ids[it.id] = true; expected++; }
+        });
+        if (expected === 0) return;
+        const before = state.items.length;
+        state.items = state.items.filter(function (it) { return !ids[it.id]; });
+        const removed = before - state.items.length;
+        if (removed !== expected) {
+            // Local state diverged from what we expected to splice — bail to
+            // a full reload so the grid can't show stale or missing rows.
+            console.warn('Pinned: removeItemsLocally expected ' + expected +
+                ' removals but stripped ' + removed + '; reloading.');
+            loadAll();
+            return;
+        }
+        aggregate();
+        // applyCoverage repopulates g.hits on the rebuilt groups so the
+        // Activity column doesn't fall back to "—" for every surviving row.
+        applyCoverage();
+        renderGrid();
     }
 
     function sortGroups(arr) {
@@ -334,9 +430,15 @@
                 case 'collection': va = (a.collectionKey || '').toLowerCase(); vb = (b.collectionKey || '').toLowerCase(); break;
                 case 'locale':     va = a.locale || ''; vb = b.locale || ''; break;
                 case 'items':      va = a.items.length; vb = b.items.length; break;
-                case 'state':      va = a.state; vb = b.state; break;
-                case 'modified':
-                default:           va = a.modified || ''; vb = b.modified || ''; break;
+                // Activity sort: numeric. Coverage-not-loaded groups
+                // (hits === null) sort lowest so they don't muddy a
+                // "most active first" descending scan; ascending puts
+                // them after 0-hit groups. Matches Synonyms.
+                case 'activity':
+                default:
+                    va = (typeof a.hits === 'number') ? a.hits : -1;
+                    vb = (typeof b.hits === 'number') ? b.hits : -1;
+                    break;
             }
             if (va < vb) return -1 * dir;
             if (va > vb) return 1 * dir;
@@ -344,22 +446,27 @@
         });
     }
 
-    function renderStateBadge(s) {
-        const label = GST.s('pinned.state_' + s, s);
-        const cls = s === 'active' ? 'gst-badge--success'
-            : s === 'inactive' ? 'gst-badge--default'
-            : s === 'expired' ? 'gst-badge--danger'
-            : 'gst-badge--warning';
-        return '<span class="gst-badge ' + cls + '">' + GST.escHtml(label) + '</span>';
+    // Pin locale=null means "applies regardless of locale" (Graph stores
+    // Language as null). Render that explicitly so the column doesn't read
+    // as missing data — same text weight as a real locale code so the row
+    // doesn't look disabled.
+    function renderLocaleCell(locale) {
+        if (locale) return GST.escHtml(locale);
+        return GST.escHtml(GST.s('pinFlyout.localeAll', 'All locales'));
     }
 
-    function formatWhen(iso) {
-        if (!iso) return '';
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return iso;
-        const pad = function (n) { return n < 10 ? '0' + n : '' + n; };
-        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
-            ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    function renderActivityCell(hits) {
+        if (typeof hits !== 'number') {
+            return '<span class="gst-muted">' +
+                GST.escHtml(GST.s('pinned.activity_unknown', '—')) +
+                '</span>';
+        }
+        if (hits === 0) {
+            // Mute the zero so an inactive pin reads as "needs attention"
+            // without screaming colour at every fresh-tenant row.
+            return '<span class="gst-muted">0</span>';
+        }
+        return '<strong>' + hits.toLocaleString() + '</strong>';
     }
 
     // ── Flyout — open / populate ───────────────────────────────────────
@@ -443,18 +550,33 @@
         const localeSel = document.getElementById('gst-pinfly-locale');
         const knownLocales = collectLocales();
         if (g.locale && knownLocales.indexOf(g.locale) === -1) knownLocales.unshift(g.locale);
-        localeSel.innerHTML = '<option value=""></option>' + knownLocales.map(function (l) {
-            return '<option value="' + GST.escHtml(l) + '"' + (l === g.locale ? ' selected' : '') + '>' + GST.escHtml(l) + '</option>';
-        }).join('');
+        // Empty value maps to Graph's null Language ("applies regardless of
+        // locale"). Label it explicitly so it doesn't read as "no choice yet".
+        const allLabel = GST.escHtml(GST.s('pinFlyout.localeAll', 'All locales'));
+        localeSel.innerHTML = '<option value=""' + (g.locale ? '' : ' selected') + '>' + allLabel + '</option>' +
+            knownLocales.map(function (l) {
+                return '<option value="' + GST.escHtml(l) + '"' + (l === g.locale ? ' selected' : '') + '>' + GST.escHtml(l) + '</option>';
+            }).join('');
         // Effective until — use the first item's effectiveTo (if any).
         const first = g.items[0];
         document.getElementById('gst-pinfly-effective').value =
             first && first.effectiveTo ? String(first.effectiveTo).slice(0, 10) : '';
-        // Active checkbox — true if any item is active.
-        document.getElementById('gst-pinfly-active').checked = !first || first.isActive !== false;
+        // Active state — true if the first item is active (or no items yet).
+        state.editing.isActive = !first || first.isActive !== false;
+        renderActiveButton();
 
         renderTargetList();
         checkConflicts(g.phrase || '', g.locale || '');
+    }
+
+    function renderActiveButton() {
+        const btn = document.getElementById('gst-pinfly-toggle-active');
+        if (!btn || !state.editing) return;
+        const isActive = state.editing.isActive;
+        btn.textContent = isActive
+            ? GST.s('pinFlyout.deactivate', 'Deactivate')
+            : GST.s('pinFlyout.activate', 'Activate');
+        btn.classList.toggle('gst-btn--danger', isActive);
     }
 
     function collectLocales() {
@@ -470,16 +592,14 @@
         count.textContent = '(' + targets.length + ')';
         if (targets.length === 0) {
             host.innerHTML = '<div class="gst-muted" style="padding:8px 0">' +
-                GST.escHtml(GST.s('pinFlyout.targetsHint', '')) + '</div>';
+                GST.escHtml(GST.s('pinFlyout.targetsEmpty', 'No targets yet.')) + '</div>';
             return;
         }
         host.innerHTML = targets.map(function (t, idx) {
-            const sub = t.targetKey && t.targetKey !== t.name ? t.targetKey : '';
             return '<div class="gst-target-row" draggable="true" data-idx="' + idx + '">' +
                 '<span class="gst-target-row__drag" aria-hidden="true"></span>' +
                 '<span class="gst-target-row__body">' +
                     '<span class="gst-target-row__name">' + GST.escHtml(t.name || t.targetKey || '(empty)') + '</span>' +
-                    (sub ? '<span class="gst-target-row__sub">' + GST.escHtml(sub) + '</span>' : '') +
                 '</span>' +
                 '<button type="button" class="gst-target-row__remove" data-remove="' + idx + '" aria-label="Remove">×</button>' +
                 '</div>';
@@ -587,18 +707,19 @@
         e.preventDefault();
         if (!state.editing || state.editing.mode !== 'edit') return;
         const g = state.editing.group;
-        if (!window.confirm(GST.s('pinned.confirm_delete', 'Delete this pinned item?'))) return;
         const btn = e.currentTarget;
         const ops = g.items.map(function (it) {
             return { kind: 'delete', id: it.id, collectionId: it.collectionId };
         });
         runOps(ops, btn, g.collectionId).then(function (errors) {
+            GST.flyout.close('pin');
             if (errors > 0) {
                 window.alert(GST.s('pinned.save_failed', '%1 of %2 changes failed.')
                     .replace('%1', errors).replace('%2', ops.length));
+                loadAll();
+                return;
             }
-            GST.flyout.close('pin');
-            loadAll();
+            removeItemsLocally(g.items);
         });
     }
 
@@ -612,7 +733,7 @@
         const newPhrase = document.getElementById('gst-pinfly-phrase').value.trim();
         const newLocale = document.getElementById('gst-pinfly-locale').value.trim();
         const newEffective = document.getElementById('gst-pinfly-effective').value.trim() || null;
-        const newActive = document.getElementById('gst-pinfly-active').checked;
+        const newActive = state.editing.isActive !== false;
 
         if (!newPhrase) { window.alert(GST.s('pinned.error_phrase_and_content_required', 'Phrase and content are required.')); return; }
         if (state.editing.targets.length === 0) { window.alert(GST.s('pinned.error_phrase_and_content_required', 'Phrase and content are required.')); return; }
@@ -717,10 +838,10 @@
             btn.textContent = saveTmpl.replace('%1', done).replace('%2', ops.length);
             switch (op.kind) {
                 case 'create':
-                    return GST.postJson(API + '/CreateItem?collectionId=' + encodeURIComponent(op.collectionId), op.payload);
+                    return GST.postJson(API + '/CreateItem?collectionId=' + encodeURIComponent(op.collectionId) + SCOPE_QS, op.payload);
                 case 'update':
                     return fetch(API + '/UpdateItem?collectionId=' + encodeURIComponent(op.collectionId) +
-                        '&id=' + encodeURIComponent(op.id), {
+                        '&id=' + encodeURIComponent(op.id) + SCOPE_QS, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                         body: JSON.stringify(op.payload)
@@ -730,10 +851,16 @@
                     });
                 case 'delete':
                     return fetch(API + '/DeleteItem?collectionId=' + encodeURIComponent(op.collectionId) +
-                        '&id=' + encodeURIComponent(op.id), {
+                        '&id=' + encodeURIComponent(op.id) + SCOPE_QS, {
                         method: 'DELETE',
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     }).then(function (r) {
+                        // 404 means the item is already gone — that's the desired end
+                        // state, so treat as success. Without this, rapid clicks on
+                        // adjacent rows or a row whose first delete is mid-flight
+                        // surface as "1 of 1 changes failed" alerts even though the
+                        // user got what they wanted.
+                        if (r.status === 404) return;
                         if (!r.ok) throw new Error('Delete failed ' + r.status);
                     });
             }

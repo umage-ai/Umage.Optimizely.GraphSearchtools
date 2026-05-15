@@ -36,7 +36,6 @@
         <health>Health</health>
         <autocomplete>Autocomplete check</autocomplete>
         <savedqueries>Saved Queries</savedqueries>
-        <about>About</about>
       </menu>
 
       <tools>
@@ -52,9 +51,9 @@
           <title>Pinned</title>
           <description>Pin specific content to the top of the results for chosen phrases, per collection and locale.</description>
           <filter_placeholder>Filter by phrase or content...</filter_placeholder>
-          <all_sites>All sites</all_sites>
-          <add>Add</add>
-          <col_site>Site</col_site>
+          <all_sites>All collections</all_sites>
+          <add>Add pin</add>
+          <col_site>Collection</col_site>
           <col_phrase>Phrase</col_phrase>
           <col_content>Content</col_content>
         </pinned>
@@ -333,7 +332,7 @@
           <synonyms>
             <addFirst>Add your first rule</addFirst>
             <addRow>Add rule</addRow>
-            <colScope>Scope</colScope>
+            <colScope>Locale</colScope>
             <colFilterRule>Filter rule…</colFilterRule>
             <colFilterScope>Filter scope…</colFilterScope>
             <discard>Discard changes</discard>
@@ -410,15 +409,6 @@
         </time>
       </profiles>
 
-      <about>
-        <title>About Graph Search Tools</title>
-        <description>Editor and admin tooling for Optimizely Graph: pinned results, synonyms, query playground, and relevancy tuning.</description>
-        <version>Version</version>
-        <repository>Repository</repository>
-        <license>License</license>
-        <poweredby>Powered by umage.ai</poweredby>
-      </about>
-
       <ui>
         <shared>
           <loading>Loading...</loading>
@@ -458,7 +448,7 @@
         </graphsearchtools>
         <pinned>
           <request_failed>Request failed</request_failed>
-          <all_sites>All sites</all_sites>
+          <all_sites>All collections</all_sites>
           <action_save>Save</action_save>
           <action_delete>Delete</action_delete>
           <search_placeholder>Search for content...</search_placeholder>
@@ -468,8 +458,6 @@
           <deleted>Pinned item deleted.</deleted>
           <confirm_delete>Delete this pinned item?</confirm_delete>
           <no_sites>No sites available.</no_sites>
-          <tab_pins>Pins</tab_pins>
-          <tab_audit>Audit</tab_audit>
         </pinned>
         <synonyms>
           <request_failed>Request failed</request_failed>
@@ -494,12 +482,14 @@
           <phraseLabel>Phrase(s)</phraseLabel>
           <phraseHint>Comma-separated; each phrase triggers the pin.</phraseHint>
           <targetsLabel>Targets</targetsLabel>
-          <targetsAdd>+ Add another target</targetsAdd>
+          <targetsAdd>+ Add target</targetsAdd>
           <targetsHint>Targets are pinned to the top of the results in the order shown. Drag the grip handle to reorder, click × to remove.</targetsHint>
           <localeLabel>Locale</localeLabel>
+          <localeAll>All locales</localeAll>
           <effectiveLabel>Effective until</effectiveLabel>
           <effectiveHint>Blank = never.</effectiveHint>
-          <activeLabel>Active</activeLabel>
+          <activate>Activate</activate>
+          <deactivate>Deactivate</deactivate>
           <conflictPrefix>Conflict:</conflictPrefix>
           <conflictBody>phrase %1 is also pinned in %2.</conflictBody>
           <save>Save</save>

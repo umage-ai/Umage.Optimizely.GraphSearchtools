@@ -44,7 +44,6 @@
         <searchLogs>Search logs</searchLogs>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
-        <about>About</about>
       </menu>
 
       <tools>
@@ -60,18 +59,13 @@
           <title>Pinned</title>
           <description>Pin specific content to the top of the results for chosen phrases, per collection and locale.</description>
           <filter_placeholder>Filter by phrase or content...</filter_placeholder>
-          <all_sites>All sites</all_sites>
-          <add>Add</add>
-          <col_site>Site</col_site>
+          <all_sites>All collections</all_sites>
+          <add>Add pin</add>
+          <col_site>Collection</col_site>
           <col_phrase>Phrase</col_phrase>
           <col_content>Content</col_content>
           <col_items>Pinned items</col_items>
-          <col_state>State</col_state>
-          <col_modified>Modified</col_modified>
-          <state_active>Active</state_active>
-          <state_inactive>Inactive</state_inactive>
-          <state_mixed>Mixed</state_mixed>
-          <state_expired>Expired</state_expired>
+          <col_activity>Activity (30d)</col_activity>
           <items_count>%1 items</items_count>
           <empty_grid>No pinned items yet. Click "Add" to create one.</empty_grid>
           <load_failed>Could not load pinned items.</load_failed>
@@ -400,7 +394,7 @@
           <synonyms>
             <addFirst>Add your first rule</addFirst>
             <addRow>Add rule</addRow>
-            <colScope>Scope</colScope>
+            <colScope>Locale</colScope>
             <colFilterRule>Filter rule…</colFilterRule>
             <colFilterScope>Filter scope…</colFilterScope>
             <discard>Discard changes</discard>
@@ -479,15 +473,6 @@
         </time>
       </profiles>
 
-      <about>
-        <title>About Graph Search Tools</title>
-        <description>Editor and admin tooling for Optimizely Graph: pinned results, synonyms, query playground, and relevancy tuning.</description>
-        <version>Version</version>
-        <repository>Repository</repository>
-        <license>License</license>
-        <poweredby>Powered by umage.ai</poweredby>
-      </about>
-
       <ui>
         <shared>
           <loading>Loading...</loading>
@@ -510,7 +495,6 @@
           <copied>Copied</copied>
           <pagerLabel>Pagination</pagerLabel>
           <pagerStatus>Page %1 of %2</pagerStatus>
-          <help>Help</help>
           <rowActions>Row actions</rowActions>
         </shared>
         <components>
@@ -529,7 +513,7 @@
         </graphsearchtools>
         <pinned>
           <request_failed>Request failed</request_failed>
-          <all_sites>All sites</all_sites>
+          <all_sites>All collections</all_sites>
           <action_save>Save</action_save>
           <action_delete>Delete</action_delete>
           <search_placeholder>Search for content...</search_placeholder>
@@ -539,8 +523,7 @@
           <deleted>Pinned item deleted.</deleted>
           <confirm_delete>Delete this pinned item?</confirm_delete>
           <no_sites>No sites available.</no_sites>
-          <tab_pins>Pins</tab_pins>
-          <tab_audit>Audit</tab_audit>
+          <activity_unknown>—</activity_unknown>
           <target_unresolved>Content not in index</target_unresolved>
           <target_pick>Pick content…</target_pick>
           <items_count>%1 items</items_count>
@@ -549,10 +532,6 @@
           <save_failed>%1 of %2 changes failed. See console for details.</save_failed>
           <save_progress>Saving %1 of %2…</save_progress>
           <conflict>This phrase is also pinned in: %1</conflict>
-          <state_active>Active</state_active>
-          <state_inactive>Inactive</state_inactive>
-          <state_mixed>Mixed</state_mixed>
-          <state_expired>Expired</state_expired>
         </pinned>
         <synonyms>
           <request_failed>Request failed</request_failed>
@@ -582,12 +561,14 @@
           <phraseLabel>Phrase(s)</phraseLabel>
           <phraseHint>Comma-separated; each phrase triggers the pin.</phraseHint>
           <targetsLabel>Targets</targetsLabel>
-          <targetsAdd>+ Add another target</targetsAdd>
+          <targetsAdd>+ Add target</targetsAdd>
           <targetsHint>Targets are pinned to the top of the results in the order shown. Drag the grip handle to reorder, click × to remove.</targetsHint>
           <localeLabel>Locale</localeLabel>
+          <localeAll>All locales</localeAll>
           <effectiveLabel>Effective until</effectiveLabel>
           <effectiveHint>Blank = never.</effectiveHint>
-          <activeLabel>Active</activeLabel>
+          <activate>Activate</activate>
+          <deactivate>Deactivate</deactivate>
           <conflictPrefix>Conflict:</conflictPrefix>
           <conflictBody>phrase %1 is also pinned in %2.</conflictBody>
           <save>Save</save>

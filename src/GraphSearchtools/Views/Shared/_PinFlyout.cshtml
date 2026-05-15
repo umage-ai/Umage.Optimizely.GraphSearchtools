@@ -51,11 +51,12 @@
             </div>
         </div>
 
+        @* Activate/Deactivate is a CTA, not a passive checkbox — the button
+           label inverts the current state ("Deactivate" when on, "Activate"
+           when off) and toggling here only updates the in-memory edit; the
+           change is persisted by Save. *@
         <div class="gst-field">
-            <label class="gst-field__checkbox">
-                <input type="checkbox" id="gst-pinfly-active" checked />
-                @F("activeLabel")
-            </label>
+            <button type="button" class="gst-btn" id="gst-pinfly-toggle-active"></button>
         </div>
 
         <div id="gst-pinfly-conflict" class="gst-flyout__notice" hidden>

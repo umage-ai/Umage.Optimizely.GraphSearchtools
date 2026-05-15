@@ -475,7 +475,6 @@
             renderGrid();
             return;
         }
-        if (!confirm(STRINGS.confirm_delete || 'Delete this pinned item?')) return;
         ajax(BASE + '/PinnedApi/DeleteItem?collectionId=' + encodeURIComponent(row.collectionId) + '&id=' + encodeURIComponent(row.id), {
             method: 'DELETE'
         }).then(function () {
@@ -1181,7 +1180,6 @@
                 renderRows();
                 return;
             }
-            if (!confirm(STRINGS.confirm_delete || 'Delete this pinned item?')) return;
             var qs = '?collectionId=' + encodeURIComponent(state.collectionId)
                 + '&id=' + encodeURIComponent(row.id)
                 + '&profileKey=' + encodeURIComponent(profileKey)
