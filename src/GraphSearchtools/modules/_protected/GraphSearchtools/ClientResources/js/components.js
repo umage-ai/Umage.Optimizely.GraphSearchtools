@@ -7,7 +7,7 @@
  * Row menu:        GST.rowMenu(anchor, [{ label, onSelect, danger? }, ...])
  */
 (function () {
-    const API = window.GST_BASE_URL + 'ComponentsApi';
+    const API = window.GST_BASE_URL + '/ComponentsApi';
 
     // ── Row menu (Aurora ⋯ popover) ────────────────────────────────────
     // Anchors a small popover beneath the ⋯ button and renders a list of
@@ -223,7 +223,7 @@
     GST.contentPicker = function (opts = {}) {
         return new Promise((resolve) => {
             const rootId = opts.rootId || 0;
-            const { body, close } = GST.openDialog(opts.title || GST.s('components.picker_title', 'Select Content'), { wide: false });
+            const { body, close } = GST.openDialog(opts.title || GST.s('components.picker_title', 'Select Content'), { narrow: true });
 
             let selectedItem = null;
             let mode = 'tree'; // 'tree' or 'search'
