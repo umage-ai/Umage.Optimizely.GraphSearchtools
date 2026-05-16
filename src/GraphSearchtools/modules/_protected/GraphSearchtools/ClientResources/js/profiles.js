@@ -302,6 +302,7 @@
         // activation: the Aurora module owns its own DOM and binding it
         // up-front would slow down the initial Insights paint.
         mountInsights();
+        loadKpis(key);
 
         // Inject copy buttons into any code blocks marked [data-gst-copy].
         // The Razor markup wraps the GraphQL doc <pre> in such a block; this
@@ -966,14 +967,21 @@
     var _auditLoaded = false;
 
     /**
-     * Aurora Phase 3C — write a number into the detail-page stat row. Each
-     * cell carries data-stat="pinned" / "synonyms" / "recentEdits"; the JS
-     * that loads the underlying data calls this when its rows arrive.
+     * Load the 30-day search-activity KPIs for this profile and render them
+     * into the #gst-prof-kpis host. Shares the renderer (and therefore the
+     * visual treatment) with the global Insights tool — the only difference
+     * is the ?profileKey scope on the API call.
      */
-    function setStat(key, value) {
-        var el = document.querySelector('.gst-prof-stat-row [data-stat="' + key + '"]');
-        if (!el) return;
-        el.textContent = (value == null) ? '—' : String(value);
+    function loadKpis(profileKey) {
+        if (!window.GST || typeof window.GST.renderKpiCard !== 'function') return;
+        var host = document.getElementById('gst-prof-kpis');
+        if (!host) return;
+        var BASE = window.GST_BASE_URL || '';
+        var url = BASE + '/InsightsApi/SearchKpis?profileKey=' + encodeURIComponent(profileKey);
+        GST.renderKpiCardLoading(host);
+        GST.fetchJson(url)
+            .then(function (k) { GST.renderKpiCard(host, k); })
+            .catch(function () { GST.renderKpiCardError(host); });
     }
 
     function loadAudit(key) {
@@ -990,7 +998,6 @@
             if (!rows || rows.length === 0) {
                 GST.showEmpty(host, s('profiles.detail.audit.empty', 'No edits recorded yet.'));
                 if (badge) badge.hidden = true;
-                setStat('recentEdits', 0);
                 return;
             }
             renderAudit(host, rows);
@@ -998,26 +1005,11 @@
                 badge.hidden = false;
                 badge.textContent = rows.length;
             }
-            // Stat-row "Recent edits" counts everything in the last 7 days
-            // rather than the full take, so the number feels like a useful
-            // "what's been touched recently" signal rather than a paging cap.
-            var cutoff = Date.now() - 7 * 86400e3;
-            var recent = rows.filter(function (r) {
-                var t = Date.parse(r.at);
-                return !isNaN(t) && t >= cutoff;
-            }).length;
-            setStat('recentEdits', recent);
         }).catch(function(err) {
             host.innerHTML = '<p class="gst-muted">' + escHtml(s('profiles.requestFailed', 'Failed to load audit log.')) + '</p>';
             console.error('Audit log failed', err);
         });
     }
-
-    // Expose the setter so the Aurora pinned / synonyms modules can fill
-    // their respective stat cells when their data loads. Currently unused
-    // post-Aurora (the modules don't yet emit a "stats ready" signal);
-    // retained as the integration point for the phase-2 wiring.
-    GST.profilesDetailSetStat = setStat;
 
     function renderAudit(host, rows) {
         var html = '<table class="gst-table gst-prof-audit-table"><thead><tr>'

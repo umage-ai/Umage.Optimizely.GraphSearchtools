@@ -119,8 +119,13 @@ public sealed class InsightsService
     /// ending now-UTC) regardless of the page-level toggle, and the spark
     /// arrays are always 30 entries with missing days zero-filled so callers
     /// can render a fixed-width chart without conditional plumbing.
+    /// When <paramref name="profileKey"/> is supplied the read is scoped to
+    /// one profile (used by the Profile detail surface); omitted means the
+    /// global aggregate (used by the standalone Insights tool).
     /// </summary>
-    public async Task<InsightsSearchKpis> SearchKpisAsync(CancellationToken cancellationToken = default)
+    public async Task<InsightsSearchKpis> SearchKpisAsync(
+        string? profileKey = null,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         // Today (UTC) + 29 prior days = 30 calendar days. Anchoring on the
@@ -128,7 +133,8 @@ public sealed class InsightsService
         // a day, instead of sliding by the second.
         var since = now.Date.AddDays(-(SearchKpisWindowDays - 1));
 
-        var query = new TelemetryQuery(since, now, Take: 0);
+        var profile = string.IsNullOrWhiteSpace(profileKey) ? null : profileKey;
+        var query = new TelemetryQuery(since, now, Take: 0, ProfileKey: profile);
         var daily = await _reader.DailyTotalsAsync(query, cancellationToken);
 
         var byDate = daily.ToDictionary(d => d.DateUtc.Date);

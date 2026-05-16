@@ -282,6 +282,136 @@
         el.appendChild(svg);
     };
 
+    // ── KPI card renderer ──────────────────────────────────────────
+    // Fills a .gst-kpis host with three tiles (Searches / CTR / Zero
+    // results) sourced from an InsightsSearchKpis payload. Both the
+    // global Insights tool and the per-profile detail surface call this
+    // — same wire format, same visual treatment, only the profileKey on
+    // the API call differs.
+    //
+    // Usage:
+    //   GST.renderKpiCard('#gst-insights-kpis', kpisFromApi);
+    //   GST.renderKpiCard(hostEl, kpisFromApi, { strings: customStrings });
+    //
+    // The helper reads localized labels from window.GST_STRINGS.insights
+    // by default; pass `opts.strings` to override (e.g. a profile-scoped
+    // namespace if one is added later).
+    GST.renderKpiCard = function (host, kpis, opts) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        opts = opts || {};
+        const k = kpis || {};
+        const days = k.windowDays || 30;
+        const strings = opts.strings || (window.GST_STRINGS && window.GST_STRINGS.insights) || {};
+
+        function formatInt(n) {
+            if (n == null || isNaN(n)) return '0';
+            try { return Number(n).toLocaleString(); } catch (e) { return String(n); }
+        }
+        function formatPct(p) {
+            if (p == null || isNaN(p)) return '0%';
+            return (Math.round(p * 10) / 10).toFixed(1) + '%';
+        }
+        function tmpl(t, value, fallback) {
+            const s = t || fallback || '%1';
+            if (Array.isArray(value)) {
+                return s.replace(/%(\d+)/g, function (_, n) {
+                    const idx = parseInt(n, 10) - 1;
+                    return idx >= 0 && idx < value.length ? String(value[idx]) : '';
+                });
+            }
+            return s.replace('%1', String(value));
+        }
+        function daysAgoLabel(d, i) {
+            const ago = d - 1 - i;
+            if (ago === 0) {
+                return (window.GST_STRINGS && window.GST_STRINGS.shared && window.GST_STRINGS.shared.today) || 'today';
+            }
+            return tmpl(strings.kpi_days_ago, ago, '%1d ago');
+        }
+        function esc(s) {
+            if (s == null) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        const tiles = [
+            {
+                key: 'searches',
+                label: strings.kpi_searches || 'Searches',
+                value: formatInt(k.totalSearches || 0),
+                series: k.sparkSearches || [],
+                fmt: function (v) { return formatInt(v) + ' searches'; }
+            },
+            {
+                key: 'ctr',
+                label: strings.kpi_ctr || 'Click-through rate',
+                value: formatPct(k.ctrPct || 0),
+                series: k.sparkCtr || [],
+                fmt: function (v) { return formatPct(v); },
+                // CTR scale is [0,100] regardless of the data — fixed max
+                // means a quiet day doesn't look like a 100%-day visually.
+                max: 100
+            },
+            {
+                key: 'zero',
+                label: strings.kpi_zero || 'Zero-result searches',
+                value: formatInt(k.totalZero || 0),
+                series: k.sparkZero || [],
+                fmt: function (v) { return formatInt(v) + ' zero-result'; }
+            }
+        ];
+
+        el.innerHTML = '';
+        tiles.forEach(function (t) {
+            const tile = document.createElement('div');
+            tile.className = 'gst-kpi';
+            tile.setAttribute('data-kpi', t.key);
+            tile.innerHTML =
+                '<div class="gst-kpi__label">' + esc(t.label) +
+                ' <span class="gst-muted">(' + esc(tmpl(strings.kpi_window, days, 'last %1 days')) + ')</span></div>' +
+                '<div class="gst-kpi__value">' + esc(t.value) + '</div>' +
+                '<div class="gst-kpi__spark"></div>';
+            el.appendChild(tile);
+
+            GST.sparkline(tile.querySelector('.gst-kpi__spark'), t.series, {
+                label: t.label,
+                max: t.max,
+                formatTooltip: function (v, i) {
+                    return tmpl(strings.kpi_tooltip, [daysAgoLabel(days, i), t.fmt(v)], '%1: %2');
+                }
+            });
+        });
+    };
+
+    // Loading + error placeholders for the KPI card. Three blank tiles
+    // so layout doesn't reflow when the real data arrives.
+    GST.renderKpiCardLoading = function (host) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        const msg = (window.GST_STRINGS && window.GST_STRINGS.shared && window.GST_STRINGS.shared.loading) || 'Loading...';
+        el.innerHTML = (
+            '<div class="gst-kpi"><div class="gst-kpi__label">' + escText(msg) + '</div></div>'
+        ).repeat(3);
+    };
+
+    GST.renderKpiCardError = function (host, message) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        const msg = message ||
+            (window.GST_STRINGS && window.GST_STRINGS.insights && window.GST_STRINGS.insights.load_failed) ||
+            'Could not load.';
+        el.innerHTML = '<div class="gst-kpi"><div class="gst-kpi__label">' + escText(msg) + '</div></div>';
+    };
+
+    function escText(s) {
+        if (s == null) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
     // ── Content Picker ─────────────────────────────────────────────
     /**
      * Opens a dialog with a content tree browser + search.

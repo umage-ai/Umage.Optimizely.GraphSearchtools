@@ -246,12 +246,9 @@
             <settings>Settings</settings>
             <synonyms>Synonyms</synonyms>
           </tabs>
-          <statRow>
-            <label>Profile at a glance</label>
-            <pinnedLabel>Pinned phrases</pinnedLabel>
-            <synonymsLabel>Synonym entries</synonymsLabel>
-            <recentLabel>Edits in last 7 days</recentLabel>
-          </statRow>
+          <kpis>
+            <sectionLabel>Profile at a glance</sectionLabel>
+          </kpis>
           <insights>
             <windowLabel>Time window</windowLabel>
             <topTitle>Top phrases</topTitle>
