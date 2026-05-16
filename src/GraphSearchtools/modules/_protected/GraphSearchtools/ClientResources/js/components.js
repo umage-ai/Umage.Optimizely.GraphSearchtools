@@ -230,6 +230,10 @@
     //                  the chart is invisible to screen readers.
     //   formatTooltip: fn(value, index) → string. Drives the per-day
     //                  <title> tooltip on hover. When omitted, no tooltips.
+    //   onClick:       fn(value, index) → void. When provided, hit-areas
+    //                  become clickable (cursor + click handler).
+    //   selectedIndex: int. Highlights that data point with a filled dot
+    //                  drawn on top of the line. -1 / undefined = none.
     GST.sparkline = function (host, series, opts) {
         const el = typeof host === 'string' ? document.querySelector(host) : host;
         if (!el) return;
@@ -270,22 +274,50 @@
             line.setAttribute('points', points.join(' '));
             svg.appendChild(line);
 
-            // Invisible hit-area columns for tooltips. One per data point,
-            // half a unit on either side, so the entire chart surface is
-            // covered without gaps.
-            if (typeof opts.formatTooltip === 'function' && n > 1) {
+            // Invisible hit-area columns: one per data point, half a unit on
+            // either side so the entire surface is covered. Each carries the
+            // optional <title> tooltip and click handler.
+            const wantHits = typeof opts.formatTooltip === 'function' || typeof opts.onClick === 'function';
+            if (wantHits && n > 1) {
+                const onClick = typeof opts.onClick === 'function' ? opts.onClick : null;
                 for (let i = 0; i < n; i++) {
                     const hit = document.createElementNS(svgNs, 'rect');
-                    hit.setAttribute('class', 'gst-sparkline__hit');
+                    hit.setAttribute('class', 'gst-sparkline__hit' + (onClick ? ' is-clickable' : ''));
                     hit.setAttribute('x', String(i - 0.5));
                     hit.setAttribute('y', '0');
                     hit.setAttribute('width', '1');
                     hit.setAttribute('height', '100');
-                    const title = document.createElementNS(svgNs, 'title');
-                    title.textContent = opts.formatTooltip(data[i] || 0, i);
-                    hit.appendChild(title);
+                    if (typeof opts.formatTooltip === 'function') {
+                        const title = document.createElementNS(svgNs, 'title');
+                        title.textContent = opts.formatTooltip(data[i] || 0, i);
+                        hit.appendChild(title);
+                    }
+                    if (onClick) {
+                        (function (idx) {
+                            hit.addEventListener('click', function () { onClick(data[idx] || 0, idx); });
+                        })(i);
+                    }
                     svg.appendChild(hit);
                 }
+            }
+
+            // Highlighted dot — drawn last so it sits above the line. Uses a
+            // CSS variable so the colour can shift per surface if needed.
+            const sel = (typeof opts.selectedIndex === 'number') ? opts.selectedIndex : -1;
+            if (sel >= 0 && sel < n) {
+                const v = data[sel] || 0;
+                const h = max > 0 ? (v / max) * 100 : 0;
+                const dot = document.createElementNS(svgNs, 'circle');
+                dot.setAttribute('class', 'gst-sparkline__dot');
+                dot.setAttribute('cx', String(sel));
+                dot.setAttribute('cy', String(100 - h));
+                dot.setAttribute('r', '3');
+                // r doesn't get vector-effect: non-scaling-stroke; circles
+                // stretch under preserveAspectRatio=none. Counter that by
+                // setting r in user units small and relying on the SVG's
+                // overflow:visible — the dot reads as a small round marker
+                // in both x and y once the chart is wider than ~30px.
+                svg.appendChild(dot);
             }
         }
 
@@ -335,6 +367,27 @@
         const k = kpis || {};
         const days = k.windowDays || 30;
         const strings = opts.strings || (window.GST_STRINGS && window.GST_STRINGS.insights) || {};
+
+        // Resolve a per-index UTC date so callers can filter by day. Index
+        // 0 is the oldest entry in the spark series; the last index lands
+        // on the UTC day of `windowEndUtc`. Returns a Date at UTC midnight.
+        function dateAtIndex(i) {
+            if (!k.windowEndUtc) return null;
+            const end = new Date(k.windowEndUtc);
+            if (isNaN(end.getTime())) return null;
+            const endDay = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+            return new Date(endDay - (days - 1 - i) * 86400000);
+        }
+
+        // Cross-sparkline selection state lives on the host. Repeat calls
+        // to renderKpiCard preserve the selection across data refreshes,
+        // and a click on one sparkline highlights the same day on all three.
+        if (!el.__kpiState) el.__kpiState = { selectedIndex: -1 };
+        const state = el.__kpiState;
+        // If the new payload has a different window size, selection becomes
+        // ambiguous — clear it rather than highlight a different date.
+        if (state.lastDays != null && state.lastDays !== days) state.selectedIndex = -1;
+        state.lastDays = days;
 
         // Headline figures use the compact forms (12K / 1M / 13%). The
         // tooltip uses the same compact forms — at this precision the
@@ -393,6 +446,8 @@
         ];
 
         el.innerHTML = '';
+        const sparkHosts = [];
+        const tilesRendered = [];
         tiles.forEach(function (t) {
             const tile = document.createElement('div');
             tile.className = 'gst-kpi';
@@ -403,15 +458,51 @@
                 '<div class="gst-kpi__value">' + esc(t.value) + '</div>' +
                 '<div class="gst-kpi__spark"></div>';
             el.appendChild(tile);
-
-            GST.sparkline(tile.querySelector('.gst-kpi__spark'), t.series, {
-                label: t.label,
-                max: t.max,
-                formatTooltip: function (v, i) {
-                    return tmpl(strings.kpi_tooltip, [daysAgoLabel(days, i), t.fmt(v)], '%1: %2');
-                }
-            });
+            sparkHosts.push(tile.querySelector('.gst-kpi__spark'));
+            tilesRendered.push(t);
         });
+
+        // Render all three sparklines, sharing the selectedIndex. Click on
+        // any one toggles selection across the trio and fires onDateSelect.
+        function paintAll() {
+            tilesRendered.forEach(function (t, tileIdx) {
+                GST.sparkline(sparkHosts[tileIdx], t.series, {
+                    label: t.label,
+                    max: t.max,
+                    selectedIndex: state.selectedIndex,
+                    formatTooltip: function (v, i) {
+                        return tmpl(strings.kpi_tooltip, [daysAgoLabel(days, i), t.fmt(v)], '%1: %2');
+                    },
+                    onClick: typeof opts.onDateSelect === 'function'
+                        ? function (_v, i) {
+                            const next = state.selectedIndex === i ? -1 : i;
+                            state.selectedIndex = next;
+                            paintAll();
+                            opts.onDateSelect(next < 0 ? null : dateAtIndex(next), next);
+                        }
+                        : null
+                });
+            });
+        }
+        paintAll();
+    };
+
+    // Programmatically clear the cross-sparkline selection on a KPI card.
+    // Used by the surrounding page when the user picks a window pill or
+    // clicks the chip's × — both fire onDateSelect(null) via the helper
+    // so the caller doesn't need to know the internal state shape.
+    GST.clearKpiCardSelection = function (host) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el || !el.__kpiState || el.__kpiState.selectedIndex < 0) return false;
+        el.__kpiState.selectedIndex = -1;
+        // Re-paint each sparkline without selectedIndex. Cheapest path:
+        // walk the rendered tiles and drop the dot. Re-paint is simpler.
+        const spans = el.querySelectorAll('.gst-kpi__spark');
+        spans.forEach(function (s) {
+            const dot = s.querySelector('.gst-sparkline__dot');
+            if (dot && dot.parentNode) dot.parentNode.removeChild(dot);
+        });
+        return true;
     };
 
     // Loading + error placeholders for the KPI card. Three blank tiles

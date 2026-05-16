@@ -56,10 +56,11 @@ public sealed class InsightsService
         int take,
         string? profileKey = null,
         string? locale = null,
+        DateTime? dateUtc = null,
         CancellationToken cancellationToken = default)
     {
-        var since = DateTime.UtcNow - TimeSpan.FromDays(Math.Clamp(days, 1, 90));
-        var rows = await _logs.TopPhrasesAsync(since, take, profileKey, locale, cancellationToken);
+        var (since, until) = ResolveWindow(days, dateUtc);
+        var rows = await _logs.TopPhrasesAsync(since, take, profileKey, locale, until, cancellationToken);
         return rows.Select(r => new InsightsPhraseRow
         {
             Phrase = r.Phrase,
@@ -80,10 +81,11 @@ public sealed class InsightsService
         int take,
         string? profileKey = null,
         string? locale = null,
+        DateTime? dateUtc = null,
         CancellationToken cancellationToken = default)
     {
-        var since = DateTime.UtcNow - TimeSpan.FromDays(Math.Clamp(days, 1, 90));
-        var rows = await _logs.ZeroResultPhrasesAsync(since, take, profileKey, locale, cancellationToken);
+        var (since, until) = ResolveWindow(days, dateUtc);
+        var rows = await _logs.ZeroResultPhrasesAsync(since, take, profileKey, locale, until, cancellationToken);
         return rows.Select(r => new InsightsZeroResultRow
         {
             Phrase = r.Phrase,
@@ -91,6 +93,22 @@ public sealed class InsightsService
             Locale = r.Locale,
             ProfileKey = r.ProfileKey
         }).ToList();
+    }
+
+    /// <summary>
+    /// Resolve a phrase-lane window. When <paramref name="dateUtc"/> is set,
+    /// returns a 24h window over that UTC day (overrides <paramref name="days"/>).
+    /// Otherwise returns <c>[now - days, now]</c>.
+    /// </summary>
+    private static (DateTime since, DateTime until) ResolveWindow(int days, DateTime? dateUtc)
+    {
+        if (dateUtc.HasValue)
+        {
+            var d = dateUtc.Value.Kind == DateTimeKind.Utc ? dateUtc.Value.Date : dateUtc.Value.ToUniversalTime().Date;
+            return (d, d.AddDays(1));
+        }
+        var now = DateTime.UtcNow;
+        return (now - TimeSpan.FromDays(Math.Clamp(days, 1, 90)), now);
     }
 
     /// <summary>

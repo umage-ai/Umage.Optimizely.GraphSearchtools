@@ -296,13 +296,34 @@
             synonyms: makeSynonymsEditorShim()
         };
 
+        // Set when mountInsights() actually runs mountInsightsPanel and
+        // captures its returned control surface. The KPI card's
+        // onDateSelect callback drives setDateFilter / clearDateFilter
+        // through this handle.
+        var insightsCtl = null;
+
         // Mount the Insights tab eagerly — it's the default-visible panel,
         // so its lanes need to populate on first paint without a user click.
         // The Pinned / Synonyms Aurora grids are lazy-mounted on first tab
         // activation: the Aurora module owns its own DOM and binding it
         // up-front would slow down the initial Insights paint.
         mountInsights();
-        loadKpis(key);
+        loadKpis(key, {
+            // Sparkline click → activate Insights tab (if not already
+            // visible) and scope the lanes to that day. A null `date`
+            // arrives when the user re-clicks the same day or the chip's
+            // × button — clear the filter so the lanes revert to the
+            // pill-driven sliding window.
+            onDateSelect: function (date /*, index */) {
+                if (!insightsCtl) return;
+                if (date) {
+                    activateTab('insights');
+                    insightsCtl.setDateFilter(date);
+                } else {
+                    insightsCtl.clearDateFilter();
+                }
+            }
+        });
 
         // Inject copy buttons into any code blocks marked [data-gst-copy].
         // The Razor markup wraps the GraphQL doc <pre> in such a block; this
@@ -507,7 +528,7 @@
         function mountInsights() {
             if (insightsMounted) return;
             insightsMounted = true;
-            mountInsightsPanel({
+            insightsCtl = mountInsightsPanel({
                 profileKey: key,
                 hasGraphQLDoc: !!opts.hasGraphQLDoc,
                 queryAppliesPinned: typeof opts.queryAppliesPinned === 'boolean' ? opts.queryAppliesPinned : !!opts.hasGraphQLDoc,
@@ -515,7 +536,7 @@
                 getEditors: function () { return editors; },
                 ensureSynonymsMounted: mountSynonyms,
                 activateTab: activateTab
-            });
+            }) || null;
         }
     }
 
@@ -573,6 +594,11 @@
             window: '24h',
             inflight: null,
             takes: { top: INITIAL_TAKE, zero: INITIAL_TAKE, lowctr: INITIAL_TAKE },
+            // When set (UTC midnight), overrides the window pill — the
+            // three lanes fetch only that 24h slice. Cleared by the pill,
+            // the refresh button, the chip × button, or a same-day re-click
+            // on the KPI sparkline.
+            dateFilter: null,
             // Aurora Phase 3B: auto-fire the preview with the most-searched
             // phrase on first paint so the marketer lands on "what people
             // actually search for, and what they get back" rather than an
@@ -610,13 +636,16 @@
 
         // Window pill click → state change → refetch. Reset per-lane takes
         // so a fresh window opens compact rather than carrying over a
-        // previously-expanded row count.
+        // previously-expanded row count. Picking a pill also clears any
+        // active date filter — the gesture says "I want a range view
+        // again".
         pillEls.forEach(function (pill) {
             pill.addEventListener('click', function () {
-                if (pill.classList.contains('is-active')) return;
+                if (pill.classList.contains('is-active') && !state.dateFilter) return;
                 pillEls.forEach(function (p) { p.classList.remove('is-active'); });
                 pill.classList.add('is-active');
                 state.window = pill.dataset.window || '24h';
+                clearDateFilter(/* silent: */ true);
                 resetTakes();
                 fetchAll();
             });
@@ -642,9 +671,20 @@
         }
 
         function fetchLane(lane) {
-            var since = new Date(Date.now() - activeWindowMs()).toISOString();
+            // When a sparkline day is selected, scope every lane to that
+            // 24h UTC window. Otherwise use the pill-driven sliding window
+            // ending now.
+            var sinceMs, untilMs;
+            if (state.dateFilter) {
+                sinceMs = state.dateFilter.getTime();
+                untilMs = sinceMs + 86400000;
+            } else {
+                untilMs = Date.now();
+                sinceMs = untilMs - activeWindowMs();
+            }
             var url = SEARCHLOGS_API + '/' + LANE_API[lane]
-                + '?since=' + encodeURIComponent(since)
+                + '?since=' + encodeURIComponent(new Date(sinceMs).toISOString())
+                + '&until=' + encodeURIComponent(new Date(untilMs).toISOString())
                 + '&take=' + state.takes[lane]
                 + '&profileKey=' + encodeURIComponent(profileKey);
             var loc = activeLocale();
@@ -960,8 +1000,85 @@
             });
         }
 
+        // Filter chip — surfaces the active date filter next to the pill
+        // group. Re-rendered whenever state.dateFilter changes; absent when
+        // null. Inserted into the existing toolbar so it shares the bar's
+        // vertical alignment with the pills and refresh button.
+        function renderFilterChip() {
+            var bar = root && root.querySelector('.gst-prof-ins__bar');
+            if (!bar) return;
+            var existing = bar.querySelector('.gst-filter-chip');
+            if (!state.dateFilter) {
+                if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+                return;
+            }
+            var label = formatDateLabel(state.dateFilter);
+            if (existing) {
+                existing.querySelector('.gst-filter-chip__text').textContent = label;
+                return;
+            }
+            var chip = document.createElement('span');
+            chip.className = 'gst-filter-chip';
+            chip.innerHTML = '<span class="gst-filter-chip__text"></span>' +
+                '<button type="button" class="gst-filter-chip__clear" aria-label="Clear filter">×</button>';
+            chip.querySelector('.gst-filter-chip__text').textContent = label;
+            chip.querySelector('.gst-filter-chip__clear').addEventListener('click', function () {
+                clearDateFilter();
+            });
+            // Place after the pill group, before the spacer. Querying the
+            // spacer rather than appending keeps the refresh button on the
+            // right edge.
+            var spacer = bar.querySelector('.gst-prof-ins__bar-spacer');
+            if (spacer) bar.insertBefore(chip, spacer);
+            else bar.appendChild(chip);
+        }
+
+        // "May 12" / locale-aware month-day. Year omitted because the spark
+        // covers a 30d window; the year is unambiguous from context.
+        function formatDateLabel(d) {
+            try {
+                return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+            } catch (e) {
+                return d.toISOString().slice(0, 10);
+            }
+        }
+
+        function setDateFilter(d) {
+            // Same-day re-click toggles off (the sparkline already does
+            // this for us, but defending here keeps the API symmetric).
+            if (!d) { clearDateFilter(); return; }
+            if (state.dateFilter && state.dateFilter.getTime() === d.getTime()) {
+                clearDateFilter();
+                return;
+            }
+            state.dateFilter = d;
+            renderFilterChip();
+            resetTakes();
+            fetchAll();
+        }
+
+        function clearDateFilter(silent) {
+            if (!state.dateFilter && !silent) return;
+            state.dateFilter = null;
+            renderFilterChip();
+            // Also clear the KPI card's highlighted dot so the visuals
+            // agree with the data.
+            if (window.GST && typeof GST.clearKpiCardSelection === 'function') {
+                GST.clearKpiCardSelection('#gst-prof-kpis');
+            }
+            if (!silent) {
+                resetTakes();
+                fetchAll();
+            }
+        }
+
         // Initial load.
         fetchAll();
+
+        return {
+            setDateFilter: setDateFilter,
+            clearDateFilter: clearDateFilter
+        };
     }
 
     var _auditLoaded = false;
@@ -972,15 +1089,16 @@
      * visual treatment) with the global Insights tool — the only difference
      * is the ?profileKey scope on the API call.
      */
-    function loadKpis(profileKey) {
+    function loadKpis(profileKey, opts) {
         if (!window.GST || typeof window.GST.renderKpiCard !== 'function') return;
         var host = document.getElementById('gst-prof-kpis');
         if (!host) return;
+        opts = opts || {};
         var BASE = window.GST_BASE_URL || '';
         var url = BASE + '/InsightsApi/SearchKpis?profileKey=' + encodeURIComponent(profileKey);
         GST.renderKpiCardLoading(host);
         GST.fetchJson(url)
-            .then(function (k) { GST.renderKpiCard(host, k); })
+            .then(function (k) { GST.renderKpiCard(host, k, { onDateSelect: opts.onDateSelect }); })
             .catch(function () { GST.renderKpiCardError(host); });
     }
 

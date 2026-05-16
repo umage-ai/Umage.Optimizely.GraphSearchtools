@@ -19,6 +19,11 @@
     const STRINGS = (window.GST_STRINGS && window.GST_STRINGS.insights) || {};
 
     let days = 7;
+    // When non-null, the Top / Zero tables are scoped to this UTC day
+    // and `days` is ignored. Set by a sparkline click on the KPI card;
+    // cleared by re-clicking the same day, by the × on the filter chip,
+    // or by picking a window pill.
+    let dateFilter = null;
 
     document.addEventListener('DOMContentLoaded', init);
 
@@ -29,6 +34,7 @@
                     .forEach(function (b) { b.classList.remove('gst-sl-pill--active'); });
                 btn.classList.add('gst-sl-pill--active');
                 days = parseInt(btn.getAttribute('data-days'), 10) || 7;
+                clearDateFilter(/* silent: */ true);
                 reloadWindowed();
             });
         });
@@ -46,12 +52,70 @@
     function reloadWindowed() {
         renderLoading('gst-insights-top', 5);
         renderLoading('gst-insights-zero', 4);
-        GST.fetchJson(API + '/TopPhrases?days=' + days)
+        const dateQs = dateFilter ? '&date=' + isoDayString(dateFilter) : '';
+        GST.fetchJson(API + '/TopPhrases?days=' + days + dateQs)
             .then(renderTop)
             .catch(function () { renderError('gst-insights-top', 5); });
-        GST.fetchJson(API + '/ZeroResultPhrases?days=' + days)
+        GST.fetchJson(API + '/ZeroResultPhrases?days=' + days + dateQs)
             .then(renderZero)
             .catch(function () { renderError('gst-insights-zero', 4); });
+    }
+
+    function setDateFilter(d) {
+        if (!d) { clearDateFilter(); return; }
+        if (dateFilter && dateFilter.getTime() === d.getTime()) {
+            clearDateFilter();
+            return;
+        }
+        dateFilter = d;
+        renderFilterChip();
+        reloadWindowed();
+    }
+
+    function clearDateFilter(silent) {
+        if (!dateFilter && !silent) return;
+        dateFilter = null;
+        renderFilterChip();
+        if (window.GST && typeof GST.clearKpiCardSelection === 'function') {
+            GST.clearKpiCardSelection('#gst-insights-kpis');
+        }
+        if (!silent) reloadWindowed();
+    }
+
+    function renderFilterChip() {
+        // Chip sits next to the pill group, inside the same .gst-sl-toolbar
+        // strip that hosts the 7d/30d pills + refresh button.
+        const bar = document.querySelector('.gst-sl-toolbar');
+        if (!bar) return;
+        const existing = bar.querySelector('.gst-filter-chip');
+        if (!dateFilter) {
+            if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+            return;
+        }
+        const label = formatDateLabel(dateFilter);
+        if (existing) {
+            existing.querySelector('.gst-filter-chip__text').textContent = label;
+            return;
+        }
+        const chip = document.createElement('span');
+        chip.className = 'gst-filter-chip';
+        chip.innerHTML = '<span class="gst-filter-chip__text"></span>' +
+            '<button type="button" class="gst-filter-chip__clear" aria-label="Clear filter">×</button>';
+        chip.querySelector('.gst-filter-chip__text').textContent = label;
+        chip.querySelector('.gst-filter-chip__clear').addEventListener('click', clearDateFilter);
+        const spacer = bar.querySelector('.gst-toolbar__spacer');
+        if (spacer) bar.insertBefore(chip, spacer);
+        else bar.appendChild(chip);
+    }
+
+    function isoDayString(d) {
+        // YYYY-MM-DD in UTC; matches what the API parses as a date filter.
+        const pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+        return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+    }
+    function formatDateLabel(d) {
+        try { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+        catch (e) { return isoDayString(d); }
     }
 
     function reloadKpis() {
@@ -104,7 +168,9 @@
     }
 
     function renderKpis(k) {
-        GST.renderKpiCard('gst-insights-kpis', k);
+        GST.renderKpiCard('gst-insights-kpis', k, {
+            onDateSelect: setDateFilter
+        });
     }
 
     function renderActivity(rows) {

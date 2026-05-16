@@ -780,6 +780,45 @@
     fill: transparent;
     cursor: default;
 }
+.gst-sparkline__hit.is-clickable {
+    cursor: pointer;
+}
+.gst-sparkline__hit.is-clickable:hover {
+    fill: var(--gst-primary-light);
+    opacity: 0.4;
+}
+.gst-sparkline__dot {
+    fill: var(--gst-primary);
+    stroke: var(--gst-surface);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}
+
+/* Filter chip — surfaces the active date filter near the lane toolbar. */
+.gst-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gst-space-xs);
+    padding: 2px var(--gst-space-sm);
+    border-radius: 999px;
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+}
+.gst-filter-chip__clear {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: var(--gst-text-base);
+    line-height: 1;
+    padding: 0 2px;
+    margin-left: 2px;
+}
+.gst-filter-chip__clear:hover { opacity: 0.7; }
 .gst-sparkline--empty {
     /* All-zero series: show a muted dotted baseline rather than a flat
        line touching the bottom, which would read as "broken chart". */

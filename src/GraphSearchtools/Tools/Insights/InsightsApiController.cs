@@ -41,12 +41,13 @@ public class InsightsApiController : Controller
         [FromQuery] int? take = null,
         [FromQuery] string? profileKey = null,
         [FromQuery] string? locale = null,
+        [FromQuery] DateTime? date = null,
         CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, cancellationToken);
+            var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, date, cancellationToken);
             return Ok(rows);
         }
         catch (Exception ex)
@@ -64,12 +65,13 @@ public class InsightsApiController : Controller
         [FromQuery] int? take = null,
         [FromQuery] string? profileKey = null,
         [FromQuery] string? locale = null,
+        [FromQuery] DateTime? date = null,
         CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, cancellationToken);
+            var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, date, cancellationToken);
             return Ok(rows);
         }
         catch (Exception ex)
