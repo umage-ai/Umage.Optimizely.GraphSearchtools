@@ -267,8 +267,12 @@ public class UiStringsProvider(LocalizationService loc)
             kpi_tooltip = IN("kpi_tooltip"),
             empty_phrases = IN("empty_phrases"),
             empty_zero = IN("empty_zero"),
-            empty_activity = IN("empty_activity"),
-            load_failed = IN("load_failed")
+            empty_lowctr = IN("empty_lowctr"),
+            load_failed = IN("load_failed"),
+            hits_label = IN("hits_label"),
+            ctr_label = IN("ctr_label"),
+            show_more = IN("show_more"),
+            open_profile = IN("open_profile")
         },
         pinnedCoverage = new
         {

@@ -105,34 +105,21 @@ public class InsightsApiController : Controller
     }
 
     /// <summary>
-    /// <c>GET InsightsApi/SynonymCoverage</c> — totals + unused + suggested.
-    /// Window is fixed at <see cref="SynonymCoverageService.DefaultWindow"/>.
+    /// <c>GET InsightsApi/LowCtrPhrases?days=7&amp;take=25&amp;profileKey=…&amp;locale=…</c>
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> SynonymCoverage(CancellationToken cancellationToken)
+    public async Task<IActionResult> LowCtrPhrases(
+        [FromQuery] int days = 7,
+        [FromQuery] int? take = null,
+        [FromQuery] string? profileKey = null,
+        [FromQuery] string? locale = null,
+        CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.SynonymCoverageAsync(cancellationToken));
-        }
-        catch (Exception ex)
-        {
-            return HandleError(ex);
-        }
-    }
-
-    /// <summary>
-    /// <c>GET InsightsApi/RecentActivity?take=20</c> — cross-profile audit
-    /// strip, newest-first.
-    /// </summary>
-    [HttpGet]
-    public IActionResult RecentActivity([FromQuery] int? take = null)
-    {
-        if (!HasAccess()) return Forbid();
-        try
-        {
-            return Ok(_service.RecentActivity(take ?? 20));
+            var rows = await _service.LowCtrPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, cancellationToken);
+            return Ok(rows);
         }
         catch (Exception ex)
         {

@@ -131,13 +131,20 @@
         </autocomplete>
         <insights>
           <title>Insights</title>
-          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every profile.</description>
+          <description>What people search for across every profile — top phrases, zero-result phrases, and low-CTR phrases. Filter by profile to narrow.</description>
           <window_7d>Last 7d</window_7d>
           <window_30d>Last 30d</window_30d>
+          <profile_filter_label>Filter by profile</profile_filter_label>
+          <profile_filter_all>All profiles</profile_filter_all>
+          <tab_top>Top phrases</tab_top>
+          <tab_zero>Zero-result</tab_zero>
+          <tab_lowctr>Low-CTR</tab_lowctr>
           <top_title>Top phrases</top_title>
-          <top_subtitle>Most-searched phrases. Zero-result counts are derived from the same window.</top_subtitle>
+          <top_subtitle>Most-searched phrases in the window.</top_subtitle>
           <zero_title>Zero-result phrases</zero_title>
           <zero_subtitle>What people searched for and found nothing — pin candidates.</zero_subtitle>
+          <lowctr_title>Low-CTR phrases</lowctr_title>
+          <lowctr_subtitle>Phrases with the worst click-through rate. Excludes phrases with too few hits to score honestly.</lowctr_subtitle>
           <kpis_title>Search activity</kpis_title>
           <kpis_subtitle>Headline numbers for the last 30 days, with a daily sparkline on each.</kpis_subtitle>
           <kpi_searches>Searches</kpi_searches>
@@ -146,22 +153,15 @@
           <kpi_window>last %1 days</kpi_window>
           <kpi_days_ago>%1d ago</kpi_days_ago>
           <kpi_tooltip>%1: %2</kpi_tooltip>
-          <activity_title>Recent activity</activity_title>
-          <activity_subtitle>Latest edits across every profile.</activity_subtitle>
-          <col_phrase>Phrase</col_phrase>
-          <col_count>Count</col_count>
-          <col_zero>Zero results</col_zero>
-          <col_locale>Locale</col_locale>
-          <col_profile>Profile</col_profile>
-          <col_when>When</col_when>
-          <col_kind>Kind</col_kind>
-          <col_action>Action</col_action>
-          <col_subject>Subject</col_subject>
-          <col_actor>Editor</col_actor>
           <empty_phrases>No phrases logged in this window yet.</empty_phrases>
           <empty_zero>No zero-result phrases — every search found something.</empty_zero>
-          <empty_activity>No edits recorded yet.</empty_activity>
+          <empty_lowctr>Not enough sessions to score CTR yet.</empty_lowctr>
           <load_failed>Could not load insights.</load_failed>
+          <hits_label>hits</hits_label>
+          <ctr_label>CTR</ctr_label>
+          <show_more>Show more</show_more>
+          <open_profile>Open this profile</open_profile>
+          <more>More</more>
         </insights>
         <synonymCoverage>
           <title>Synonym Coverage</title>
