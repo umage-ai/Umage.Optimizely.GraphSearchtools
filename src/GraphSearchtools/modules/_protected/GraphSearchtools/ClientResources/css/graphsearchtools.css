@@ -823,9 +823,18 @@
    Right-edge edit panel — the Aurora pattern Optimizely uses for
    "edit one small thing" surfaces (Settings, scheduled publish, etc.).
    Sized for ~5–8 fields; for richer editing graduate to a detail page. */
+/* Flyout sits below the CMS platform top nav (48px, same offset the
+   profile rail already assumes). The platform nav owns a higher z-index
+   than our 1001, so we can't reliably layer above it — yielding here
+   means the editor's title stays readable instead of being clipped
+   under the shell. The same offset is applied to the backdrop so the
+   dimming doesn't leave a visible strip beside the panel. */
 .gst-flyout-backdrop {
     position: fixed;
-    inset: 0;
+    top: var(--gst-flyout-top, 48px);
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: rgba(0,0,0,.32);
     z-index: 1000;
     animation: gst-fade-in .15s ease;
@@ -834,10 +843,7 @@
 
 .gst-flyout {
     position: fixed;
-    /* Cover the full viewport height — the flyout layers above the CMS
-       shell's top nav so editors aren't visually anchored to the platform
-       chrome while editing. */
-    top: 0;
+    top: var(--gst-flyout-top, 48px);
     right: 0;
     bottom: 0;
     width: 480px;
