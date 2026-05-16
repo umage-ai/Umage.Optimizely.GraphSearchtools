@@ -232,8 +232,9 @@
     //                  <title> tooltip on hover. When omitted, no tooltips.
     //   onClick:       fn(value, index) → void. When provided, hit-areas
     //                  become clickable (cursor + click handler).
-    //   selectedIndex: int. Highlights that data point with a filled dot
-    //                  drawn on top of the line. -1 / undefined = none.
+    //   selectedIndex: int. Draws a vertical cursor bar at that data
+    //                  point — full chart height, on top of the line.
+    //                  -1 / undefined = none.
     GST.sparkline = function (host, series, opts) {
         const el = typeof host === 'string' ? document.querySelector(host) : host;
         if (!el) return;
@@ -301,23 +302,19 @@
                 }
             }
 
-            // Highlighted dot — drawn last so it sits above the line. Uses a
-            // CSS variable so the colour can shift per surface if needed.
+            // Selected-date cursor — a vertical bar spanning the chart
+            // height at the chosen x. Drawn last so it sits above the line.
+            // Stroke width is held constant by vector-effect; bar position
+            // is always exactly on the data point's x slot.
             const sel = (typeof opts.selectedIndex === 'number') ? opts.selectedIndex : -1;
             if (sel >= 0 && sel < n) {
-                const v = data[sel] || 0;
-                const h = max > 0 ? (v / max) * 100 : 0;
-                const dot = document.createElementNS(svgNs, 'circle');
-                dot.setAttribute('class', 'gst-sparkline__dot');
-                dot.setAttribute('cx', String(sel));
-                dot.setAttribute('cy', String(100 - h));
-                dot.setAttribute('r', '3');
-                // r doesn't get vector-effect: non-scaling-stroke; circles
-                // stretch under preserveAspectRatio=none. Counter that by
-                // setting r in user units small and relying on the SVG's
-                // overflow:visible — the dot reads as a small round marker
-                // in both x and y once the chart is wider than ~30px.
-                svg.appendChild(dot);
+                const cursor = document.createElementNS(svgNs, 'line');
+                cursor.setAttribute('class', 'gst-sparkline__cursor');
+                cursor.setAttribute('x1', String(sel));
+                cursor.setAttribute('y1', '0');
+                cursor.setAttribute('x2', String(sel));
+                cursor.setAttribute('y2', '100');
+                svg.appendChild(cursor);
             }
         }
 
@@ -499,8 +496,8 @@
         // walk the rendered tiles and drop the dot. Re-paint is simpler.
         const spans = el.querySelectorAll('.gst-kpi__spark');
         spans.forEach(function (s) {
-            const dot = s.querySelector('.gst-sparkline__dot');
-            if (dot && dot.parentNode) dot.parentNode.removeChild(dot);
+            const cursor = s.querySelector('.gst-sparkline__cursor');
+            if (cursor && cursor.parentNode) cursor.parentNode.removeChild(cursor);
         });
         return true;
     };
