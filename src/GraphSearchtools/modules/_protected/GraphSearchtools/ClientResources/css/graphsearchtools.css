@@ -787,10 +787,10 @@
     fill: var(--gst-primary-light);
     opacity: 0.4;
 }
-.gst-sparkline__dot {
-    fill: var(--gst-primary);
-    stroke: var(--gst-surface);
-    stroke-width: 1.5;
+.gst-sparkline__cursor {
+    stroke: var(--gst-primary);
+    stroke-width: 2;
+    stroke-linecap: butt;
     vector-effect: non-scaling-stroke;
     pointer-events: none;
 }
