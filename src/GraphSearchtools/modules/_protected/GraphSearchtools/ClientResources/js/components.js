@@ -212,21 +212,23 @@
     };
 
     // ── Sparkline ──────────────────────────────────────────────────
-    // Tiny inline bar chart for KPI tiles. Renders one <rect> per value
-    // into an SVG sized by its container (the host's CSS sets width +
-    // height — typically inside .gst-kpi__spark which is 100% × 36px).
+    // Tiny inline line chart for KPI tiles. Renders an SVG <polyline>
+    // sized by its container (the host's CSS sets width + height —
+    // typically inside .gst-kpi__spark which is 100% × 36px). One
+    // invisible <rect> hit-area per data point carries the per-day
+    // <title> tooltip.
     //
     // Usage:
     //   GST.sparkline(host, [12, 45, 0, …], { label: 'Daily searches' });
     //
     // Options:
-    //   max:           normalize bar heights to this. Defaults to
-    //                  Math.max(...series, 1) — i.e. tallest bar is the
-    //                  series max. Pass an explicit max (e.g. 100 for
+    //   max:           normalize point heights to this. Defaults to
+    //                  Math.max(...series, 1) — the peak is the series
+    //                  max. Pass an explicit max (e.g. 100 for
     //                  percentages) when you want a fixed scale.
     //   label:         aria-label for the <svg>. Recommended; without it
     //                  the chart is invisible to screen readers.
-    //   formatTooltip: fn(value, index) → string. Drives the per-bar
+    //   formatTooltip: fn(value, index) → string. Drives the per-day
     //                  <title> tooltip on hover. When omitted, no tooltips.
     GST.sparkline = function (host, series, opts) {
         const el = typeof host === 'string' ? document.querySelector(host) : host;
@@ -244,42 +246,72 @@
             : Math.max.apply(null, data.concat([0])) || 1;
         const allZero = data.every(function (v) { return !v; });
 
-        // viewBox uses n columns by 100 units tall; preserveAspectRatio
-        // = none so the SVG stretches to fill its container width. Bars
-        // are 0.85 wide leaving a 0.15-unit gutter between them.
+        // viewBox is (n-1) units wide × 100 tall — one unit per segment
+        // between adjacent points. preserveAspectRatio=none lets the SVG
+        // stretch to fill its container; vector-effect=non-scaling-stroke
+        // (in CSS) keeps the line at a stable pixel width regardless.
         const svgNs = 'http://www.w3.org/2000/svg';
         const svg = document.createElementNS(svgNs, 'svg');
         svg.setAttribute('class', 'gst-sparkline' + (allZero ? ' gst-sparkline--empty' : ''));
-        svg.setAttribute('viewBox', '0 0 ' + n + ' 100');
+        svg.setAttribute('viewBox', '0 0 ' + Math.max(n - 1, 1) + ' 100');
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('role', 'img');
         if (opts.label) svg.setAttribute('aria-label', opts.label);
 
         if (!allZero) {
+            const points = [];
             for (let i = 0; i < n; i++) {
                 const v = data[i] || 0;
                 const h = max > 0 ? (v / max) * 100 : 0;
-                // Bars below 1 viewBox unit tall render as a hairline at
-                // the baseline so empty days are visible without dwarfing
-                // real bars. Floor at h, not 1, so the scale is honest.
-                const y = 100 - h;
-                const rect = document.createElementNS(svgNs, 'rect');
-                rect.setAttribute('class', 'gst-sparkline__bar');
-                rect.setAttribute('x', String(i + 0.075));
-                rect.setAttribute('y', String(y));
-                rect.setAttribute('width', '0.85');
-                rect.setAttribute('height', String(Math.max(h, 0.5)));
-                if (typeof opts.formatTooltip === 'function') {
+                points.push(i + ',' + (100 - h));
+            }
+            const line = document.createElementNS(svgNs, 'polyline');
+            line.setAttribute('class', 'gst-sparkline__line');
+            line.setAttribute('points', points.join(' '));
+            svg.appendChild(line);
+
+            // Invisible hit-area columns for tooltips. One per data point,
+            // half a unit on either side, so the entire chart surface is
+            // covered without gaps.
+            if (typeof opts.formatTooltip === 'function' && n > 1) {
+                for (let i = 0; i < n; i++) {
+                    const hit = document.createElementNS(svgNs, 'rect');
+                    hit.setAttribute('class', 'gst-sparkline__hit');
+                    hit.setAttribute('x', String(i - 0.5));
+                    hit.setAttribute('y', '0');
+                    hit.setAttribute('width', '1');
+                    hit.setAttribute('height', '100');
                     const title = document.createElementNS(svgNs, 'title');
-                    title.textContent = opts.formatTooltip(v, i);
-                    rect.appendChild(title);
+                    title.textContent = opts.formatTooltip(data[i] || 0, i);
+                    hit.appendChild(title);
+                    svg.appendChild(hit);
                 }
-                svg.appendChild(rect);
             }
         }
 
         el.innerHTML = '';
         el.appendChild(svg);
+    };
+
+    // ── Number formatters ──────────────────────────────────────────
+    // Compact integer for KPI headlines. 999 → "999", 1,234 → "1K",
+    // 12,345 → "12K", 1,234,567 → "1M". Rounds to nearest unit; no
+    // decimal places. The boundary cases (e.g. 999,500) bump to the
+    // next unit so we never render "1000K".
+    GST.formatCompactInt = function (n) {
+        if (n == null || isNaN(n)) return '0';
+        const v = Math.round(Number(n));
+        const absv = Math.abs(v);
+        const sign = v < 0 ? '-' : '';
+        if (absv >= 999500) return sign + Math.round(absv / 1e6) + 'M';
+        if (absv >= 1000)   return sign + Math.round(absv / 1000) + 'K';
+        return sign + absv;
+    };
+
+    // Percentage rounded to nearest integer. 12.7 → "13%", 0.4 → "0%".
+    GST.formatCompactPct = function (p) {
+        if (p == null || isNaN(p)) return '0%';
+        return Math.round(Number(p)) + '%';
     };
 
     // ── KPI card renderer ──────────────────────────────────────────
@@ -304,14 +336,11 @@
         const days = k.windowDays || 30;
         const strings = opts.strings || (window.GST_STRINGS && window.GST_STRINGS.insights) || {};
 
-        function formatInt(n) {
-            if (n == null || isNaN(n)) return '0';
-            try { return Number(n).toLocaleString(); } catch (e) { return String(n); }
-        }
-        function formatPct(p) {
-            if (p == null || isNaN(p)) return '0%';
-            return (Math.round(p * 10) / 10).toFixed(1) + '%';
-        }
+        // Headline figures use the compact forms (12K / 1M / 13%). The
+        // tooltip uses the same compact forms — at this precision the
+        // hover popup is a sanity check, not a forensic readout.
+        const formatInt = GST.formatCompactInt;
+        const formatPct = GST.formatCompactPct;
         function tmpl(t, value, fallback) {
             const s = t || fallback || '%1';
             if (Array.isArray(value)) {
