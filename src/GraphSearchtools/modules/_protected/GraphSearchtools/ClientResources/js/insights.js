@@ -104,61 +104,7 @@
     }
 
     function renderKpis(k) {
-        const host = document.getElementById('gst-insights-kpis');
-        if (!host) return;
-        const days = (k && k.windowDays) || 30;
-
-        // Three tiles, each rendered as DOM nodes so we can attach SVG
-        // sparklines after the value markup. Innerhtml-then-append would
-        // also work but DOM nodes keep IDs stable for testing.
-        host.innerHTML = '';
-        const tiles = [
-            {
-                key: 'searches',
-                label: STRINGS.kpi_searches || 'Searches',
-                value: formatInt((k && k.totalSearches) || 0),
-                series: (k && k.sparkSearches) || [],
-                fmt: function (v) { return formatInt(v) + ' searches'; }
-            },
-            {
-                key: 'ctr',
-                label: STRINGS.kpi_ctr || 'Click-through rate',
-                value: formatPct((k && k.ctrPct) || 0),
-                series: (k && k.sparkCtr) || [],
-                fmt: function (v) { return formatPct(v); },
-                // CTR scale is [0,100] regardless of the data — fixed max
-                // means a quiet day doesn't look like a 100%-day visually.
-                max: 100
-            },
-            {
-                key: 'zero',
-                label: STRINGS.kpi_zero || 'Zero-result searches',
-                value: formatInt((k && k.totalZero) || 0),
-                series: (k && k.sparkZero) || [],
-                fmt: function (v) { return formatInt(v) + ' zero-result'; }
-            }
-        ];
-
-        tiles.forEach(function (t) {
-            const tile = document.createElement('div');
-            tile.className = 'gst-kpi';
-            tile.setAttribute('data-kpi', t.key);
-            tile.innerHTML =
-                '<div class="gst-kpi__label">' + esc(t.label) +
-                ' <span class="gst-muted">(' + esc(formatTemplate(STRINGS.kpi_window, days, 'last %1 days')) + ')</span></div>' +
-                '<div class="gst-kpi__value">' + esc(t.value) + '</div>' +
-                '<div class="gst-kpi__spark"></div>';
-            host.appendChild(tile);
-
-            const sparkHost = tile.querySelector('.gst-kpi__spark');
-            GST.sparkline(sparkHost, t.series, {
-                label: t.label,
-                max: t.max,
-                formatTooltip: function (v, i) {
-                    return formatTemplate(STRINGS.kpi_tooltip, [daysAgoLabel(days, i), t.fmt(v)], '%1: %2');
-                }
-            });
-        });
+        GST.renderKpiCard('gst-insights-kpis', k);
     }
 
     function renderActivity(rows) {
@@ -189,16 +135,7 @@
     }
 
     function renderKpisLoading() {
-        const host = document.getElementById('gst-insights-kpis');
-        if (host) {
-            const msg = (window.GST_STRINGS && window.GST_STRINGS.shared && window.GST_STRINGS.shared.loading) || 'Loading...';
-            // Three placeholder tiles so the layout doesn't reflow when
-            // real data arrives.
-            host.innerHTML =
-                '<div class="gst-kpi"><div class="gst-kpi__label">' + esc(msg) + '</div></div>' +
-                '<div class="gst-kpi"><div class="gst-kpi__label">' + esc(msg) + '</div></div>' +
-                '<div class="gst-kpi"><div class="gst-kpi__label">' + esc(msg) + '</div></div>';
-        }
+        GST.renderKpiCardLoading('gst-insights-kpis');
     }
 
     function renderError(id, cols) {
@@ -209,49 +146,11 @@
     }
 
     function renderKpisError() {
-        const host = document.getElementById('gst-insights-kpis');
-        if (host) {
-            host.innerHTML = '<div class="gst-kpi"><div class="gst-kpi__label">' +
-                esc(STRINGS.load_failed || 'Could not load insights.') + '</div></div>';
-        }
-    }
-
-    function formatInt(n) {
-        if (n == null || isNaN(n)) return '0';
-        // Locale-aware thousands separator. Falls back to the raw number
-        // for ancient browsers / non-Intl envs.
-        try { return Number(n).toLocaleString(); }
-        catch (e) { return String(n); }
-    }
-
-    function formatPct(p) {
-        if (p == null || isNaN(p)) return '0%';
-        // One decimal so a CTR of 12.7 doesn't get rounded to "13%" —
-        // the lost precision misreads on a marketer's dashboard.
-        return (Math.round(p * 10) / 10).toFixed(1) + '%';
-    }
-
-    function daysAgoLabel(windowDays, index) {
-        // index 0 is the oldest day in the spark series; index windowDays-1
-        // is today. Convert to "today" / "1d ago" / "Nd ago".
-        const ago = windowDays - 1 - index;
-        if (ago === 0) return (window.GST_STRINGS && GST_STRINGS.shared && GST_STRINGS.shared.today) || 'today';
-        return formatTemplate(STRINGS.kpi_days_ago, ago, '%1d ago');
+        GST.renderKpiCardError('gst-insights-kpis');
     }
 
     function emptyRow(cols, message) {
         return '<tr><td colspan="' + cols + '" class="gst-empty"><p>' + esc(message) + '</p></td></tr>';
-    }
-
-    function formatTemplate(tmpl, value, fallback) {
-        const t = tmpl || fallback || '%1';
-        if (Array.isArray(value)) {
-            return t.replace(/%(\d+)/g, function (_, n) {
-                const idx = parseInt(n, 10) - 1;
-                return idx >= 0 && idx < value.length ? String(value[idx]) : '';
-            });
-        }
-        return t.replace('%1', String(value));
     }
 
     function formatWhen(iso) {

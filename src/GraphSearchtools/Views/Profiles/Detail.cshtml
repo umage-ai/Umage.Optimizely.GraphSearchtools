@@ -44,23 +44,14 @@
 
 <div id="gst-prof-detail-alert" class="gst-alert" hidden></div>
 
-@* Aurora Phase 3C — stat row at a glance. Counts are filled in by JS as
-   each tab loads; the placeholder "—" stays until then. Locale-friendly:
-   `data-stat` keys let the JS update values without re-rendering labels. *@
-<div class="gst-stats gst-prof-stat-row" aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/statRow/label")">
-    <div class="gst-stat">
-        <div class="gst-stat__value" data-stat="pinned">—</div>
-        <div class="gst-stat__label">@Loc.GetString("/graphsearchtools/profiles/detail/statRow/pinnedLabel")</div>
-    </div>
-    <div class="gst-stat">
-        <div class="gst-stat__value" data-stat="synonyms">—</div>
-        <div class="gst-stat__label">@Loc.GetString("/graphsearchtools/profiles/detail/statRow/synonymsLabel")</div>
-    </div>
-    <div class="gst-stat">
-        <div class="gst-stat__value" data-stat="recentEdits">—</div>
-        <div class="gst-stat__label">@Loc.GetString("/graphsearchtools/profiles/detail/statRow/recentLabel")</div>
-    </div>
-</div>
+@* Search-activity KPIs for this profile — replaces the pinned/synonyms/
+   recent-edits counts that used to live here. Three tiles with 30-day
+   sparklines (total searches, daily CTR, total zero-result searches);
+   profiles.js loads from /InsightsApi/SearchKpis?profileKey=… on mount.
+   See docs/design-system.md "KPI tile with sparkline". *@
+<div id="gst-prof-kpis" class="gst-kpis"
+     aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/kpis/sectionLabel")"
+     aria-live="polite"></div>
 
 <div class="gst-prof-workspace" data-profile-key="@Model.Key">
 

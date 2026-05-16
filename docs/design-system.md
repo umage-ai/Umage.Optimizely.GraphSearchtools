@@ -334,9 +334,25 @@ GST.sparkline(hostElementOrSelector, [12, 45, 0, 56, ...], {
 - The sparkline is decorative-but-informative — provide a tooltip for
   per-bar values so a marketer hovering on a peak can read the day.
 
-Reference: `Views/Insights/Index.cshtml` (the `data-card="kpis"` block),
-`modules/_protected/GraphSearchtools/ClientResources/js/insights.js`
-(the `renderKpis` function), `GST.sparkline` in `components.js`.
+### Card-level render helper
+
+Both the global Insights tool and the Profile detail page mount this
+component, so the rendering is centralised:
+
+```js
+GST.renderKpiCard(hostElementOrSelector, kpisPayload);
+GST.renderKpiCardLoading(host);   // 3 blank tiles while fetching
+GST.renderKpiCardError(host);     // single-tile error state
+```
+
+The helper reads localized labels from `window.GST_STRINGS.insights` by
+default. If a future surface needs different labels, pass
+`{ strings: customMap }`.
+
+Reference: `Views/Insights/Index.cshtml` (the `data-card="kpis"` block,
+global aggregate), `Views/Profiles/Detail.cshtml` (the `#gst-prof-kpis`
+host, profile-scoped), `GST.renderKpiCard` + `GST.sparkline` in
+`components.js`.
 
 ---
 
