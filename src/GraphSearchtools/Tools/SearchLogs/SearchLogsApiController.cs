@@ -7,11 +7,13 @@ using UmageAI.Optimizely.GraphSearchTools.Permissions;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 
 /// <summary>
-/// REST API for the Search Logs UI. Mounted under
-/// <c>{basePath}/SearchLogsApi/{action}</c> by the convention route. All four
-/// endpoints are read-only and idempotent; the writes go through the public
-/// telemetry beacon (<c>POST /api/telemetry/searchlog</c>), which this surface
-/// intentionally does not touch.
+/// Internal read API over the search-log telemetry. Mounted under
+/// <c>{basePath}/SearchLogsApi/{action}</c> by the convention route. Drives
+/// the per-profile Insights tab on Profile Detail; the standalone Search Logs
+/// page that previously consumed every endpoint here has been retired.
+/// All four endpoints are read-only and idempotent; writes go through the
+/// public telemetry beacon (<c>POST /api/telemetry/searchlog</c>), which this
+/// surface intentionally does not touch.
 /// </summary>
 /// <remarks>
 /// Each endpoint accepts the same <c>since</c> + <c>take</c> pair so the JS
