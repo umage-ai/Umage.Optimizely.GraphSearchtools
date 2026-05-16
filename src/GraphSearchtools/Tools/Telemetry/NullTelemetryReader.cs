@@ -21,4 +21,7 @@ internal sealed class NullTelemetryReader : ITelemetryReader
 
     public Task<IReadOnlyList<RawEvent>> RecentRawAsync(TelemetryQuery query, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<RawEvent>>(Array.Empty<RawEvent>());
+
+    public Task<IReadOnlyList<DailyAggregate>> DailyTotalsAsync(TelemetryQuery query, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<DailyAggregate>>(Array.Empty<DailyAggregate>());
 }

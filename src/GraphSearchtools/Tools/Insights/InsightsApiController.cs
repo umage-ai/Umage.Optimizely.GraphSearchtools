@@ -79,6 +79,26 @@ public class InsightsApiController : Controller
     }
 
     /// <summary>
+    /// <c>GET InsightsApi/SearchKpis</c> — 30-day totals + sparkline series
+    /// for searches, CTR, and zero-result searches. Window is fixed at
+    /// <see cref="InsightsService.SearchKpisWindowDays"/>; the page-level
+    /// 7d/30d toggle does not apply.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> SearchKpis(CancellationToken cancellationToken)
+    {
+        if (!HasAccess()) return Forbid();
+        try
+        {
+            return Ok(await _service.SearchKpisAsync(cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            return HandleError(ex);
+        }
+    }
+
+    /// <summary>
     /// <c>GET InsightsApi/SynonymCoverage</c> — totals + unused + suggested.
     /// Window is fixed at <see cref="SynonymCoverageService.DefaultWindow"/>.
     /// </summary>

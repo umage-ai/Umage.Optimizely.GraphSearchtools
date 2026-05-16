@@ -211,6 +211,77 @@
         }
     };
 
+    // ── Sparkline ──────────────────────────────────────────────────
+    // Tiny inline bar chart for KPI tiles. Renders one <rect> per value
+    // into an SVG sized by its container (the host's CSS sets width +
+    // height — typically inside .gst-kpi__spark which is 100% × 36px).
+    //
+    // Usage:
+    //   GST.sparkline(host, [12, 45, 0, …], { label: 'Daily searches' });
+    //
+    // Options:
+    //   max:           normalize bar heights to this. Defaults to
+    //                  Math.max(...series, 1) — i.e. tallest bar is the
+    //                  series max. Pass an explicit max (e.g. 100 for
+    //                  percentages) when you want a fixed scale.
+    //   label:         aria-label for the <svg>. Recommended; without it
+    //                  the chart is invisible to screen readers.
+    //   formatTooltip: fn(value, index) → string. Drives the per-bar
+    //                  <title> tooltip on hover. When omitted, no tooltips.
+    GST.sparkline = function (host, series, opts) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        opts = opts || {};
+        const data = Array.isArray(series) ? series : [];
+        const n = data.length;
+        if (n === 0) {
+            el.innerHTML = '';
+            return;
+        }
+
+        const max = typeof opts.max === 'number' && opts.max > 0
+            ? opts.max
+            : Math.max.apply(null, data.concat([0])) || 1;
+        const allZero = data.every(function (v) { return !v; });
+
+        // viewBox uses n columns by 100 units tall; preserveAspectRatio
+        // = none so the SVG stretches to fill its container width. Bars
+        // are 0.85 wide leaving a 0.15-unit gutter between them.
+        const svgNs = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNs, 'svg');
+        svg.setAttribute('class', 'gst-sparkline' + (allZero ? ' gst-sparkline--empty' : ''));
+        svg.setAttribute('viewBox', '0 0 ' + n + ' 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('role', 'img');
+        if (opts.label) svg.setAttribute('aria-label', opts.label);
+
+        if (!allZero) {
+            for (let i = 0; i < n; i++) {
+                const v = data[i] || 0;
+                const h = max > 0 ? (v / max) * 100 : 0;
+                // Bars below 1 viewBox unit tall render as a hairline at
+                // the baseline so empty days are visible without dwarfing
+                // real bars. Floor at h, not 1, so the scale is honest.
+                const y = 100 - h;
+                const rect = document.createElementNS(svgNs, 'rect');
+                rect.setAttribute('class', 'gst-sparkline__bar');
+                rect.setAttribute('x', String(i + 0.075));
+                rect.setAttribute('y', String(y));
+                rect.setAttribute('width', '0.85');
+                rect.setAttribute('height', String(Math.max(h, 0.5)));
+                if (typeof opts.formatTooltip === 'function') {
+                    const title = document.createElementNS(svgNs, 'title');
+                    title.textContent = opts.formatTooltip(v, i);
+                    rect.appendChild(title);
+                }
+                svg.appendChild(rect);
+            }
+        }
+
+        el.innerHTML = '';
+        el.appendChild(svg);
+    };
+
     // ── Content Picker ─────────────────────────────────────────────
     /**
      * Opens a dialog with a content tree browser + search.

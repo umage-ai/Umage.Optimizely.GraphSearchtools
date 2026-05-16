@@ -36,4 +36,13 @@ public interface ITelemetryReader
     /// node's ring contents (per design §3.3).
     /// </summary>
     Task<IReadOnlyList<RawEvent>> RecentRawAsync(TelemetryQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One row per day-with-data, ascending by date, covering the
+    /// <see cref="TelemetryQuery"/> window. The window is interpreted in UTC
+    /// — bucket timestamps are floored to day boundaries before grouping.
+    /// <see cref="TelemetryQuery.Take"/> is ignored (the window itself caps
+    /// row count to ~window-days).
+    /// </summary>
+    Task<IReadOnlyList<DailyAggregate>> DailyTotalsAsync(TelemetryQuery query, CancellationToken cancellationToken = default);
 }

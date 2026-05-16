@@ -276,6 +276,70 @@ Reference: `Views/Shared/_PinFlyout.cshtml`, `components.js` lines 73–212,
 
 ---
 
+## Component: KPI tile with sparkline
+
+A horizontal row of headline metric tiles. Each tile stacks a small label,
+a large value, and an inline 30-bar sparkline. Used for "here's the number,
+here's the trend" surfaces — the Insights tool's search-activity card is
+the reference.
+
+**Use when** showing 3–5 cluster-summed numbers that share the same window
+and benefit from a trend hint. **Don't use** for single ratios (use a plain
+text line), for >5 metrics (becomes a dashboard, not a header), or for
+non-numeric signals (status badges live in row chrome instead).
+
+### Skeleton
+
+```html
+<div class="gst-kpis" aria-live="polite">
+    <div class="gst-kpi" data-kpi="{name}">
+        <div class="gst-kpi__label">@Loc.GetString("…") <span class="gst-muted">(last 30 days)</span></div>
+        <div class="gst-kpi__value">12,345</div>
+        <div class="gst-kpi__spark"></div>   <!-- GST.sparkline fills this -->
+    </div>
+    …two more…
+</div>
+```
+
+### JS API
+
+```js
+GST.sparkline(hostElementOrSelector, [12, 45, 0, 56, ...], {
+    label: 'Daily searches',          // aria-label on the SVG
+    max: 100,                          // optional fixed scale (CTR uses 100)
+    formatTooltip: (v, i) => `…`       // optional per-bar <title>
+});
+```
+
+- Series can be any length; the SVG stretches to fill its container.
+- Default max = `Math.max(...series, 1)`. Fix the max for ratio metrics
+  (CTR, success rate) so a quiet day doesn't look like a 100% day.
+- When every value is zero, the helper paints a muted dotted baseline
+  instead of invisible bars.
+
+### Rules
+
+- One row per page, max 5 tiles. If you need more, you're building a
+  dashboard — split into multiple `.gst-kpis` rows or a separate card.
+- Window applies to the *whole row*; mixing windows across tiles in the
+  same row is confusing.
+- The label always names the metric *and* the window
+  ("Searches (last 30 days)"). Don't rely on a card-level subtitle to
+  carry the window — a screenshot of just the tile must be legible.
+- Don't put interactive controls (filters, toggles) inside a tile. The
+  tile is read-only; refresh + window pick live on the surrounding card
+  header.
+- Numbers use locale-aware thousand separators (`Number.toLocaleString()`)
+  and never lose precision (one decimal for percentages).
+- The sparkline is decorative-but-informative — provide a tooltip for
+  per-bar values so a marketer hovering on a peak can read the day.
+
+Reference: `Views/Insights/Index.cshtml` (the `data-card="kpis"` block),
+`modules/_protected/GraphSearchtools/ClientResources/js/insights.js`
+(the `renderKpis` function), `GST.sparkline` in `components.js`.
+
+---
+
 ## Component: Content picker (`GST.contentPicker`)
 
 A modal dialog with a content-tree browser and a search box. Used inside a

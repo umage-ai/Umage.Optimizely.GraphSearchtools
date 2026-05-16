@@ -26,6 +26,18 @@ public sealed record PhraseAggregate(
     string ProfileKey);
 
 /// <summary>
+/// One day's worth of cluster-summed counts. <see cref="DateUtc"/> is the
+/// midnight-UTC of the day. The reader returns only days that have at least
+/// one event; callers that need a dense series (e.g. a 30-bar sparkline)
+/// zero-fill the gaps client-side.
+/// </summary>
+public sealed record DailyAggregate(
+    DateTime DateUtc,
+    int Searches,
+    int Zeroes,
+    int Clicks);
+
+/// <summary>
 /// One raw search or click as recorded in the per-instance forensic ring.
 /// Cross-instance forensics is a non-goal; readers may return rows from a
 /// single node only.
