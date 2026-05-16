@@ -279,9 +279,10 @@ Reference: `Views/Shared/_PinFlyout.cshtml`, `components.js` lines 73–212,
 ## Component: KPI tile with sparkline
 
 A horizontal row of headline metric tiles. Each tile stacks a small label,
-a large value, and an inline 30-bar sparkline. Used for "here's the number,
-here's the trend" surfaces — the Insights tool's search-activity card is
-the reference.
+a large value, and an inline 30-day sparkline (a single SVG line, not
+bars). Used for "here's the number, here's the trend" surfaces — the
+Insights tool's search-activity card and the Profile detail header are
+the reference implementations.
 
 **Use when** showing 3–5 cluster-summed numbers that share the same window
 and benefit from a trend hint. **Don't use** for single ratios (use a plain
@@ -329,10 +330,12 @@ GST.sparkline(hostElementOrSelector, [12, 45, 0, 56, ...], {
 - Don't put interactive controls (filters, toggles) inside a tile. The
   tile is read-only; refresh + window pick live on the surrounding card
   header.
-- Numbers use locale-aware thousand separators (`Number.toLocaleString()`)
-  and never lose precision (one decimal for percentages).
-- The sparkline is decorative-but-informative — provide a tooltip for
-  per-bar values so a marketer hovering on a peak can read the day.
+- Numbers use the compact form: `GST.formatCompactInt` rounds to nearest
+  integer with K/M suffixes (`12K`, `1M`); `GST.formatCompactPct` rounds
+  to nearest integer with `%`. KPI tiles are scanning surfaces, not
+  forensic readouts — precision belongs in the tables below.
+- The sparkline is decorative-but-informative — provide a `formatTooltip`
+  callback so hovering over a day surfaces the value.
 
 ### Card-level render helper
 

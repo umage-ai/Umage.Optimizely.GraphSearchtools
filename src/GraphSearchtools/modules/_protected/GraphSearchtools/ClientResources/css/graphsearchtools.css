@@ -765,16 +765,24 @@
     height: 100%;
     overflow: visible;
 }
-.gst-sparkline__bar {
-    fill: var(--gst-primary);
-    opacity: 0.55;
-    transition: opacity .12s;
+.gst-sparkline__line {
+    fill: none;
+    stroke: var(--gst-primary);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    /* Keep the stroke at a stable pixel width regardless of how the
+       SVG is stretched by preserveAspectRatio=none. */
+    vector-effect: non-scaling-stroke;
+    opacity: 0.85;
 }
-.gst-sparkline__bar:hover { opacity: 1; }
+.gst-sparkline__hit {
+    fill: transparent;
+    cursor: default;
+}
 .gst-sparkline--empty {
-    /* When every value is zero the bars would render as invisible 1-px
-       baselines; show a muted dotted line instead so the tile doesn't
-       look broken. */
+    /* All-zero series: show a muted dotted baseline rather than a flat
+       line touching the bottom, which would read as "broken chart". */
     background:
         linear-gradient(to right, var(--gst-border) 50%, transparent 50%) repeat-x
         center / 6px 1px;
