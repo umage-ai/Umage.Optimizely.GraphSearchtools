@@ -43,12 +43,12 @@ public class SearchLogsApiController : Controller
     /// by hit count, most-frequent first.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Top([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Top([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.TopPhrasesAsync(since, take, profileKey, locale, cancellationToken));
+            return Ok(await _service.TopPhrasesAsync(since, take, profileKey, locale, until, cancellationToken));
         }
         catch (Exception ex)
         {
@@ -61,12 +61,12 @@ public class SearchLogsApiController : Controller
     /// whose sessions returned zero hits. The synonym-mining list.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> ZeroResults([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ZeroResults([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.ZeroResultPhrasesAsync(since, take, profileKey, locale, cancellationToken));
+            return Ok(await _service.ZeroResultPhrasesAsync(since, take, profileKey, locale, until, cancellationToken));
         }
         catch (Exception ex)
         {
@@ -80,12 +80,12 @@ public class SearchLogsApiController : Controller
     /// keeps the surface actionable.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> LowCtr([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> LowCtr([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.LowCtrPhrasesAsync(since, take, profileKey, locale, cancellationToken));
+            return Ok(await _service.LowCtrPhrasesAsync(since, take, profileKey, locale, until, cancellationToken));
         }
         catch (Exception ex)
         {
