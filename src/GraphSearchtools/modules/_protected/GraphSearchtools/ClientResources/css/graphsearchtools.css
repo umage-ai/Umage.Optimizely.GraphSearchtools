@@ -4942,6 +4942,12 @@ td.bpe-editing select {
     gap: var(--gst-space-md);
 }
 
+/* Tab-panel show/hide on the global Insights page — only one of the three
+   lanes is visible at a time. Specificity is bumped past .gst-prof-ins-lane
+   so this wins regardless of selector order in the cascade. */
+.gst-ins-tabpanel { display: none; }
+.gst-ins-tabpanel.is-active { display: block; }
+
 /* ── Window pills + refresh ──────────────────────────────────── */
 .gst-prof-ins__bar {
     display: flex;
@@ -5027,12 +5033,31 @@ td.bpe-editing select {
 
 .gst-prof-ins-lane__head {
     display: grid;
-    grid-template-columns: 2px max-content 1fr max-content;
+    grid-template-columns: 2px max-content 1fr max-content max-content;
     align-items: baseline;
     gap: 10px;
     padding: 10px var(--gst-space-md) 10px 0;
     border-bottom: 1px solid var(--gst-border-light);
     background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 220%);
+}
+/* Deep-link from a profile-scoped lane header into the matching global
+   Insights tab, pre-filtered to this profile. Quiet text-button styling so
+   it doesn't compete with the lane content. */
+.gst-prof-ins-lane__deeplink {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gst-text-secondary);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: color .12s, background .12s;
+}
+.gst-prof-ins-lane__deeplink:hover,
+.gst-prof-ins-lane__deeplink:focus-visible {
+    color: var(--lane-accent);
+    background: var(--gst-surface-hover);
+    outline: none;
 }
 .gst-prof-ins-lane__rule {
     align-self: stretch;
