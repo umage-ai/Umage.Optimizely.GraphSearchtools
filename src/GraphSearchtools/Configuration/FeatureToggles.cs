@@ -30,9 +30,10 @@ public class FeatureToggles
     public bool Telemetry { get; set; } = true;
 
     /// <summary>
-    /// Search Logs UI. Read-only surface over <c>ITelemetryReader</c>: top
-    /// phrases, zero-result phrases, low-CTR phrases, and a forensic-ring
-    /// recent-events tail. Synonym-mining starts here.
+    /// Internal /SearchLogsApi read endpoints (top / zero-result / low-CTR /
+    /// raw). No standalone UI — the per-profile Insights tab on Profile Detail
+    /// is the only consumer. Disable to short-circuit those lanes to their
+    /// empty state without breaking the rest of the package.
     /// </summary>
     public bool SearchLogs { get; set; } = true;
 

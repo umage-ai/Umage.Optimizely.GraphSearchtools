@@ -17,13 +17,6 @@ public class UiStringsProvider(LocalizationService loc)
     private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
 
     /// <summary>
-    /// Lookup for Search Logs strings under /graphsearchtools/tools/searchLogs/*.
-    /// The Search Logs JS reads inline empty-card / status-badge / link / load-
-    /// failed messages from this section.
-    /// </summary>
-    private string SL(string key) => loc.GetString($"/graphsearchtools/tools/searchLogs/{key}");
-
-    /// <summary>
     /// Lookup for Pinned Result Coverage strings under
     /// /graphsearchtools/tools/pinnedCoverage/*. The Pinned Coverage JS reads
     /// the kind-badge labels, generated-at prefix, fix-link button, and empty/
@@ -263,14 +256,6 @@ public class UiStringsProvider(LocalizationService loc)
                     hitsLabel = P("detail/insights/hitsLabel")
                 }
             }
-        },
-        searchLogs = new
-        {
-            add_as_synonym = SL("add_as_synonym"),
-            tune_pinned = SL("tune_pinned"),
-            empty_title = SL("empty_title"),
-            empty_body = SL("empty_body"),
-            load_failed = SL("load_failed")
         },
         insights = new
         {

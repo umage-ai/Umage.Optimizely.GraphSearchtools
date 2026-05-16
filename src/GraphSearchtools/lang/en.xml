@@ -22,7 +22,7 @@
               <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
               <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
-              <SearchLogs>View Search Logs analytics — top phrases, zero-result phrases, low-CTR phrases, recent raw events.</SearchLogs>
+              <SearchLogs>Access the internal /SearchLogsApi telemetry read endpoints that power the Profile Insights tab.</SearchLogs>
               <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
               <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
               <ContentSearchabilityAudit>Scan the CMS content tree for empty Name / MainBody / Tags and string fields exceeding Graph's 1024-character sortable-field limit.</ContentSearchabilityAudit>
@@ -41,7 +41,6 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete check</autocomplete>
-        <searchLogs>Search logs</searchLogs>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
       </menu>
@@ -164,31 +163,6 @@
           <empty_activity>No edits recorded yet.</empty_activity>
           <load_failed>Could not load insights.</load_failed>
         </insights>
-        <searchLogs>
-          <title>Search logs</title>
-          <description>What people are searching for — and where it's failing. Top phrases, zero-result phrases, low-CTR phrases, and a live tail of recent events. Every row links into the tool that fixes it.</description>
-          <window_1h>Last 1h</window_1h>
-          <window_24h>Last 24h</window_24h>
-          <window_7d>Last 7d</window_7d>
-          <window_30d>Last 30d</window_30d>
-          <top_title>Top phrases</top_title>
-          <zero_results_title>Zero-result phrases</zero_results_title>
-          <low_ctr_title>Low-CTR phrases</low_ctr_title>
-          <raw_title>Recent events</raw_title>
-          <col_phrase>Phrase</col_phrase>
-          <col_count>Count</col_count>
-          <col_locale>Locale</col_locale>
-          <col_profile>Profile</col_profile>
-          <col_when>When</col_when>
-          <col_detail>Detail</col_detail>
-          <col_status>Status</col_status>
-          <status_search>search</status_search>
-          <add_as_synonym>→ add as synonym?</add_as_synonym>
-          <tune_pinned>→ tune pinned?</tune_pinned>
-          <empty_title>No search activity yet</empty_title>
-          <empty_body>Once visitors run searches, top phrases, zero-result phrases, and recent events will appear here. Needs the storefront telemetry SDK wired to POST /api/telemetry/searchlog — ask your developer if the cards stay empty.</empty_body>
-          <load_failed>Could not load search logs.</load_failed>
-        </searchLogs>
         <synonymCoverage>
           <title>Synonym Coverage</title>
           <description>Joins your saved synonyms with the recent search-log window to surface two complementary actions: prune entries that never matched a logged query, and add synonyms for top zero-result phrases that look like missing rules.</description>
