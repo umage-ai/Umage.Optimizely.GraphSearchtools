@@ -272,7 +272,8 @@ public class UiStringsProvider(LocalizationService loc)
             hits_label = IN("hits_label"),
             ctr_label = IN("ctr_label"),
             show_more = IN("show_more"),
-            open_profile = IN("open_profile")
+            open_profile = IN("open_profile"),
+            phrase_filter_no_matches = IN("phrase_filter_no_matches")
         },
         pinnedCoverage = new
         {

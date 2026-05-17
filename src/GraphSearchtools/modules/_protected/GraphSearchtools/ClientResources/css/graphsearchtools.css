@@ -5689,3 +5689,50 @@ td.bpe-editing select {
     font-weight: 600;
 }
 .gst-btn.is-active { background: var(--gst-bg-soft, #eef1f6); border-color: var(--gst-primary); color: var(--gst-primary); }
+
+/* ── Insights Aurora-style telemetry table ───────────────────────
+   Variant of .gst-table used on the global Insights tool's three
+   tabs. Read-only rows (no flyout, no ⋯ menu, no row-click) — the
+   classic Aurora behaviours are intentionally absent per the
+   design-system rule that telemetry surfaces don't borrow them.
+   Visual treatment: first column reads as the row's name, profile
+   cell is a quiet link to /Profiles/Detail, numeric columns get
+   the shared .num right-alignment + tabular numerals.
+*/
+.gst-ins-aurora-table tbody tr { cursor: default; }
+.gst-ins-aurora-table tbody tr:hover td { background: var(--gst-surface-hover); }
+
+.gst-ins-row__phrase {
+    font-weight: 500;
+    color: var(--gst-text);
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gst-ins-row__profile {
+    color: var(--gst-link) !important;
+    text-decoration: none;
+}
+.gst-ins-row__profile:hover { text-decoration: underline; }
+
+/* Small count chip riding inside a .gst-tab label — "Top phrases · 23".
+   Stays muted so it reads as metadata, not part of the tab name. */
+.gst-tab__count {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 9px;
+    background: var(--gst-surface-active);
+    color: var(--gst-text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    vertical-align: 1px;
+}
+.gst-tab.active .gst-tab__count {
+    background: color-mix(in srgb, var(--gst-primary) 12%, transparent);
+    color: var(--gst-primary);
+}
