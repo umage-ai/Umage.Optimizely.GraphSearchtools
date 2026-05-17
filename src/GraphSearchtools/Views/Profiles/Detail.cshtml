@@ -109,8 +109,9 @@
                             <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
                             <span class="gst-prof-chip__value">@siteLabel</span>
                         </span>
-                        @* Hidden but enabled — pinned.js reads `.value` via getElementById
-                           and skips it as an event source when there's nothing to change. *@
+                        @* Hidden but enabled — Insights / live-preview JS reads `.value`
+                           via getElementById and skips it as an event source when
+                           there's nothing to change. *@
                         <select id="gst-pin-site" class="gst-prof-chip__hidden" aria-hidden="true" tabindex="-1">
                             <option value="@(Model.Sites.Count == 1 ? Model.Sites[0] : "")"></option>
                         </select>
@@ -255,12 +256,10 @@
             </button>
         </nav>
 
-        @* Phase 6 redesign — flat sortable / filterable grid, in-place
-           editing, content-by-name typeahead. The phrase-tabs grouping
-           was removed in favour of a single grid where Phrase is just
-           another column; the toolbar carries a global filter and a
-           count chip. The "Save all" drawer surfaces only when there
-           are unsaved rows. *@
+        @* Aurora summary grid + right-edge flyout — same surface as the
+           top-level Pinned page. The Profile-scoped instance is mounted by
+           profiles.js → GST.pinned.aurora.init({ scope }) when the user
+           activates this tab. *@
         <article class="gst-prof-panel" data-panel="pinned" hidden
                  role="tabpanel" aria-labelledby="gst-prof-tab-pinned">
             @if (!Model.QueryAppliesPinned)
@@ -292,98 +291,57 @@
             }
             else
             {
-            <div class="gst-pinedit">
-                <div class="gst-pinedit__cmdbar">
-                    <div class="gst-pinedit__searchbox">
-                        <svg class="gst-pinedit__searchglyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                            <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                            <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                @* Aurora summary grid — same shape as the top-level Pinned
+                   page. Profile-scoped via `GST.pinned.aurora.init({ scope })`
+                   in profiles.js: the JS narrows `Collections` to the
+                   profile's pinned collection and the locale filter to the
+                   profile's declared languages. The site filter is hidden
+                   because the active profile already pins us to one site
+                   group. *@
+                <div class="gst-toolbar">
+                    <div class="gst-search">
+                        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        <input type="text" id="gst-pinedit-global"
-                               class="gst-pinedit__searchinput"
-                               placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/globalFilter")"
-                               autocomplete="off" />
+                        <input type="text" id="gst-pin-search"
+                               placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
                     </div>
-                    <span class="gst-pinedit__count" id="gst-pinedit-count" aria-live="polite">0</span>
-                    <span class="gst-pinedit__sep" aria-hidden="true"></span>
-                    <button type="button" id="gst-pinedit-add" class="gst-pinedit__addbtn">
-                        <span class="gst-pinedit__addbtn__plus">＋</span>
-                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/addRow")</span>
+                    <label class="gst-filter">
+                        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
+                        <select class="gst-filter__select" id="gst-pin-locale-filter">
+                            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
+                        </select>
+                    </label>
+                    <div class="gst-toolbar__spacer"></div>
+                    <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
+                        + @Loc.GetString("/graphsearchtools/tools/pinned/add")
                     </button>
                 </div>
 
-                <div class="gst-pinedit__grid-wrap">
-                    <table class="gst-pinedit__grid" role="grid" aria-describedby="gst-pinedit-pager-status">
-                        @* colgroup gives the browser an unambiguous, single
-                           source of truth for column widths so thead and
-                           tbody share the same column tracks regardless of
-                           any cell-level width discrepancies. *@
-                        <colgroup>
-                            <col style="width: 35%" />
-                            <col style="width: 54%" />
-                            <col style="width: 11%" />
-                        </colgroup>
-                        <thead>
-                            <tr class="gst-pinedit__head-sort">
-                                <th class="gst-pinedit__col gst-pinedit__col--phrase" data-sort="phrases">
-                                    <button type="button" class="gst-pinedit__sortbtn">
-                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colPhrase")</span>
-                                        <span class="gst-pinedit__caret"></span>
-                                    </button>
-                                </th>
-                                <th class="gst-pinedit__col gst-pinedit__col--target" data-sort="contentName">
-                                    <button type="button" class="gst-pinedit__sortbtn">
-                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/colTarget")</span>
-                                        <span class="gst-pinedit__caret"></span>
-                                    </button>
-                                </th>
-                                <th class="gst-pinedit__col gst-pinedit__col--actions" aria-hidden="true"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="gst-pinedit-rows"></tbody>
-                    </table>
-                    <div id="gst-pinedit-empty" class="gst-pinedit__empty" hidden>
-                        <p>@Loc.GetString("/graphsearchtools/profiles/detail/pinned/emptyHeadline")</p>
-                        <button type="button" class="gst-pinedit__empty-add" id="gst-pinedit-empty-add">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/addFirst")
-                        </button>
-                    </div>
-                </div>
-
-                <nav class="gst-pager" id="gst-pinedit-pager" hidden
-                     aria-label="@Loc.GetString("/graphsearchtools/ui/shared/pagerLabel")">
-                    <button type="button" class="gst-pager__btn" id="gst-pinedit-prev"
-                            title="@Loc.GetString("/graphsearchtools/ui/shared/prev")">
-                        <span aria-hidden="true">‹</span>
-                        <span>@Loc.GetString("/graphsearchtools/ui/shared/prev")</span>
-                    </button>
-                    <span class="gst-pager__status" id="gst-pinedit-pager-status" aria-live="polite"></span>
-                    <button type="button" class="gst-pager__btn" id="gst-pinedit-next"
-                            title="@Loc.GetString("/graphsearchtools/ui/shared/next")">
-                        <span>@Loc.GetString("/graphsearchtools/ui/shared/next")</span>
-                        <span aria-hidden="true">›</span>
-                    </button>
-                </nav>
-
-                <div id="gst-pinedit-drawer" class="gst-pinedit__drawer" hidden>
-                    <span class="gst-pinedit__drawer__count">
-                        <strong id="gst-pinedit-dirty-count">0</strong>
-                        @Loc.GetString("/graphsearchtools/profiles/detail/pinned/unsaved")
-                    </span>
-                    <div class="gst-pinedit__drawer__actions">
-                        <button type="button" class="gst-pinedit__drawer__btn" id="gst-pinedit-discard">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/discardAll")
-                        </button>
-                        <button type="button" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary" id="gst-pinedit-save-all">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/saveAll")
-                        </button>
-                    </div>
-                </div>
-            </div>
+                <table class="gst-table gst-pin-aurora-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
+                            <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
+                            <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
+                            <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
+                            <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
+                            <th aria-label="Actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="gst-pin-aurora-rows"></tbody>
+                </table>
             }
         </article>
 
-        @* Synonyms panel — pulls from the global per-language synonym pool. *@
+        @* Aurora synonyms summary grid + right-edge flyout — same surface as
+           the top-level Synonyms page. Mounted by profiles.js →
+           GST.synonyms.aurora.init({ scope }) when the user activates this
+           tab. Synonyms in Optimizely Graph are tenant-global; scoping only
+           narrows the Scope-filter dropdown to the profile's locales. *@
         <article class="gst-prof-panel" data-panel="synonyms" hidden
                  role="tabpanel" aria-labelledby="gst-prof-tab-synonyms">
             @if (!Model.QueryAppliesSynonyms)
@@ -414,110 +372,50 @@
             }
             else
             {
-            <div id="gst-prof-syn" class="gst-pinedit gst-prof-syn" data-loaded="false">
-                <div class="gst-pinedit__cmdbar">
-                    <div class="gst-pinedit__searchbox">
-                        <svg class="gst-pinedit__searchglyph" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                            <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                            <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                        </svg>
-                        <input type="text" id="gst-prof-syn-filter"
-                               class="gst-pinedit__searchinput"
-                               placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")"
-                               autocomplete="off" />
-                    </div>
-                    <span class="gst-pinedit__count" id="gst-prof-syn-count" aria-live="polite">0</span>
-                    <span class="gst-pinedit__sep" aria-hidden="true"></span>
-                    <button type="button" id="gst-prof-syn-add" class="gst-pinedit__addbtn">
-                        <span class="gst-pinedit__addbtn__plus">＋</span>
-                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRow")</span>
-                    </button>
-                </div>
-
-                @* Rule-format hint sits next to the Add button — that's where
-                   a marketer reaches for it (right when typing a new rule). *@
-                <details class="gst-prof-syn__help">
-                    <summary>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/helpSummary")</summary>
-                    <dl class="gst-prof-syn__help-dl">
-                        <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_label"):</dt>
-                        <dd><code>laptop =&gt; computer</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_replacement_text")</dd>
-                        <dt>@Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_label"):</dt>
-                        <dd><code>laptop, computer, pc</code> — @Loc.GetString("/graphsearchtools/ui/synonyms/help_equivalent_text")</dd>
-                    </dl>
-                </details>
-
+                @* Aurora summary grid — same shape as the top-level Synonyms
+                   page. The Profile detail page passes `scope.locales` so
+                   the Scope filter is narrowed to the profile's declared
+                   languages (plus the tenant-global pool, which always
+                   applies). The "synonyms are global" note stays — even when
+                   scoped, edits write to the tenant-wide synonym pool. *@
                 <p class="gst-prof-syn__note">
                     @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/globalNote")
                 </p>
 
-                <div id="gst-prof-syn-alert" class="gst-alert" hidden></div>
-
-                <div class="gst-pinedit__grid-wrap">
-                    <table class="gst-pinedit__grid" role="grid" aria-describedby="gst-prof-syn-pager-status">
-                        <colgroup>
-                            <col style="width: 6%" />
-                            <col style="width: 71%" />
-                            <col style="width: 12%" />
-                            <col style="width: 11%" />
-                        </colgroup>
-                        <thead>
-                            <tr class="gst-pinedit__head-sort">
-                                <th class="gst-pinedit__col" aria-hidden="true"></th>
-                                <th class="gst-pinedit__col" data-sort="rule">
-                                    <button type="button" class="gst-pinedit__sortbtn">
-                                        <span>@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</span>
-                                        <span class="gst-pinedit__caret"></span>
-                                    </button>
-                                </th>
-                                <th class="gst-pinedit__col" data-sort="scope">
-                                    <button type="button" class="gst-pinedit__sortbtn">
-                                        <span>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</span>
-                                        <span class="gst-pinedit__caret"></span>
-                                    </button>
-                                </th>
-                                <th class="gst-pinedit__col" aria-hidden="true"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="gst-prof-syn-rows"></tbody>
-                    </table>
-                    <div id="gst-prof-syn-empty" class="gst-pinedit__empty" hidden>
-                        <p>@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/emptyHeadline")</p>
-                        <button type="button" class="gst-pinedit__empty-add" id="gst-prof-syn-empty-add">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addFirst")
-                        </button>
+                <div class="gst-toolbar">
+                    <div class="gst-search">
+                        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="gst-syn-search"
+                               placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")" />
                     </div>
+                    <label class="gst-filter">
+                        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</span>
+                        <select class="gst-filter__select" id="gst-syn-locale-filter">
+                            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
+                        </select>
+                    </label>
+                    <div class="gst-toolbar__spacer"></div>
+                    <button type="button" id="gst-syn-create" class="gst-btn gst-btn--primary">
+                        + @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRow")
+                    </button>
                 </div>
 
-                <nav class="gst-pager" id="gst-prof-syn-pager" hidden
-                     aria-label="@Loc.GetString("/graphsearchtools/ui/shared/pagerLabel")">
-                    <button type="button" class="gst-pager__btn" id="gst-prof-syn-prev"
-                            title="@Loc.GetString("/graphsearchtools/ui/shared/prev")">
-                        <span aria-hidden="true">‹</span>
-                        <span>@Loc.GetString("/graphsearchtools/ui/shared/prev")</span>
-                    </button>
-                    <span class="gst-pager__status" id="gst-prof-syn-pager-status" aria-live="polite"></span>
-                    <button type="button" class="gst-pager__btn" id="gst-prof-syn-next"
-                            title="@Loc.GetString("/graphsearchtools/ui/shared/next")">
-                        <span>@Loc.GetString("/graphsearchtools/ui/shared/next")</span>
-                        <span aria-hidden="true">›</span>
-                    </button>
-                </nav>
-
-                <div id="gst-prof-syn-drawer" class="gst-pinedit__drawer" hidden>
-                    <span class="gst-pinedit__drawer__count">
-                        <strong id="gst-prof-syn-dirty-count">0</strong>
-                        @Loc.GetString("/graphsearchtools/profiles/detail/pinned/unsaved")
-                    </span>
-                    <div class="gst-pinedit__drawer__actions">
-                        <button type="button" id="gst-prof-syn-discard" class="gst-pinedit__drawer__btn">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/discard")
-                        </button>
-                        <button type="button" id="gst-prof-syn-save" class="gst-pinedit__drawer__btn gst-pinedit__drawer__btn--primary">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/save")
-                        </button>
-                    </div>
-                </div>
-            </div>
+                <table class="gst-table gst-syn-aurora-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
+                            <th data-sort="locale">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</th>
+                            <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
+                            <th aria-label="Actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="gst-syn-aurora-rows"></tbody>
+                </table>
             }
         </article>
 
@@ -767,9 +665,21 @@
     </section>
 </div>
 
+@* Aurora flyouts — shared markup; the profile-scoped Aurora JS opens/closes
+   them via GST.flyout. Same partial as the top-level Pinned/Synonyms pages,
+   so the editor experience is identical regardless of entry point. *@
+@if (Model.QueryAppliesPinned)
+{
+    @await Html.PartialAsync("/Views/Shared/_PinFlyout.cshtml")
+}
+@if (Model.QueryAppliesSynonyms)
+{
+    @await Html.PartialAsync("/Views/Shared/_SynonymFlyout.cshtml")
+}
+
 @section Scripts {
-    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned.js")"></script>
-    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms-grid.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-aurora.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms-aurora.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/profiles.js")"></script>
     <script>
         (function() {

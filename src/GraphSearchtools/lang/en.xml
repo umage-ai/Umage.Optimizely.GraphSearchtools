@@ -83,10 +83,6 @@
           <add>Add</add>
           <col_rule>Rule</col_rule>
           <save>Save changes</save>
-          <help_replacement_label>Replacement</help_replacement_label>
-          <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
-          <help_equivalent_label>Equivalent</help_equivalent_label>
-          <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
         </synonyms>
         <health>
           <title>Health</title>
@@ -300,34 +296,9 @@
             <graphqlTitle>GraphQL query</graphqlTitle>
           </overview>
           <pinned>
-            <addFirst>Add your first pin</addFirst>
-            <addRow>Add pin</addRow>
-            <colPhrase>Phrase</colPhrase>
-            <colPriority>Priority</colPriority>
-            <colTarget>Always show</colTarget>
-            <colFilterPhrase>Filter phrase…</colFilterPhrase>
-            <colFilterTarget>Filter content…</colFilterTarget>
-            <colType>Type</colType>
-            <discardAll>Discard changes</discardAll>
-            <empty>No pinned items for this phrase yet.</empty>
-            <emptyHeadline>No pins yet — add one to override the organic results for a phrase.</emptyHeadline>
-            <loading>Loading pinned items…</loading>
-            <globalFilter>Search pins by phrase, target, or type…</globalFilter>
-            <organicTitle>Organic results (no pins applied)</organicTitle>
-            <previewFailed>Preview failed</previewFailed>
-            <saveAll>Save all changes</saveAll>
-            <serpEmpty>No matches.</serpEmpty>
-            <serpEmptyHelp>No content matched this phrase. Try a different term, or pin a target above.</serpEmptyHelp>
-            <serpPinnedBadge>Pinned</serpPinnedBadge>
-            <serpPinnedTooltip>This result is locked to the top by a pin in this profile.</serpPinnedTooltip>
             <serpPlaceholder>Search the live index…</serpPlaceholder>
-            <serpScoreTooltip>Graph relevance score</serpScoreTooltip>
-            <serpShowJson>inspect</serpShowJson>
-            <serpUntitled>(untitled)</serpUntitled>
             <sharedSite>Shared across sites</sharedSite>
             <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
-            <tryTitle>Live preview</tryTitle>
-            <unsaved>unsaved</unsaved>
           </pinned>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
@@ -365,19 +336,6 @@
             <actionPinDisabled>This profile doesn't apply pinned results.</actionPinDisabled>
             <actionSynonym>Add a synonym for this phrase</actionSynonym>
             <actionSynonymDisabled>This profile doesn't apply synonyms.</actionSynonymDisabled>
-            <pinPickerPlaceholder>Search content…</pinPickerPlaceholder>
-            <pinUnavailable>Pinned results not configured for this profile.</pinUnavailable>
-            <pinLoading>Loading pinned config…</pinLoading>
-            <synRulePlaceholder>phrase => replacement</synRulePlaceholder>
-            <synRuleTip>Format: original =&gt; replacement. Queries for "original" are rewritten to "replacement" at search time.</synRuleTip>
-            <synUnavailable>Synonyms not loaded yet — open the Synonyms tab once.</synUnavailable>
-            <editSave>Save</editSave>
-            <editUpdate>Update</editUpdate>
-            <editSaving>Saving…</editSaving>
-            <editCancel>Cancel</editCancel>
-            <editPinSaved>✓ Pinned — open the Pinned tab to refine.</editPinSaved>
-            <editSynSaved>✓ Synonym added.</editSynSaved>
-            <editFailed>Save failed.</editFailed>
             <ctrLabel>CTR</ctrLabel>
             <hitsLabel>hits</hitsLabel>
             <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
@@ -392,23 +350,9 @@
             <switcherLabel>Profile tools</switcherLabel>
           </workspace>
           <synonyms>
-            <addFirst>Add your first rule</addFirst>
             <addRow>Add rule</addRow>
             <colScope>Locale</colScope>
-            <colFilterRule>Filter rule…</colFilterRule>
-            <colFilterScope>Filter scope…</colFilterScope>
-            <discard>Discard changes</discard>
-            <emptyHeadline>No synonym rules yet — add one to expand or substitute terms at query time.</emptyHeadline>
-            <loading>Loading synonym rules…</loading>
-            <globalNote>Showing every rule that applies when previewing in this language: the per-language blob (editable here) plus the global blob, which is shared across languages and managed in the Synonyms tool.</globalNote>
-            <globalRowTip>Global rule — applies in every language. Manage in the Synonyms tool.</globalRowTip>
-            <helpSummary>Rule format</helpSummary>
-            <noMatches>No rules match the current filter.</noMatches>
-            <save>Save all changes</save>
-            <scopeGlobal>global</scopeGlobal>
-            <scopeGlobalTip>Stored in the global synonym blob — applies to every language.</scopeGlobalTip>
-            <scopeLangTip>Stored in this language's synonym blob.</scopeLangTip>
-            <title>Synonym rules</title>
+            <globalNote>Synonyms in Optimizely Graph are tenant-global — edits made here apply to every profile that opts in via the synonyms directive in its GraphQL query.</globalNote>
           </synonyms>
           <details>
             <auditTitle>Audit log</auditTitle>
@@ -545,12 +489,6 @@
           <add>Add</add>
           <col_rule>Rule</col_rule>
           <save>Save changes</save>
-          <help_replacement_label>Replacement</help_replacement_label>
-          <help_replacement_text>searching "H2O" also returns results for "water", but not the reverse.</help_replacement_text>
-          <help_equivalent_label>Equivalent</help_equivalent_label>
-          <help_equivalent_text>searching any of these terms returns results for all three.</help_equivalent_text>
-          <tab_rules>Rules</tab_rules>
-          <tab_unused>Unused</tab_unused>
           <col_activity>Activity (30d)</col_activity>
           <activity_unknown>—</activity_unknown>
           <activity_load_failed>Activity unavailable</activity_load_failed>

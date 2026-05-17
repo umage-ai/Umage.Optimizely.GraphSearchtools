@@ -25,6 +25,12 @@
     const PROFILES_API = window.GST_BASE_URL + '/api/profiles';
 
     const state = {
+        initialized: false,
+        // Optional scope. When the Profile detail view mounts the grid, it
+        // passes `scope.locales` to narrow the rule list to the profile's
+        // declared languages (plus the tenant-global pool, which always
+        // applies). Top-level synonyms tool leaves this null.
+        scope: null,
         locales: ['Global'],  // editable scopes; Global + per-locale
         blobs: {},            // locale → original raw blob ('' if missing)
         rules: [],            // [{ id, raw, type, locale, lineIndex, hits }]
@@ -41,9 +47,20 @@
         editing: null
     };
 
-    document.addEventListener('DOMContentLoaded', init);
+    // Auto-init for the top-level Synonyms page. The Profile detail page
+    // calls `GST.synonyms.aurora.init({ scope })` from its own JS before
+    // DOMContentLoaded fires, so this handler becomes a no-op there.
+    document.addEventListener('DOMContentLoaded', function () {
+        if (state.initialized) return;
+        if (!document.getElementById('gst-syn-aurora-rows')) return;
+        init();
+    });
 
-    function init() {
+    function init(opts) {
+        if (state.initialized) return;
+        state.initialized = true;
+        opts = opts || {};
+        state.scope = opts.scope || null;
         const search = document.getElementById('gst-syn-search');
         if (search) search.addEventListener('input', function () {
             state.filters.q = search.value.trim().toLowerCase();
@@ -164,8 +181,16 @@
     }
 
     function discoverLocales() {
-        // Prefer the Profiles registry's union of declared locales; fall back
-        // to Graph's introspection endpoint, then to a hardcoded shortlist.
+        // Profile-scoped: the active profile declares exactly which locales
+        // it cares about. Use that list verbatim so the editable scopes
+        // match the profile's surface — fewer empty rule blobs to fetch and
+        // a tighter Scope filter dropdown.
+        if (state.scope && Array.isArray(state.scope.locales) && state.scope.locales.length) {
+            return Promise.resolve(state.scope.locales.slice());
+        }
+        // Top-level synonyms tool: prefer the Profiles registry's union of
+        // declared locales; fall back to Graph's introspection endpoint,
+        // then to a hardcoded shortlist.
         return GST.fetchJson(PROFILES_API)
             .then(function (profiles) {
                 const seen = {};
@@ -513,4 +538,10 @@
             if (!r.ok) throw new Error('Update failed ' + r.status);
         });
     }
+
+    // Expose `init` so the Profile detail view can mount a scoped instance
+    // before DOMContentLoaded fires.
+    window.GST = window.GST || {};
+    window.GST.synonyms = window.GST.synonyms || {};
+    window.GST.synonyms.aurora = { init: init };
 })();
