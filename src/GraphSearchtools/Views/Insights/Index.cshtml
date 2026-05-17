@@ -4,7 +4,6 @@
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
     ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/insights/title");
     string T(string key) => Loc.GetString($"/graphsearchtools/tools/insights/{key}");
-    string Sh(string key) => Loc.GetString($"/graphsearchtools/ui/shared/{key}");
 }
 
 <div class="gst-page-header">
@@ -14,93 +13,118 @@
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-@* Window toggle — 7d default, 30d for slower-moving signals. JS keeps the
-   four panels in sync. *@
-<div class="gst-card gst-sl-toolbar-card">
-    <div class="gst-toolbar gst-sl-toolbar">
-        <div class="gst-sl-pillgroup" role="group" aria-label="@T("title")">
-            <button type="button" class="gst-sl-pill gst-sl-pill--active" data-days="7">@T("window_7d")</button>
-            <button type="button" class="gst-sl-pill" data-days="30">@T("window_30d")</button>
-        </div>
-        <div class="gst-toolbar__spacer"></div>
-        <button type="button" id="gst-insights-refresh" class="gst-btn">@Sh("refresh")</button>
+@* 30d KPI strip — three headline numbers (total searches, daily CTR,
+   zero-result searches) each with a 30-day sparkline. Window is fixed
+   at 30d regardless of the page-level Window selector (which scopes the
+   lane tables); the sparkline needs 30 buckets to be useful. Sparkline
+   click filters the active tab to one day. *@
+<div class="gst-card gst-sl-card gst-sl-card--wide" data-card="kpis">
+    <div id="gst-insights-kpis" class="gst-kpis" aria-live="polite">
+        @* JS renders three .gst-kpi tiles with sparklines. *@
     </div>
 </div>
 
-<div class="gst-sl-grid">
-    @* ─────── Top phrases ─────── *@
-    <div class="gst-card gst-sl-card" data-card="top">
-        <div class="gst-sl-card__head">
-            <h2>@T("top_title")</h2>
-            <p class="gst-muted">@T("top_subtitle")</p>
-        </div>
-        <table class="gst-table gst-sl-table">
-            <thead>
-                <tr>
-                    <th>@T("col_phrase")</th>
-                    <th class="num">@T("col_count")</th>
-                    <th class="num">@T("col_zero")</th>
-                    <th>@T("col_locale")</th>
-                    <th>@T("col_profile")</th>
-                </tr>
-            </thead>
-            <tbody id="gst-insights-top"></tbody>
-        </table>
+@* Tab strip — one tab per lane (Top / Zero-result / Low-CTR). The toolbar
+   below scopes whichever tab is visible; filter state carries across tabs
+   so switching doesn't reset what the user picked. Profile is the one
+   filter that also bleeds upward to re-scope the KPI card. *@
+<div class="gst-card">
+    <div class="gst-tabs" role="tablist" aria-label="@T("title")">
+        <button type="button" class="gst-tab active" role="tab"
+                id="gst-ins-tab-top" data-tab="top"
+                aria-selected="true" aria-controls="gst-ins-panel-top">@T("tab_top")<span class="gst-tab__count" id="gst-ins-top-count" hidden></span></button>
+        <button type="button" class="gst-tab" role="tab"
+                id="gst-ins-tab-zero" data-tab="zero"
+                aria-selected="false" aria-controls="gst-ins-panel-zero">@T("tab_zero")<span class="gst-tab__count" id="gst-ins-zero-count" hidden></span></button>
+        <button type="button" class="gst-tab" role="tab"
+                id="gst-ins-tab-lowctr" data-tab="lowctr"
+                aria-selected="false" aria-controls="gst-ins-panel-lowctr">@T("tab_lowctr")<span class="gst-tab__count" id="gst-ins-lowctr-count" hidden></span></button>
     </div>
 
-    @* ─────── Zero-result phrases ─────── *@
-    <div class="gst-card gst-sl-card" data-card="zero">
-        <div class="gst-sl-card__head">
-            <h2>@T("zero_title")</h2>
-            <p class="gst-muted">@T("zero_subtitle")</p>
+    <div class="gst-toolbar gst-sl-toolbar">
+        <div class="gst-search">
+            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="gst-insights-phrase-filter"
+                   placeholder="@T("phrase_filter_placeholder")" />
         </div>
-        <table class="gst-table gst-sl-table">
-            <thead>
-                <tr>
-                    <th>@T("col_phrase")</th>
-                    <th class="num">@T("col_count")</th>
-                    <th>@T("col_locale")</th>
-                    <th>@T("col_profile")</th>
-                </tr>
-            </thead>
-            <tbody id="gst-insights-zero"></tbody>
-        </table>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@T("col_profile")</span>
+            <select class="gst-filter__select" id="gst-insights-profile-filter">
+                <option value="">@T("profile_filter_all")</option>
+            </select>
+        </label>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@T("col_locale")</span>
+            <select class="gst-filter__select" id="gst-insights-locale-filter">
+                <option value="">@T("locale_filter_all")</option>
+            </select>
+        </label>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@T("window_filter_label")</span>
+            <select class="gst-filter__select" id="gst-insights-window-filter">
+                <option value="7">@T("window_7d")</option>
+                <option value="30">@T("window_30d")</option>
+            </select>
+        </label>
+        <div class="gst-toolbar__spacer"></div>
     </div>
 
-    @* ─────── Search-activity KPIs ───────
-       Three headline numbers — total searches, daily CTR, zero-result
-       searches — each paired with a 30-day sparkline. Window is fixed
-       at 30d regardless of the page-level 7/30 pill (which scopes the
-       lane tables); the sparkline needs 30 buckets to be useful. *@
-    <div class="gst-card gst-sl-card gst-sl-card--wide" data-card="kpis">
-        <div class="gst-sl-card__head">
-            <h2>@T("kpis_title")</h2>
-            <p class="gst-muted">@T("kpis_subtitle")</p>
-        </div>
-        <div id="gst-insights-kpis" class="gst-kpis" aria-live="polite">
-            @* JS renders three .gst-kpi tiles with sparklines. *@
-        </div>
-    </div>
+    <div class="gst-ins-panels">
+        @* Top — most-asked phrases. Aurora-style read-only telemetry table:
+           no row-click, no flyout, no ⋯ menu (per design-system.md:139). *@
+        <section class="gst-ins-tabpanel is-active" data-lane="top"
+                 id="gst-ins-panel-top" role="tabpanel" aria-labelledby="gst-ins-tab-top">
+            <table class="gst-table gst-ins-aurora-table" data-lane="top">
+                <thead>
+                    <tr>
+                        <th data-sort="phrase">@T("col_phrase")</th>
+                        <th data-sort="profile">@T("col_profile")</th>
+                        <th data-sort="locale">@T("col_locale")</th>
+                        <th data-sort="hits" class="num">@T("col_hits")</th>
+                        <th data-sort="zero" class="num">@T("col_zero_count")</th>
+                    </tr>
+                </thead>
+                <tbody id="gst-ins-top"></tbody>
+            </table>
+        </section>
 
-    @* ─────── Recent activity strip ─────── *@
-    <div class="gst-card gst-sl-card gst-sl-card--wide" data-card="activity">
-        <div class="gst-sl-card__head">
-            <h2>@T("activity_title")</h2>
-            <p class="gst-muted">@T("activity_subtitle")</p>
-        </div>
-        <table class="gst-table gst-sl-table">
-            <thead>
-                <tr>
-                    <th>@T("col_when")</th>
-                    <th>@T("col_profile")</th>
-                    <th>@T("col_kind")</th>
-                    <th>@T("col_action")</th>
-                    <th>@T("col_subject")</th>
-                    <th>@T("col_actor")</th>
-                </tr>
-            </thead>
-            <tbody id="gst-insights-activity"></tbody>
-        </table>
+        @* Zero-result — synonym-mining surface. *@
+        <section class="gst-ins-tabpanel" data-lane="zero"
+                 id="gst-ins-panel-zero" role="tabpanel" aria-labelledby="gst-ins-tab-zero">
+            <table class="gst-table gst-ins-aurora-table" data-lane="zero">
+                <thead>
+                    <tr>
+                        <th data-sort="phrase">@T("col_phrase")</th>
+                        <th data-sort="profile">@T("col_profile")</th>
+                        <th data-sort="locale">@T("col_locale")</th>
+                        <th data-sort="hits" class="num">@T("col_hits")</th>
+                    </tr>
+                </thead>
+                <tbody id="gst-ins-zero"></tbody>
+            </table>
+        </section>
+
+        @* Low-CTR — pin-candidate surface. *@
+        <section class="gst-ins-tabpanel" data-lane="lowctr"
+                 id="gst-ins-panel-lowctr" role="tabpanel" aria-labelledby="gst-ins-tab-lowctr">
+            <table class="gst-table gst-ins-aurora-table" data-lane="lowctr">
+                <thead>
+                    <tr>
+                        <th data-sort="phrase">@T("col_phrase")</th>
+                        <th data-sort="profile">@T("col_profile")</th>
+                        <th data-sort="locale">@T("col_locale")</th>
+                        <th data-sort="hits" class="num">@T("col_hits")</th>
+                        <th data-sort="ctr" class="num">@T("col_ctr")</th>
+                    </tr>
+                </thead>
+                <tbody id="gst-ins-lowctr"></tbody>
+            </table>
+        </section>
     </div>
 </div>
 

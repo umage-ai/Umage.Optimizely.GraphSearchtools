@@ -1,24 +1,20 @@
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
-using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Insights.Models;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
-using UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 
 /// <summary>
-/// Aggregation surface for the Insights dashboard. Reuses
-/// <see cref="SearchLogsService"/> for the phrase/zero-result lanes,
-/// <see cref="SynonymCoverageService"/> for the synonym-coverage rollup, and
-/// <see cref="SearchProfileEditService"/> for the activity strip — no new DB
-/// schema. The Insights surface is read-only; everything here is a join over
-/// data the other tools already maintain.
+/// Aggregation surface for the Insights dashboard. Three lanes — top phrases,
+/// zero-result phrases, low-CTR phrases — all sourced from
+/// <see cref="SearchLogsService"/>. Read-only; everything here is a projection
+/// over the search-log telemetry the host SDK posts.
 /// </summary>
 public sealed class InsightsService
 {
     /// <summary>
-    /// Default window for the top-phrases / zero-result panels (7 days). The
-    /// JS toggle exposes 30 days too.
+    /// Default window for all three lanes (7 days). The JS toggle exposes
+    /// 30 days too.
     /// </summary>
     public static readonly TimeSpan DefaultWindow = TimeSpan.FromDays(7);
 
@@ -29,19 +25,11 @@ public sealed class InsightsService
     public const int SearchKpisWindowDays = 30;
 
     private readonly SearchLogsService _logs;
-    private readonly SynonymCoverageService _synonymCoverage;
-    private readonly SearchProfileEditService _editLog;
     private readonly ITelemetryReader _reader;
 
-    public InsightsService(
-        SearchLogsService logs,
-        SynonymCoverageService synonymCoverage,
-        SearchProfileEditService editLog,
-        ITelemetryReader reader)
+    public InsightsService(SearchLogsService logs, ITelemetryReader reader)
     {
         _logs = logs;
-        _synonymCoverage = synonymCoverage;
-        _editLog = editLog;
         _reader = reader;
     }
 
@@ -95,7 +83,6 @@ public sealed class InsightsService
         }).ToList();
     }
 
-    /// <summary>
     /// Resolve a phrase-lane window. When <paramref name="dateUtc"/> is set,
     /// returns a 24h window over that UTC day (overrides <paramref name="days"/>).
     /// Otherwise returns <c>[now - days, now]</c>.
@@ -112,23 +99,28 @@ public sealed class InsightsService
     }
 
     /// <summary>
-    /// Synonym coverage rollup. Drives the "are your synonyms keeping up?"
-    /// card — totals + the two actionable counts (unused, suggested-add).
-    /// The 30d window matches <see cref="SynonymCoverageService.DefaultWindow"/>
-    /// so a marketer who drills from this panel into the full Synonyms ›
-    /// Unused tab sees the same dataset.
+    /// Low-CTR phrases in the window. The reader's threshold (half the window
+    /// mean) keeps the surface actionable; <paramref name="days"/> is clamped
+    /// to <c>[1, 90]</c>.
     /// </summary>
-    public async Task<InsightsSynonymCoverage> SynonymCoverageAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<InsightsPhraseRow>> LowCtrPhrasesAsync(
+        int days,
+        int take,
+        string? profileKey = null,
+        string? locale = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _synonymCoverage.AnalyzeAsync(cancellationToken);
-        return new InsightsSynonymCoverage
+        var since = DateTime.UtcNow - TimeSpan.FromDays(Math.Clamp(days, 1, 90));
+        var rows = await _logs.LowCtrPhrasesAsync(since, take, profileKey, locale, cancellationToken: cancellationToken);
+        return rows.Select(r => new InsightsPhraseRow
         {
-            TotalRules = result.TotalRules,
-            UnusedRules = result.UnusedEntries.Count,
-            LogsScanned = result.LogsScanned,
-            GeneratedAt = result.GeneratedAt,
-            WindowStart = result.WindowStart
-        };
+            Phrase = r.Phrase,
+            Count = r.Hits,
+            ZeroResults = (long)Math.Round(r.Hits * r.ZeroResultRate),
+            Ctr = r.Ctr,
+            Locale = r.Locale,
+            ProfileKey = r.ProfileKey
+        }).ToList();
     }
 
     /// <summary>
@@ -187,25 +179,5 @@ public sealed class InsightsService
             SparkZero     = sparkZero,
             SparkCtr      = sparkCtr
         };
-    }
-
-    /// <summary>
-    /// Cross-profile recent activity feed for the strip at the bottom of the
-    /// Insights view. Newest-first.
-    /// </summary>
-    public IReadOnlyList<InsightsActivityRow> RecentActivity(int take = 20)
-    {
-        return _editLog.ListRecent(take)
-            .Select(e => new InsightsActivityRow
-            {
-                At = e.At,
-                ProfileKey = e.ProfileKey,
-                Kind = e.Kind,
-                Action = e.Action,
-                Subject = e.Subject,
-                ActorName = e.ActorName,
-                Locale = e.Locale
-            })
-            .ToList();
     }
 }

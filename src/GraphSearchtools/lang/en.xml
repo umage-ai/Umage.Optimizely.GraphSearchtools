@@ -22,7 +22,7 @@
               <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
               <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
               <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
-              <SearchLogs>View Search Logs analytics — top phrases, zero-result phrases, low-CTR phrases, recent raw events.</SearchLogs>
+              <SearchLogs>Access the internal /SearchLogsApi telemetry read endpoints that power the Profile Insights tab.</SearchLogs>
               <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
               <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
               <ContentSearchabilityAudit>Scan the CMS content tree for empty Name / MainBody / Tags and string fields exceeding Graph's 1024-character sortable-field limit.</ContentSearchabilityAudit>
@@ -41,7 +41,6 @@
         <synonyms>Synonyms</synonyms>
         <health>Health</health>
         <autocomplete>Autocomplete check</autocomplete>
-        <searchLogs>Search logs</searchLogs>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
       </menu>
@@ -132,13 +131,20 @@
         </autocomplete>
         <insights>
           <title>Insights</title>
-          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every profile.</description>
+          <description>What people search for across every profile — top phrases, zero-result phrases, and low-CTR phrases. Filter by profile to narrow.</description>
           <window_7d>Last 7d</window_7d>
           <window_30d>Last 30d</window_30d>
+          <profile_filter_label>Filter by profile</profile_filter_label>
+          <profile_filter_all>All profiles</profile_filter_all>
+          <tab_top>Top phrases</tab_top>
+          <tab_zero>Zero-result</tab_zero>
+          <tab_lowctr>Low-CTR</tab_lowctr>
           <top_title>Top phrases</top_title>
-          <top_subtitle>Most-searched phrases. Zero-result counts are derived from the same window.</top_subtitle>
+          <top_subtitle>Most-searched phrases in the window.</top_subtitle>
           <zero_title>Zero-result phrases</zero_title>
           <zero_subtitle>What people searched for and found nothing — pin candidates.</zero_subtitle>
+          <lowctr_title>Low-CTR phrases</lowctr_title>
+          <lowctr_subtitle>Phrases with the worst click-through rate. Excludes phrases with too few hits to score honestly.</lowctr_subtitle>
           <kpis_title>Search activity</kpis_title>
           <kpis_subtitle>Headline numbers for the last 30 days, with a daily sparkline on each.</kpis_subtitle>
           <kpi_searches>Searches</kpi_searches>
@@ -147,48 +153,26 @@
           <kpi_window>last %1 days</kpi_window>
           <kpi_days_ago>%1d ago</kpi_days_ago>
           <kpi_tooltip>%1: %2</kpi_tooltip>
-          <activity_title>Recent activity</activity_title>
-          <activity_subtitle>Latest edits across every profile.</activity_subtitle>
-          <col_phrase>Phrase</col_phrase>
-          <col_count>Count</col_count>
-          <col_zero>Zero results</col_zero>
-          <col_locale>Locale</col_locale>
-          <col_profile>Profile</col_profile>
-          <col_when>When</col_when>
-          <col_kind>Kind</col_kind>
-          <col_action>Action</col_action>
-          <col_subject>Subject</col_subject>
-          <col_actor>Editor</col_actor>
           <empty_phrases>No phrases logged in this window yet.</empty_phrases>
           <empty_zero>No zero-result phrases — every search found something.</empty_zero>
-          <empty_activity>No edits recorded yet.</empty_activity>
+          <empty_lowctr>Not enough sessions to score CTR yet.</empty_lowctr>
           <load_failed>Could not load insights.</load_failed>
-        </insights>
-        <searchLogs>
-          <title>Search logs</title>
-          <description>What people are searching for — and where it's failing. Top phrases, zero-result phrases, low-CTR phrases, and a live tail of recent events. Every row links into the tool that fixes it.</description>
-          <window_1h>Last 1h</window_1h>
-          <window_24h>Last 24h</window_24h>
-          <window_7d>Last 7d</window_7d>
-          <window_30d>Last 30d</window_30d>
-          <top_title>Top phrases</top_title>
-          <zero_results_title>Zero-result phrases</zero_results_title>
-          <low_ctr_title>Low-CTR phrases</low_ctr_title>
-          <raw_title>Recent events</raw_title>
+          <hits_label>hits</hits_label>
+          <ctr_label>CTR</ctr_label>
+          <show_more>Show more</show_more>
+          <open_profile>Open this profile</open_profile>
+          <more>More</more>
           <col_phrase>Phrase</col_phrase>
-          <col_count>Count</col_count>
-          <col_locale>Locale</col_locale>
           <col_profile>Profile</col_profile>
-          <col_when>When</col_when>
-          <col_detail>Detail</col_detail>
-          <col_status>Status</col_status>
-          <status_search>search</status_search>
-          <add_as_synonym>→ add as synonym?</add_as_synonym>
-          <tune_pinned>→ tune pinned?</tune_pinned>
-          <empty_title>No search activity yet</empty_title>
-          <empty_body>Once visitors run searches, top phrases, zero-result phrases, and recent events will appear here. Needs the storefront telemetry SDK wired to POST /api/telemetry/searchlog — ask your developer if the cards stay empty.</empty_body>
-          <load_failed>Could not load search logs.</load_failed>
-        </searchLogs>
+          <col_locale>Locale</col_locale>
+          <col_hits>Hits</col_hits>
+          <col_ctr>CTR</col_ctr>
+          <col_zero_count>Zero results</col_zero_count>
+          <locale_filter_all>All locales</locale_filter_all>
+          <window_filter_label>Window</window_filter_label>
+          <phrase_filter_placeholder>Filter phrases…</phrase_filter_placeholder>
+          <phrase_filter_no_matches>No phrases match your filter.</phrase_filter_no_matches>
+        </insights>
         <synonymCoverage>
           <title>Synonym Coverage</title>
           <description>Joins your saved synonyms with the recent search-log window to surface two complementary actions: prune entries that never matched a logged query, and add synonyms for top zero-result phrases that look like missing rules.</description>

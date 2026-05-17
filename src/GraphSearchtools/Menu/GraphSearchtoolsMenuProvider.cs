@@ -92,17 +92,6 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
         };
 
-        // Analytics & audits group (Phase 4 Wave 5). Search Logs leads the
-        // group because it's the synonym-mining surface every other Wave 5
-        // tool feeds off: top phrases, zero-result phrases, low-CTR phrases,
-        // recent raw events.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/searchLogs", "Search insights"), BaseMenuPath + "/searchlogs",
-            GetResourcePath("SearchLogs/Index"))
-        {
-            SortIndex = 510,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.SearchLogs))
-        };
-
         // Pinned audit surfacing lives in Insights — no standalone menu
         // entry, no Pinned sub-tab. Legacy /pinnedcoverage URL still 301s
         // to /Pinned via GraphSearchtoolsController.PinnedCoverage.

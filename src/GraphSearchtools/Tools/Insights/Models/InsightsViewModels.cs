@@ -13,6 +13,14 @@ public sealed class InsightsPhraseRow
     public long ZeroResults { get; init; }
     public string? Locale { get; init; }
     public string? ProfileKey { get; init; }
+
+    /// <summary>
+    /// Click-through rate as a fraction in <c>[0, 1]</c> — only populated by
+    /// <c>LowCtrPhrasesAsync</c> where it's the row's load-bearing signal.
+    /// Top-phrase rows leave it at the default <c>0</c>; the UI column that
+    /// reads it is gated to the Low-CTR lane.
+    /// </summary>
+    public double Ctr { get; init; }
 }
 
 /// <summary>
@@ -28,27 +36,12 @@ public sealed class InsightsZeroResultRow
 }
 
 /// <summary>
-/// Recent edit row for the activity strip. One per <c>SearchProfileEdit</c>
-/// DDS entry, cross-profile, newest-first.
-/// </summary>
-public sealed class InsightsActivityRow
-{
-    public DateTime At { get; init; }
-    public string ProfileKey { get; init; } = string.Empty;
-    public string Kind { get; init; } = string.Empty;
-    public string Action { get; init; } = string.Empty;
-    public string Subject { get; init; } = string.Empty;
-    public string ActorName { get; init; } = string.Empty;
-    public string Locale { get; init; } = string.Empty;
-}
-
-/// <summary>
 /// Search-activity KPIs over a fixed 30-day window. Drives the three-tile
-/// card at the top of the Insights view: total searches, daily CTR, total
-/// zero-result searches — each paired with a 30-day sparkline. The window
-/// is intentionally not affected by the page-level 7d/30d toggle (which
-/// scopes the lane tables); these KPIs are always 30-day so the sparkline
-/// has enough resolution to be useful.
+/// card above the tab strip on the Insights view: total searches, daily CTR,
+/// total zero-result searches — each paired with a 30-day sparkline. The
+/// window is intentionally not affected by the page-level 7d/30d toggle
+/// (which scopes the lane tables); these KPIs are always 30-day so the
+/// sparkline has enough resolution to be useful.
 /// </summary>
 public sealed class InsightsSearchKpis
 {
@@ -83,32 +76,4 @@ public sealed class InsightsSearchKpis
     /// the less surprising default).
     /// </summary>
     public IReadOnlyList<double> SparkCtr { get; init; } = Array.Empty<double>();
-}
-
-/// <summary>
-/// Synonym coverage rollup — the panel that tells marketers whether their
-/// synonym pool is keeping up with the search log. Surfaces the unused-rule
-/// count from <see cref="SynonymCoverageService"/>; the missing-rules signal
-/// (zero-result phrases that look like new rule candidates) is owned by the
-/// per-profile insights pipeline now.
-/// </summary>
-public sealed class InsightsSynonymCoverage
-{
-    /// <summary>
-    /// Total rules in the tenant's synonym pool (Global + per-language).
-    /// </summary>
-    public int TotalRules { get; init; }
-
-    /// <summary>
-    /// Rules whose triggers never matched a query in the window.
-    /// </summary>
-    public int UnusedRules { get; init; }
-
-    /// <summary>
-    /// Number of telemetry events scanned to produce these signals.
-    /// </summary>
-    public int LogsScanned { get; init; }
-
-    public DateTime GeneratedAt { get; init; }
-    public DateTime WindowStart { get; init; }
 }
