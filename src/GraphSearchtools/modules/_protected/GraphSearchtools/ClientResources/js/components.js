@@ -96,6 +96,33 @@
         );
     }
 
+    // The CMS shell's platform-nav has a higher z-index than us, so the
+    // flyout has to anchor below it. Measure the actual bottom edge on
+    // every open — nav height varies between CMS 12 (#epi-navigation-root)
+    // and CMS 13 (<platform-navigation>), and the static 48px fallback
+    // overshoots most shells. Falls back if no nav element is found.
+    function syncFlyoutTopOffset() {
+        // The inner <header> is the actual fixed top-app-bar; the outer
+        // #epi-navigation-root wraps open dropdown menus too, so its
+        // bounding-rect overshoots when any menu is open.
+        var sels = [
+            '#epi-navigation-root > header',  // CMS 12 (Axiom shell)
+            'header.epi-pn-navigation',
+            'platform-navigation-wrapper',    // CMS 13
+            'platform-navigation',
+            '.epi-globalNavigation'           // older CMS 12 shells
+        ];
+        for (var i = 0; i < sels.length; i++) {
+            var el = document.querySelector(sels[i]);
+            if (!el) continue;
+            var rect = el.getBoundingClientRect();
+            if (rect.height > 0) {
+                document.documentElement.style.setProperty('--gst-flyout-top', Math.round(rect.bottom) + 'px');
+                return;
+            }
+        }
+    }
+
     GST.flyout = {
         /**
          * Open the flyout identified by `key`. Markup must already exist
@@ -124,6 +151,7 @@
                 flyoutState[key].lastFocus = document.activeElement;
             }
 
+            syncFlyoutTopOffset();
             els.backdrop.hidden = false;
             els.panel.hidden = false;
 
