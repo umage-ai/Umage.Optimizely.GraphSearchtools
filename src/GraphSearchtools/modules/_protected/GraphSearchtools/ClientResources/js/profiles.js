@@ -279,21 +279,28 @@
     function detail(opts) {
         opts = opts || {};
         var key = opts.profileKey || '';
-        var pinnedMounted = false;
         var synonymsMounted = false;
         var insightsMounted = false;
-        var auditLoaded = false;
 
         // Editor handles surfaced from each panel — the Insights tab uses
-        // these to seed draft pin / synonym rows from a phrase signal.
-        var editors = { pinned: null, synonyms: null };
+        // these to seed draft pin / synonym rows from a phrase signal. The
+        // post-Aurora wiring narrows these to a minimal contract: clicking
+        // an Insights row's pin / synonym icon opens the matching Aurora
+        // flyout prefilled. The richer inline-edit panel is a phase-2 task.
+        //
+        // Shims are populated immediately (not behind the lazy `mountPinned` /
+        // `mountSynonyms`) so the Insights icons work even when the marketer
+        // never switches tabs — clicking them will trigger the mount.
+        var editors = {
+            pinned: makePinnedEditorShim(),
+            synonyms: makeSynonymsEditorShim()
+        };
 
-        // Mount the pinned editor immediately — it owns the site/locale state
-        // shared with the preview and we want the preview's pinned-row
-        // intersection to be live from first paint. The Insights tab is the
-        // default-visible panel and also needs to mount eagerly so its lanes
-        // populate on first paint without waiting for a user click.
-        mountPinned();
+        // Mount the Insights tab eagerly — it's the default-visible panel,
+        // so its lanes need to populate on first paint without a user click.
+        // The Pinned / Synonyms Aurora grids are lazy-mounted on first tab
+        // activation: the Aurora module owns its own DOM and binding it
+        // up-front would slow down the initial Insights paint.
         mountInsights();
 
         // Inject copy buttons into any code blocks marked [data-gst-copy].
@@ -326,6 +333,7 @@
                     p.hidden = p.dataset.panel !== target;
                     p.classList.toggle('is-active', p.dataset.panel === target);
                 });
+                if (target === 'pinned') mountPinned();
                 if (target === 'synonyms') mountSynonyms();
                 if (target === 'insights') mountInsights();
                 // Audit lives in the Activity tab now (Aurora Phase 3C);
@@ -340,26 +348,158 @@
             if (btn) btn.click();
         }
 
+        // Aurora Pinned grid — profile-scoped via the JS module's `init({scope})`
+        // entry point. Resolves the profile's collection id up-front via
+        // /api/profiles/{key}/pinned so the Aurora grid only walks the
+        // matching collection (generic profiles fall through to the unscoped
+        // view, which is what /api/profiles returns for them anyway).
+        // Returns a Promise that resolves after init has run so callers
+        // (the Insights "open pin flyout" shim) can wait before reaching
+        // for the create button's wired-up click handler.
+        var pinnedMountPromise = null;
         function mountPinned() {
-            if (pinnedMounted) return;
-            if (!window.GST || !window.GST.pinned || typeof window.GST.pinned.editor !== 'function') return;
-            pinnedMounted = true;
-            editors.pinned = window.GST.pinned.editor({
-                profileKey: key,
-                sites: opts.sites || [],
-                locales: opts.locales || [],
-                isGeneric: !!opts.isGeneric,
-                isSiteShared: !!opts.isSiteShared,
-                hasGraphQLDoc: !!opts.hasGraphQLDoc,
-                queryAppliesPinned: !!opts.queryAppliesPinned
+            if (pinnedMountPromise) return pinnedMountPromise;
+            if (!window.GST || !window.GST.pinned || !window.GST.pinned.aurora
+                || typeof window.GST.pinned.aurora.init !== 'function') return Promise.resolve();
+            if (!document.getElementById('gst-pin-aurora-rows')) return Promise.resolve(); // unwired panel
+
+            // Generic profiles have no PinnedKey formula → no single collection
+            // to narrow to. Mount the Aurora grid against all collections so
+            // free-form pins are still surfaced — matches the legacy behaviour.
+            if (opts.isGeneric) {
+                window.GST.pinned.aurora.init({
+                    scope: {
+                        profileKey: key,
+                        collectionId: null,
+                        locales: opts.locales || []
+                    }
+                });
+                pinnedMountPromise = Promise.resolve();
+                return pinnedMountPromise;
+            }
+
+            // Resolve the profile's collection id via the existing scoped
+            // endpoint. The first declared locale is enough for the formula
+            // (PinnedKeyForLocale is stable per-locale; we only need a key
+            // to look up the collection, not to filter rows).
+            var firstLocale = (opts.locales && opts.locales[0]) || '';
+            var firstSite = (opts.sites && opts.sites[0]) || '';
+            var url = API_BASE + '/' + encodeURIComponent(key) + '/pinned'
+                + '?site=' + encodeURIComponent(firstSite)
+                + '&locale=' + encodeURIComponent(firstLocale);
+            pinnedMountPromise = GST.fetchJson(url).then(function (resp) {
+                window.GST.pinned.aurora.init({
+                    scope: {
+                        profileKey: key,
+                        collectionId: (resp && resp.collectionId) || null,
+                        locales: opts.locales || []
+                    }
+                });
+            }).catch(function (err) {
+                console.error('Profile pinned scope resolution failed', err);
+                // Fall through to an unscoped mount so the grid still loads.
+                window.GST.pinned.aurora.init({
+                    scope: {
+                        profileKey: key,
+                        collectionId: null,
+                        locales: opts.locales || []
+                    }
+                });
+            });
+            return pinnedMountPromise;
+        }
+
+        // Aurora Synonyms grid — profile-scoped via `init({scope.locales})`.
+        // Synonyms are tenant-global in Optimizely Graph so there's no
+        // collection narrowing; the scope only filters which locale pools
+        // are surfaced in the Scope filter dropdown.
+        function mountSynonyms() {
+            if (synonymsMounted) return;
+            if (!window.GST || !window.GST.synonyms || !window.GST.synonyms.aurora
+                || typeof window.GST.synonyms.aurora.init !== 'function') return;
+            if (!document.getElementById('gst-syn-aurora-rows')) return; // unwired panel, nothing to mount
+            synonymsMounted = true;
+            window.GST.synonyms.aurora.init({
+                scope: {
+                    locales: opts.locales || []
+                }
             });
         }
 
-        function mountSynonyms() {
-            if (synonymsMounted) return;
-            synonymsMounted = true;
-            editors.synonyms = mountSynonymsPanel({
-                locales: opts.locales || []
+        // Minimal "editor" shim that the Insights inline pin/synonym editors
+        // use to read state + create/update entries. Post-Aurora the inline
+        // editor only needs: whenReady (no async loading happens now —
+        // Aurora's `init` is synchronous), canCreatePins, and a path to
+        // open the matching Aurora flyout prefilled. The richer
+        // findPinForPhrase / updatePin / appendRule contract from the old
+        // pinned.js / synonyms-grid.js is phase-2 — for now the icon click
+        // opens the create flyout with the phrase prefilled and the marketer
+        // confirms / picks content there. See PR description for the
+        // phase-2 candidates this leaves behind.
+        function makePinnedEditorShim() {
+            return {
+                whenReady: function () { return Promise.resolve(); },
+                canCreatePins: function () { return !!opts.queryAppliesPinned; },
+                // No client-side index of pins exists post-Aurora — return null
+                // so the Insights inline editor always offers "create" rather
+                // than "update".
+                findPinForPhrase: function () { return null; },
+                // Open the Aurora pin flyout in create mode with the phrase
+                // prefilled. The marketer picks content + locale + saves
+                // inside the flyout — the same surface the Pinned tab uses.
+                createPin: function (phrase) {
+                    return openPinFlyoutForPhrase(phrase);
+                },
+                updatePin: function () { return openPinFlyoutForPhrase(); },
+                // Content typeahead lives inside the flyout now — surface
+                // an empty result here so the Insights inline editor's
+                // typeahead degrades to "use the flyout to pick content".
+                lookupContent: function () { return Promise.resolve([]); }
+            };
+        }
+        function makeSynonymsEditorShim() {
+            return {
+                whenReady: function () { return Promise.resolve(); },
+                findRuleForPhrase: function () { return null; },
+                appendRule: function (lhs, rhs) {
+                    return openSynFlyoutForRule(lhs + ' => ' + rhs);
+                },
+                updateRule: function (_obj, lhs, rhs) {
+                    return openSynFlyoutForRule(lhs + ' => ' + rhs);
+                }
+            };
+        }
+
+        // Open the Aurora pin flyout in create mode and seed the phrase
+        // field. Returns a resolved promise — the actual save happens inside
+        // the flyout, not via this shim. The Insights row's "Saved" toast
+        // accordingly reads as "Open flyout to confirm" rather than "Saved".
+        // Awaits the mount promise so the create button's click handler is
+        // wired up before we synthesise the click.
+        function openPinFlyoutForPhrase(phrase) {
+            // Activate the Pinned tab so the flyout overlays the correct
+            // surface (the flyout's backdrop scopes to the page, but the tab
+            // switch keeps the user oriented for follow-on edits).
+            activateTab('pinned');
+            return Promise.resolve(mountPinned()).then(function () {
+                var createBtn = document.getElementById('gst-pin-create');
+                if (createBtn) createBtn.click();
+                var phraseEl = document.getElementById('gst-pinfly-phrase');
+                if (phraseEl && phrase) phraseEl.value = phrase;
+            });
+        }
+        function openSynFlyoutForRule(rule) {
+            activateTab('synonyms');
+            mountSynonyms();
+            return Promise.resolve().then(function () {
+                var createBtn = document.getElementById('gst-syn-create');
+                if (createBtn) createBtn.click();
+                var ruleEl = document.getElementById('gst-synfly-rule');
+                if (ruleEl && rule) {
+                    ruleEl.value = rule;
+                    // Fire input event so the parse hint updates.
+                    ruleEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             });
         }
 
@@ -376,51 +516,6 @@
                 activateTab: activateTab
             });
         }
-    }
-
-    /** ---------------- SYNONYMS PANEL ---------------- */
-    /*
-     * Inline synonyms editor for the profile detail page. The grid widget
-     * itself lives in synonyms-grid.js (shared with the standalone Synonyms
-     * tool); this wrapper supplies the profile-specific opts:
-     *
-     *  • the locale picker is the live preview's `gst-pin-locale` chip — one
-     *    "active" locale on the detail page, so duplicating the picker
-     *    invited the question "are these in sync?";
-     *  • mergeWithGlobal=true so the active locale view shows lang AND
-     *    global rules (read-only) in one merged list — both apply at query
-     *    time for the locale.
-     */
-    function mountSynonymsPanel(opts) {
-        opts = opts || {};
-        var langSel = document.getElementById('gst-pin-locale');
-        return GST.synonymsGrid.mount({
-            slot: 'one',
-            mergeWithGlobal: true,
-            getLang: function () { return langSel ? langSel.value : ''; },
-            onLangChange: function (handler) {
-                if (!langSel) return;
-                langSel.addEventListener('change', function () { handler(langSel.value); });
-            },
-            dom: {
-                rowsHost: '#gst-prof-syn-rows',
-                emptyEl: '#gst-prof-syn-empty',
-                addBtn: '#gst-prof-syn-add',
-                addEmpty: '#gst-prof-syn-empty-add',
-                alertEl: '#gst-prof-syn-alert',
-                saveBtn: '#gst-prof-syn-save',
-                discardBtn: '#gst-prof-syn-discard',
-                filterInput: '#gst-prof-syn-filter',
-                countEl: '#gst-prof-syn-count',
-                pagerEl: '#gst-prof-syn-pager',
-                pagerStatusEl: '#gst-prof-syn-pager-status',
-                prevBtn: '#gst-prof-syn-prev',
-                nextBtn: '#gst-prof-syn-next',
-                drawerEl: '#gst-prof-syn-drawer',
-                drawerCount: '#gst-prof-syn-dirty-count',
-                sortBtns: document.querySelectorAll('#gst-prof-syn .gst-pinedit__sortbtn')
-            }
-        });
     }
 
     /** ---------------- INSIGHTS PANEL ---------------- */
@@ -810,350 +905,26 @@
             return btn;
         }
 
-        // Toggle the inline pin/synonym editor below `rowEl`. The panel is
-        // sibling to the row (inside the same <ol>) so its hover / focus
-        // state stays bounded to the row context. Closing one variant always
-        // collapses the other so only one inline form is open per row.
+        // Aurora migration: the inline pin/synonym editor used to render
+        // below an Insights row with its own typeahead / save flow. Post-
+        // Aurora the canonical edit surface is the right-edge flyout, so
+        // clicking the row's pin / synonym icon now opens that flyout in
+        // create mode with the phrase prefilled. The richer inline editor
+        // (with existing-pin detection + in-place updates) is a phase-2
+        // candidate: it needs an Aurora "compact create" variant that the
+        // design system doesn't yet have an entry for.
         function toggleInlineEditor(rowEl, row, kind) {
-            var existing = rowEl.nextElementSibling;
-            if (existing && existing.classList && existing.classList.contains('gst-prof-ins-edit')) {
-                var sameKind = existing.dataset.kind === kind;
-                existing.remove();
-                if (sameKind) return; // second click on same icon → toggle off
-            }
-            // Synonyms editor is lazy-mounted; force-mount before opening
-            // its inline editor so the helper handle is available.
-            if (kind === 'synonym' && opts.ensureSynonymsMounted) {
-                opts.ensureSynonymsMounted();
-            }
-            var panel = kind === 'pin'
-                ? buildInlinePinEditor(row)
-                : buildInlineSynonymEditor(row);
-            if (!panel) return;
-            panel.dataset.kind = kind;
-            // Insert as a sibling <li> after the row so the <ol> stays valid.
-            rowEl.parentNode.insertBefore(panel, rowEl.nextSibling);
             // Mirror the row's phrase into the live preview so the marketer
-            // sees the current SERP while picking a target / typing a rule.
+            // sees the current SERP while the flyout is open.
             applyToPreview(row.phrase);
-            // Move keyboard focus into the panel for fast keyboard completion.
-            var firstField = panel.querySelector('input, button:not([disabled])');
-            if (firstField) firstField.focus();
-        }
-
-        // Re-fire the preview query for `phrase` so the SERP reflects an edit
-        // that just landed (new pin, new synonym rule). Bypasses lastQuery
-        // staleness because dispatching `input` always reschedules run().
-        function refreshPreview(phrase) {
-            var input = document.getElementById('gst-pin-tryit-q');
-            if (!input) return;
-            if (phrase && input.value !== phrase) input.value = phrase;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        function buildInlinePinEditor(row) {
-            var ed = (opts.getEditors() || {}).pinned;
-            var panel = document.createElement('li');
-            panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--pin';
-
-            // Phrase chip — read-only — the picker fills the right side.
-            var phraseChip = document.createElement('span');
-            phraseChip.className = 'gst-prof-ins-edit__chip';
-            phraseChip.textContent = row.phrase;
-            panel.appendChild(phraseChip);
-
-            var arrow = document.createElement('span');
-            arrow.className = 'gst-prof-ins-edit__arrow';
-            arrow.textContent = '→';
-            panel.appendChild(arrow);
-
-            // Content typeahead box. Reuses pinned editor's lookup endpoint
-            // (locale-scoped) so the suggestions match the table's typeahead.
-            var pickerWrap = document.createElement('span');
-            pickerWrap.className = 'gst-prof-ins-edit__picker';
-            var input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'gst-prof-ins-edit__input';
-            input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder', 'Search content…');
-            pickerWrap.appendChild(input);
-            var dropdown = document.createElement('div');
-            dropdown.className = 'gst-prof-ins-edit__dropdown';
-            dropdown.hidden = true;
-            pickerWrap.appendChild(dropdown);
-            panel.appendChild(pickerWrap);
-
-            var saveBtn = document.createElement('button');
-            saveBtn.type = 'button';
-            saveBtn.className = 'gst-prof-ins-edit__save';
-            saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
-            saveBtn.disabled = true;
-            panel.appendChild(saveBtn);
-
-            var cancelBtn = document.createElement('button');
-            cancelBtn.type = 'button';
-            cancelBtn.className = 'gst-prof-ins-edit__cancel';
-            cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
-            panel.appendChild(cancelBtn);
-
-            cancelBtn.addEventListener('click', function () { panel.remove(); });
-
-            // No pinned editor at all (e.g. its host DOM wasn't rendered
-            // because the profile doesn't apply pinned) → permanently
-            // disabled state with an explanatory placeholder.
-            if (!ed || typeof ed.canCreatePins !== 'function') {
-                input.disabled = true;
-                input.placeholder = s('profiles.detail.insights.pinUnavailable',
-                    'Pinned results not configured for this profile.');
-                return panel;
+            var ed = (opts.getEditors() || {})[kind === 'pin' ? 'pinned' : 'synonyms'];
+            if (!ed) return;
+            if (kind === 'pin') {
+                if (typeof ed.createPin === 'function') ed.createPin(row.phrase);
+            } else if (kind === 'synonym') {
+                if (opts.ensureSynonymsMounted) opts.ensureSynonymsMounted();
+                if (typeof ed.appendRule === 'function') ed.appendRule(row.phrase, '');
             }
-
-            // The pinned key is loaded async by pinned.js — if the user
-            // clicked the pin icon before that fetch settles, canCreatePins
-            // is still false. Show a spinner and re-check once the editor
-            // reports ready, instead of permanently locking the panel on a
-            // race. After ready we also look up an existing pin for this
-            // phrase and prefill if one exists so the save path edits
-            // instead of stacking a duplicate.
-            var picked = null;
-            var debounceT = null;
-            var existingPin = null;
-            var spinner = makeSpinner();
-            input.disabled = true;
-            pickerWrap.appendChild(spinner);
-
-            var whenReady = typeof ed.whenReady === 'function'
-                ? ed.whenReady()
-                : Promise.resolve();
-            whenReady.then(function () {
-                if (!panel.isConnected) return; // user closed it
-                spinner.remove();
-                if (!ed.canCreatePins()) {
-                    input.placeholder = s('profiles.detail.insights.pinUnavailable',
-                        'Pinned results not configured for this profile.');
-                    return;
-                }
-                input.disabled = false;
-                input.placeholder = s('profiles.detail.insights.pinPickerPlaceholder',
-                    'Search content…');
-                existingPin = typeof ed.findPinForPhrase === 'function'
-                    ? ed.findPinForPhrase(row.phrase)
-                    : null;
-                if (existingPin) {
-                    picked = {
-                        targetKey: existingPin.targetKey,
-                        contentName: existingPin.contentName,
-                        contentType: existingPin.contentType
-                    };
-                    input.value = existingPin.contentName || '';
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = s('profiles.detail.insights.editUpdate', 'Update');
-                } else {
-                    input.focus();
-                }
-            });
-
-            input.addEventListener('input', function () {
-                picked = null;
-                saveBtn.disabled = true;
-                clearTimeout(debounceT);
-                var q = input.value.trim();
-                if (q.length < 2) { dropdown.hidden = true; dropdown.innerHTML = ''; return; }
-                debounceT = setTimeout(function () { runLookup(q); }, 250);
-            });
-
-            function runLookup(q) {
-                ed.lookupContent(q).then(function (hits) {
-                    dropdown.innerHTML = '';
-                    hits = hits || [];
-                    if (!hits.length) {
-                        dropdown.hidden = true;
-                        return;
-                    }
-                    hits.slice(0, 8).forEach(function (hit) {
-                        var hitEl = document.createElement('div');
-                        hitEl.className = 'gst-prof-ins-edit__hit';
-                        hitEl.innerHTML = '<strong>' + escHtml(hit.name || '') + '</strong>'
-                            + '<small>' + escHtml((hit.contentType || '') + ' · ' + (hit.language || '')) + '</small>';
-                        hitEl.addEventListener('click', function () {
-                            picked = {
-                                targetKey: hit.contentGuid,
-                                contentName: hit.name,
-                                contentType: hit.contentType
-                            };
-                            input.value = hit.name || '';
-                            dropdown.hidden = true;
-                            saveBtn.disabled = false;
-                            saveBtn.focus();
-                        });
-                        dropdown.appendChild(hitEl);
-                    });
-                    dropdown.hidden = false;
-                }).catch(function () {
-                    dropdown.hidden = true;
-                });
-            }
-
-            saveBtn.addEventListener('click', function () {
-                if (!picked) return;
-                var saveLabel = saveBtn.textContent;
-                saveBtn.disabled = true;
-                saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
-                var saveCall = existingPin && typeof ed.updatePin === 'function'
-                    ? ed.updatePin(existingPin, picked)
-                    : ed.createPin(row.phrase, picked);
-                saveCall.then(function () {
-                    panel.classList.add('is-saved');
-                    panel.innerHTML = '';
-                    var ok = document.createElement('span');
-                    ok.className = 'gst-prof-ins-edit__ok';
-                    ok.textContent = s('profiles.detail.insights.editPinSaved',
-                        '✓ Pinned — open the Pinned tab to refine.');
-                    panel.appendChild(ok);
-                    refreshPreview(row.phrase);
-                    setTimeout(function () { if (panel.parentNode) panel.remove(); }, 2200);
-                }).catch(function (err) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = saveLabel;
-                    flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
-                });
-            });
-
-            return panel;
-        }
-
-        function buildInlineSynonymEditor(row) {
-            var ed = (opts.getEditors() || {}).synonyms;
-            var panel = document.createElement('li');
-            panel.className = 'gst-prof-ins-edit gst-prof-ins-edit--synonym';
-
-            // Single rule input. While the synonyms blob is loading, we show
-            // a spinner and disable the input — once ready we either prefill
-            // with an existing rule for this phrase (so the save path edits
-            // the row in place) or with "<phrase> => " (so the marketer only
-            // types the replacement side).
-            var ruleInput = document.createElement('input');
-            ruleInput.type = 'text';
-            ruleInput.className = 'gst-prof-ins-edit__input gst-prof-ins-edit__input--rule';
-            var prefix = row.phrase + ' => ';
-            ruleInput.placeholder = s('profiles.detail.insights.synRulePlaceholder',
-                'phrase => replacement');
-            ruleInput.disabled = true;
-            panel.appendChild(ruleInput);
-
-            var spinner = makeSpinner();
-            panel.appendChild(spinner);
-
-            var saveBtn = document.createElement('button');
-            saveBtn.type = 'button';
-            saveBtn.className = 'gst-prof-ins-edit__save';
-            saveBtn.textContent = s('profiles.detail.insights.editSave', 'Save');
-            saveBtn.disabled = true;
-            panel.appendChild(saveBtn);
-
-            var cancelBtn = document.createElement('button');
-            cancelBtn.type = 'button';
-            cancelBtn.className = 'gst-prof-ins-edit__cancel';
-            cancelBtn.textContent = s('profiles.detail.insights.editCancel', 'Cancel');
-            panel.appendChild(cancelBtn);
-
-            var tip = document.createElement('span');
-            tip.className = 'gst-prof-ins-edit__tip';
-            tip.textContent = s('profiles.detail.insights.synRuleTip',
-                'Format: original => replacement. Queries for "original" are rewritten to "replacement" at search time.');
-            panel.appendChild(tip);
-
-            cancelBtn.addEventListener('click', function () { panel.remove(); });
-
-            if (!ed || typeof ed.appendRule !== 'function') {
-                spinner.remove();
-                ruleInput.placeholder = s('profiles.detail.insights.synUnavailable',
-                    'Synonyms not loaded yet — open the Synonyms tab once.');
-                return panel;
-            }
-
-            function parseRule() {
-                var v = (ruleInput.value || '').trim();
-                var idx = v.indexOf('=>');
-                if (idx < 0) return null;
-                var lhs = v.slice(0, idx).trim();
-                var rhs = v.slice(idx + 2).trim();
-                if (!lhs || !rhs) return null;
-                return { lhs: lhs, rhs: rhs };
-            }
-
-            var existingRule = null;
-            var whenReady = typeof ed.whenReady === 'function'
-                ? ed.whenReady()
-                : Promise.resolve();
-            whenReady.then(function () {
-                if (!panel.isConnected) return;
-                spinner.remove();
-                ruleInput.disabled = false;
-                existingRule = typeof ed.findRuleForPhrase === 'function'
-                    ? ed.findRuleForPhrase(row.phrase)
-                    : null;
-                if (existingRule) {
-                    ruleInput.value = existingRule.ruleObj.rule;
-                    saveBtn.disabled = !parseRule();
-                    saveBtn.textContent = s('profiles.detail.insights.editUpdate', 'Update');
-                } else {
-                    ruleInput.value = prefix;
-                }
-                // Place caret at the end so the marketer continues typing the
-                // RHS rather than selecting / deleting the phrase.
-                try { ruleInput.setSelectionRange(ruleInput.value.length, ruleInput.value.length); }
-                catch (e) { /* type=text on some browsers refuses setSelectionRange */ }
-                ruleInput.focus();
-            });
-
-            ruleInput.addEventListener('input', function () {
-                saveBtn.disabled = !parseRule();
-            });
-            ruleInput.addEventListener('keydown', function (ev) {
-                if (ev.key === 'Enter' && !saveBtn.disabled) {
-                    ev.preventDefault();
-                    saveBtn.click();
-                }
-            });
-
-            saveBtn.addEventListener('click', function () {
-                var parsed = parseRule();
-                if (!parsed) return;
-                var saveLabel = saveBtn.textContent;
-                saveBtn.disabled = true;
-                saveBtn.textContent = s('profiles.detail.insights.editSaving', 'Saving…');
-                var saveCall = existingRule && typeof ed.updateRule === 'function'
-                    ? ed.updateRule(existingRule.ruleObj, parsed.lhs, parsed.rhs)
-                    : ed.appendRule(parsed.lhs, parsed.rhs);
-                saveCall.then(function () {
-                    panel.classList.add('is-saved');
-                    panel.innerHTML = '';
-                    var ok = document.createElement('span');
-                    ok.className = 'gst-prof-ins-edit__ok';
-                    ok.textContent = s('profiles.detail.insights.editSynSaved',
-                        '✓ Synonym added.');
-                    panel.appendChild(ok);
-                    refreshPreview(row.phrase);
-                    setTimeout(function () { if (panel.parentNode) panel.remove(); }, 1800);
-                }).catch(function (err) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = saveLabel;
-                    flash((err && err.message) || s('profiles.detail.insights.editFailed', 'Save failed.'));
-                });
-            });
-
-            return panel;
-        }
-
-        // Tiny inline spinner element used while either editor is waiting on
-        // its source data to load. Kept as a helper because both inline
-        // editors mount it the same way (append, then remove on ready).
-        function makeSpinner() {
-            var el = document.createElement('span');
-            el.className = 'gst-prof-ins-edit__spinner';
-            el.setAttribute('role', 'progressbar');
-            el.setAttribute('aria-label', s('shared.loading', 'Loading…'));
-            return el;
         }
 
         function applyToPreview(phrase) {
@@ -1169,39 +940,15 @@
             var input = document.getElementById('gst-pin-tryit-q');
             if (!input) return;
             input.value = phrase;
-            // Synthesize an input event so pinned.js's existing debounce
+            // Synthesize an input event so the live preview's debounce
             // handler picks it up — the path is the same one a typed-in
-            // phrase takes.
+            // phrase takes. Note: post-Aurora migration, the live preview
+            // wiring is deferred to phase 2 — the input still receives the
+            // value but the SERP below stays inert until the preview module
+            // is reintroduced.
             input.dispatchEvent(new Event('input', { bubbles: true }));
             // Don't steal focus; leaving focus inside the row keeps keyboard
             // navigation working.
-        }
-
-        var flashTimer = null;
-        function flash(message) {
-            if (!root) return;
-            var existing = root.querySelector('.gst-prof-ins__flash');
-            if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
-
-            var el = document.createElement('div');
-            el.className = 'gst-prof-ins__flash';
-            el.textContent = message;
-            // Anchor onto the parent panel so the toast survives even though
-            // we just navigated away from the Insights tab.
-            var panel = document.querySelector('.gst-prof-panel[data-panel="insights"]');
-            if (panel) panel.appendChild(el);
-
-            // Force layout, then add the shown class for the transition.
-            void el.offsetWidth;
-            el.classList.add('is-shown');
-
-            if (flashTimer) clearTimeout(flashTimer);
-            flashTimer = setTimeout(function () {
-                el.classList.remove('is-shown');
-                setTimeout(function () {
-                    if (el.parentNode) el.parentNode.removeChild(el);
-                }, 220);
-            }, 2400);
         }
 
         // CSS.escape polyfill — old Edge / quiet selector edge cases.
@@ -1266,9 +1013,10 @@
         });
     }
 
-    // Expose the setter so pinned.js / synonyms-grid.js can fill their
-    // respective stat cells when their data loads. Both files run after
-    // profiles.js so this is available by then.
+    // Expose the setter so the Aurora pinned / synonyms modules can fill
+    // their respective stat cells when their data loads. Currently unused
+    // post-Aurora (the modules don't yet emit a "stats ready" signal);
+    // retained as the integration point for the phase-2 wiring.
     GST.profilesDetailSetStat = setStat;
 
     function renderAudit(host, rows) {
