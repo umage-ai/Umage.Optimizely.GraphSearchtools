@@ -162,6 +162,16 @@
           <show_more>Show more</show_more>
           <open_profile>Open this profile</open_profile>
           <more>More</more>
+          <col_phrase>Phrase</col_phrase>
+          <col_profile>Profile</col_profile>
+          <col_locale>Locale</col_locale>
+          <col_hits>Hits</col_hits>
+          <col_ctr>CTR</col_ctr>
+          <col_zero_count>Zero results</col_zero_count>
+          <locale_filter_all>All locales</locale_filter_all>
+          <window_filter_label>Window</window_filter_label>
+          <phrase_filter_placeholder>Filter phrases…</phrase_filter_placeholder>
+          <phrase_filter_no_matches>No phrases match your filter.</phrase_filter_no_matches>
         </insights>
         <synonymCoverage>
           <title>Synonym Coverage</title>
