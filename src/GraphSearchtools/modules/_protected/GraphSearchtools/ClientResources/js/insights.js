@@ -215,13 +215,13 @@
     }
 
     function renderKpis(k) {
-        GST.renderKpiCard('gst-insights-kpis', k, {
+        GST.renderKpiCard('#gst-insights-kpis', k, {
             onDateSelect: setDateFilter
         });
     }
 
-    function renderKpisLoading() { GST.renderKpiCardLoading('gst-insights-kpis'); }
-    function renderKpisError()   { GST.renderKpiCardError('gst-insights-kpis'); }
+    function renderKpisLoading() { GST.renderKpiCardLoading('#gst-insights-kpis'); }
+    function renderKpisError()   { GST.renderKpiCardError('#gst-insights-kpis'); }
 
     // ── Date-filter chip (set by sparkline click) ─────────────────────
 
