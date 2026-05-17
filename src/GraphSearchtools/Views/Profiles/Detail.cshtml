@@ -444,6 +444,13 @@
 
                 <div class="gst-prof-ins__lanes">
 
+                    @{
+                        string MoreLink(string lane) =>
+                            Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "Insights/Index")
+                                + "#tab=" + lane + "&profile=" + Uri.EscapeDataString(Model.Key);
+                        var moreLabel = Loc.GetString("/graphsearchtools/tools/insights/more");
+                    }
+
                     @* TOP — most-asked phrases. The phrase you should know about. *@
                     <section class="gst-prof-ins-lane gst-prof-ins-lane--top" data-lane="top">
                         <header class="gst-prof-ins-lane__head">
@@ -455,6 +462,7 @@
                                 @Loc.GetString("/graphsearchtools/profiles/detail/insights/topHint")
                             </span>
                             <span class="gst-prof-ins-lane__count" id="gst-prof-ins-top-count">—</span>
+                            <a class="gst-prof-ins-lane__deeplink" href="@MoreLink("top")">@moreLabel →</a>
                         </header>
                         <ol class="gst-prof-ins-lane__list" id="gst-prof-ins-top"></ol>
                     </section>
@@ -470,6 +478,7 @@
                                 @Loc.GetString("/graphsearchtools/profiles/detail/insights/zeroHint")
                             </span>
                             <span class="gst-prof-ins-lane__count" id="gst-prof-ins-zero-count">—</span>
+                            <a class="gst-prof-ins-lane__deeplink" href="@MoreLink("zero")">@moreLabel →</a>
                         </header>
                         <ol class="gst-prof-ins-lane__list" id="gst-prof-ins-zero"></ol>
                     </section>
@@ -485,6 +494,7 @@
                                 @Loc.GetString("/graphsearchtools/profiles/detail/insights/lowCtrHint")
                             </span>
                             <span class="gst-prof-ins-lane__count" id="gst-prof-ins-lowctr-count">—</span>
+                            <a class="gst-prof-ins-lane__deeplink" href="@MoreLink("lowctr")">@moreLabel →</a>
                         </header>
                         <ol class="gst-prof-ins-lane__list" id="gst-prof-ins-lowctr"></ol>
                     </section>

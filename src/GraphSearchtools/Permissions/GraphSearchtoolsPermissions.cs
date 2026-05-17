@@ -40,8 +40,9 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Telemetry { get; } =
         new("GraphSearchtools", "Telemetry");
 
-    // Phase 4 Wave 5 — Search Logs UI (top phrases, zero-result phrases,
-    // low-CTR phrases, recent raw events). Read-only over the search log table.
+    // Gates the internal /SearchLogsApi read endpoints — now consumed only by
+    // the Profile Detail Insights tab. No standalone Search Logs UI ships any
+    // more.
     public static PermissionType SearchLogs { get; } =
         new("GraphSearchtools", "SearchLogs");
 
