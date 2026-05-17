@@ -117,6 +117,7 @@ public sealed class InsightsService
             Phrase = r.Phrase,
             Count = r.Hits,
             ZeroResults = (long)Math.Round(r.Hits * r.ZeroResultRate),
+            Ctr = r.Ctr,
             Locale = r.Locale,
             ProfileKey = r.ProfileKey
         }).ToList();

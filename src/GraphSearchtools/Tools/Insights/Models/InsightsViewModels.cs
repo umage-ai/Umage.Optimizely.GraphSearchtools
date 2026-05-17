@@ -13,6 +13,14 @@ public sealed class InsightsPhraseRow
     public long ZeroResults { get; init; }
     public string? Locale { get; init; }
     public string? ProfileKey { get; init; }
+
+    /// <summary>
+    /// Click-through rate as a fraction in <c>[0, 1]</c> — only populated by
+    /// <c>LowCtrPhrasesAsync</c> where it's the row's load-bearing signal.
+    /// Top-phrase rows leave it at the default <c>0</c>; the UI column that
+    /// reads it is gated to the Low-CTR lane.
+    /// </summary>
+    public double Ctr { get; init; }
 }
 
 /// <summary>
