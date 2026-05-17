@@ -42,9 +42,9 @@ public sealed class SearchLogsService
     /// so each lane reflects exactly the preview the editor is staring at.
     /// </summary>
     public async Task<IReadOnlyList<SearchLogPhraseRow>> TopPhrasesAsync(
-        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, DateTime? until = null, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey, locale);
+        var query = BuildQuery(since, take, profileKey, locale, until);
         var rows = await _reader.TopPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
@@ -55,9 +55,9 @@ public sealed class SearchLogsService
     /// locale-scoped when those are supplied.
     /// </summary>
     public async Task<IReadOnlyList<SearchLogPhraseRow>> ZeroResultPhrasesAsync(
-        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, DateTime? until = null, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey, locale);
+        var query = BuildQuery(since, take, profileKey, locale, until);
         var rows = await _reader.ZeroResultPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
@@ -67,9 +67,9 @@ public sealed class SearchLogsService
     /// excludes phrases with too few hits to score honestly.
     /// </summary>
     public async Task<IReadOnlyList<SearchLogPhraseRow>> LowCtrPhrasesAsync(
-        DateTime? since, int? take, string? profileKey = null, string? locale = null, CancellationToken cancellationToken = default)
+        DateTime? since, int? take, string? profileKey = null, string? locale = null, DateTime? until = null, CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(since, take, profileKey, locale);
+        var query = BuildQuery(since, take, profileKey, locale, until);
         var rows = await _reader.LowCtrPhrasesAsync(query, cancellationToken);
         return rows.Select(ToPhraseRow).ToList();
     }
@@ -91,31 +91,42 @@ public sealed class SearchLogsService
 
     /// <summary>
     /// Window + take normalisation. <paramref name="since"/> defaults to
-    /// <see cref="DefaultWindow"/> ago; <paramref name="take"/> defaults to
-    /// <see cref="DefaultTake"/> and is clamped to <c>[1, <see cref="MaxTake"/>]</c>.
-    /// Future-dated <c>since</c> values are clamped to "now" so a clock-skewed
-    /// caller can't accidentally request the empty set.
+    /// <see cref="DefaultWindow"/> ago; <paramref name="until"/> defaults to
+    /// "now"; <paramref name="take"/> defaults to <see cref="DefaultTake"/>
+    /// and is clamped to <c>[1, <see cref="MaxTake"/>]</c>. A future-dated
+    /// <paramref name="since"/> is clamped to <paramref name="until"/> so a
+    /// clock-skewed caller can't accidentally request the empty set.
     /// </summary>
-    internal static TelemetryQuery BuildQuery(DateTime? since, int? take, string? profileKey, string? locale)
+    internal static TelemetryQuery BuildQuery(DateTime? since, int? take, string? profileKey, string? locale, DateTime? until = null)
     {
         var now = DateTime.UtcNow;
+        DateTime untilUtc;
+        if (until.HasValue)
+        {
+            untilUtc = until.Value.Kind == DateTimeKind.Utc ? until.Value : until.Value.ToUniversalTime();
+        }
+        else
+        {
+            untilUtc = now;
+        }
+
         DateTime sinceUtc;
         if (since.HasValue)
         {
             var raw = since.Value.Kind == DateTimeKind.Utc
                 ? since.Value
                 : since.Value.ToUniversalTime();
-            sinceUtc = raw > now ? now : raw;
+            sinceUtc = raw > untilUtc ? untilUtc : raw;
         }
         else
         {
-            sinceUtc = now - DefaultWindow;
+            sinceUtc = untilUtc - DefaultWindow;
         }
 
         var clamped = Math.Clamp(take ?? DefaultTake, 1, MaxTake);
         var profile = string.IsNullOrWhiteSpace(profileKey) ? null : profileKey;
         var loc = string.IsNullOrWhiteSpace(locale) ? null : locale;
-        return new TelemetryQuery(sinceUtc, now, clamped, profile, loc);
+        return new TelemetryQuery(sinceUtc, untilUtc, clamped, profile, loc);
     }
 
     private static SearchLogPhraseRow ToPhraseRow(PhraseAggregate row) => new()

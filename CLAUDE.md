@@ -32,6 +32,20 @@ dotnet test                                                 # Run tests on both 
 
 Pre-release local verification: `dotnet test` (no `--no-build`).
 
+### Iterating on UI assets against a running SampleSite
+
+EPiServer serves module assets from the **consumer's content root** (e.g.
+`src/GraphSearchtools.SampleSite/modules/_protected/GraphSearchtools/ClientResources/`),
+not from `bin/`. The NuGet `.targets` seeds that location on first build
+and *doesn't* refresh on subsequent edits to the addon's source.
+
+When live-editing JS/CSS while a SampleSite process is running, mirror
+your changes from
+`src/GraphSearchtools/modules/_protected/GraphSearchtools/ClientResources/`
+into the SampleSite's content-root copy. Browser refresh picks them up
+without a server restart. Don't bother copying to `bin/...` — that path
+is unused for static file serving.
+
 ## Release & distribution
 
 - Pushing a tag matching `v*` triggers `.github/workflows/publish.yml`, which builds, tests

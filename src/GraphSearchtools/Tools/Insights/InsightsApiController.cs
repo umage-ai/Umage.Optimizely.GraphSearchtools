@@ -41,12 +41,13 @@ public class InsightsApiController : Controller
         [FromQuery] int? take = null,
         [FromQuery] string? profileKey = null,
         [FromQuery] string? locale = null,
+        [FromQuery] DateTime? date = null,
         CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, cancellationToken);
+            var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, date, cancellationToken);
             return Ok(rows);
         }
         catch (Exception ex)
@@ -64,13 +65,38 @@ public class InsightsApiController : Controller
         [FromQuery] int? take = null,
         [FromQuery] string? profileKey = null,
         [FromQuery] string? locale = null,
+        [FromQuery] DateTime? date = null,
         CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, cancellationToken);
+            var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, date, cancellationToken);
             return Ok(rows);
+        }
+        catch (Exception ex)
+        {
+            return HandleError(ex);
+        }
+    }
+
+    /// <summary>
+    /// <c>GET InsightsApi/SearchKpis?profileKey=…</c> — 30-day totals +
+    /// sparkline series for searches, CTR, and zero-result searches. Window
+    /// is fixed at <see cref="InsightsService.SearchKpisWindowDays"/>; the
+    /// page-level 7d/30d toggle does not apply. When <c>profileKey</c> is
+    /// supplied, results are scoped to that profile (Profile detail surface);
+    /// without it, the response is the cluster-wide aggregate (Insights tool).
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> SearchKpis(
+        [FromQuery] string? profileKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!HasAccess()) return Forbid();
+        try
+        {
+            return Ok(await _service.SearchKpisAsync(profileKey, cancellationToken));
         }
         catch (Exception ex)
         {

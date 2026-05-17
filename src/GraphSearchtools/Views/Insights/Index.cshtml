@@ -67,16 +67,19 @@
         </table>
     </div>
 
-    @* ─────── Synonym coverage rollup ─────── *@
-    <div class="gst-card gst-sl-card" data-card="coverage">
+    @* ─────── Search-activity KPIs ───────
+       Three headline numbers — total searches, daily CTR, zero-result
+       searches — each paired with a 30-day sparkline. Window is fixed
+       at 30d regardless of the page-level 7/30 pill (which scopes the
+       lane tables); the sparkline needs 30 buckets to be useful. *@
+    <div class="gst-card gst-sl-card gst-sl-card--wide" data-card="kpis">
         <div class="gst-sl-card__head">
-            <h2>@T("coverage_title")</h2>
-            <p class="gst-muted">@T("coverage_subtitle")</p>
+            <h2>@T("kpis_title")</h2>
+            <p class="gst-muted">@T("kpis_subtitle")</p>
         </div>
-        <div id="gst-insights-coverage" class="gst-stats">
-            @* JS renders three stat cells: total · unused · suggested *@
+        <div id="gst-insights-kpis" class="gst-kpis" aria-live="polite">
+            @* JS renders three .gst-kpi tiles with sparklines. *@
         </div>
-        <p class="gst-muted gst-sl-coverage-meta" id="gst-insights-coverage-meta"></p>
     </div>
 
     @* ─────── Recent activity strip ─────── *@

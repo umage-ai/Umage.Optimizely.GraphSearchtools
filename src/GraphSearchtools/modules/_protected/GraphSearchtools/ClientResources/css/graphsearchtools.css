@@ -710,6 +710,123 @@
     margin-top: 6px;
 }
 
+/* ── KPI tile + sparkline ──────────────────────────────────────────
+   A horizontal row of headline metrics, each with a label, value, and
+   inline sparkline. The container (.gst-kpis) borrows the stats-row
+   chrome (bordered, rounded, dividers between cells); the tiles
+   themselves stack label → value → sparkline vertically. Backed by the
+   GST.sparkline helper in components.js. See docs/design-system.md
+   "KPI tile with sparkline". */
+.gst-kpis {
+    display: flex;
+    gap: 0;
+    margin-bottom: var(--gst-space-xl);
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius-lg);
+    background: var(--gst-surface);
+    overflow: hidden;
+    flex-wrap: wrap;
+}
+
+.gst-kpi {
+    flex: 1 1 0;
+    min-width: 200px;
+    padding: var(--gst-space-md) var(--gst-space-lg);
+    border-right: 1px solid var(--gst-border-light);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gst-space-sm);
+}
+.gst-kpi:last-child { border-right: 0; }
+
+.gst-kpi__label {
+    font-size: var(--gst-text-sm);
+    color: var(--gst-text-secondary);
+}
+
+.gst-kpi__value {
+    font-size: var(--gst-text-3xl);
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    color: var(--gst-text);
+    line-height: 1.1;
+}
+
+.gst-kpi__spark {
+    height: 36px;
+    width: 100%;
+    margin-top: auto; /* push sparkline to the bottom when tiles unequal */
+}
+
+.gst-sparkline {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+.gst-sparkline__line {
+    fill: none;
+    stroke: var(--gst-primary);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    /* Keep the stroke at a stable pixel width regardless of how the
+       SVG is stretched by preserveAspectRatio=none. */
+    vector-effect: non-scaling-stroke;
+    opacity: 0.85;
+}
+.gst-sparkline__hit {
+    fill: transparent;
+    cursor: default;
+}
+.gst-sparkline__hit.is-clickable {
+    cursor: pointer;
+}
+.gst-sparkline__hit.is-clickable:hover {
+    fill: var(--gst-primary-light);
+    opacity: 0.4;
+}
+.gst-sparkline__cursor {
+    stroke: var(--gst-primary);
+    stroke-width: 2;
+    stroke-linecap: butt;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}
+
+/* Filter chip — surfaces the active date filter near the lane toolbar. */
+.gst-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gst-space-xs);
+    padding: 2px var(--gst-space-sm);
+    border-radius: 999px;
+    background: var(--gst-primary-light);
+    color: var(--gst-primary);
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+}
+.gst-filter-chip__clear {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: var(--gst-text-base);
+    line-height: 1;
+    padding: 0 2px;
+    margin-left: 2px;
+}
+.gst-filter-chip__clear:hover { opacity: 0.7; }
+.gst-sparkline--empty {
+    /* All-zero series: show a muted dotted baseline rather than a flat
+       line touching the bottom, which would read as "broken chart". */
+    background:
+        linear-gradient(to right, var(--gst-border) 50%, transparent 50%) repeat-x
+        center / 6px 1px;
+}
+
 /* ── Toggle / Checkbox ──────────────────────────────────────────── */
 .gst-toggle {
     display: inline-flex;

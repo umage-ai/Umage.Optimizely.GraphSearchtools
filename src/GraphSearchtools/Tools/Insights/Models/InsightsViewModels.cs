@@ -43,6 +43,49 @@ public sealed class InsightsActivityRow
 }
 
 /// <summary>
+/// Search-activity KPIs over a fixed 30-day window. Drives the three-tile
+/// card at the top of the Insights view: total searches, daily CTR, total
+/// zero-result searches — each paired with a 30-day sparkline. The window
+/// is intentionally not affected by the page-level 7d/30d toggle (which
+/// scopes the lane tables); these KPIs are always 30-day so the sparkline
+/// has enough resolution to be useful.
+/// </summary>
+public sealed class InsightsSearchKpis
+{
+    /// <summary>Total search hits across the window.</summary>
+    public long TotalSearches { get; init; }
+
+    /// <summary>Total searches that returned no results.</summary>
+    public long TotalZero { get; init; }
+
+    /// <summary>
+    /// Click-through rate as a percentage in <c>[0, 100]</c>. Computed as
+    /// <c>SUM(clicks) / SUM(searches) × 100</c> across the whole window —
+    /// total ÷ total, not the mean of daily ratios, so volume-weighted.
+    /// </summary>
+    public double CtrPct { get; init; }
+
+    public int WindowDays { get; init; }
+    public DateTime WindowEndUtc { get; init; }
+
+    /// <summary>
+    /// 30 entries, oldest-first, zero-filled for days with no events.
+    /// </summary>
+    public IReadOnlyList<int> SparkSearches { get; init; } = Array.Empty<int>();
+
+    /// <summary>30 entries, oldest-first, zero-filled.</summary>
+    public IReadOnlyList<int> SparkZero { get; init; } = Array.Empty<int>();
+
+    /// <summary>
+    /// 30 entries, oldest-first, each a percentage in <c>[0, 100]</c>. Days
+    /// with zero searches report 0 (the alternative — null — would force the
+    /// sparkline to choose between drop-to-zero and skip-with-gap; zero is
+    /// the less surprising default).
+    /// </summary>
+    public IReadOnlyList<double> SparkCtr { get; init; } = Array.Empty<double>();
+}
+
+/// <summary>
 /// Synonym coverage rollup — the panel that tells marketers whether their
 /// synonym pool is keeping up with the search log. Surfaces the unused-rule
 /// count from <see cref="SynonymCoverageService"/>; the missing-rules signal

@@ -315,6 +315,8 @@ public class TelemetryTests
             => Task.FromResult<IReadOnlyList<PhraseAggregate>>(Array.Empty<PhraseAggregate>());
         public Task<IReadOnlyList<RawEvent>> RecentRawAsync(TelemetryQuery query, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<RawEvent>>(Array.Empty<RawEvent>());
+        public Task<IReadOnlyList<DailyAggregate>> DailyTotalsAsync(TelemetryQuery query, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<DailyAggregate>>(Array.Empty<DailyAggregate>());
     }
 
     // ── Construction helpers ─────────────────────────────────────────────

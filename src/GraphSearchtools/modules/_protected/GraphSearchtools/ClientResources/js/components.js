@@ -96,6 +96,33 @@
         );
     }
 
+    // The CMS shell's platform-nav has a higher z-index than us, so the
+    // flyout has to anchor below it. Measure the actual bottom edge on
+    // every open — nav height varies between CMS 12 (#epi-navigation-root)
+    // and CMS 13 (<platform-navigation>), and the static 48px fallback
+    // overshoots most shells. Falls back if no nav element is found.
+    function syncFlyoutTopOffset() {
+        // The inner <header> is the actual fixed top-app-bar; the outer
+        // #epi-navigation-root wraps open dropdown menus too, so its
+        // bounding-rect overshoots when any menu is open.
+        var sels = [
+            '#epi-navigation-root > header',  // CMS 12 (Axiom shell)
+            'header.epi-pn-navigation',
+            'platform-navigation-wrapper',    // CMS 13
+            'platform-navigation',
+            '.epi-globalNavigation'           // older CMS 12 shells
+        ];
+        for (var i = 0; i < sels.length; i++) {
+            var el = document.querySelector(sels[i]);
+            if (!el) continue;
+            var rect = el.getBoundingClientRect();
+            if (rect.height > 0) {
+                document.documentElement.style.setProperty('--gst-flyout-top', Math.round(rect.bottom) + 'px');
+                return;
+            }
+        }
+    }
+
     GST.flyout = {
         /**
          * Open the flyout identified by `key`. Markup must already exist
@@ -124,6 +151,7 @@
                 flyoutState[key].lastFocus = document.activeElement;
             }
 
+            syncFlyoutTopOffset();
             els.backdrop.hidden = false;
             els.panel.hidden = false;
 
@@ -210,6 +238,324 @@
             return !!(els.panel && !els.panel.hidden);
         }
     };
+
+    // ── Sparkline ──────────────────────────────────────────────────
+    // Tiny inline line chart for KPI tiles. Renders an SVG <polyline>
+    // sized by its container (the host's CSS sets width + height —
+    // typically inside .gst-kpi__spark which is 100% × 36px). One
+    // invisible <rect> hit-area per data point carries the per-day
+    // <title> tooltip.
+    //
+    // Usage:
+    //   GST.sparkline(host, [12, 45, 0, …], { label: 'Daily searches' });
+    //
+    // Options:
+    //   max:           normalize point heights to this. Defaults to
+    //                  Math.max(...series, 1) — the peak is the series
+    //                  max. Pass an explicit max (e.g. 100 for
+    //                  percentages) when you want a fixed scale.
+    //   label:         aria-label for the <svg>. Recommended; without it
+    //                  the chart is invisible to screen readers.
+    //   formatTooltip: fn(value, index) → string. Drives the per-day
+    //                  <title> tooltip on hover. When omitted, no tooltips.
+    //   onClick:       fn(value, index) → void. When provided, hit-areas
+    //                  become clickable (cursor + click handler).
+    //   selectedIndex: int. Draws a vertical cursor bar at that data
+    //                  point — full chart height, on top of the line.
+    //                  -1 / undefined = none.
+    GST.sparkline = function (host, series, opts) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        opts = opts || {};
+        const data = Array.isArray(series) ? series : [];
+        const n = data.length;
+        if (n === 0) {
+            el.innerHTML = '';
+            return;
+        }
+
+        const max = typeof opts.max === 'number' && opts.max > 0
+            ? opts.max
+            : Math.max.apply(null, data.concat([0])) || 1;
+        const allZero = data.every(function (v) { return !v; });
+
+        // viewBox is (n-1) units wide × 100 tall — one unit per segment
+        // between adjacent points. preserveAspectRatio=none lets the SVG
+        // stretch to fill its container; vector-effect=non-scaling-stroke
+        // (in CSS) keeps the line at a stable pixel width regardless.
+        const svgNs = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNs, 'svg');
+        svg.setAttribute('class', 'gst-sparkline' + (allZero ? ' gst-sparkline--empty' : ''));
+        svg.setAttribute('viewBox', '0 0 ' + Math.max(n - 1, 1) + ' 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('role', 'img');
+        if (opts.label) svg.setAttribute('aria-label', opts.label);
+
+        if (!allZero) {
+            const points = [];
+            for (let i = 0; i < n; i++) {
+                const v = data[i] || 0;
+                const h = max > 0 ? (v / max) * 100 : 0;
+                points.push(i + ',' + (100 - h));
+            }
+            const line = document.createElementNS(svgNs, 'polyline');
+            line.setAttribute('class', 'gst-sparkline__line');
+            line.setAttribute('points', points.join(' '));
+            svg.appendChild(line);
+
+            // Invisible hit-area columns: one per data point, half a unit on
+            // either side so the entire surface is covered. Each carries the
+            // optional <title> tooltip and click handler.
+            const wantHits = typeof opts.formatTooltip === 'function' || typeof opts.onClick === 'function';
+            if (wantHits && n > 1) {
+                const onClick = typeof opts.onClick === 'function' ? opts.onClick : null;
+                for (let i = 0; i < n; i++) {
+                    const hit = document.createElementNS(svgNs, 'rect');
+                    hit.setAttribute('class', 'gst-sparkline__hit' + (onClick ? ' is-clickable' : ''));
+                    hit.setAttribute('x', String(i - 0.5));
+                    hit.setAttribute('y', '0');
+                    hit.setAttribute('width', '1');
+                    hit.setAttribute('height', '100');
+                    if (typeof opts.formatTooltip === 'function') {
+                        const title = document.createElementNS(svgNs, 'title');
+                        title.textContent = opts.formatTooltip(data[i] || 0, i);
+                        hit.appendChild(title);
+                    }
+                    if (onClick) {
+                        (function (idx) {
+                            hit.addEventListener('click', function () { onClick(data[idx] || 0, idx); });
+                        })(i);
+                    }
+                    svg.appendChild(hit);
+                }
+            }
+
+            // Selected-date cursor — a vertical bar spanning the chart
+            // height at the chosen x. Drawn last so it sits above the line.
+            // Stroke width is held constant by vector-effect; bar position
+            // is always exactly on the data point's x slot.
+            const sel = (typeof opts.selectedIndex === 'number') ? opts.selectedIndex : -1;
+            if (sel >= 0 && sel < n) {
+                const cursor = document.createElementNS(svgNs, 'line');
+                cursor.setAttribute('class', 'gst-sparkline__cursor');
+                cursor.setAttribute('x1', String(sel));
+                cursor.setAttribute('y1', '0');
+                cursor.setAttribute('x2', String(sel));
+                cursor.setAttribute('y2', '100');
+                svg.appendChild(cursor);
+            }
+        }
+
+        el.innerHTML = '';
+        el.appendChild(svg);
+    };
+
+    // ── Number formatters ──────────────────────────────────────────
+    // Compact integer for KPI headlines. 999 → "999", 1,234 → "1K",
+    // 12,345 → "12K", 1,234,567 → "1M". Rounds to nearest unit; no
+    // decimal places. The boundary cases (e.g. 999,500) bump to the
+    // next unit so we never render "1000K".
+    GST.formatCompactInt = function (n) {
+        if (n == null || isNaN(n)) return '0';
+        const v = Math.round(Number(n));
+        const absv = Math.abs(v);
+        const sign = v < 0 ? '-' : '';
+        if (absv >= 999500) return sign + Math.round(absv / 1e6) + 'M';
+        if (absv >= 1000)   return sign + Math.round(absv / 1000) + 'K';
+        return sign + absv;
+    };
+
+    // Percentage rounded to nearest integer. 12.7 → "13%", 0.4 → "0%".
+    GST.formatCompactPct = function (p) {
+        if (p == null || isNaN(p)) return '0%';
+        return Math.round(Number(p)) + '%';
+    };
+
+    // ── KPI card renderer ──────────────────────────────────────────
+    // Fills a .gst-kpis host with three tiles (Searches / CTR / Zero
+    // results) sourced from an InsightsSearchKpis payload. Both the
+    // global Insights tool and the per-profile detail surface call this
+    // — same wire format, same visual treatment, only the profileKey on
+    // the API call differs.
+    //
+    // Usage:
+    //   GST.renderKpiCard('#gst-insights-kpis', kpisFromApi);
+    //   GST.renderKpiCard(hostEl, kpisFromApi, { strings: customStrings });
+    //
+    // The helper reads localized labels from window.GST_STRINGS.insights
+    // by default; pass `opts.strings` to override (e.g. a profile-scoped
+    // namespace if one is added later).
+    GST.renderKpiCard = function (host, kpis, opts) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        opts = opts || {};
+        const k = kpis || {};
+        const days = k.windowDays || 30;
+        const strings = opts.strings || (window.GST_STRINGS && window.GST_STRINGS.insights) || {};
+
+        // Resolve a per-index UTC date so callers can filter by day. Index
+        // 0 is the oldest entry in the spark series; the last index lands
+        // on the UTC day of `windowEndUtc`. Returns a Date at UTC midnight.
+        function dateAtIndex(i) {
+            if (!k.windowEndUtc) return null;
+            const end = new Date(k.windowEndUtc);
+            if (isNaN(end.getTime())) return null;
+            const endDay = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+            return new Date(endDay - (days - 1 - i) * 86400000);
+        }
+
+        // Cross-sparkline selection state lives on the host. Repeat calls
+        // to renderKpiCard preserve the selection across data refreshes,
+        // and a click on one sparkline highlights the same day on all three.
+        if (!el.__kpiState) el.__kpiState = { selectedIndex: -1 };
+        const state = el.__kpiState;
+        // If the new payload has a different window size, selection becomes
+        // ambiguous — clear it rather than highlight a different date.
+        if (state.lastDays != null && state.lastDays !== days) state.selectedIndex = -1;
+        state.lastDays = days;
+
+        // Headline figures use the compact forms (12K / 1M / 13%). The
+        // tooltip uses the same compact forms — at this precision the
+        // hover popup is a sanity check, not a forensic readout.
+        const formatInt = GST.formatCompactInt;
+        const formatPct = GST.formatCompactPct;
+        function tmpl(t, value, fallback) {
+            const s = t || fallback || '%1';
+            if (Array.isArray(value)) {
+                return s.replace(/%(\d+)/g, function (_, n) {
+                    const idx = parseInt(n, 10) - 1;
+                    return idx >= 0 && idx < value.length ? String(value[idx]) : '';
+                });
+            }
+            return s.replace('%1', String(value));
+        }
+        function daysAgoLabel(d, i) {
+            const ago = d - 1 - i;
+            if (ago === 0) {
+                return (window.GST_STRINGS && window.GST_STRINGS.shared && window.GST_STRINGS.shared.today) || 'today';
+            }
+            return tmpl(strings.kpi_days_ago, ago, '%1d ago');
+        }
+        function esc(s) {
+            if (s == null) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        const tiles = [
+            {
+                key: 'searches',
+                label: strings.kpi_searches || 'Searches',
+                value: formatInt(k.totalSearches || 0),
+                series: k.sparkSearches || [],
+                fmt: function (v) { return formatInt(v) + ' searches'; }
+            },
+            {
+                key: 'ctr',
+                label: strings.kpi_ctr || 'Click-through rate',
+                value: formatPct(k.ctrPct || 0),
+                series: k.sparkCtr || [],
+                fmt: function (v) { return formatPct(v); },
+                // CTR scale is [0,100] regardless of the data — fixed max
+                // means a quiet day doesn't look like a 100%-day visually.
+                max: 100
+            },
+            {
+                key: 'zero',
+                label: strings.kpi_zero || 'Zero-result searches',
+                value: formatInt(k.totalZero || 0),
+                series: k.sparkZero || [],
+                fmt: function (v) { return formatInt(v) + ' zero-result'; }
+            }
+        ];
+
+        el.innerHTML = '';
+        const sparkHosts = [];
+        const tilesRendered = [];
+        tiles.forEach(function (t) {
+            const tile = document.createElement('div');
+            tile.className = 'gst-kpi';
+            tile.setAttribute('data-kpi', t.key);
+            tile.innerHTML =
+                '<div class="gst-kpi__label">' + esc(t.label) +
+                ' <span class="gst-muted">(' + esc(tmpl(strings.kpi_window, days, 'last %1 days')) + ')</span></div>' +
+                '<div class="gst-kpi__value">' + esc(t.value) + '</div>' +
+                '<div class="gst-kpi__spark"></div>';
+            el.appendChild(tile);
+            sparkHosts.push(tile.querySelector('.gst-kpi__spark'));
+            tilesRendered.push(t);
+        });
+
+        // Render all three sparklines, sharing the selectedIndex. Click on
+        // any one toggles selection across the trio and fires onDateSelect.
+        function paintAll() {
+            tilesRendered.forEach(function (t, tileIdx) {
+                GST.sparkline(sparkHosts[tileIdx], t.series, {
+                    label: t.label,
+                    max: t.max,
+                    selectedIndex: state.selectedIndex,
+                    formatTooltip: function (v, i) {
+                        return tmpl(strings.kpi_tooltip, [daysAgoLabel(days, i), t.fmt(v)], '%1: %2');
+                    },
+                    onClick: typeof opts.onDateSelect === 'function'
+                        ? function (_v, i) {
+                            const next = state.selectedIndex === i ? -1 : i;
+                            state.selectedIndex = next;
+                            paintAll();
+                            opts.onDateSelect(next < 0 ? null : dateAtIndex(next), next);
+                        }
+                        : null
+                });
+            });
+        }
+        paintAll();
+    };
+
+    // Programmatically clear the cross-sparkline selection on a KPI card.
+    // Used by the surrounding page when the user picks a window pill or
+    // clicks the chip's × — both fire onDateSelect(null) via the helper
+    // so the caller doesn't need to know the internal state shape.
+    GST.clearKpiCardSelection = function (host) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el || !el.__kpiState || el.__kpiState.selectedIndex < 0) return false;
+        el.__kpiState.selectedIndex = -1;
+        // Re-paint each sparkline without selectedIndex. Cheapest path:
+        // walk the rendered tiles and drop the dot. Re-paint is simpler.
+        const spans = el.querySelectorAll('.gst-kpi__spark');
+        spans.forEach(function (s) {
+            const cursor = s.querySelector('.gst-sparkline__cursor');
+            if (cursor && cursor.parentNode) cursor.parentNode.removeChild(cursor);
+        });
+        return true;
+    };
+
+    // Loading + error placeholders for the KPI card. Three blank tiles
+    // so layout doesn't reflow when the real data arrives.
+    GST.renderKpiCardLoading = function (host) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        const msg = (window.GST_STRINGS && window.GST_STRINGS.shared && window.GST_STRINGS.shared.loading) || 'Loading...';
+        el.innerHTML = (
+            '<div class="gst-kpi"><div class="gst-kpi__label">' + escText(msg) + '</div></div>'
+        ).repeat(3);
+    };
+
+    GST.renderKpiCardError = function (host, message) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        const msg = message ||
+            (window.GST_STRINGS && window.GST_STRINGS.insights && window.GST_STRINGS.insights.load_failed) ||
+            'Could not load.';
+        el.innerHTML = '<div class="gst-kpi"><div class="gst-kpi__label">' + escText(msg) + '</div></div>';
+    };
+
+    function escText(s) {
+        if (s == null) return '';
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
 
     // ── Content Picker ─────────────────────────────────────────────
     /**

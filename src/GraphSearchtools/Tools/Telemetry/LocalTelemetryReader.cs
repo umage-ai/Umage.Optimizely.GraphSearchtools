@@ -102,6 +102,101 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
         return Task.FromResult(result);
     }
 
+    /// <summary>
+    /// Daily roll-up — one row per UTC day with at least one event. The fast
+    /// SQL path groups by <c>CAST(BucketUtc AS date)</c>; the LINQ fallback
+    /// projects through <see cref="DateTime.Date"/>. Caching is intentionally
+    /// not shared with the phrase-aggregate cache because the result shape is
+    /// different and the call pattern is once-per-render, not three-concurrent.
+    /// </summary>
+    public Task<IReadOnlyList<DailyAggregate>> DailyTotalsAsync(TelemetryQuery query, CancellationToken cancellationToken = default)
+    {
+        var rows = LoadDailyFast(query) ?? LoadDailySlow(query);
+        return Task.FromResult<IReadOnlyList<DailyAggregate>>(rows);
+    }
+
+    private List<DailyAggregate>? LoadDailyFast(TelemetryQuery query)
+    {
+        var map = ResolveColumnMap();
+        if (map == null) return null;
+
+        var connectionString = _configuration.GetConnectionString("EPiServerDB");
+        if (string.IsNullOrEmpty(connectionString)) return null;
+
+        // Column names are whitelist-validated by BucketColumnMap; the store
+        // name literal is constant. Direct interpolation is safe here.
+        var profileFilter = !string.IsNullOrEmpty(query.ProfileKey) ? $" AND {map.ProfileKey} = @profile" : string.Empty;
+        var localeFilter  = !string.IsNullOrEmpty(query.Locale)     ? $" AND {map.Locale} = @locale"      : string.Empty;
+        var sql = $@"
+SELECT
+    CAST({map.BucketUtc} AS date)                AS DayUtc,
+    SUM({map.Hits})                              AS Hits,
+    SUM({map.Zeroes})                            AS Zeroes,
+    SUM({map.Clicks1} + {map.Clicks2} + {map.Clicks3}) AS Clicks
+FROM tblBigTable
+WHERE StoreName = 'GraphSearchtools_SearchLogBucket'
+  AND {map.BucketUtc} >= @since
+  AND {map.BucketUtc} <  @until{profileFilter}{localeFilter}
+GROUP BY CAST({map.BucketUtc} AS date)
+ORDER BY DayUtc ASC";
+
+        try
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.Parameters.Add(new SqlParameter("@since", System.Data.SqlDbType.DateTime) { Value = query.SinceUtc });
+            cmd.Parameters.Add(new SqlParameter("@until", System.Data.SqlDbType.DateTime) { Value = query.UntilUtc });
+            if (!string.IsNullOrEmpty(query.ProfileKey))
+                cmd.Parameters.Add(new SqlParameter("@profile", query.ProfileKey));
+            if (!string.IsNullOrEmpty(query.Locale))
+                cmd.Parameters.Add(new SqlParameter("@locale", query.Locale));
+
+            using var reader = cmd.ExecuteReader();
+            var rows = new List<DailyAggregate>(capacity: 32);
+            while (reader.Read())
+            {
+                // CAST AS date comes back as DateTime with Kind=Unspecified; we
+                // re-stamp UTC so downstream serialization round-trips cleanly.
+                var day = DateTime.SpecifyKind(reader.GetDateTime(0), DateTimeKind.Utc);
+                var hits   = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                var zeroes = reader.IsDBNull(2) ? 0 : reader.GetInt32(2);
+                var clicks = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
+                rows.Add(new DailyAggregate(day, hits, zeroes, clicks));
+            }
+            return rows;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Telemetry daily-totals fast-path SQL query failed; falling back to DDS-LINQ.");
+            return null;
+        }
+    }
+
+    private List<DailyAggregate> LoadDailySlow(TelemetryQuery query)
+    {
+        var store = DynamicDataStoreFactory.Instance.CreateStore(typeof(SearchLogBucket));
+        var q = store.Items<SearchLogBucket>()
+            .Where(b => b.BucketUtc >= query.SinceUtc && b.BucketUtc < query.UntilUtc);
+
+        if (!string.IsNullOrEmpty(query.ProfileKey))
+            q = q.Where(b => b.ProfileKey == query.ProfileKey);
+        if (!string.IsNullOrEmpty(query.Locale))
+            q = q.Where(b => b.Locale == query.Locale);
+
+        return q
+            .ToList()
+            .GroupBy(b => b.BucketUtc.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new DailyAggregate(
+                DateTime.SpecifyKind(g.Key, DateTimeKind.Utc),
+                g.Sum(b => b.Hits),
+                g.Sum(b => b.Zeroes),
+                g.Sum(b => b.Clicks1 + b.Clicks2 + b.Clicks3)))
+            .ToList();
+    }
+
     public Task<IReadOnlyList<RawEvent>> RecentRawAsync(TelemetryQuery query, CancellationToken cancellationToken = default)
     {
         var store = DynamicDataStoreFactory.Instance.CreateStore(typeof(SearchLogRing));
