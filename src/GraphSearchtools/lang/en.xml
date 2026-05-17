@@ -139,11 +139,14 @@
           <top_subtitle>Most-searched phrases. Zero-result counts are derived from the same window.</top_subtitle>
           <zero_title>Zero-result phrases</zero_title>
           <zero_subtitle>What people searched for and found nothing — pin candidates.</zero_subtitle>
-          <coverage_title>Synonym coverage</coverage_title>
-          <coverage_subtitle>How well your synonyms keep up with the search log.</coverage_subtitle>
-          <coverage_total>%1 rules</coverage_total>
-          <coverage_unused>%1 unused</coverage_unused>
-          <coverage_logs_scanned>%1 events scanned</coverage_logs_scanned>
+          <kpis_title>Search activity</kpis_title>
+          <kpis_subtitle>Headline numbers for the last 30 days, with a daily sparkline on each.</kpis_subtitle>
+          <kpi_searches>Searches</kpi_searches>
+          <kpi_ctr>Click-through rate</kpi_ctr>
+          <kpi_zero>Zero-result searches</kpi_zero>
+          <kpi_window>last %1 days</kpi_window>
+          <kpi_days_ago>%1d ago</kpi_days_ago>
+          <kpi_tooltip>%1: %2</kpi_tooltip>
           <activity_title>Recent activity</activity_title>
           <activity_subtitle>Latest edits across every profile.</activity_subtitle>
           <col_phrase>Phrase</col_phrase>
@@ -159,7 +162,6 @@
           <empty_phrases>No phrases logged in this window yet.</empty_phrases>
           <empty_zero>No zero-result phrases — every search found something.</empty_zero>
           <empty_activity>No edits recorded yet.</empty_activity>
-          <coverage_no_rules>No synonym rules defined yet.</coverage_no_rules>
           <load_failed>Could not load insights.</load_failed>
         </insights>
         <searchLogs>
@@ -311,12 +313,9 @@
             <settings>Settings</settings>
             <synonyms>Synonyms</synonyms>
           </tabs>
-          <statRow>
-            <label>Profile at a glance</label>
-            <pinnedLabel>Pinned phrases</pinnedLabel>
-            <synonymsLabel>Synonym entries</synonymsLabel>
-            <recentLabel>Edits in last 7 days</recentLabel>
-          </statRow>
+          <kpis>
+            <sectionLabel>Profile at a glance</sectionLabel>
+          </kpis>
           <insights>
             <windowLabel>Time window</windowLabel>
             <topTitle>Top phrases</topTitle>
@@ -440,6 +439,7 @@
           <pagerLabel>Pagination</pagerLabel>
           <pagerStatus>Page %1 of %2</pagerStatus>
           <rowActions>Row actions</rowActions>
+          <today>today</today>
         </shared>
         <components>
           <picker_title>Select content</picker_title>

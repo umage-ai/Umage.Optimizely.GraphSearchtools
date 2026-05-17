@@ -61,7 +61,8 @@ public class UiStringsProvider(LocalizationService loc)
             copy = S("shared/copy"),
             copied = S("shared/copied"),
             pagerLabel = S("shared/pagerLabel"),
-            pagerStatus = S("shared/pagerStatus")
+            pagerStatus = S("shared/pagerStatus"),
+            today = S("shared/today")
         },
         components = new
         {
@@ -273,10 +274,12 @@ public class UiStringsProvider(LocalizationService loc)
         },
         insights = new
         {
-            coverage_total = IN("coverage_total"),
-            coverage_unused = IN("coverage_unused"),
-            coverage_logs_scanned = IN("coverage_logs_scanned"),
-            coverage_no_rules = IN("coverage_no_rules"),
+            kpi_searches = IN("kpi_searches"),
+            kpi_ctr = IN("kpi_ctr"),
+            kpi_zero = IN("kpi_zero"),
+            kpi_window = IN("kpi_window"),
+            kpi_days_ago = IN("kpi_days_ago"),
+            kpi_tooltip = IN("kpi_tooltip"),
             empty_phrases = IN("empty_phrases"),
             empty_zero = IN("empty_zero"),
             empty_activity = IN("empty_activity"),

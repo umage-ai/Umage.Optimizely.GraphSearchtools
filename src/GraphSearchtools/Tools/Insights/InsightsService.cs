@@ -1,3 +1,4 @@
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Insights.Models;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
@@ -21,18 +22,27 @@ public sealed class InsightsService
     /// </summary>
     public static readonly TimeSpan DefaultWindow = TimeSpan.FromDays(7);
 
+    /// <summary>
+    /// Fixed window for the search-activity KPI card. Independent of the
+    /// page-level 7d/30d toggle; the sparkline needs 30 buckets to be useful.
+    /// </summary>
+    public const int SearchKpisWindowDays = 30;
+
     private readonly SearchLogsService _logs;
     private readonly SynonymCoverageService _synonymCoverage;
     private readonly SearchProfileEditService _editLog;
+    private readonly ITelemetryReader _reader;
 
     public InsightsService(
         SearchLogsService logs,
         SynonymCoverageService synonymCoverage,
-        SearchProfileEditService editLog)
+        SearchProfileEditService editLog,
+        ITelemetryReader reader)
     {
         _logs = logs;
         _synonymCoverage = synonymCoverage;
         _editLog = editLog;
+        _reader = reader;
     }
 
     /// <summary>
@@ -46,10 +56,11 @@ public sealed class InsightsService
         int take,
         string? profileKey = null,
         string? locale = null,
+        DateTime? dateUtc = null,
         CancellationToken cancellationToken = default)
     {
-        var since = DateTime.UtcNow - TimeSpan.FromDays(Math.Clamp(days, 1, 90));
-        var rows = await _logs.TopPhrasesAsync(since, take, profileKey, locale, cancellationToken);
+        var (since, until) = ResolveWindow(days, dateUtc);
+        var rows = await _logs.TopPhrasesAsync(since, take, profileKey, locale, until, cancellationToken);
         return rows.Select(r => new InsightsPhraseRow
         {
             Phrase = r.Phrase,
@@ -70,10 +81,11 @@ public sealed class InsightsService
         int take,
         string? profileKey = null,
         string? locale = null,
+        DateTime? dateUtc = null,
         CancellationToken cancellationToken = default)
     {
-        var since = DateTime.UtcNow - TimeSpan.FromDays(Math.Clamp(days, 1, 90));
-        var rows = await _logs.ZeroResultPhrasesAsync(since, take, profileKey, locale, cancellationToken);
+        var (since, until) = ResolveWindow(days, dateUtc);
+        var rows = await _logs.ZeroResultPhrasesAsync(since, take, profileKey, locale, until, cancellationToken);
         return rows.Select(r => new InsightsZeroResultRow
         {
             Phrase = r.Phrase,
@@ -81,6 +93,22 @@ public sealed class InsightsService
             Locale = r.Locale,
             ProfileKey = r.ProfileKey
         }).ToList();
+    }
+
+    /// <summary>
+    /// Resolve a phrase-lane window. When <paramref name="dateUtc"/> is set,
+    /// returns a 24h window over that UTC day (overrides <paramref name="days"/>).
+    /// Otherwise returns <c>[now - days, now]</c>.
+    /// </summary>
+    private static (DateTime since, DateTime until) ResolveWindow(int days, DateTime? dateUtc)
+    {
+        if (dateUtc.HasValue)
+        {
+            var d = dateUtc.Value.Kind == DateTimeKind.Utc ? dateUtc.Value.Date : dateUtc.Value.ToUniversalTime().Date;
+            return (d, d.AddDays(1));
+        }
+        var now = DateTime.UtcNow;
+        return (now - TimeSpan.FromDays(Math.Clamp(days, 1, 90)), now);
     }
 
     /// <summary>
@@ -100,6 +128,64 @@ public sealed class InsightsService
             LogsScanned = result.LogsScanned,
             GeneratedAt = result.GeneratedAt,
             WindowStart = result.WindowStart
+        };
+    }
+
+    /// <summary>
+    /// 30-day search-activity KPIs — totals + per-day sparkline series for
+    /// searches, CTR, and zero-result searches. The window is fixed (30 days
+    /// ending now-UTC) regardless of the page-level toggle, and the spark
+    /// arrays are always 30 entries with missing days zero-filled so callers
+    /// can render a fixed-width chart without conditional plumbing.
+    /// When <paramref name="profileKey"/> is supplied the read is scoped to
+    /// one profile (used by the Profile detail surface); omitted means the
+    /// global aggregate (used by the standalone Insights tool).
+    /// </summary>
+    public async Task<InsightsSearchKpis> SearchKpisAsync(
+        string? profileKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        // Today (UTC) + 29 prior days = 30 calendar days. Anchoring on the
+        // day boundary keeps the sparkline consistent across refreshes during
+        // a day, instead of sliding by the second.
+        var since = now.Date.AddDays(-(SearchKpisWindowDays - 1));
+
+        var profile = string.IsNullOrWhiteSpace(profileKey) ? null : profileKey;
+        var query = new TelemetryQuery(since, now, Take: 0, ProfileKey: profile);
+        var daily = await _reader.DailyTotalsAsync(query, cancellationToken);
+
+        var byDate = daily.ToDictionary(d => d.DateUtc.Date);
+        var sparkSearches = new int[SearchKpisWindowDays];
+        var sparkZero = new int[SearchKpisWindowDays];
+        var sparkCtr = new double[SearchKpisWindowDays];
+        long totalSearches = 0, totalZero = 0, totalClicks = 0;
+
+        for (int i = 0; i < SearchKpisWindowDays; i++)
+        {
+            var day = since.AddDays(i);
+            if (!byDate.TryGetValue(day, out var d)) continue;
+
+            sparkSearches[i] = d.Searches;
+            sparkZero[i]     = d.Zeroes;
+            sparkCtr[i]      = d.Searches > 0 ? (double)d.Clicks / d.Searches * 100.0 : 0.0;
+            totalSearches += d.Searches;
+            totalZero     += d.Zeroes;
+            totalClicks   += d.Clicks;
+        }
+
+        var ctrPct = totalSearches > 0 ? (double)totalClicks / totalSearches * 100.0 : 0.0;
+
+        return new InsightsSearchKpis
+        {
+            TotalSearches = totalSearches,
+            TotalZero     = totalZero,
+            CtrPct        = ctrPct,
+            WindowDays    = SearchKpisWindowDays,
+            WindowEndUtc  = now,
+            SparkSearches = sparkSearches,
+            SparkZero     = sparkZero,
+            SparkCtr      = sparkCtr
         };
     }
 
