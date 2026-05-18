@@ -590,7 +590,11 @@
         }
         var a = document.createElement('a');
         a.className = 'gst-ins-row__profile';
-        a.href = BASE + '/Profiles/Detail?key=' + encodeURIComponent(profileKey);
+        // ProfilesController is rooted at /EPiServer/cms/graphsearchtools/profiles
+        // (not under the module resource base), and the detail page reads
+        // ?key=<id> from the index action — matches how Index.cshtml and
+        // profiles.js build the same link.
+        a.href = '/EPiServer/cms/graphsearchtools/profiles?key=' + encodeURIComponent(profileKey);
         a.textContent = profileKey;
         a.title = STRINGS.open_profile || 'Open this profile';
         td.appendChild(a);

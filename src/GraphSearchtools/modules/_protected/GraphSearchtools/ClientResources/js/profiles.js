@@ -325,6 +325,8 @@
             }
         });
 
+        wireLivePreview();
+
         // Inject copy buttons into any code blocks marked [data-gst-copy].
         // The Razor markup wraps the GraphQL doc <pre> in such a block; this
         // keeps the wireup co-located with the panel that owns the code so
@@ -373,11 +375,9 @@
         // Aurora Pinned grid — profile-scoped via the JS module's `init({scope})`
         // entry point. Resolves the profile's collection id up-front via
         // /api/profiles/{key}/pinned so the Aurora grid only walks the
-        // matching collection (generic profiles fall through to the unscoped
-        // view, which is what /api/profiles returns for them anyway).
-        // Returns a Promise that resolves after init has run so callers
-        // (the Insights "open pin flyout" shim) can wait before reaching
-        // for the create button's wired-up click handler.
+        // matching collection. Returns a Promise that resolves after init
+        // has run so callers (the Insights "open pin flyout" shim) can wait
+        // before reaching for the create button's wired-up click handler.
         var pinnedMountPromise = null;
         function mountPinned() {
             if (pinnedMountPromise) return pinnedMountPromise;
@@ -385,45 +385,26 @@
                 || typeof window.GST.pinned.aurora.init !== 'function') return Promise.resolve();
             if (!document.getElementById('gst-pin-aurora-rows')) return Promise.resolve(); // unwired panel
 
-            // Generic profiles have no PinnedKey formula → no single collection
-            // to narrow to. Mount the Aurora grid against all collections so
-            // free-form pins are still surfaced — matches the legacy behaviour.
-            if (opts.isGeneric) {
-                window.GST.pinned.aurora.init({
-                    scope: {
-                        profileKey: key,
-                        collectionId: null,
-                        locales: opts.locales || []
-                    }
-                });
-                pinnedMountPromise = Promise.resolve();
-                return pinnedMountPromise;
-            }
-
-            // Resolve the profile's collection id via the existing scoped
-            // endpoint. The first declared locale is enough for the formula
-            // (PinnedKeyForLocale is stable per-locale; we only need a key
-            // to look up the collection, not to filter rows).
-            var firstLocale = (opts.locales && opts.locales[0]) || '';
+            // Resolve a {locale → collectionId|null} map by probing each
+            // declared locale's scoped endpoint in parallel. Locales whose
+            // backing collection doesn't exist yet stay null in the map; the
+            // Aurora grid lazily EnsureCollection's them on first save.
+            var localesToProbe = (opts.locales && opts.locales.length) ? opts.locales : [''];
             var firstSite = (opts.sites && opts.sites[0]) || '';
-            var url = API_BASE + '/' + encodeURIComponent(key) + '/pinned'
-                + '?site=' + encodeURIComponent(firstSite)
-                + '&locale=' + encodeURIComponent(firstLocale);
-            pinnedMountPromise = GST.fetchJson(url).then(function (resp) {
+            pinnedMountPromise = Promise.all(localesToProbe.map(function (l) {
+                var url = API_BASE + '/' + encodeURIComponent(key) + '/pinned'
+                    + '?site=' + encodeURIComponent(firstSite)
+                    + '&locale=' + encodeURIComponent(l);
+                return GST.fetchJson(url).then(function (resp) {
+                    return { locale: l, collectionId: (resp && resp.collectionId) || null };
+                }).catch(function () { return { locale: l, collectionId: null }; });
+            })).then(function (results) {
+                var collectionsByLocale = {};
+                results.forEach(function (r) { collectionsByLocale[r.locale] = r.collectionId; });
                 window.GST.pinned.aurora.init({
                     scope: {
                         profileKey: key,
-                        collectionId: (resp && resp.collectionId) || null,
-                        locales: opts.locales || []
-                    }
-                });
-            }).catch(function (err) {
-                console.error('Profile pinned scope resolution failed', err);
-                // Fall through to an unscoped mount so the grid still loads.
-                window.GST.pinned.aurora.init({
-                    scope: {
-                        profileKey: key,
-                        collectionId: null,
+                        collectionsByLocale: collectionsByLocale,
                         locales: opts.locales || []
                     }
                 });
@@ -537,6 +518,233 @@
                 ensureSynonymsMounted: mountSynonyms,
                 activateTab: activateTab
             }) || null;
+        }
+
+        // SERP-style live preview. Listens to the try-it input + locale chip
+        // and renders /api/profiles/{key}/preview into #gst-pin-tryit-results.
+        // The Aurora migration deleted the legacy wiring from pinned.js but
+        // left the markup + endpoint + CSS in place; this is the minimum
+        // wireup that brings the preview back to life. The richer synonym-
+        // chip strip and JSON inspect toggle from the legacy module are
+        // phase-2 candidates.
+        function wireLivePreview() {
+            if (!opts.hasGraphQLDoc) return;
+            var qInput = document.getElementById('gst-pin-tryit-q');
+            var resultsEl = document.getElementById('gst-pin-tryit-results');
+            var statsEl = document.getElementById('gst-pin-tryit-stats');
+            if (!qInput || !resultsEl) return;
+
+            var localeSel = document.getElementById('gst-pin-locale');
+            var inputWrap = qInput.parentNode;
+            var debounceTimer = null;
+            var lastQuery = '';
+
+            function setLoading(on) {
+                resultsEl.classList.toggle('is-loading', !!on);
+                if (inputWrap) inputWrap.classList.toggle('is-loading', !!on);
+            }
+            function setStats(text, isError) {
+                if (!statsEl) return;
+                statsEl.textContent = text || '';
+                statsEl.classList.toggle('gst-serp__stats--err', !!isError);
+            }
+            function formatStats(shown, total, ms) {
+                if (!total && !shown) return s('profiles.detail.pinned.serpEmpty', 'No matches.') + ' · ' + ms + ' ms';
+                if (!total || total === shown) return shown + ' hits · ' + ms + ' ms';
+                return shown + ' of ' + total + ' hits · ' + ms + ' ms';
+            }
+            function formatScore(score) {
+                if (!score) return '';
+                if (score >= 100) return Math.round(score).toString();
+                if (score >= 10)  return score.toFixed(1);
+                return score.toFixed(2);
+            }
+
+            function escapeRegex(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+            // Wrap case-insensitive matches of `phrase` tokens in <mark>.
+            function highlightFragment(text, phrase) {
+                var frag = document.createDocumentFragment();
+                if (!text) return frag;
+                var tokens = (phrase || '').split(/\s+/).filter(function (t) { return t.length >= 2; });
+                if (!tokens.length) { frag.appendChild(document.createTextNode(text)); return frag; }
+                var pattern = new RegExp('(' + tokens.map(escapeRegex).join('|') + ')', 'gi');
+                var lastIdx = 0;
+                text.replace(pattern, function (match, _g, offset) {
+                    if (offset > lastIdx) frag.appendChild(document.createTextNode(text.slice(lastIdx, offset)));
+                    var mark = document.createElement('mark');
+                    mark.className = 'gst-serp__mark';
+                    mark.textContent = match;
+                    frag.appendChild(mark);
+                    lastIdx = offset + match.length;
+                    return match;
+                });
+                if (lastIdx < text.length) frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+                return frag;
+            }
+            // Snippet arrives with Graph's native highlight markers
+            // (U+0001 / U+0002 around matched tokens). Split on them so
+            // synonym-expanded matches highlight correctly, not just the
+            // user's typed phrase.
+            function markedFragment(text) {
+                var frag = document.createDocumentFragment();
+                if (!text) return frag;
+                var i = 0;
+                while (i < text.length) {
+                    var open = text.indexOf('', i);
+                    if (open < 0) { frag.appendChild(document.createTextNode(text.slice(i))); break; }
+                    if (open > i) frag.appendChild(document.createTextNode(text.slice(i, open)));
+                    var close = text.indexOf('', open + 1);
+                    if (close < 0) { frag.appendChild(document.createTextNode(text.slice(open + 1))); break; }
+                    var mark = document.createElement('mark');
+                    mark.className = 'gst-serp__mark';
+                    mark.textContent = text.slice(open + 1, close);
+                    frag.appendChild(mark);
+                    i = close + 1;
+                }
+                return frag;
+            }
+
+            function buildHitCard(hit, phrase, idx) {
+                var isPinned = !!hit.pinned;
+                var li = document.createElement('li');
+                li.className = 'gst-serp__hit' + (isPinned ? ' is-pinned' : '');
+                li.style.setProperty('--gst-serp-stagger', (idx * 28) + 'ms');
+
+                if (isPinned) {
+                    var ribbon = document.createElement('span');
+                    ribbon.className = 'gst-serp__pin-ribbon';
+                    ribbon.setAttribute('aria-hidden', 'true');
+                    ribbon.innerHTML = '<svg viewBox="0 0 12 12" width="11" height="11">'
+                        + '<path d="M6 1.5 L7.4 4.4 L10.5 4.7 L8.2 6.8 L8.9 9.9 L6 8.4 L3.1 9.9 L3.8 6.8 L1.5 4.7 L4.6 4.4 Z" fill="currentColor"/>'
+                        + '</svg>';
+                    li.appendChild(ribbon);
+                }
+
+                var head = document.createElement('div');
+                head.className = 'gst-serp__hit-head';
+                var title = document.createElement('a');
+                title.className = 'gst-serp__title';
+                title.href = hit.url || '#';
+                if (!hit.url) title.classList.add('is-disabled');
+                title.target = hit.url ? '_blank' : '_self';
+                title.rel = 'noopener noreferrer';
+                title.appendChild(highlightFragment(hit.name || s('profiles.detail.pinned.serpUntitled', '(untitled)'), phrase));
+                head.appendChild(title);
+                if (hit.score) {
+                    var score = document.createElement('span');
+                    score.className = 'gst-serp__score';
+                    score.title = s('profiles.detail.pinned.serpScoreTooltip', 'Graph relevance score');
+                    score.textContent = formatScore(hit.score);
+                    head.appendChild(score);
+                }
+                li.appendChild(head);
+
+                if (hit.url) {
+                    var urlLine = document.createElement('div');
+                    urlLine.className = 'gst-serp__url';
+                    var glyph = document.createElement('span');
+                    glyph.className = 'gst-serp__url-glyph';
+                    glyph.textContent = '›';
+                    urlLine.appendChild(glyph);
+                    urlLine.appendChild(document.createTextNode(' ' + hit.url));
+                    li.appendChild(urlLine);
+                }
+
+                if (hit.fullTextSnippet) {
+                    var snippet = document.createElement('p');
+                    snippet.className = 'gst-serp__snippet';
+                    snippet.appendChild(markedFragment(hit.fullTextSnippet));
+                    li.appendChild(snippet);
+                }
+
+                var meta = document.createElement('div');
+                meta.className = 'gst-serp__meta';
+                if (isPinned) {
+                    var pinChip = document.createElement('span');
+                    pinChip.className = 'gst-serp__chip gst-serp__chip--pinned';
+                    pinChip.textContent = s('profiles.detail.pinned.serpPinnedBadge', 'Pinned');
+                    pinChip.title = s('profiles.detail.pinned.serpPinnedTooltip',
+                        'This result is locked to the top by a pin in this profile.');
+                    meta.appendChild(pinChip);
+                }
+                if (hit.contentType) {
+                    var chip = document.createElement('span');
+                    chip.className = 'gst-serp__chip';
+                    chip.textContent = hit.contentType;
+                    meta.appendChild(chip);
+                }
+                if (hit.language) {
+                    var lang = document.createElement('span');
+                    lang.className = 'gst-serp__lang';
+                    lang.textContent = hit.language;
+                    meta.appendChild(lang);
+                }
+                li.appendChild(meta);
+                return li;
+            }
+
+            function renderHits(hits, phrase) {
+                resultsEl.innerHTML = '';
+                if (!hits.length) {
+                    var empty = document.createElement('li');
+                    empty.className = 'gst-serp__empty';
+                    empty.textContent = s('profiles.detail.pinned.serpEmptyHelp',
+                        'No content matched this phrase. Try a different term, or pin a target above.');
+                    resultsEl.appendChild(empty);
+                    return;
+                }
+                var frag = document.createDocumentFragment();
+                hits.forEach(function (hit, idx) { frag.appendChild(buildHitCard(hit, phrase, idx)); });
+                resultsEl.appendChild(frag);
+            }
+
+            function run() {
+                var q = qInput.value.trim();
+                if (q.length < 2) {
+                    resultsEl.innerHTML = '';
+                    setStats('');
+                    setLoading(false);
+                    lastQuery = '';
+                    return;
+                }
+                lastQuery = q;
+                setLoading(true);
+                var loc = (localeSel && !localeSel.disabled) ? (localeSel.value || '') : '';
+                var url = API_BASE + '/' + encodeURIComponent(key)
+                    + '/preview?phrase=' + encodeURIComponent(q)
+                    + '&locale=' + encodeURIComponent(loc);
+                GST.fetchJson(url).then(function (result) {
+                    if (qInput.value.trim() !== lastQuery) return; // stale
+                    setLoading(false);
+                    var hits  = (result && result.hits) || [];
+                    var total = (result && result.totalCount) || 0;
+                    var ms    = (result && result.durationMs) || 0;
+                    setStats(formatStats(hits.length, total, ms));
+                    renderHits(hits, q);
+                }).catch(function (err) {
+                    if (qInput.value.trim() !== lastQuery) return;
+                    setLoading(false);
+                    resultsEl.innerHTML = '';
+                    setStats((err && err.message) || s('profiles.detail.pinned.previewFailed', 'preview failed'), true);
+                });
+            }
+
+            qInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(run, 320);
+            });
+            // Locale switch should re-run the preview without forcing the
+            // marketer to retype. lastQuery reset so the staleness guard
+            // accepts the re-issued call.
+            if (localeSel) {
+                localeSel.addEventListener('change', function () {
+                    if (qInput.value.trim().length >= 2) {
+                        lastQuery = '';
+                        run();
+                    }
+                });
+            }
         }
     }
 

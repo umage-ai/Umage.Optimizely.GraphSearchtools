@@ -397,6 +397,22 @@
     background: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
     pointer-events: none;
 }
+/* Static variant — same dimensions and typography as an interactive
+   .gst-filter but without the caret affordance. Used when a profile
+   declares exactly one site/locale (or none), so the picker becomes a
+   read-only label rather than a dropdown. */
+.gst-filter--static { cursor: default; }
+.gst-filter--static:hover { opacity: 1; }
+.gst-filter--static::after { display: none; }
+.gst-filter__static-value {
+    display: block;
+    font-family: var(--gst-font);
+    font-size: var(--gst-text-base);
+    font-weight: 500;
+    color: var(--gst-text);
+    line-height: 1.2;
+    padding-right: 28px;
+}
 
 /* ── Table ──────────────────────────────────────────────────────────────
    Aurora's data table is flat: no background tint, no zebra stripes, no
@@ -532,6 +548,27 @@
 }
 .gst-rowdelete:hover { background: var(--gst-danger-light); color: var(--gst-danger); }
 .gst-rowdelete svg { width: 16px; height: 16px; }
+
+/* Neutral row-action button — same chassis as .gst-rowdelete but with a
+   non-destructive hover. Sits next to .gst-rowdelete in actions cells
+   that surface more than one affordance (e.g. Pinned "preview this
+   phrase" alongside Delete). */
+.gst-rowaction {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: var(--gst-text-muted);
+    cursor: pointer;
+    transition: background .12s, color .12s;
+    padding: 0;
+}
+.gst-rowaction:hover { background: var(--gst-surface-hover); color: var(--gst-primary); }
+.gst-rowaction svg { width: 16px; height: 16px; }
 
 /* Row-menu popover anchored under the ⋯ button. Renders as a small,
    shadow-elevated column of labelled actions. Single instance only —
@@ -1055,6 +1092,7 @@
    Pairs a label with a control. Stack vertically by default; group two
    on a row with .gst-field-row. */
 .gst-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--gst-space-md); }
+.gst-field[hidden] { display: none; }
 .gst-field:last-child { margin-bottom: 0; }
 .gst-field__label {
     font-size: var(--gst-text-sm);
@@ -4482,8 +4520,19 @@ td.bpe-editing select {
 .gst-prof-preview__pickers {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--gst-space-md);
 }
+/* Compact override for aurora-style .gst-filter when embedded in the
+   slim preview header — the default 56px height pushes the header tall
+   and unbalances the title row. The picker still reads as a label-over-
+   value pair, just on a tighter vertical rhythm. */
+.gst-prof-preview__filter {
+    min-width: 0;
+    height: auto;
+    padding: 4px 0;
+}
+.gst-prof-preview__filter .gst-filter__label { margin-bottom: 2px; }
+.gst-prof-preview__filter.gst-filter::after { bottom: 8px; }
 .gst-prof-chip {
     display: inline-flex;
     align-items: center;
@@ -4807,10 +4856,12 @@ td.bpe-editing select {
 .gst-prof-syn__note {
     font-size: 11px;
     color: var(--gst-text-muted);
-    margin: 0;
-    padding: 8px 14px 0;
+    margin: 16px 0 0;
+    padding: 12px 14px 0;
     max-width: 60em;
     line-height: 1.5;
+    border-top: 1px solid var(--gst-border-light);
+    font-style: italic;
 }
 
 /* Kind chip lives inside a grid cell — center it horizontally so it
@@ -5735,4 +5786,45 @@ td.bpe-editing select {
 .gst-tab.active .gst-tab__count {
     background: color-mix(in srgb, var(--gst-primary) 12%, transparent);
     color: var(--gst-primary);
+}
+
+/* ── Collections-tab flyout pieces ──────────────────────────────── */
+.gst-field__readonly {
+    padding: 6px 8px;
+    background: var(--gst-bg-soft, #f5f7fb);
+    border: 1px solid var(--gst-border-light, #e5e7eb);
+    border-radius: 4px;
+    color: var(--gst-text);
+    font-size: var(--gst-text-sm);
+}
+.gst-field__readonly.gst-mono { font-family: var(--gst-font-mono); font-size: 12px; }
+
+.gst-colfly-profiles { margin-top: 4px; }
+.gst-colfly-proflist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.gst-colfly-profrow {
+    padding: 8px 10px;
+    background: var(--gst-bg-soft, #f5f7fb);
+    border: 1px solid var(--gst-border-light, #e5e7eb);
+    border-radius: 4px;
+    font-size: var(--gst-text-sm);
+    line-height: 1.6;
+}
+.gst-locale-chip {
+    display: inline-block;
+    padding: 1px 6px;
+    margin: 0 2px;
+    background: color-mix(in srgb, var(--gst-primary) 10%, transparent);
+    color: var(--gst-primary);
+    border-radius: 3px;
+    font-family: var(--gst-font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    vertical-align: baseline;
 }

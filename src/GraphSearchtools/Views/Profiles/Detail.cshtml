@@ -70,23 +70,18 @@
                 <div class="gst-prof-preview__pickers" role="group"
                      aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/scopeLabel")">
 
-                    @* The interactive chips render the visible label + value
-                       in normal flow and overlay a transparent <select> on
-                       top so the entire pill is the click target — clicking
-                       the label, caret, or padding all open the dropdown.
-                       Without the overlay, the native select's hit area is
-                       just its content text and the surrounding pill feels
-                       dead. The label's `for` attribute also points to the
-                       select for label-click focus + screen-reader linkage. *@
+                    @* Aurora-style filters: label-above-value with caret on
+                       the right, matching the toolbar dropdowns inside the
+                       Pinned / Synonyms aurora grids. The page-level locale
+                       chip is the single source of truth — pinned-aurora.js
+                       and synonyms-aurora.js mirror its value into their grid
+                       state, so we don't surface a per-tab locale filter
+                       inside the profile-scoped tabs. *@
                     @if (siteSelectable)
                     {
-                        <label class="gst-prof-chip gst-prof-chip--input" for="gst-pin-site">
-                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
-                            <span class="gst-prof-chip__value" id="gst-pin-site-display">@Model.Sites[0]</span>
-                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
-                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
-                            </svg>
-                            <select id="gst-pin-site" class="gst-prof-chip__select">
+                        <label class="gst-filter gst-prof-preview__filter">
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <select id="gst-pin-site" class="gst-filter__select">
                                 @foreach (var site in Model.Sites)
                                 {
                                     <option value="@site">@site</option>
@@ -96,13 +91,13 @@
                     }
                     else
                     {
-                        <span class="gst-prof-chip gst-prof-chip--static">
-                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
-                            <span class="gst-prof-chip__value">@siteLabel</span>
-                        </span>
-                        @* Hidden but enabled — Insights / live-preview JS reads `.value`
-                           via getElementById and skips it as an event source when
-                           there's nothing to change. *@
+                        <div class="gst-filter gst-prof-preview__filter gst-filter--static">
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <span class="gst-filter__static-value">@siteLabel</span>
+                        </div>
+                        @* Hidden form holder — JS reads .value via getElementById
+                           and skips it as an event source when there's nothing
+                           to change. *@
                         <select id="gst-pin-site" class="gst-prof-chip__hidden" aria-hidden="true" tabindex="-1">
                             <option value="@(Model.Sites.Count == 1 ? Model.Sites[0] : "")"></option>
                         </select>
@@ -110,13 +105,9 @@
 
                     @if (localeSelectable)
                     {
-                        <label class="gst-prof-chip gst-prof-chip--input" for="gst-pin-locale">
-                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
-                            <span class="gst-prof-chip__value" id="gst-pin-locale-display">@Model.Locales[0]</span>
-                            <svg class="gst-prof-chip__caret" viewBox="0 0 8 5" width="8" height="5" aria-hidden="true">
-                                <path d="M0 0 L4 5 L8 0" fill="currentColor"/>
-                            </svg>
-                            <select id="gst-pin-locale" class="gst-prof-chip__select">
+                        <label class="gst-filter gst-prof-preview__filter">
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <select id="gst-pin-locale" class="gst-filter__select">
                                 @foreach (var loc in Model.Locales)
                                 {
                                     <option value="@loc">@loc</option>
@@ -126,10 +117,10 @@
                     }
                     else
                     {
-                        <span class="gst-prof-chip gst-prof-chip--static">
-                            <span class="gst-prof-chip__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
-                            <span class="gst-prof-chip__value">@localeLabel</span>
-                        </span>
+                        <div class="gst-filter gst-prof-preview__filter gst-filter--static">
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <span class="gst-filter__static-value">@localeLabel</span>
+                        </div>
                         <select id="gst-pin-locale" class="gst-prof-chip__hidden" aria-hidden="true" tabindex="-1">
                             <option value="@(Model.Locales.Count == 1 ? Model.Locales[0] : "")"></option>
                         </select>
@@ -289,6 +280,10 @@
                    profile's declared languages. The site filter is hidden
                    because the active profile already pins us to one site
                    group. *@
+                @* Locale filter intentionally omitted — the page-level
+                   locale picker above the live preview is the single
+                   source of truth and pinned-aurora.js mirrors it into
+                   the grid's filter state. *@
                 <div class="gst-toolbar">
                     <div class="gst-search">
                         <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
@@ -300,12 +295,6 @@
                         <input type="text" id="gst-pin-search"
                                placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
                     </div>
-                    <label class="gst-filter">
-                        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
-                        <select class="gst-filter__select" id="gst-pin-locale-filter">
-                            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
-                        </select>
-                    </label>
                     <div class="gst-toolbar__spacer"></div>
                     <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
                         + @Loc.GetString("/graphsearchtools/tools/pinned/add")
@@ -365,14 +354,16 @@
             {
                 @* Aurora summary grid — same shape as the top-level Synonyms
                    page. The Profile detail page passes `scope.locales` so
-                   the Scope filter is narrowed to the profile's declared
+                   the grid filter is narrowed to the profile's declared
                    languages (plus the tenant-global pool, which always
-                   applies). The "synonyms are global" note stays — even when
-                   scoped, edits write to the tenant-wide synonym pool. *@
-                <p class="gst-prof-syn__note">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/globalNote")
-                </p>
-
+                   applies). The "synonyms are global" note follows the grid
+                   as a footnote — it's a clarification readers reach for
+                   after they've scanned the rules, not before. *@
+                @* Scope filter intentionally omitted — the page-level
+                   locale picker is the single source of truth. The grid
+                   surfaces both the picker's locale and the tenant-wide
+                   "Global" pool, since both apply when previewing that
+                   locale. *@
                 <div class="gst-toolbar">
                     <div class="gst-search">
                         <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
@@ -384,12 +375,6 @@
                         <input type="text" id="gst-syn-search"
                                placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")" />
                     </div>
-                    <label class="gst-filter">
-                        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</span>
-                        <select class="gst-filter__select" id="gst-syn-locale-filter">
-                            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
-                        </select>
-                    </label>
                     <div class="gst-toolbar__spacer"></div>
                     <button type="button" id="gst-syn-create" class="gst-btn gst-btn--primary">
                         + @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRow")
@@ -407,6 +392,10 @@
                     </thead>
                     <tbody id="gst-syn-aurora-rows"></tbody>
                 </table>
+
+                <p class="gst-prof-syn__note">
+                    @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/globalNote")
+                </p>
             }
         </article>
 
@@ -689,7 +678,6 @@
                     profileKey: '@Html.Raw(Model.Key)',
                     sites: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Sites)),
                     locales: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Locales)),
-                    isGeneric: @(Model.IsGeneric ? "true" : "false"),
                     isSiteShared: @(Model.IsSiteShared ? "true" : "false"),
                     hasGraphQLDoc: @(Model.GraphQLDocExists ? "true" : "false"),
                     queryAppliesPinned: @(Model.QueryAppliesPinned ? "true" : "false"),
