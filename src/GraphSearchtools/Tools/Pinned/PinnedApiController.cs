@@ -16,14 +16,11 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// honour the optional per-feature permission gate.
 /// </summary>
 /// <remarks>
-/// Phase 2.5 §4.1: pinned data is now scoped to <see cref="SearchProfile"/>s.
-/// When at least one profile is registered (i.e. <c>registry.All.Count &gt; 1</c>
-/// — Generic is always synthesised), every write requires a <c>profileKey</c>
-/// query parameter. The controller resolves the Graph collection key from the
-/// profile + locale via <see cref="SearchProfile.PinnedKeyForLocale"/>; the
-/// marketer never types the key. Generic-mode (only the synthesised profile
-/// exists) keeps the legacy free-form <c>collectionName</c>/<c>collectionId</c>
-/// shape for back-compat with installs that haven't adopted profiles yet.
+/// Phase 2.5 §4.1: pinned data is scoped to <see cref="SearchProfile"/>s.
+/// Every write requires a <c>profileKey</c> query parameter; the controller
+/// resolves the Graph collection key from the profile + locale via
+/// <see cref="SearchProfile.PinnedKeyForLocale"/> so the marketer never types
+/// the key.
 /// </remarks>
 [Authorize(Policy = "codeart:graphsearchtools")]
 public class PinnedApiController : Controller
@@ -67,6 +64,124 @@ public class PinnedApiController : Controller
         }
     }
 
+    /// <summary>
+    /// Returns the <c>{ collectionKey: profileKey }</c> lookup the top-level
+    /// Pinned grid uses for row deep-links. First-write-wins on overlap; for
+    /// the richer "all matching profiles + their locales" payload that the
+    /// Collections tab uses, see <see cref="CollectionProfiles"/>.
+    /// </summary>
+    [HttpGet]
+    public IActionResult ProfileMap()
+    {
+        if (!HasAccess()) return Forbid();
+
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var match in EnumerateProfileMatches())
+        {
+            map.TryAdd(match.CollectionKey, match.ProfileKey);
+        }
+        return Ok(map);
+    }
+
+    /// <summary>
+    /// Returns the inverse of <see cref="ProfileMap"/>: every registered
+    /// profile × declared locale tuple grouped by the collection key its
+    /// <see cref="SearchProfile.PinnedKeyForLocale"/> resolves to. Used by the
+    /// Collections-tab flyout to show "which profiles point at this
+    /// collection and through which locales."
+    /// </summary>
+    [HttpGet]
+    public IActionResult CollectionProfiles()
+    {
+        if (!HasAccess()) return Forbid();
+
+        var map = new Dictionary<string, List<object>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var match in EnumerateProfileMatches())
+        {
+            if (!map.TryGetValue(match.CollectionKey, out var list))
+            {
+                list = new List<object>();
+                map[match.CollectionKey] = list;
+            }
+            list.Add(new { profileKey = match.ProfileKey, locale = match.Locale });
+        }
+        return Ok(map);
+    }
+
+    /// <summary>
+    /// Resolves the (profile, locale) tuple to its Graph collection, creating
+    /// the collection if it doesn't exist yet. Returns the resolved key and
+    /// the collection id (existing or newly created). Used by the Profile
+    /// detail Pinned tab so editors can add a pin under a declared locale
+    /// without manually pre-creating the backing collection.
+    /// </summary>
+    [HttpPost]
+    [RequireAjax]
+    public async Task<IActionResult> EnsureCollection(
+        [FromQuery] string profileKey,
+        [FromQuery] string locale,
+        CancellationToken cancellationToken)
+    {
+        if (!HasAccess()) return Forbid();
+        if (string.IsNullOrWhiteSpace(profileKey)) return BadRequest(new { message = "profileKey is required." });
+        if (string.IsNullOrWhiteSpace(locale)) return BadRequest(new { message = "locale is required." });
+
+        var profile = _registry.Get(profileKey);
+        if (profile == null) return NotFound(new { message = "Profile not found." });
+        if (profile.PinnedKeyForLocale == null)
+        {
+            return BadRequest(new { message = $"Profile '{profile.Key}' has no PinnedKey formula." });
+        }
+
+        string? resolvedKey;
+        try { resolvedKey = profile.PinnedKeyForLocale(locale); }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "PinnedKeyForLocale threw for profile {Profile} locale {Locale}.", profile.Key, locale);
+            return BadRequest(new { message = "Profile's PinnedKey formula failed for this locale." });
+        }
+        if (string.IsNullOrEmpty(resolvedKey))
+        {
+            return BadRequest(new { message = "Profile's PinnedKey formula returned no key for this locale." });
+        }
+
+        try
+        {
+            var collections = await _service.GetCollectionsAsync(cancellationToken);
+            var existing = collections.FirstOrDefault(c =>
+                string.Equals(c.Key, resolvedKey, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                return Ok(new { collectionId = existing.Id, key = existing.Key, created = false });
+            }
+
+            var created = await _service.CreateCollectionAsync(
+                new PinnedCollectionPayload { Key = resolvedKey!, IsActive = true },
+                cancellationToken);
+            return Ok(new { collectionId = created.Id, key = created.Key, created = true });
+        }
+        catch (Exception ex) { return HandleError(ex); }
+    }
+
+    private IEnumerable<(string CollectionKey, string ProfileKey, string Locale)> EnumerateProfileMatches()
+    {
+        foreach (var profile in _registry.All)
+        {
+            if (profile.PinnedKeyForLocale == null) continue;
+            var locales = profile.Locales != null && profile.Locales.Count > 0
+                ? profile.Locales
+                : new[] { "en" };
+            foreach (var locale in locales)
+            {
+                string? key;
+                try { key = profile.PinnedKeyForLocale(locale); }
+                catch { key = null; }
+                if (string.IsNullOrEmpty(key)) continue;
+                yield return (key!, profile.Key, locale);
+            }
+        }
+    }
+
     [HttpPost]
     [RequireAjax]
     public async Task<IActionResult> CreateCollection([FromBody] PinnedCollectionPayload payload, CancellationToken cancellationToken)
@@ -102,7 +217,13 @@ public class PinnedApiController : Controller
 
     [HttpDelete]
     [RequireAjax]
-    public async Task<IActionResult> DeleteCollection(string id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteCollection(
+        // [FromQuery] is explicit because the convention route is
+        // `{controller}/{action}/{id?}` — without it, the binder reads
+        // the empty route token and 400s before the query string is
+        // considered. Same wart as UpdateItem above.
+        [FromQuery] string id,
+        CancellationToken cancellationToken)
     {
         if (!HasAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { message = "Collection id is required." });
@@ -261,26 +382,16 @@ public class PinnedApiController : Controller
 
     /// <summary>
     /// Resolves the (profile, site, locale) tuple from the query string against
-    /// the registry. When at least one real profile is registered (i.e. the
-    /// registry exposes more than just the synthesised Generic), <c>profileKey</c>
-    /// is required — writes without it are 400'd. Generic-only mode keeps the
-    /// legacy free-form behaviour: <c>profile</c> is null and the caller's
-    /// <c>collectionId</c>/<c>collectionName</c> drives the Graph call directly.
+    /// the registry. <c>profileKey</c> is optional — the top-level Pinned
+    /// page's flyout writes directly against a collection and may have no
+    /// owning profile to attribute the audit row to, in which case
+    /// <see cref="AppendAudit"/> is skipped.
     /// </summary>
     private ScopeResolution ResolveScope(string? profileKey, string? site, string? locale)
     {
-        var hasRegisteredProfiles = _registry.All.Count > 1;
-
         if (string.IsNullOrWhiteSpace(profileKey))
         {
-            if (hasRegisteredProfiles)
-            {
-                var msg = _localization.GetString("/graphsearchtools/profiles/api/profileKeyRequired");
-                return ScopeResolution.Error(BadRequest(new { message = msg }));
-            }
-
-            // Generic-only mode: legacy behaviour, no profile context.
-            return ScopeResolution.Generic(site, locale);
+            return ScopeResolution.For(profile: null, site, locale);
         }
 
         var profile = _registry.Get(profileKey!);
@@ -294,11 +405,14 @@ public class PinnedApiController : Controller
 
     private void AppendAudit(ScopeResolution scope, string action, string subject)
     {
+        // Direct-collection writes (no profileKey) have no profile context —
+        // skip the audit row rather than crashing on a null Profile.
+        if (scope.Profile == null) return;
         try
         {
             var entry = new SearchProfileEdit
             {
-                ProfileKey = scope.Profile?.Key ?? "generic",
+                ProfileKey = scope.Profile.Key,
                 Site = scope.Site ?? string.Empty,
                 Locale = scope.Locale ?? string.Empty,
                 Kind = "Pinned",
@@ -321,8 +435,12 @@ public class PinnedApiController : Controller
     {
         if (exception is GraphSearchApiException apiException)
         {
-            // Don't leak the upstream response body — log it and return a generic error.
-            _logger.LogWarning(apiException, "Graph API request failed with status {StatusCode}.", apiException.StatusCode);
+            // Don't leak the upstream response body to the HTTP response —
+            // but DO log it server-side so the developer can diagnose the
+            // upstream rejection without having to wireshark Graph traffic.
+            _logger.LogWarning(apiException,
+                "Graph API request failed with status {StatusCode}. Body: {Body}",
+                apiException.StatusCode, apiException.ResponseContent);
             return StatusCode(apiException.StatusCode, new { message = "Graph API request failed." });
         }
         if (exception is BulkLoadCapExceededException cap)
@@ -353,11 +471,8 @@ public class PinnedApiController : Controller
         public IActionResult? ErrorResult { get; private init; }
         public bool IsError => ErrorResult != null;
 
-        public static ScopeResolution For(SearchProfile profile, string? site, string? locale)
+        public static ScopeResolution For(SearchProfile? profile, string? site, string? locale)
             => new() { Profile = profile, Site = site, Locale = locale };
-
-        public static ScopeResolution Generic(string? site, string? locale)
-            => new() { Profile = null, Site = site, Locale = locale };
 
         public static ScopeResolution Error(IActionResult error)
             => new() { ErrorResult = error };

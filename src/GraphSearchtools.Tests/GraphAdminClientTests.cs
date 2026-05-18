@@ -28,7 +28,7 @@ public class GraphAdminClientTests
 
         var results = await client.GetCollectionsAsync(CancellationToken.None);
 
-        results.Should().ContainSingle().Which.Title.Should().Be("Test");
+        results.Should().ContainSingle().Which.Key.Should().Be("test");
         captured.Should().NotBeNull();
         captured!.Method.Should().Be(HttpMethod.Get);
         captured.RequestUri!.ToString().Should().Be("https://cg.optimizely.com/api/pinned/collections");

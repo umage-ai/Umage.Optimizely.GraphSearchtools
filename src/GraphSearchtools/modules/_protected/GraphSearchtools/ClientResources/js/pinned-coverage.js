@@ -127,12 +127,14 @@
         }).join('');
     }
 
-    function fixHref(issue) {
-        // ProfileKey may be null when the collection isn't profile-bound — in
-        // that case we deep-link to the synthesised Generic profile so the
-        // editor still has a single place to land.
-        var key = issue.profileKey || 'generic';
-        return PROFILE_URL_BASE + encodeURIComponent(key) + '#pinned';
+    function fixCell(issue) {
+        // ProfileKey is null when the collection key doesn't match any
+        // registered profile's PinnedKey formula — those rows are read-only.
+        if (!issue.profileKey) {
+            return '<span class="gst-muted">' + escHtml(STRINGS.no_profile || 'No profile') + '</span>';
+        }
+        var href = PROFILE_URL_BASE + encodeURIComponent(issue.profileKey) + '#pinned';
+        return '<a class="gst-btn gst-btn--sm" href="' + href + '">' + escHtml(STRINGS.fix_in_profile || 'Fix') + '</a>';
     }
 
     function renderGrid(issues) {
@@ -154,7 +156,7 @@
                 '<td>' + targetCell + '</td>' +
                 '<td><code>' + escHtml(issue.collectionKey || '') + '</code></td>' +
                 '<td>' + escHtml(issue.detail || '') + '</td>' +
-                '<td class="gst-pc-fix-col"><a class="gst-btn gst-btn--sm" href="' + fixHref(issue) + '">' + escHtml(STRINGS.fix_in_profile || 'Fix') + '</a></td>';
+                '<td class="gst-pc-fix-col">' + fixCell(issue) + '</td>';
             grid.appendChild(tr);
         });
     }
