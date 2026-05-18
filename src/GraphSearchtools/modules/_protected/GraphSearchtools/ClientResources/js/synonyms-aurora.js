@@ -22,7 +22,7 @@
     const API = window.GST_BASE_URL + '/SynonymsApi';
     const COVERAGE_API = window.GST_BASE_URL + '/SynonymCoverageApi/Index';
     const GRAPH_LOCALES_API = window.GST_BASE_URL + '/SitesApi/Locales';
-    const PROFILES_API = window.GST_BASE_URL + '/api/profiles';
+    const PROFILES_API = '/EPiServer/cms/graphsearchtools/api/profiles';
 
     const state = {
         initialized: false,
@@ -71,6 +71,20 @@
             state.filters.locale = localeF.value;
             renderGrid();
         });
+        // Profile detail's page-level locale chip (#gst-pin-locale) is the
+        // single source of truth for which language the marketer is
+        // inspecting — Pinned and Insights both mirror it. Seed and follow
+        // the chip here too so opening Synonyms with preview="en" lands on
+        // the en-scoped slice instead of "All".
+        const localeChip = document.getElementById('gst-pin-locale');
+        if (localeChip) {
+            if (localeChip.value) state.filters.locale = localeChip.value;
+            localeChip.addEventListener('change', function () {
+                state.filters.locale = localeChip.value || '';
+                if (localeF) localeF.value = state.filters.locale;
+                renderGrid();
+            });
+        }
         const typeF = document.getElementById('gst-syn-type-filter');
         if (typeF) typeF.addEventListener('change', function () {
             state.filters.type = typeF.value;
@@ -266,9 +280,11 @@
             if (b === 'Global') return 1;
             return a.localeCompare(b);
         });
-        // Keep the current selection if it's still represented; otherwise
-        // fall back to "All" so the chip-display doesn't go blank.
-        const current = sel.value;
+        // Source the selection from state, not sel.value — state is seeded
+        // from the page-level locale chip before this runs, so on first paint
+        // the dropdown should match the chip even though sel.value is still
+        // the empty "all" default.
+        const current = state.filters.locale;
         // Clear all options except the static "All" one (data attribute marks
         // it; if absent, leave the first option as-is).
         const all = sel.querySelector('option[value=""]');
@@ -295,7 +311,11 @@
         if (!tbody) return;
 
         const filtered = state.rules.filter(function (r) {
-            if (state.filters.locale && r.locale !== state.filters.locale) return false;
+            // Locale filter: rules in the tenant-wide "Global" pool always
+            // apply, even when previewing a specific locale, so the grid
+            // includes them alongside the locale-matched rules. The marketer
+            // sees every synonym Graph would expand at query time.
+            if (state.filters.locale && r.locale !== state.filters.locale && r.locale !== 'Global') return false;
             if (state.filters.q && r.raw.toLowerCase().indexOf(state.filters.q) === -1) return false;
             return true;
         });
@@ -309,17 +329,29 @@
         }
 
         const deleteLabel = GST.s('shared.delete', 'Delete');
+        const previewLabel = GST.s('profiles.detail.insights.actionPreview', 'Preview this phrase');
         const trash = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
             '<path d="M3 4 H13 M5 4 V13 a1 1 0 0 0 1 1 H10 a1 1 0 0 0 1 -1 V4 M6 4 V2 a1 1 0 0 1 1 -1 H9 a1 1 0 0 1 1 1 V4 M6.5 7 V11 M9.5 7 V11"/>' +
             '</svg>';
+        const eye = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
+            '<circle cx="7" cy="7" r="4.5"/>' +
+            '<line x1="10.5" y1="10.5" x2="14" y2="14"/>' +
+            '</svg>';
+        // Preview button only renders when there's a SERP target to send the
+        // phrase to — i.e. inside a profile-scoped synonyms tab. The top-level
+        // Synonyms page has no live preview surface, so omit the affordance.
+        const hasPreviewTarget = !!document.getElementById('gst-pin-tryit-q');
         tbody.innerHTML = sorted.map(function (r) {
+            var actionButtons = '';
+            if (hasPreviewTarget && rulePreviewPhrase(r.raw)) {
+                actionButtons += '<button class="gst-rowaction" data-row-preview title="' + GST.escHtml(previewLabel) + '" aria-label="' + GST.escHtml(previewLabel) + '">' + eye + '</button>';
+            }
+            actionButtons += '<button class="gst-rowdelete" data-row-delete title="' + GST.escHtml(deleteLabel) + '" aria-label="' + GST.escHtml(deleteLabel) + '">' + trash + '</button>';
             return '<tr class="is-selectable" data-rule-id="' + GST.escHtml(r.id) + '">' +
                 '<td><a href="#" class="gst-table__link" data-row-link>' + GST.escHtml(r.raw) + '</a></td>' +
                 '<td>' + GST.escHtml(r.locale) + '</td>' +
                 '<td class="num">' + renderActivityCell(r.hits) + '</td>' +
-                '<td class="gst-table__actions">' +
-                '<button class="gst-rowdelete" data-row-delete title="' + GST.escHtml(deleteLabel) + '" aria-label="' + GST.escHtml(deleteLabel) + '">' + trash + '</button>' +
-                '</td></tr>';
+                '<td class="gst-table__actions">' + actionButtons + '</td></tr>';
         }).join('');
 
         tbody.querySelectorAll('tr.is-selectable').forEach(function (tr) {
@@ -332,12 +364,42 @@
                 e.preventDefault();
                 openEditFlyout(tr.dataset.ruleId);
             });
+            const previewBtn = tr.querySelector('[data-row-preview]');
+            if (previewBtn) previewBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                applyRuleToPreview(tr.dataset.ruleId);
+            });
             const deleteBtn = tr.querySelector('[data-row-delete]');
             if (deleteBtn) deleteBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 deleteRule(tr.dataset.ruleId);
             });
         });
+    }
+
+    // Pick the phrase to drop into the live preview when "Preview this rule"
+    // fires. Both rule shapes give us the first LHS token:
+    //   • `a, b, c`         → equality, first term is `a`
+    //   • `a, b => c, d`    → replacement, first LHS term is `a`
+    // The LHS is what a marketer would actually type into the SERP, so the
+    // preview reflects the search Graph would expand. RHS-only previews would
+    // skip the synonym path and just hit content directly.
+    function rulePreviewPhrase(raw) {
+        if (!raw) return '';
+        var lhs = raw.split('=>')[0] || '';
+        var first = lhs.split(',')[0] || '';
+        return first.trim();
+    }
+
+    function applyRuleToPreview(ruleId) {
+        const r = state.rules.find(function (x) { return x.id === ruleId; });
+        if (!r) return;
+        const phrase = rulePreviewPhrase(r.raw);
+        if (!phrase) return;
+        const input = document.getElementById('gst-pin-tryit-q');
+        if (!input) return;
+        input.value = phrase;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // Delete the rule from its locale's blob and PUT the reduced blob back.
