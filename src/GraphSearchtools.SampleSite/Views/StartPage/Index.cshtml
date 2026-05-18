@@ -4,13 +4,4 @@
     <div epi-property="@Model.CurrentPage.MainContentArea" class="row">
         <div epi-property-item class="block" epi-on-item-rendered="OnItemRendered" />
     </div>
-
-    @* Featured Products surface — fed by the alloy-products search profile.
-       Editors curate the list via the GraphSearchtools admin (Profiles →
-       Product cards → Pinned tab) under collection key alloy-products-{locale}
-       with phrase "featured". When no pins exist, the section falls back to
-       the organic top ProductPages. *@
-    <div class="container">
-        @await Component.InvokeAsync("FeaturedProducts", new { locale = Model.CurrentPage.Language?.Name ?? "en", limit = 6 })
-    </div>
 </div>
