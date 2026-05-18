@@ -127,8 +127,6 @@ public class PinnedServiceLoadAllItemsTests
         public Task DeleteSynonymsAsync(SynonymsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<IReadOnlyList<ContentSearchHit>> SearchContentAsync(string query, string? locale, IReadOnlyList<string> contentTypes, CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<IReadOnlyList<ContentSearchHit>> ResolveByGuidsAsync(IReadOnlyList<string> guids, IReadOnlyList<string> contentTypes, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<IReadOnlyList<string>> AutocompleteAsync(string typeName, string field, string value, string? locale, int limit, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<IReadOnlyList<AutocompleteFieldDescriptor>> GetAutocompleteSchemaAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
         public Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
     }
 }

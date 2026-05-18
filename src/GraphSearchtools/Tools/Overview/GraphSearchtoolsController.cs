@@ -31,11 +31,10 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
-    /// Global Pinned tool — the cross-collection editor. Renders the merged
-    /// view with Pins (default) and Audit tabs; Audit absorbs the former
-    /// Pinned Coverage view. Phase 2.5 §4.1 originally redirected this to
-    /// Profiles, but a global pin-management surface (matching the global
-    /// Synonyms tool) is the right home for "see all my pins" workflows.
+    /// Top-level Pinned tool — collection-axis browser. Reads collections + items
+    /// from Graph and joins with the profile registry so each row carries its
+    /// resolved profile. Prototype is read-only; edits still happen inside
+    /// Profile detail tabs.
     /// </summary>
     [HttpGet]
     public IActionResult Pinned()
@@ -45,6 +44,10 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Pinned/Index.cshtml");
     }
 
+    /// <summary>
+    /// Top-level Synonyms tool — talks straight to Graph's synonym admin.
+    /// Profile-agnostic by design: Graph synonyms live in a tenant-global pool.
+    /// </summary>
     [HttpGet]
     public IActionResult Synonyms()
     {
@@ -53,45 +56,13 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Synonyms/Index.cshtml");
     }
 
+    /// <summary>Legacy URL — Synonym Coverage now lives inside each Profile detail.</summary>
     [HttpGet]
-    public IActionResult Health()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Health), GraphSearchtoolsPermissions.Health))
-            return Forbid();
-        return View("/Views/Health/Index.cshtml");
-    }
+    public IActionResult SynonymCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
 
+    /// <summary>Legacy URL — Pinned Coverage now lives inside each Profile detail.</summary>
     [HttpGet]
-    public IActionResult Autocomplete()
-    {
-        if (!_accessChecker.HasAccess(HttpContext, nameof(FeatureToggles.Autocomplete), GraphSearchtoolsPermissions.Autocomplete))
-            return Forbid();
-        return View("/Views/Autocomplete/Index.cshtml");
-    }
-
-    /// <summary>
-    /// Legacy URL for the standalone Synonym Coverage view. The view is gone
-    /// — the unused-rules signal lives in the Aurora Synonyms grid's
-    /// Activity (30d) column / filter, and the "suggested adds" half is
-    /// being rebuilt as part of the per-profile insights pipeline. 301 to
-    /// the Synonyms page so bookmarked links keep working.
-    /// </summary>
-    [HttpGet]
-    public IActionResult SynonymCoverage()
-    {
-        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Synonyms");
-    }
-
-    /// <summary>
-    /// The Pinned Audit tab has been removed; the audit surface lives in
-    /// Insights now. Keep this action 301-redirecting old bookmarks to the
-    /// Pinned grid rather than 404-ing.
-    /// </summary>
-    [HttpGet]
-    public IActionResult PinnedCoverage()
-    {
-        return RedirectPermanent("/EPiServer/GraphSearchtools/GraphSearchtools/Pinned");
-    }
+    public IActionResult PinnedCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
 
     /// <summary>
     /// Returns all UI strings as JSON for CMS shell widgets that cannot access window.GST_STRINGS.

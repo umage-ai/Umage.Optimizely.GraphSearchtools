@@ -16,8 +16,6 @@
               <Overview>Access the Graph Search Tools overview dashboard.</Overview>
               <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
               <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
-              <Health>Run Optimizely Graph health probes — gateway, credentials, query endpoint, index population.</Health>
-              <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
               <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
               <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
             </permissions>
@@ -33,8 +31,6 @@
         <insights>Insights</insights>
         <pinned>Pinned</pinned>
         <synonyms>Synonyms</synonyms>
-        <health>Health</health>
-        <autocomplete>Autocomplete check</autocomplete>
         <savedqueries>Saved Queries</savedqueries>
       </menu>
 
@@ -63,52 +59,6 @@
           <add>Add</add>
           <col_rule>Rule</col_rule>
         </synonyms>
-        <health>
-          <title>Health</title>
-          <description>Live diagnostics for Optimizely Graph — gateway reach, credentials, and index population. Auto-mode runs a background scan every 5 minutes against your published pages and flags any that are missing from Graph.</description>
-          <run>Run check</run>
-          <auto_label>Auto</auto_label>
-          <auto_off>OFF</auto_off>
-          <auto_on>ON 5m</auto_on>
-          <kpi_status>Status</kpi_status>
-          <kpi_avg_latency>Avg latency</kpi_avg_latency>
-          <kpi_verified>Content verified</kpi_verified>
-          <kpi_session_label>last check</kpi_session_label>
-          <kpi_verified_of>of %1 page(s)</kpi_verified_of>
-          <kpi_verified_unknown>No catalog data</kpi_verified_unknown>
-          <kpi_open_issues>Open issues</kpi_open_issues>
-          <kpi_issues_clean>All clear</kpi_issues_clean>
-          <kpi_issues_count>%1 page(s) need attention</kpi_issues_count>
-          <timeline_title>Scan timeline</timeline_title>
-          <timeline_legend_clean>Clean</timeline_legend_clean>
-          <timeline_legend_missing>Content missing</timeline_legend_missing>
-          <timeline_legend_down>Probes failed</timeline_legend_down>
-          <timeline_empty>No scans yet — enable Auto or click Run check.</timeline_empty>
-          <probes_title>Probes</probes_title>
-          <probe_target>Target</probe_target>
-          <probe_message>Detail</probe_message>
-          <issues_title>Issues</issues_title>
-          <issues_open>Open</issues_open>
-          <issues_resolved>Recently resolved</issues_resolved>
-          <issues_empty>No issues — every page in the rotation has been verified in Graph.</issues_empty>
-          <issue_first_seen>First seen</issue_first_seen>
-          <issue_last_seen>Last seen</issue_last_seen>
-          <issue_resolved_at>Resolved</issue_resolved_at>
-          <issue_open_in_cms>Open in CMS</issue_open_in_cms>
-          <issue_reason_missing>Missing from Graph</issue_reason_missing>
-          <issue_reason_removed>Removed from CMS</issue_reason_removed>
-        </health>
-        <autocomplete>
-          <title>Autocomplete check</title>
-          <description>Verify what the Optimizely Graph autocomplete returns for a given content type and field. The dropdowns reflect the live Graph schema for this environment.</description>
-          <placeholder>Type to see suggestions…</placeholder>
-          <type>Type</type>
-          <type_placeholder>Search content types…</type_placeholder>
-          <field>Field</field>
-          <field_placeholder>Search fields…</field_placeholder>
-          <locale_label>Locale</locale_label>
-          <limit>Limit</limit>
-        </autocomplete>
         <savedqueries>
           <title>Saved Queries</title>
           <description>Run Optimizely Graph queries interactively, then save the phrase + ranking knobs as a named preset so you (or another editor) can re-run them with one click.</description>
@@ -190,10 +140,6 @@
         <api>
           <profileKeyRequired>profileKey is required when search profiles are registered.</profileKeyRequired>
         </api>
-        <generic>
-          <name>Generic</name>
-          <desc>Catchment for pinned collections and synonym groups that don't match a registered profile.</desc>
-        </generic>
         <registration>
           <invalidKey>Profile key must match [a-z0-9-]+.</invalidKey>
           <unknownSite>Site '{0}' is not registered with the CMS — profile will still load.</unknownSite>
@@ -213,7 +159,7 @@
           <backToList>Back to all profiles</backToList>
           <comingSoon>Editor lands in a follow-up PR.</comingSoon>
           <meta>
-            <allLocales>all locales</allLocales>
+            <allLocales>Global</allLocales>
             <allSites>all sites</allSites>
             <docInline>inline (registered in code)</docInline>
             <docNotFound>File not found in the host project.</docNotFound>
@@ -316,7 +262,7 @@
             <title>No profiles registered yet</title>
           </empty>
           <filter>
-            <allLocales>All locales</allLocales>
+            <allLocales>Global</allLocales>
             <allSites>All sites</allSites>
           </filter>
           <filterPlaceholder>Filter profiles…</filterPlaceholder>
@@ -419,7 +365,7 @@
           <targetsAdd>+ Add target</targetsAdd>
           <targetsHint>Targets are pinned to the top of the results in the order shown. Drag the grip handle to reorder, click × to remove.</targetsHint>
           <localeLabel>Locale</localeLabel>
-          <localeAll>All locales</localeAll>
+          <localeAll>Global</localeAll>
           <effectiveLabel>Effective until</effectiveLabel>
           <effectiveHint>Blank = never.</effectiveHint>
           <activate>Activate</activate>
@@ -443,38 +389,6 @@
           <save>Save</save>
           <cancel>Cancel</cancel>
         </synFlyout>
-        <health>
-          <request_failed>Health check failed</request_failed>
-          <probing>Probing…</probing>
-          <gateway_unset>Gateway not configured</gateway_unset>
-          <checked_just_now>Just now</checked_just_now>
-          <checked_seconds_ago>%1s ago</checked_seconds_ago>
-          <checked_minutes_ago>%1m ago</checked_minutes_ago>
-          <status_healthy>HEALTHY</status_healthy>
-          <status_degraded>DEGRADED</status_degraded>
-          <status_down>DOWN</status_down>
-          <status_unknown>UNKNOWN</status_unknown>
-          <status_running>CHECKING</status_running>
-          <subtitle_healthy>All probes passed.</subtitle_healthy>
-          <subtitle_degraded>Reachable with warnings.</subtitle_degraded>
-          <subtitle_down>Connection problem.</subtitle_down>
-          <subtitle_unknown>Unknown status.</subtitle_unknown>
-          <auto_enabled>Background scan enabled — runs every 5 minutes.</auto_enabled>
-          <auto_disabled>Background scan paused.</auto_disabled>
-          <last_scan_at>Last scan %1</last_scan_at>
-          <last_scan_never>Never scanned</last_scan_never>
-          <bar_tooltip>%1 — %2 / %3 probes, %4 / %5 pages, %6</bar_tooltip>
-        </health>
-        <autocomplete>
-          <request_failed>Autocomplete failed</request_failed>
-          <schema_failed>Could not load schema</schema_failed>
-          <no_results>No suggestions.</no_results>
-          <no_types>No autocomplete types</no_types>
-          <no_fields>No fields</no_fields>
-          <all_locales>ALL</all_locales>
-          <returned_for>Returned %1 in %2 ms</returned_for>
-          <error_pick_type_and_field>Pick a type and a field first.</error_pick_type_and_field>
-        </autocomplete>
         <savedqueries>
           <request_failed>Request failed</request_failed>
           <no_items>No saved queries yet.</no_items>

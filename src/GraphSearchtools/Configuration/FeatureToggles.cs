@@ -10,8 +10,6 @@ public class FeatureToggles
     public bool Overview { get; set; } = true;
     public bool Pinned { get; set; } = true;
     public bool Synonyms { get; set; } = true;
-    public bool Health { get; set; } = true;
-    public bool Autocomplete { get; set; } = true;
     public bool Profiles { get; set; } = true;
 
     /// <summary>
