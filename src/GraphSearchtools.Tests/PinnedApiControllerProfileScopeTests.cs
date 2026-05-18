@@ -18,20 +18,17 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 
 /// <summary>
-/// Phase 2.5 §4.1 — guards the new profile-scoping behaviour on
-/// <see cref="PinnedApiController"/>: writes require a <c>profileKey</c> when
-/// any real profile is registered (Generic alone keeps legacy free-form mode);
+/// Phase 2.5 §4.1 — guards the profile-scoping behaviour on
+/// <see cref="PinnedApiController"/>: writes require a <c>profileKey</c>;
 /// the audit log is appended on every successful write; and the legacy
 /// <c>/pinned</c> route 301-redirects to the Profiles index.
 /// </summary>
 public class PinnedApiControllerProfileScopeTests
 {
     [Fact]
-    public async Task Write_WithoutProfileKey_When_Profiles_Registered_Returns400()
+    public async Task Write_WithoutProfileKey_Returns400()
     {
-        var registry = new StaticRegistry(
-            BuildProfile("site-search"),
-            BuildGeneric());
+        var registry = new StaticRegistry(BuildProfile("site-search"));
 
         var (controller, _, _) = NewController(registry);
 
@@ -44,41 +41,15 @@ public class PinnedApiControllerProfileScopeTests
             cancellationToken: CancellationToken.None);
 
         var bad = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-        // Payload is the anonymous { message = "..." } we return.
         bad.Value.Should().NotBeNull();
         var msgProp = bad.Value!.GetType().GetProperty("message");
         msgProp.Should().NotBeNull("the controller returns { message = ... } on validation failures");
     }
 
     [Fact]
-    public async Task Write_WithoutProfileKey_When_Only_Generic_Allows_LegacyShape()
-    {
-        // Only Generic in the registry → legacy free-form behaviour, profileKey
-        // is optional and writes proceed against the supplied collectionId.
-        var registry = new StaticRegistry(BuildGeneric());
-        var (controller, graphClient, _) = NewController(registry);
-
-        var created = new PinnedItemResult { Id = "item-1", Phrases = "warranty", TargetKey = "guid-1" };
-        graphClient
-            .Setup(c => c.CreateItemAsync("col-1", It.IsAny<PinnedItemPayload>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(created);
-
-        var result = await controller.CreateItem(
-            collectionId: "col-1",
-            payload: new PinnedItemPayload { Phrases = "warranty", TargetKey = "guid-1" },
-            profileKey: null,
-            site: null,
-            locale: null,
-            cancellationToken: CancellationToken.None);
-
-        result.Should().BeOfType<OkObjectResult>()
-            .Which.Value.Should().BeSameAs(created);
-    }
-
-    [Fact]
     public async Task Write_AppendsAuditEntry()
     {
-        var registry = new StaticRegistry(BuildProfile("site-search"), BuildGeneric());
+        var registry = new StaticRegistry(BuildProfile("site-search"));
         var (controller, graphClient, editLog) = NewController(registry);
 
         var created = new PinnedItemResult { Id = "item-1", Phrases = "warranty", TargetKey = "guid-1" };
@@ -188,14 +159,6 @@ public class PinnedApiControllerProfileScopeTests
         Sites = new[] { "corporate" },
         Locales = new[] { "en" },
         PinnedKeyForLocale = locale => $"{key}-{locale}"
-    };
-
-    private static SearchProfile BuildGeneric() => new()
-    {
-        Key = "generic",
-        DisplayName = LocalizedString.Literal("Generic"),
-        Sites = Array.Empty<string>(),
-        Locales = Array.Empty<string>()
     };
 
     private sealed class StaticRegistry : ISearchProfileRegistry

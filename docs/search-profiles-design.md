@@ -65,18 +65,12 @@ services.AddGraphSearchtools(options =>
         .SearchedFields("Name", "MetaDescription", "MainBody")
         .UsesPinnedKey("alloy-{locale}")
         .SemanticBlend(0.3, GraphRanking.Semantic)
-        .GraphQLDocument("Queries/AlloySearch.graphql"))
-    .AddSearchProfile("alloy-products", p => p
-        .DisplayName("Product cards")
-        .Description("Pinned recommendations for the product/teaser surface.")
-        .Locales("en")
-        .SearchedFields("Name", "TeaserText")
-        .UsesPinnedKey("alloy-products-{locale}"));
+        .GraphQLDocument("Queries/AlloySearch.graphql"));
 ```
 
 > The example above mirrors what the Alloy CMS 12 sample site registers in
 > `src/GraphSearchtools.SampleSite/Startup.cs`; the CMS 13 sample registers the
-> same two profiles. Multi-site / multi-locale solutions add `Sites(...)` and
+> same profile. Multi-site / multi-locale solutions add `Sites(...)` and
 > more entries to `Locales(...)`.
 
 ### 2.1 Profile shape

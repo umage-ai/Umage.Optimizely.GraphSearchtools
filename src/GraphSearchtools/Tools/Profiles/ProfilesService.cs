@@ -16,8 +16,6 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
 /// </summary>
 public sealed class ProfilesService
 {
-    private const string GenericKey = "generic";
-
     private readonly ISearchProfileRegistry _registry;
     private readonly SearchProfileEditService _edits;
     private readonly LocalizationService _localization;
@@ -113,7 +111,6 @@ public sealed class ProfilesService
             Key = profile.Key,
             DisplayName = profile.DisplayName?.Resolve(_localization) ?? profile.Key,
             DescriptionResolved = profile.Description?.Resolve(_localization),
-            IsGeneric = string.Equals(profile.Key, GenericKey, StringComparison.OrdinalIgnoreCase),
             IsSiteShared = IsPinnedKeySiteShared(profile),
             Sites = profile.Sites ?? Array.Empty<string>(),
             Locales = profile.Locales ?? Array.Empty<string>(),
@@ -141,7 +138,6 @@ public sealed class ProfilesService
         var hasDoc = hasInline || hasPath;
         var docExists = hasInline || (hasPath && DocumentExists(profile.GraphQLDocumentPath!));
         var lastEdit = _edits.LatestForProfile(profile.Key);
-        var isGeneric = string.Equals(profile.Key, GenericKey, StringComparison.OrdinalIgnoreCase);
 
         return new ProfileSummary
         {
@@ -154,22 +150,18 @@ public sealed class ProfilesService
             GraphQLDocPath = profile.GraphQLDocumentPath,
             SemanticWeight = profile.SemanticWeight,
             RankingName = profile.Ranking.ToString(),
-            IsGeneric = isGeneric,
-            Status = DeriveStatus(profile, isGeneric, hasDoc, docExists, lastEdit),
+            Status = DeriveStatus(hasDoc, docExists, lastEdit),
             LastEditedAt = lastEdit?.At,
             LastEditedBy = lastEdit?.ActorName ?? lastEdit?.ActorId
         };
     }
 
     private static ProfileStatus DeriveStatus(
-        SearchProfile profile,
-        bool isGeneric,
         bool hasDoc,
         bool docExists,
         SearchProfileEdit? lastEdit)
     {
         if (hasDoc && !docExists) return ProfileStatus.DocMissing;
-        if (isGeneric) return ProfileStatus.FreeForm;
         if (lastEdit == null) return ProfileStatus.Cold;
         return ProfileStatus.Tuned;
     }

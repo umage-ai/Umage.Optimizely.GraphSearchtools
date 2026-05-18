@@ -1,69 +1,42 @@
-using EPiServer.DataAbstraction;
-using EPiServer.Web;
 using FluentAssertions;
-using Moq;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
-
-#pragma warning disable CS0618 // ISiteDefinitionRepository — see LanguageSiteEnumerator.
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 
 /// <summary>
-/// Validates the <see cref="SearchProfileRegistry"/> contract: Generic always
-/// present, key lookup includes both registered and Generic, ForSite filters
-/// honour the empty-Sites-means-all rule from the design doc.
+/// Validates the <see cref="SearchProfileRegistry"/> contract: key lookup
+/// returns registered profiles, ForSite filters honour the empty-Sites-
+/// means-all rule from the design doc.
 /// </summary>
 public class SearchProfileRegistryTests
 {
     [Fact]
-    public void Registry_AlwaysIncludesGeneric()
+    public void Registry_EmptyWhenNoProfilesRegistered()
     {
         var registry = BuildRegistry();
-        registry.All.Should().ContainSingle()
-            .Which.Key.Should().Be("generic");
+        registry.All.Should().BeEmpty();
     }
 
     [Fact]
-    public void Registry_PutsRegisteredProfilesBeforeGeneric()
+    public void Registry_PreservesRegistrationOrder()
     {
         var registry = BuildRegistry(
             BuildProfile("site-search"),
             BuildProfile("kb-search"));
 
         registry.All.Select(p => p.Key)
-            .Should().Equal("site-search", "kb-search", "generic");
+            .Should().Equal("site-search", "kb-search");
     }
 
     [Fact]
-    public void Registry_GetByKey_FindsRegistered_AndGeneric()
+    public void Registry_GetByKey_FindsRegistered()
     {
         var site = BuildProfile("site-search");
         var registry = BuildRegistry(site);
 
         registry.Get("site-search").Should().BeSameAs(site);
-        registry.Get("generic").Should().NotBeNull();
-        registry.Get("generic")!.IsGeneric.Should().BeTrue();
         registry.Get("missing").Should().BeNull();
         registry.Get(string.Empty).Should().BeNull();
-    }
-
-    [Fact]
-    public void Registry_DropsHostRegisteredGenericProfile()
-    {
-        // Defensive: a host that managed to construct a profile with key "generic"
-        // shouldn't be able to mask the synthesised one. The constructor filters them out.
-        var hostGeneric = new SearchProfile
-        {
-            Key = "generic",
-            DisplayName = LocalizedString.Literal("Host generic"),
-            Sites = Array.Empty<string>(),
-            Locales = Array.Empty<string>(),
-            SearchedFields = Array.Empty<string>(),
-            DefaultVariables = new Dictionary<string, object?>()
-        };
-
-        var registry = BuildRegistry(hostGeneric);
-        registry.Get("generic")!.DisplayName.Value.Should().NotBe("Host generic");
     }
 
     [Fact]
@@ -78,7 +51,6 @@ public class SearchProfileRegistryTests
         var corpProfiles = registry.ForSite("corporate").Select(p => p.Key).ToList();
         corpProfiles.Should().Contain("corp-search");
         corpProfiles.Should().Contain("shared-search");
-        corpProfiles.Should().Contain("generic");
         corpProfiles.Should().NotContain("kb-search");
 
         var supportProfiles = registry.ForSite("support").Select(p => p.Key).ToList();
@@ -100,7 +72,6 @@ public class SearchProfileRegistryTests
 
         var keys = registry.ForSite("").Select(p => p.Key).ToList();
         keys.Should().Contain("shared-search");
-        keys.Should().Contain("generic");
         keys.Should().NotContain("corp-search");
     }
 
@@ -115,12 +86,6 @@ public class SearchProfileRegistryTests
 
     private static SearchProfileRegistry BuildRegistry(params SearchProfile[] profiles)
     {
-        var sites = new Mock<ISiteDefinitionRepository>(MockBehavior.Loose);
-        sites.Setup(s => s.List()).Returns(Array.Empty<SiteDefinition>());
-
-        var languages = new Mock<ILanguageBranchRepository>(MockBehavior.Loose);
-        languages.Setup(l => l.ListEnabled()).Returns(Array.Empty<LanguageBranch>());
-
-        return new SearchProfileRegistry(profiles, sites.Object, languages.Object);
+        return new SearchProfileRegistry(profiles);
     }
 }

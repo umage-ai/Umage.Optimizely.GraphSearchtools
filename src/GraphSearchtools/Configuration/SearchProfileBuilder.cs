@@ -178,13 +178,6 @@ public sealed class SearchProfileBuilder
                 $"Search profile key '{_key}' is invalid. Profile key must match [a-z0-9-]+.");
         }
 
-        // Reserve "generic" for the synthesized catchment profile.
-        if (string.Equals(_key, "generic", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                "Search profile key 'generic' is reserved for the synthesized catchment profile.");
-        }
-
         return new SearchProfile
         {
             Key = _key,

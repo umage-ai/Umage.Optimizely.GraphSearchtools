@@ -1,16 +1,12 @@
 namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 
 /// <summary>
-/// Read-only registry of <see cref="SearchProfile"/> instances. Always exposes
-/// a synthesized <c>generic</c> profile in addition to whatever was registered
-/// at startup, so the addon never has zero profiles to display.
+/// Read-only registry of <see cref="SearchProfile"/> instances registered by
+/// the host at startup via <c>AddSearchProfile</c>.
 /// </summary>
 public interface ISearchProfileRegistry
 {
-    /// <summary>
-    /// All profiles known to the addon — registered profiles first (in
-    /// registration order) followed by the synthesized Generic catchment.
-    /// </summary>
+    /// <summary>All profiles known to the addon in registration order.</summary>
     IReadOnlyList<SearchProfile> All { get; }
 
     /// <summary>Look up a profile by key. Returns <c>null</c> when unknown.</summary>
