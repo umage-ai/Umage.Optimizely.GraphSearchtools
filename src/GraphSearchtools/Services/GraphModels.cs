@@ -4,21 +4,18 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 
 public record PinnedCollectionPayload
 {
-    public string Title { get; init; } = string.Empty;
     public string Key { get; init; } = string.Empty;
     public bool IsActive { get; init; }
 }
 
 public record PinnedCollectionUpdatePayload
 {
-    public string? Title { get; init; }
     public string? Key { get; init; }
     public bool? IsActive { get; init; }
 }
 
 public record PinnedCollectionResult
 {
-    public string Title { get; init; } = string.Empty;
     public string Key { get; init; } = string.Empty;
     public bool IsActive { get; init; }
     public string Id { get; init; } = string.Empty;
