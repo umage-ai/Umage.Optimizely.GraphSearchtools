@@ -23,26 +23,35 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 public class ProfilesApiControllerTests
 {
     [Fact]
-    public void Index_ReturnsAtLeastGenericProfile()
+    public void Index_ReturnsRegisteredProfiles()
     {
-        // Mirrors the §5 contract: when the registry has only the synthesised
-        // Generic catch-all, the API still returns one row so the index page
-        // renders something.
-        var generic = new SearchProfile
+        var alloy = new SearchProfile
         {
-            Key = "generic",
-            DisplayName = LocalizedString.Literal("Generic"),
+            Key = "alloy-search",
+            DisplayName = LocalizedString.Literal("Alloy site search"),
             Sites = Array.Empty<string>(),
-            Locales = Array.Empty<string>()
+            Locales = new[] { "en" }
         };
-        var controller = NewController(new StaticRegistry(generic));
+        var controller = NewController(new StaticRegistry(alloy));
 
         var result = controller.List();
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var rows = ok.Value.Should().BeAssignableTo<IEnumerable<ProfileSummary>>().Subject;
         rows.Should().ContainSingle()
-            .Which.Key.Should().Be("generic");
+            .Which.Key.Should().Be("alloy-search");
+    }
+
+    [Fact]
+    public void Index_ReturnsEmptyWhenNoProfilesRegistered()
+    {
+        var controller = NewController(new StaticRegistry(/* empty */));
+
+        var result = controller.List();
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var rows = ok.Value.Should().BeAssignableTo<IEnumerable<ProfileSummary>>().Subject;
+        rows.Should().BeEmpty();
     }
 
     [Fact]

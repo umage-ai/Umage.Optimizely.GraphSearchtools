@@ -77,7 +77,4 @@ public sealed class SearchProfile
     /// </summary>
     public IReadOnlyDictionary<string, object?> DefaultVariables { get; init; }
         = new Dictionary<string, object?>();
-
-    /// <summary>True when this profile is the synthesized Generic catchment.</summary>
-    public bool IsGeneric => Key == "generic";
 }

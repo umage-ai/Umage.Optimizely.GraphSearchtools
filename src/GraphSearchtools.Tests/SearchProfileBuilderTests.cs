@@ -26,15 +26,6 @@ public class SearchProfileBuilderTests
     }
 
     [Fact]
-    public void Build_RejectsReservedGenericKey()
-    {
-        var act = () => new SearchProfileBuilder("generic")
-            .DisplayName("Generic override")
-            .Build();
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Fact]
     public void Build_AcceptsValidKey_AndStoresFields()
     {
         var profile = new SearchProfileBuilder("site-search")

@@ -16,8 +16,6 @@ public enum ProfileStatus
     NeedsReview = 1,
     /// <summary>Profile declares a GraphQL document path that doesn't resolve on disk.</summary>
     DocMissing = 2,
-    /// <summary>Generic / catch-all profile — keys are free-form, not enforced.</summary>
-    FreeForm = 3,
     /// <summary>No edits recorded for this profile yet.</summary>
     Cold = 4
 }
@@ -41,9 +39,6 @@ public sealed record ProfileSummary
 
     public double SemanticWeight { get; init; }
     public string RankingName { get; init; } = nameof(GraphRanking.Relevance);
-
-    /// <summary>True for the synthesised Generic catch-all profile.</summary>
-    public bool IsGeneric { get; init; }
 
     public ProfileStatus Status { get; init; }
 
@@ -117,14 +112,11 @@ public sealed record ProfilePinnedResponse
     public string? Site { get; init; }
     public string? Locale { get; init; }
 
-    /// <summary>Resolved Graph collection key, e.g. <c>"site-en"</c>. <c>null</c> for the Generic free-form view.</summary>
+    /// <summary>Resolved Graph collection key, e.g. <c>"site-en"</c>.</summary>
     public string? PinnedKey { get; init; }
 
     /// <summary>Graph collection id matching <see cref="PinnedKey"/>, or <c>null</c> when no collection exists yet.</summary>
     public string? CollectionId { get; init; }
-
-    /// <summary>True when this is the synthesised Generic catchment with no formula — UI should fall back to free-form mode.</summary>
-    public bool IsGeneric { get; init; }
 
     public IReadOnlyList<ProfilePinnedRow> Rows { get; init; } = Array.Empty<ProfilePinnedRow>();
 }
@@ -167,7 +159,6 @@ public sealed class ProfileDetailViewModel
     public string Key { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string? DescriptionResolved { get; set; }
-    public bool IsGeneric { get; set; }
     public bool IsSiteShared { get; set; }
     public IReadOnlyList<string> Sites { get; set; } = Array.Empty<string>();
     public IReadOnlyList<string> Locales { get; set; } = Array.Empty<string>();
