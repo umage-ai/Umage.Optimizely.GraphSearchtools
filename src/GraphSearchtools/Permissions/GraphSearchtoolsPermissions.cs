@@ -20,12 +20,6 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Synonyms { get; } =
         new("GraphSearchtools", "Synonyms");
 
-    public static PermissionType Health { get; } =
-        new("GraphSearchtools", "Health");
-
-    public static PermissionType Autocomplete { get; } =
-        new("GraphSearchtools", "Autocomplete");
-
     // Phase 2.5 — Search Profiles top-level surface.
     public static PermissionType Profiles { get; } =
         new("GraphSearchtools", "Profiles");

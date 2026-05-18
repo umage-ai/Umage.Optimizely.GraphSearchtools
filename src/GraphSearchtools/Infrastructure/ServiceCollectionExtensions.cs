@@ -11,7 +11,6 @@ using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
-using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
@@ -67,13 +66,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<LanguageSiteEnumerator>();
         services.AddScoped<PinnedService>();
         services.AddScoped<SynonymsService>();
-        services.AddHttpClient<HealthService>();
-        services.AddScoped<HealthScanService>();
         services.AddHttpClient<QueryRunnerService>();
 
         // Phase 2.5: Search Profiles foundation. The registry collects every
-        // SearchProfile registered as a singleton (by AddSearchProfile) plus
-        // synthesises a Generic catchment.
+        // SearchProfile registered as a singleton (by AddSearchProfile).
         services.AddSingleton<ISearchProfileRegistry, SearchProfileRegistry>();
         services.AddSingleton<SearchProfileEditService>();
         services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.ProfilesService>();
