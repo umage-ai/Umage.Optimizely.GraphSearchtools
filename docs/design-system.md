@@ -35,23 +35,94 @@ yes, add it here. If you're not sure, ask.
 
 ## Design tokens
 
-All shared visual values are CSS custom properties defined in
-`modules/_protected/GraphSearchtools/ClientResources/css/graphsearchtools.css`
-at the top of the file. **Always reference the token, never the literal.**
+Tokens are organized in **three tiers** following the
+[W3C Design Tokens](https://www.designtokens.org/) aliasing model: each
+tier references the one below, component CSS reads from the highest
+applicable tier, and themes swap by re-pointing aliases — not by
+touching component code.
 
-| Token group   | Examples |
-|---------------|----------|
-| Surfaces      | `--gst-bg`, `--gst-surface`, `--gst-surface-hover`, `--gst-surface-active` |
-| Borders       | `--gst-border`, `--gst-border-light` |
-| Text          | `--gst-text`, `--gst-text-secondary`, `--gst-text-muted` |
-| Brand         | `--gst-primary`, `--gst-primary-hover`, `--gst-primary-light`, `--gst-link` |
-| Semantic      | `--gst-success(-light)`, `--gst-warning(-light)`, `--gst-danger(-light)`, `--gst-info(-light)` |
-| Spacing       | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) |
-| Type          | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-xl` |
-| Radii         | `--gst-radius-sm` (3), `--gst-radius` (4), `--gst-radius-lg` (6) |
-| Shadows       | `--gst-shadow-sm` … `--gst-shadow-xl` |
+See [`design-system-methodologies.md`](./design-system-methodologies.md)
+for the broader rationale and how this model compares to alternatives.
 
-CSS prefix is `gst-`; JS namespace is `GST.*`; localized strings are
+> **Current state.** The tier model is committed in this doc but the CSS
+> file (`graphsearchtools.css`) is still flat — every token sits at what
+> will become the semantic tier. A follow-up PR will introduce primitives
+> underneath and rename the current names to `--gst-color-*`. **For new
+> code today, keep using the names in the table at the bottom of this
+> section.** Don't pre-emptively invent `--gst-color-*` names — the
+> migration rewrites callsites in bulk, and a third spelling in the
+> codebase would defeat the point.
+
+### Tier 1 — primitive
+
+Raw palette values. Brand-agnostic, intent-free. Named by colour family
++ shade or by scale step.
+
+**Never reference a primitive from component CSS.** Primitives exist to
+be aliased by semantic tokens; reading them directly bypasses the
+abstraction that lets themes swap.
+
+```css
+--gst-blue-50:   #e6ecff;
+--gst-blue-600:  #0042ff;
+--gst-blue-700:  #0032c4;
+--gst-gray-0:    #ffffff;
+--gst-gray-900:  #1d1f24;
+--gst-green-600: #1b873f;
+```
+
+### Tier 2 — semantic
+
+Role / intent. This is the layer most code and conversation should
+operate at. Named by purpose, not appearance.
+
+Changing a brand colour means re-pointing one alias here — no component
+touched, no grep for hex codes.
+
+```css
+--gst-color-primary:        var(--gst-blue-600);
+--gst-color-primary-hover:  var(--gst-blue-700);
+--gst-color-text:           var(--gst-gray-900);
+--gst-color-success:        var(--gst-green-600);
+```
+
+### Tier 3 — component
+
+Per-component overrides. Only introduce one when a component needs to
+drift from the semantic default, or when "the button's background"
+deserves a stable name independent of "the primary brand colour."
+
+Most components can read semantic tokens directly and skip this tier.
+When in doubt, don't add a component token — promote later if a real
+divergence appears.
+
+```css
+--gst-button-bg:        var(--gst-color-primary);
+--gst-button-bg-hover:  var(--gst-color-primary-hover);
+--gst-input-border:     var(--gst-color-border);
+```
+
+### Token groups (today)
+
+The names below are what's in the CSS right now. After the migration
+they'll live at the semantic tier with a `--gst-color-*` prefix on the
+colour groups; spacing / type / radii / shadows are already
+semantic-by-scale and won't be renamed.
+
+| Group        | Examples |
+|--------------|----------|
+| Surfaces     | `--gst-bg`, `--gst-surface`, `--gst-surface-hover`, `--gst-surface-active` |
+| Borders      | `--gst-border`, `--gst-border-light` |
+| Text         | `--gst-text`, `--gst-text-secondary`, `--gst-text-muted` |
+| Brand        | `--gst-primary`, `--gst-primary-hover`, `--gst-primary-light`, `--gst-link` |
+| Status       | `--gst-success(-light)`, `--gst-warning(-light)`, `--gst-danger(-light)`, `--gst-info(-light)` |
+| Spacing      | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) |
+| Type         | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-xl` |
+| Radii        | `--gst-radius-sm` (3), `--gst-radius` (4), `--gst-radius-lg` (6) |
+| Shadows      | `--gst-shadow-sm` … `--gst-shadow-xl` |
+
+**Always reference the token, never the literal.** CSS prefix is
+`gst-`; JS namespace is `GST.*`; localized strings are
 `window.GST_STRINGS.{section}.{key}` (see `CLAUDE.md → Localization`).
 
 ---
