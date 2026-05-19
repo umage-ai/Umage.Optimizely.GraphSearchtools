@@ -108,82 +108,8 @@
         <tbody id="gst-col-aurora-rows"></tbody>
     </table>
 
-    @* ─────────────── New-collection flyout ─────────────── *@
-    <div id="gst-flyout-colcreate-backdrop" class="gst-flyout-backdrop" hidden></div>
-    <aside id="gst-flyout-colcreate" class="gst-flyout" hidden role="dialog"
-           aria-modal="true" aria-labelledby="gst-flyout-colcreate-title">
-        <header class="gst-flyout__header">
-            <h2 id="gst-flyout-colcreate-title" class="gst-flyout__title">New collection</h2>
-            <button type="button" class="gst-flyout__close"
-                    data-flyout-close="colcreate" aria-label="Close">×</button>
-        </header>
-        <div class="gst-flyout__body">
-            <div class="gst-field">
-                <label class="gst-field__label" for="gst-colcreate-key">Key</label>
-                <input id="gst-colcreate-key" name="key" type="text" autocomplete="off" />
-                <span class="gst-field__hint">
-                    The Graph collection key (e.g. <code>alloy-en</code>). Typically matches a
-                    channel's <code>UsesPinnedKey</code> formula output.
-                </span>
-            </div>
-            <div class="gst-field">
-                <label class="gst-field__check">
-                    <input id="gst-colcreate-active" name="isActive" type="checkbox" checked />
-                    <span>Active</span>
-                </label>
-                <span class="gst-field__hint">Inactive collections are kept by Graph but not served.</span>
-            </div>
-        </div>
-        <footer class="gst-flyout__footer">
-            <div class="gst-flyout__footer__spacer"></div>
-            <button type="button" class="gst-btn" data-flyout-close="colcreate">Cancel</button>
-            <button type="button" class="gst-btn gst-btn--primary" id="gst-colcreate-save">Create</button>
-        </footer>
-    </aside>
-
-    @* ─────────────── Collection-detail flyout ─────────────── *@
-    <div id="gst-flyout-collection-backdrop" class="gst-flyout-backdrop" hidden></div>
-    <aside id="gst-flyout-collection" class="gst-flyout" hidden role="dialog"
-           aria-modal="true" aria-labelledby="gst-flyout-col-title">
-        <header class="gst-flyout__header">
-            <h2 id="gst-flyout-col-title" class="gst-flyout__title">Collection</h2>
-            <button type="button" class="gst-flyout__close"
-                    data-flyout-close="collection" aria-label="Close">×</button>
-        </header>
-        <div class="gst-flyout__body">
-            <div class="gst-field">
-                <label class="gst-field__label">Key</label>
-                <div id="gst-colfly-key" class="gst-field__readonly"></div>
-            </div>
-            <div class="gst-field">
-                <label class="gst-field__label">Collection id</label>
-                <div id="gst-colfly-id" class="gst-field__readonly gst-mono"></div>
-            </div>
-            <div class="gst-field">
-                <label class="gst-field__label">Items</label>
-                <div id="gst-colfly-items" class="gst-field__readonly"></div>
-            </div>
-            <div class="gst-field">
-                <label class="gst-field__label">Matching channels</label>
-                <div id="gst-colfly-channels" class="gst-colfly-channels">
-                    <p class="gst-muted" data-empty>No registered channel resolves to this collection.</p>
-                </div>
-                <span class="gst-field__hint">
-                    Channels whose <code>UsesPinnedKey</code> formula resolves to this collection key
-                    for one of their declared locales.
-                </span>
-            </div>
-        </div>
-        <footer class="gst-flyout__footer">
-            @* Delete is destructive — left-aligned in danger styling. Drops
-               the collection AND every pin inside it; the JS confirms with
-               the live item count + a warning when any channel still
-               resolves here. *@
-            <button type="button" class="gst-btn gst-btn--danger" id="gst-colfly-delete">Delete collection</button>
-            <div class="gst-flyout__footer__spacer"></div>
-            <button type="button" class="gst-btn" data-flyout-close="collection">Close</button>
-        </footer>
-    </aside>
+    @await Html.PartialAsync("/Views/Shared/_CollectionCreateFlyout.cshtml")
+    @await Html.PartialAsync("/Views/Shared/_CollectionFlyout.cshtml")
 </section>
 
 @* ─────────────── Changelog tab ─────────────── *@
