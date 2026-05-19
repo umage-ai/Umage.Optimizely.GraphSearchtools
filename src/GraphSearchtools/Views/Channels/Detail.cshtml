@@ -283,16 +283,7 @@
                 </div>
 
                 <table class="gst-table gst-pin-aurora-table">
-                    <thead>
-                        <tr>
-                            <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
-                            <th data-sort="collection" class="col-collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
-                            <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
-                            <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
-                            <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
-                            <th aria-label="Actions"></th>
-                        </tr>
-                    </thead>
+                    @await Html.PartialAsync("/Views/Shared/_PinThead.cshtml")
                     <tbody id="gst-pin-aurora-rows"></tbody>
                 </table>
             }
@@ -355,14 +346,7 @@
                 </div>
 
                 <table class="gst-table gst-syn-aurora-table">
-                    <thead>
-                        <tr>
-                            <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
-                            <th data-sort="locale">@Loc.GetString("/graphsearchtools/channels/detail/synonyms/colScope")</th>
-                            <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
-                            <th aria-label="Actions"></th>
-                        </tr>
-                    </thead>
+                    @await Html.PartialAsync("/Views/Shared/_SynonymThead.cshtml")
                     <tbody id="gst-syn-aurora-rows"></tbody>
                 </table>
 

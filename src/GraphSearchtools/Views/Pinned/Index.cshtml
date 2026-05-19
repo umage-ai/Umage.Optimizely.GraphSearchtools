@@ -52,16 +52,7 @@
     </div>
 
     <table class="gst-table gst-pin-aurora-table">
-        <thead>
-            <tr>
-                <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
-                <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
-                <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
-                <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
-                <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
-                <th aria-label="Actions"></th>
-            </tr>
-        </thead>
+        @await Html.PartialAsync("/Views/Shared/_PinThead.cshtml")
         <tbody id="gst-pin-aurora-rows"></tbody>
     </table>
 

@@ -45,14 +45,7 @@
     </div>
 
     <table class="gst-table gst-syn-aurora-table">
-        <thead>
-            <tr>
-                <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
-                <th data-sort="locale">@Loc.GetString("/graphsearchtools/channels/detail/synonyms/colScope")</th>
-                <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
-                <th aria-label="Actions"></th>
-            </tr>
-        </thead>
+        @await Html.PartialAsync("/Views/Shared/_SynonymThead.cshtml")
         <tbody id="gst-syn-aurora-rows"></tbody>
     </table>
 
