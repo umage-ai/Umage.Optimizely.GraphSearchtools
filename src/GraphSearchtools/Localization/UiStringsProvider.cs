@@ -127,18 +127,8 @@ public class UiStringsProvider(LocalizationService loc)
             {
                 profile = P("index/cols/profile"),
                 scope = P("index/cols/scope"),
-                tuning = P("index/cols/tuning"),
-                status = P("index/cols/status"),
+                activity = P("index/cols/activity"),
                 lastEdited = P("index/cols/lastEdited")
-            },
-            stats = new
-            {
-                profiles = P("index/stats/profiles"),
-                pinned = P("index/stats/pinned"),
-                synonyms = P("index/stats/synonyms"),
-                coverage = P("index/stats/coverage"),
-                sites = P("index/stats/sites"),
-                locales = P("index/stats/locales")
             },
             status = new
             {
