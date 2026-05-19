@@ -141,14 +141,25 @@
 
         function renderTable(channels) {
             var table = document.createElement('table');
-            table.className = 'gst-table gst-prof-table';
+            table.className = 'gst-table gst-nav-table';
+            // Column widths live in <colgroup> rather than per-th inline
+            // styles so the schema is declarative and Razor consumers
+            // could later swap to a server-rendered <thead> without
+            // chasing widths through the JS render path.
             table.innerHTML =
-                '<thead><tr>'
-                + '<th style="width: 26%">' + escHtml(s('channels.cols.channel', 'Channel')) + '</th>'
-                + '<th style="width: 22%" class="col-scope">' + escHtml(s('channels.cols.scope', 'Sites & locales')) + '</th>'
-                + '<th style="width: 32%" class="col-activity">' + escHtml(s('channels.cols.activity', 'Activity (30d)')) + '</th>'
+                '<colgroup>'
+                + '<col style="width: 26%"/>'
+                + '<col style="width: 22%"/>'
+                + '<col style="width: 32%"/>'
+                + '<col/>'
+                + '<col style="width: 32px"/>'
+                + '</colgroup>'
+                + '<thead><tr>'
+                + '<th>' + escHtml(s('channels.cols.channel', 'Channel')) + '</th>'
+                + '<th class="col-scope">' + escHtml(s('channels.cols.scope', 'Sites & locales')) + '</th>'
+                + '<th class="col-activity">' + escHtml(s('channels.cols.activity', 'Activity (30d)')) + '</th>'
                 + '<th>' + escHtml(s('channels.cols.lastEdited', 'Last edited')) + '</th>'
-                + '<th style="width: 32px"></th>'
+                + '<th></th>'
                 + '</tr></thead><tbody></tbody>';
             tableHost.innerHTML = '';
             tableHost.appendChild(table);
@@ -156,6 +167,7 @@
             var tbody = table.querySelector('tbody');
             channels.forEach(function(p) {
                 var tr = document.createElement('tr');
+                tr.className = 'is-selectable';
                 tr.dataset.key = p.key || '';
                 tr.dataset.search = ((p.displayName || '') + ' ' + (p.key || '') + ' ' + (p.descriptionResolved || '')).toLowerCase();
                 tr.dataset.sites = (p.sites || []).join('|');

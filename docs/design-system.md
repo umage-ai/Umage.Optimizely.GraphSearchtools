@@ -200,6 +200,29 @@ Reference: `Views/Pinned/Index.cshtml` lines 17–45.
 
 ---
 
+## Two grid blueprints
+
+The addon has two list-of-things patterns that share a common substrate
+(`.gst-table`, the Toolbar, alert region, loading and empty states) and
+diverge only on the row's task:
+
+|                          | **Aurora summary grid**                | **Navigator grid**                |
+|--------------------------|----------------------------------------|-----------------------------------|
+| Row task                 | edit *in place* via flyout             | navigate to a detail surface       |
+| Row click                | `GST.flyout.open(key, …)`              | `window.location.href = …`         |
+| Last column              | `⋯` row menu                           | chevron `›`                        |
+| Row state class          | `.is-selectable`                       | `.is-selectable` + `.is-active`    |
+| Density token            | `--gst-row-padding-compact` (14×16)    | `--gst-row-padding-comfortable` (16) |
+| Per-row content          | tabular only                           | tabular + optional sparkline / status |
+| CSS class                | `.gst-table` + `.gst-{tool}-aurora-table` | `.gst-table.gst-nav-table`      |
+| Reference impl           | Pinned, Synonyms                       | Channels index                    |
+
+**Rule for new lists:** ask *do users edit these inline, or drill into them?*
+Pick the matching blueprint. If both — that's the trigger to discuss the
+shape before building. No third blueprint without an explicit proposal.
+
+---
+
 ## Component: Aurora summary grid
 
 A flat table where each row is a summary of an entity, the row is clickable
@@ -208,7 +231,8 @@ This is the canonical list-of-things surface across the addon.
 
 **Use when** showing 5+ editable entities of one kind. **Don't use** for
 read-only telemetry rows or activity logs — those use the same `.gst-table`
-class but no row-click / `⋯`.
+class but no row-click / `⋯`. For lists where the row navigates to a detail
+page instead of an inline edit, use **Navigator grid** below.
 
 ### Skeleton
 
@@ -243,6 +267,66 @@ class but no row-click / `⋯`.
   with a single CTA. Never a blank `<tbody>`.
 
 Reference: `Views/Pinned/Index.cshtml` lines 48–60 + `pinned-aurora.js`.
+
+---
+
+## Component: Navigator grid
+
+A flat table where each row is a *destination*, not an editor. Clicking a
+row navigates to a detail surface (`window.location.href`), the last column
+is a chevron rather than `⋯`, and rows are slightly taller than Aurora so
+the comfortable density reads as "browse-and-pick" rather than
+"summary-scan."
+
+**Use when** showing 5+ entities that have their own detail page. **Don't
+use** for short read-only lists, or for surfaces where the row should open
+a flyout (use **Aurora summary grid**). Currently the only consumer is the
+Channel index.
+
+### Skeleton
+
+```html
+<table class="gst-table gst-nav-table">
+    <colgroup>
+        <col style="width: 26%"/>
+        <col style="width: 22%"/>
+        <col style="width: 32%"/>
+        <col/>
+        <col style="width: 32px"/>
+    </colgroup>
+    <thead>
+        <tr>
+            <th>@Loc.GetString(".../col_name")</th>
+            <th>@Loc.GetString(".../col_scope")</th>
+            <th>@Loc.GetString(".../col_activity")</th>
+            <th>@Loc.GetString(".../col_last")</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="is-selectable">
+            <td>…</td><td>…</td><td>…</td><td>…</td>
+            <td><svg class="gst-prof-arrow">›</svg></td>
+        </tr>
+    </tbody>
+</table>
+```
+
+### Rules
+
+- Rows that navigate must add `class="is-selectable"` and a `click`
+  handler that calls `window.location.href = …`. The current item, when
+  rendered on a detail surface's "siblings" list, gets `.is-active` —
+  comfortable density + left border in `--gst-primary`.
+- Column widths belong in `<colgroup>`, not per-`<th>` inline styles. The
+  schema stays declarative even when the `<thead>` is server-rendered and
+  the `<tbody>` is JS-populated.
+- Last column is the chevron (32 px wide). Use `.gst-prof-arrow` so the
+  row-hover transition (`translateX(2px)`) animates correctly.
+- Toolbar / search / filter / loading / empty conventions: identical to
+  Aurora. The shared substrate is the point.
+
+Reference: `Views/Channels/Index.cshtml` + `channels.js` `renderTable()`.
 
 ---
 

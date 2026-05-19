@@ -46,6 +46,12 @@
     --gst-space-xl: 32px;
     --gst-space-2xl: 48px;
 
+    /* Row density — see the two grid blueprints in design-system.md.
+       Aurora summary grid (edit-in-flyout) uses compact; Navigator grid
+       (navigate-to-detail) uses comfortable. */
+    --gst-row-padding-compact: 14px 16px;
+    --gst-row-padding-comfortable: var(--gst-space-md);
+
     /* Typography. Aurora bundles Inter via @font-face; we link the same
        family from Google Fonts in the layout so the cascade lands on Inter
        rather than the OS default. */
@@ -459,7 +465,7 @@
 .gst-table th[data-sort-dir="desc"]::after { border-top: 5px solid var(--gst-text); }
 
 .gst-table td {
-    padding: 14px 16px;
+    padding: var(--gst-row-padding-compact);
     border-bottom: 1px solid var(--gst-border-light);
     vertical-align: middle;
 }
@@ -3090,14 +3096,17 @@ td.bpe-editing select {
    Search Channels (Phase 2.5) — gst-prof-* / gst-pin-*
    ============================================================ */
 
-/* ── Channel index table (specialised .gst-table) ──────────── */
-.gst-prof-table td { padding: var(--gst-space-md); }
-.gst-prof-table tr { cursor: pointer; }
-.gst-prof-table tr.is-active td {
+/* ── Navigator grid — peer blueprint of Aurora summary grid.
+   Rows navigate (window.location.href) rather than open a flyout, last
+   column is a chevron, and density is comfortable. See design-system.md
+   → Component: Navigator grid. The Channel index is the reference impl;
+   row-selectable cursor + hover are inherited from .gst-table.is-selectable. */
+.gst-nav-table td { padding: var(--gst-row-padding-comfortable); }
+.gst-nav-table tr.is-active td {
     background: var(--gst-primary-light);
     box-shadow: inset 3px 0 0 var(--gst-primary);
 }
-.gst-prof-table tr.is-active:hover td { background: var(--gst-primary-light); }
+.gst-nav-table tr.is-active:hover td { background: var(--gst-primary-light); }
 
 .gst-prof-name { display: flex; flex-direction: column; gap: 2px; }
 .gst-prof-name__title {
@@ -3145,7 +3154,7 @@ td.bpe-editing select {
     transition: color .15s, transform .15s;
     width: 16px; height: 16px;
 }
-.gst-prof-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
+.gst-nav-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
 
 /* ── Channel detail layout ──────────────────────────────────── */
 .gst-prof-layout {
@@ -3231,7 +3240,7 @@ td.bpe-editing select {
 }
 @media (max-width: 720px) {
     .gst-pin-controls { grid-template-columns: 1fr 1fr; }
-    .gst-prof-table .col-activity, .gst-prof-table .col-scope { display: none; }
+    .gst-nav-table .col-activity, .gst-nav-table .col-scope { display: none; }
 }
 
 /* Muted-token marker — used by Synonym Coverage to dim secondary cells. */
