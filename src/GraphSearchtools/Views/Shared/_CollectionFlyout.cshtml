@@ -1,0 +1,55 @@
+@*
+    Aurora right-edge view panel for an existing Graph pinned-result
+    collection. Read-only fields plus a destructive Delete; the JS that
+    opens the panel, fetches the matching channels, and wires Delete
+    lives in pinned-collections.js. Conventions: id="gst-flyout-collection",
+    id="gst-flyout-collection-backdrop", closing buttons carry
+    data-flyout-close="collection", read-only cells use gst-colfly-* IDs.
+
+    Footer: destructive Delete → spacer → primary Close. There's no
+    editable state, so the canonical "cancel" slot folds into the
+    primary "dismiss" action — Close occupies the rightmost slot and
+    is styled as primary to make its role unambiguous.
+*@
+<div id="gst-flyout-collection-backdrop" class="gst-flyout-backdrop" hidden></div>
+<aside id="gst-flyout-collection" class="gst-flyout" hidden role="dialog"
+       aria-modal="true" aria-labelledby="gst-flyout-col-title">
+    <header class="gst-flyout__header">
+        <h2 id="gst-flyout-col-title" class="gst-flyout__title">Collection</h2>
+        <button type="button" class="gst-flyout__close"
+                data-flyout-close="collection" aria-label="Close">×</button>
+    </header>
+    <div class="gst-flyout__body">
+        <div class="gst-field">
+            <label class="gst-field__label">Key</label>
+            <div id="gst-colfly-key" class="gst-field__readonly"></div>
+        </div>
+        <div class="gst-field">
+            <label class="gst-field__label">Collection id</label>
+            <div id="gst-colfly-id" class="gst-field__readonly gst-mono"></div>
+        </div>
+        <div class="gst-field">
+            <label class="gst-field__label">Items</label>
+            <div id="gst-colfly-items" class="gst-field__readonly"></div>
+        </div>
+        <div class="gst-field">
+            <label class="gst-field__label">Matching channels</label>
+            <div id="gst-colfly-channels" class="gst-colfly-channels">
+                <p class="gst-muted" data-empty>No registered channel resolves to this collection.</p>
+            </div>
+            <span class="gst-field__hint">
+                Channels whose <code>UsesPinnedKey</code> formula resolves to this collection key
+                for one of their declared locales.
+            </span>
+        </div>
+    </div>
+    <footer class="gst-flyout__footer">
+        @* Delete is destructive — left-aligned in danger styling. Drops
+           the collection AND every pin inside it; the JS confirms with
+           the live item count + a warning when any channel still
+           resolves here. *@
+        <button type="button" class="gst-btn gst-btn--danger" id="gst-colfly-delete">Delete collection</button>
+        <div class="gst-flyout__footer__spacer"></div>
+        <button type="button" class="gst-btn gst-btn--primary" data-flyout-close="collection">Close</button>
+    </footer>
+</aside>
