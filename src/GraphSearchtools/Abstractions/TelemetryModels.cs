@@ -2,18 +2,18 @@ namespace UmageAI.Optimizely.GraphSearchTools.Abstractions;
 
 /// <summary>
 /// What an analytics UI asks the reader for: a window, an optional filter pair,
-/// and a row cap. Times are UTC; an unset <see cref="ProfileKey"/> /
+/// and a row cap. Times are UTC; an unset <see cref="ChannelKey"/> /
 /// <see cref="Locale"/> means "all".
 /// </summary>
 public sealed record TelemetryQuery(
     DateTime SinceUtc,
     DateTime UntilUtc,
     int Take,
-    string? ProfileKey = null,
+    string? ChannelKey = null,
     string? Locale = null);
 
 /// <summary>
-/// Per-(phrase, profile, locale) roll-up returned by the reader. Counts cover
+/// Per-(phrase, channel, locale) roll-up returned by the reader. Counts cover
 /// the full <see cref="TelemetryQuery"/> window. Hits and click counts are
 /// summed across instances; ratios are recomputed at the cluster level.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed record PhraseAggregate(
     double ZeroResultRate,
     double Ctr,
     string Locale,
-    string ProfileKey);
+    string ChannelKey);
 
 /// <summary>
 /// One day's worth of cluster-summed counts. <see cref="DateUtc"/> is the
@@ -46,7 +46,7 @@ public sealed record RawEvent(
     DateTime TimestampUtc,
     string Kind,
     string Phrase,
-    string ProfileKey,
+    string ChannelKey,
     string Locale,
     int? ResultCount,
     int? ClickRank,
@@ -58,7 +58,7 @@ public sealed record RawEvent(
 /// </summary>
 public sealed record SearchEvent(
     string Phrase,
-    string ProfileKey,
+    string ChannelKey,
     string Locale,
     int ResultCount,
     DateTime TimestampUtc);
@@ -73,7 +73,7 @@ public sealed record SearchEvent(
 /// </summary>
 public sealed record ClickEvent(
     string Phrase,
-    string ProfileKey,
+    string ChannelKey,
     string Locale,
     int Rank,
     DateTime TimestampUtc,

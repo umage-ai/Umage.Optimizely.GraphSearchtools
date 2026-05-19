@@ -29,7 +29,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.SampleSite.Controllers;
 [Route("search/click")]
 public class SearchClickController : Controller
 {
-    private const string ProfileKey = "alloy-search";
+    private const string ChannelKey = "alloy-search";
 
     private readonly ITelemetrySink _telemetry;
     private readonly ILogger<SearchClickController> _logger;
@@ -70,7 +70,7 @@ public class SearchClickController : Controller
         {
             _telemetry.Record(new ClickEvent(
                 Phrase: request.Phrase.Trim(),
-                ProfileKey: ProfileKey,
+                ChannelKey: ChannelKey,
                 Locale: (request.Locale ?? string.Empty).ToLowerInvariant(),
                 Rank: request.Rank,
                 TimestampUtc: DateTime.UtcNow,

@@ -4,7 +4,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 
 /// <summary>
 /// Builder returned from <c>AddGraphSearchtools(...)</c> so callers can chain
-/// further configuration — currently <c>AddSearchProfile(...)</c>.
+/// further configuration — currently <c>AddSearchChannel(...)</c>.
 /// </summary>
 /// <remarks>
 /// The shape mirrors the ASP.NET pattern (see <c>IMvcBuilder</c>,
@@ -17,6 +17,6 @@ public interface IGraphSearchtoolsBuilder
     /// out of the fluent chain when they need to register their own services.</summary>
     IServiceCollection Services { get; }
 
-    /// <summary>Profiles registered so far via <c>AddSearchProfile(...)</c>.</summary>
-    IList<SearchProfile> Profiles { get; }
+    /// <summary>Channels registered so far via <c>AddSearchChannel(...)</c>.</summary>
+    IList<SearchChannel> Channels { get; }
 }

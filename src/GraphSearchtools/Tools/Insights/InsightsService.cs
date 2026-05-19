@@ -42,13 +42,13 @@ public sealed class InsightsService
     public async Task<IReadOnlyList<InsightsPhraseRow>> TopPhrasesAsync(
         int days,
         int take,
-        string? profileKey = null,
+        string? channelKey = null,
         string? locale = null,
         DateTime? dateUtc = null,
         CancellationToken cancellationToken = default)
     {
         var (since, until) = ResolveWindow(days, dateUtc);
-        var rows = await _logs.TopPhrasesAsync(since, take, profileKey, locale, until, cancellationToken);
+        var rows = await _logs.TopPhrasesAsync(since, take, channelKey, locale, until, cancellationToken);
         return rows.Select(r => new InsightsPhraseRow
         {
             Phrase = r.Phrase,
@@ -57,7 +57,7 @@ public sealed class InsightsService
             // a long so big windows don't overflow Int32.
             ZeroResults = (long)Math.Round(r.Hits * r.ZeroResultRate),
             Locale = r.Locale,
-            ProfileKey = r.ProfileKey
+            ChannelKey = r.ChannelKey
         }).ToList();
     }
 
@@ -67,19 +67,19 @@ public sealed class InsightsService
     public async Task<IReadOnlyList<InsightsZeroResultRow>> ZeroResultPhrasesAsync(
         int days,
         int take,
-        string? profileKey = null,
+        string? channelKey = null,
         string? locale = null,
         DateTime? dateUtc = null,
         CancellationToken cancellationToken = default)
     {
         var (since, until) = ResolveWindow(days, dateUtc);
-        var rows = await _logs.ZeroResultPhrasesAsync(since, take, profileKey, locale, until, cancellationToken);
+        var rows = await _logs.ZeroResultPhrasesAsync(since, take, channelKey, locale, until, cancellationToken);
         return rows.Select(r => new InsightsZeroResultRow
         {
             Phrase = r.Phrase,
             Count = r.Hits,
             Locale = r.Locale,
-            ProfileKey = r.ProfileKey
+            ChannelKey = r.ChannelKey
         }).ToList();
     }
 
@@ -106,12 +106,12 @@ public sealed class InsightsService
     public async Task<IReadOnlyList<InsightsPhraseRow>> LowCtrPhrasesAsync(
         int days,
         int take,
-        string? profileKey = null,
+        string? channelKey = null,
         string? locale = null,
         CancellationToken cancellationToken = default)
     {
         var since = DateTime.UtcNow - TimeSpan.FromDays(Math.Clamp(days, 1, 90));
-        var rows = await _logs.LowCtrPhrasesAsync(since, take, profileKey, locale, cancellationToken: cancellationToken);
+        var rows = await _logs.LowCtrPhrasesAsync(since, take, channelKey, locale, cancellationToken: cancellationToken);
         return rows.Select(r => new InsightsPhraseRow
         {
             Phrase = r.Phrase,
@@ -119,7 +119,7 @@ public sealed class InsightsService
             ZeroResults = (long)Math.Round(r.Hits * r.ZeroResultRate),
             Ctr = r.Ctr,
             Locale = r.Locale,
-            ProfileKey = r.ProfileKey
+            ChannelKey = r.ChannelKey
         }).ToList();
     }
 
@@ -129,12 +129,12 @@ public sealed class InsightsService
     /// ending now-UTC) regardless of the page-level toggle, and the spark
     /// arrays are always 30 entries with missing days zero-filled so callers
     /// can render a fixed-width chart without conditional plumbing.
-    /// When <paramref name="profileKey"/> is supplied the read is scoped to
-    /// one profile (used by the Profile detail surface); omitted means the
+    /// When <paramref name="channelKey"/> is supplied the read is scoped to
+    /// one channel (used by the Channel detail surface); omitted means the
     /// global aggregate (used by the standalone Insights tool).
     /// </summary>
     public async Task<InsightsSearchKpis> SearchKpisAsync(
-        string? profileKey = null,
+        string? channelKey = null,
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
@@ -143,8 +143,8 @@ public sealed class InsightsService
         // a day, instead of sliding by the second.
         var since = now.Date.AddDays(-(SearchKpisWindowDays - 1));
 
-        var profile = string.IsNullOrWhiteSpace(profileKey) ? null : profileKey;
-        var query = new TelemetryQuery(since, now, Take: 0, ProfileKey: profile);
+        var channel = string.IsNullOrWhiteSpace(channelKey) ? null : channelKey;
+        var query = new TelemetryQuery(since, now, Take: 0, ChannelKey: channel);
         var daily = await _reader.DailyTotalsAsync(query, cancellationToken);
 
         var byDate = daily.ToDictionary(d => d.DateUtc.Date);

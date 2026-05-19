@@ -30,20 +30,14 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
             .AddEmbeddedLocalization<Startup>();
 
         services.AddGraphSearchtools()
-            .AddSearchProfile("alloy-search", p => p
+            .AddSearchChannel("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
                 .Locales("en")
                 .SearchedFields("Name", "MetaDescription", "MainBody")
                 .UsesPinnedKey("alloy-{locale}")
                 .SemanticBlend(0.3, GraphRanking.Semantic)
-                .GraphQLDocument("Queries/AlloySearch.graphql"))
-            .AddSearchProfile("alloy-products", p => p
-                .DisplayName("Product cards")
-                .Description("Pinned recommendations for the product/teaser surface.")
-                .Locales("en")
-                .SearchedFields("Name", "TeaserText")
-                .UsesPinnedKey("alloy-products-{locale}"));
+                .GraphQLDocument("Queries/AlloySearch.graphql"));
 
         // Required by Wangkanai.Detection
         services.AddDetection();

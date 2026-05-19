@@ -39,17 +39,17 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Overview))
         };
 
-        // Phase 2.5 — Search Profiles top-level surface. Sits between Overview
+        // Phase 2.5 — Search Channels top-level surface. Sits between Overview
         // and the editorial tools so marketers land on the per-surface tuning
         // index before drilling into individual data shapes.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/profiles", "Search profiles"), BaseMenuPath + "/profiles",
-            "/EPiServer/cms/graphsearchtools/profiles")
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/channels", "Search channels"), BaseMenuPath + "/channels",
+            "/EPiServer/cms/graphsearchtools/channels")
         {
             SortIndex = 150,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Profiles))
+            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Channels))
         };
 
-        // Aurora refactor — Insights dashboard. Sits between Profiles and the
+        // Aurora refactor — Insights dashboard. Sits between Channels and the
         // editorial Pinned/Synonyms tools: marketers can see "what's
         // happening" before deciding what to tune.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/insights", "Insights"), BaseMenuPath + "/insights",
@@ -59,9 +59,9 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Insights))
         };
 
-        // Editorial group: top-level Pinned + Synonyms tools — global views
-        // that mirror the per-profile tabs inside Profile detail. The Pinned
-        // tool also absorbs the former Pinned Coverage as an "Audit" tab.
+        // Top-level cross-channel surfaces. Pinned is a collection-axis
+        // browser (prototype, read-only for now); Synonyms is channel-agnostic
+        // because Graph synonyms live in a tenant-global pool.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned"), BaseMenuPath + "/pinned",
             GetResourcePath("GraphSearchtools/Pinned"))
         {
@@ -76,29 +76,8 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Synonyms))
         };
 
-        // Diagnostics group (Phase 2): Health first so it's the place editors
-        // look when something else is misbehaving.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/health", "Health"), BaseMenuPath + "/health",
-            GetResourcePath("GraphSearchtools/Health"))
-        {
-            SortIndex = 300,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Health))
-        };
-
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/autocomplete", "Autocomplete check"), BaseMenuPath + "/autocomplete",
-            GetResourcePath("GraphSearchtools/Autocomplete"))
-        {
-            SortIndex = 310,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Autocomplete))
-        };
-
-        // Pinned audit surfacing lives in Insights — no standalone menu
-        // entry, no Pinned sub-tab. Legacy /pinnedcoverage URL still 301s
-        // to /Pinned via GraphSearchtoolsController.PinnedCoverage.
-
-        // Synonym Coverage absorbed into the Synonyms tool as an "Unused" tab
-        // — no standalone menu entry. Legacy /synonymcoverage URL still 301s
-        // to /synonyms#unused via GraphSearchtoolsController.SynonymCoverage.
+        // Legacy /pinnedcoverage and /synonymcoverage URLs still 301 to
+        // /channels via GraphSearchtoolsController.
     }
 
     private static string GetResourcePath(string resourcePath)

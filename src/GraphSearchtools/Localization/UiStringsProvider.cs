@@ -11,10 +11,10 @@ public class UiStringsProvider(LocalizationService loc)
     private string S(string key) => loc.GetString($"/graphsearchtools/ui/{key}");
 
     /// <summary>
-    /// Lookup outside the /ui/* tree — used for top-level Profile loc keys at
-    /// /graphsearchtools/profiles/* that the Profiles JS reads via GST.s().
+    /// Lookup outside the /ui/* tree — used for top-level Channel loc keys at
+    /// /graphsearchtools/channels/* that the Channels JS reads via GST.s().
     /// </summary>
-    private string P(string key) => loc.GetString($"/graphsearchtools/profiles/{key}");
+    private string P(string key) => loc.GetString($"/graphsearchtools/channels/{key}");
 
     /// <summary>
     /// Lookup for Pinned Result Coverage strings under
@@ -30,6 +30,13 @@ public class UiStringsProvider(LocalizationService loc)
     /// %1), empty-state copy, and the load-failed message from this section.
     /// </summary>
     private string IN(string key) => loc.GetString($"/graphsearchtools/tools/insights/{key}");
+
+    /// <summary>
+    /// Lookup for Changelog tab strings under /graphsearchtools/tools/changelog/*.
+    /// Surfaced by the shared changelog JS module rendered in both Pinned and
+    /// Synonyms top-level tools.
+    /// </summary>
+    private string CL(string key) => loc.GetString($"/graphsearchtools/tools/changelog/{key}");
 
     public object GetAll() => new
     {
@@ -116,63 +123,26 @@ public class UiStringsProvider(LocalizationService loc)
             col_activity = S("synonyms/col_activity"),
             activity_unknown = S("synonyms/activity_unknown")
         },
-        health = new
+        // Global changelog feed surfaced under Pinned + Synonyms. Empty / load-
+        // failed strings are looked up via GST.s('changelog.empty', ...) etc.
+        changelog = new
         {
-            request_failed = S("health/request_failed"),
-            probing = S("health/probing"),
-            gateway_unset = S("health/gateway_unset"),
-            checked_just_now = S("health/checked_just_now"),
-            checked_seconds_ago = S("health/checked_seconds_ago"),
-            checked_minutes_ago = S("health/checked_minutes_ago"),
-            status_healthy = S("health/status_healthy"),
-            status_degraded = S("health/status_degraded"),
-            status_down = S("health/status_down"),
-            status_unknown = S("health/status_unknown"),
-            status_running = S("health/status_running"),
-            subtitle_healthy = S("health/subtitle_healthy"),
-            subtitle_degraded = S("health/subtitle_degraded"),
-            subtitle_down = S("health/subtitle_down"),
-            subtitle_unknown = S("health/subtitle_unknown"),
-            auto_enabled = S("health/auto_enabled"),
-            auto_disabled = S("health/auto_disabled"),
-            last_scan_at = S("health/last_scan_at"),
-            last_scan_never = S("health/last_scan_never"),
-            bar_tooltip = S("health/bar_tooltip")
+            empty = CL("empty"),
+            load_failed = CL("load_failed")
         },
-        autocomplete = new
-        {
-            request_failed = S("autocomplete/request_failed"),
-            schema_failed = S("autocomplete/schema_failed"),
-            no_results = S("autocomplete/no_results"),
-            no_types = S("autocomplete/no_types"),
-            no_fields = S("autocomplete/no_fields"),
-            all_locales = S("autocomplete/all_locales"),
-            returned_for = S("autocomplete/returned_for"),
-            error_pick_type_and_field = S("autocomplete/error_pick_type_and_field")
-        },
-        // Phase 2.5 — Search Profiles. Reads from the top-level
-        // /graphsearchtools/profiles/* tree rather than /ui/* so the loc paths
+        // Phase 2.5 — Search Channels. Reads from the top-level
+        // /graphsearchtools/channels/* tree rather than /ui/* so the loc paths
         // line up with the design doc and stay grouped near the foundation
-        // agent's profile-builder strings.
-        profiles = new
+        // agent's channel-builder strings.
+        channels = new
         {
             requestFailed = P("requestFailed"),
             cols = new
             {
-                profile = P("index/cols/profile"),
+                channel = P("index/cols/channel"),
                 scope = P("index/cols/scope"),
-                tuning = P("index/cols/tuning"),
-                status = P("index/cols/status"),
+                activity = P("index/cols/activity"),
                 lastEdited = P("index/cols/lastEdited")
-            },
-            stats = new
-            {
-                profiles = P("index/stats/profiles"),
-                pinned = P("index/stats/pinned"),
-                synonyms = P("index/stats/synonyms"),
-                coverage = P("index/stats/coverage"),
-                sites = P("index/stats/sites"),
-                locales = P("index/stats/locales")
             },
             status = new
             {
@@ -272,7 +242,7 @@ public class UiStringsProvider(LocalizationService loc)
             hits_label = IN("hits_label"),
             ctr_label = IN("ctr_label"),
             show_more = IN("show_more"),
-            open_profile = IN("open_profile"),
+            open_channel = IN("open_channel"),
             phrase_filter_no_matches = IN("phrase_filter_no_matches")
         },
         pinnedCoverage = new
@@ -289,7 +259,7 @@ public class UiStringsProvider(LocalizationService loc)
             col_target = PC("col_target"),
             col_collection = PC("col_collection"),
             col_detail = PC("col_detail"),
-            fix_in_profile = PC("fix_in_profile"),
+            fix_in_channel = PC("fix_in_channel"),
             overlaps_title = PC("overlaps_title"),
             overlap_phrase = PC("overlap_phrase"),
             overlap_collections = PC("overlap_collections"),

@@ -19,25 +19,33 @@
  *     • shared  → PUT    /PinnedApi/UpdateItem (priority + active)
  *
  * Conflict check on save: scan groups across all collections for the same
- * phrase+locale; warn if found in another collection (cross-profile overlap).
+ * phrase+locale; warn if found in another collection (cross-channel overlap).
  */
 (function () {
     const API = window.GST_BASE_URL + '/PinnedApi';
     const LOOKUP_API = window.GST_BASE_URL + '/ContentLookupApi';
     const INSIGHTS_API = window.GST_BASE_URL + '/InsightsApi';
     const PINNED_STRINGS = (window.GST_STRINGS && window.GST_STRINGS.pinned) || {};
-    // Cross-profile editor — writes have no per-profile context, so attribute
-    // them to the synthesised Generic profile. PinnedApi.ResolveScope 400's
-    // any write that omits profileKey once a real profile is registered. The
-    // Profile detail view replaces this with the active profile's key via
-    // `scope.profileKey`; see `scopeQs()`.
-    const DEFAULT_SCOPE_QS = '&profileKey=generic';
+
+    // Editing happens either inside a Channel detail tab (state.scope) or
+    // via the top-level + Add flyout, which seeds state.flyoutScope from the
+    // channel-picker. Flyout scope wins so a save attributes to whatever the
+    // picker has selected.
+    function effectiveScope() { return state.flyoutScope || state.scope || null; }
+
+    // Tell the Channel detail's live preview that a mutation just landed so
+    // it can repaint against the new state. No-op when the listener isn't
+    // mounted (top-level Pinned page has no preview to refresh).
+    function notifyPreviewChanged() {
+        document.dispatchEvent(new CustomEvent('gst:preview-refresh'));
+    }
 
     function scopeQs() {
-        if (state.scope && state.scope.profileKey) {
-            return '&profileKey=' + encodeURIComponent(state.scope.profileKey);
+        var s = effectiveScope();
+        if (s && s.channelKey) {
+            return '&channelKey=' + encodeURIComponent(s.channelKey);
         }
-        return DEFAULT_SCOPE_QS;
+        return '';
     }
 
     // 30-day window for the Activity column. Matches the SynonymCoverage
@@ -51,13 +59,21 @@
     // ── Page state ─────────────────────────────────────────────────────
     const state = {
         initialized: false,
-        // Optional profile-scoping: when set, the grid limits itself to the
-        // profile's collection (`scope.collectionId`) and locales
+        // Optional channel-scoping: when set, the grid limits itself to the
+        // channel's collection (`scope.collectionId`) and locales
         // (`scope.locales`), and skips the unscoped collection filter. The
-        // Profile detail page wires this; the top-level Pinned page leaves
-        // it null. `scope.profileKey` is appended to write URLs so the
-        // PinnedApi can resolve the profile context for auditing.
+        // Channel detail page wires this; the top-level Pinned page leaves
+        // it null. `scope.channelKey` is appended to write URLs so the
+        // PinnedApi can resolve the channel context for auditing.
         scope: null,
+        // Top-level only: registered channels fetched on init, used by the
+        // flyout's matching-channels panel so the user can jump to the
+        // owning Channel detail from a pin row.
+        availableChannels: [],
+        // Top-level only: full collection→[{channelKey, locale}, ...] map
+        // (CollectionChannels endpoint). Used by the pin flyout's
+        // matching-channels panel — same shape as the Collection flyout's.
+        collectionChannelsMap: {},
         collections: [],
         items: [],          // flat list of every pinned item, normalised
         groups: [],         // aggregated rows
@@ -72,19 +88,31 @@
         editing: null       // current group being edited in the flyout
     };
 
-    // Auto-init for the top-level Pinned page. The Profile detail page calls
-    // `GST.pinned.aurora.init({ scope })` from its own JS before DOMContentLoaded
-    // fires, so the auto-init below is a no-op there (idempotent).
+    // Auto-init for the top-level Pinned page only. On Channel detail the
+    // page has a `.gst-prof-switcher` element and mounts the Pinned tab
+    // lazily on click via `GST.pinned.aurora.init({ scope })` — auto-init
+    // would race ahead with no scope and the scoped call would no-op.
     document.addEventListener('DOMContentLoaded', function () {
         if (state.initialized) return;
         if (!document.getElementById('gst-pin-aurora-rows')) return;
+        if (document.querySelector('.gst-prof-switcher')) return;
         init();
     });
 
     function init(opts) {
-        if (state.initialized) return;
-        state.initialized = true;
         opts = opts || {};
+        // Re-init: if a scoped caller arrives after auto-init has already
+        // taken effect (e.g. user clicks the Pinned tab on Channel detail
+        // after DOMContentLoaded), update the scope and reload instead of
+        // silently dropping the call.
+        if (state.initialized) {
+            if (opts.scope) {
+                state.scope = opts.scope;
+                loadAll();
+            }
+            return;
+        }
+        state.initialized = true;
         state.scope = opts.scope || null;
         // Toolbar wiring
         const search = document.getElementById('gst-pin-search');
@@ -102,6 +130,24 @@
             state.filters.locale = localeFilter.value;
             renderGrid();
         });
+        // Channel detail's page-level locale chip (#gst-pin-locale) lives in
+        // the Try-It header and is the page's single locale source of truth
+        // — Insights listens to it too. Mirror its value into the Pinned
+        // grid's filter so changing the chip narrows the grid in lockstep.
+        const localeChip = document.getElementById('gst-pin-locale');
+        if (localeChip) {
+            const syncFromChip = function () {
+                state.filters.locale = localeChip.value || '';
+                if (localeFilter) localeFilter.value = state.filters.locale;
+                renderGrid();
+            };
+            localeChip.addEventListener('change', syncFromChip);
+            // Seed once at init so the grid opens scoped to the chip's
+            // initial value (typically the channel's first declared locale).
+            if (localeChip.value) {
+                state.filters.locale = localeChip.value;
+            }
+        }
         const createBtn = document.getElementById('gst-pin-create');
         if (createBtn) createBtn.addEventListener('click', openCreateFlyout);
 
@@ -122,6 +168,11 @@
         // Save button wiring (the flyout markup has data-flyout-save="pin")
         document.querySelectorAll('[data-flyout-save="pin"]').forEach(function (btn) {
             btn.addEventListener('click', onSave);
+        });
+        // Cancel / close: clear any transient flyout scope so a subsequent
+        // open starts clean.
+        document.querySelectorAll('[data-flyout-close="pin"]').forEach(function (btn) {
+            btn.addEventListener('click', function () { state.flyoutScope = null; });
         });
         // Add-target button inside flyout
         const addTargetBtn = document.getElementById('gst-pinfly-add-target');
@@ -146,16 +197,40 @@
         const tbody = document.getElementById('gst-pin-aurora-rows');
         renderLoading(tbody);
 
-        GST.fetchJson(API + '/Collections')
-            .then(function (collections) {
+        // Top-level (no scope) needs both:
+        //   * The collection→channel map so each row deep-links to its owner.
+        //   * The list of registered channels so the Add-Pin flyout can offer
+        //     a channel picker.
+        var isTop = !(state.scope && state.scope.channelKey);
+        var mapPromise = isTop
+            ? GST.fetchJson(API + '/ChannelMap').catch(function () { return {}; })
+            : Promise.resolve({});
+        var channelsPromise = isTop
+            ? GST.fetchJson('/EPiServer/cms/graphsearchtools/api/channels').catch(function () { return []; })
+            : Promise.resolve([]);
+        var collectionChannelsPromise = isTop
+            ? GST.fetchJson(API + '/CollectionChannels').catch(function () { return {}; })
+            : Promise.resolve({});
+
+        Promise.all([GST.fetchJson(API + '/Collections'), mapPromise, channelsPromise, collectionChannelsPromise])
+            .then(function (results) {
+                var collections = results[0];
+                state.collectionChannelMap = results[1] || {};
+                state.availableChannels = results[2] || [];
+                state.collectionChannelsMap = results[3] || {};
                 let all = collections || [];
-                // Profile-scoped: narrow the collection set to just the
-                // profile's pinned collection so AllItems isn't walked for
-                // every other collection on the tenant. When the profile is
-                // generic (collectionId not yet resolved), show every
-                // collection — matches the unscoped behaviour.
-                if (state.scope && state.scope.collectionId) {
-                    all = all.filter(function (c) { return c.id === state.scope.collectionId; });
+                // Channel-scoped: narrow the collection set to the (possibly
+                // multiple) collections backing this channel's locales. Nulls
+                // in the map are locales without a backing collection yet —
+                // skip them on the read side; EnsureCollection materializes
+                // them on first save.
+                if (state.scope && state.scope.collectionsByLocale) {
+                    var allowed = {};
+                    Object.keys(state.scope.collectionsByLocale).forEach(function (l) {
+                        var cid = state.scope.collectionsByLocale[l];
+                        if (cid) allowed[cid] = true;
+                    });
+                    all = all.filter(function (c) { return allowed[c.id]; });
                 }
                 state.collections = all;
                 populateCollectionFilter();
@@ -172,7 +247,7 @@
                         state.items.push({
                             id: it.id,
                             collectionId: b.col.id,
-                            collectionKey: b.col.key || b.col.title || b.col.id,
+                            collectionKey: b.col.key || b.col.id,
                             phrases: it.phrases || '',
                             targetKey: it.targetKey || '',
                             language: it.language || '',
@@ -222,7 +297,7 @@
                     if (!phrase) return;
                     const hits = (typeof r.count === 'number') ? r.count : 0;
                     // Same phrase can land multiple times under different
-                    // profile/locale splits — accumulate rather than
+                    // channel/locale splits — accumulate rather than
                     // overwrite, matching the SynonymCoverage roll-up.
                     map[phrase] = (map[phrase] || 0) + hits;
                     total += hits;
@@ -309,7 +384,7 @@
     function populateCollectionFilter() {
         const sel = document.getElementById('gst-pin-collection-filter');
         if (!sel) return;
-        // Profile-scoped view hides the site/collection filter container
+        // Channel-scoped view hides the site/collection filter container
         // upstream (it doesn't apply when the grid is locked to one
         // collection), but the <select> may still exist as a hidden
         // sentinel — leave it untouched so a future re-open of the panel
@@ -319,7 +394,7 @@
         state.collections.forEach(function (c) {
             const opt = document.createElement('option');
             opt.value = c.id;
-            opt.textContent = c.title || c.key || c.id;
+            opt.textContent = c.key || c.id;
             sel.appendChild(opt);
         });
     }
@@ -329,9 +404,9 @@
         if (!sel) return;
         const seen = {};
         const locales = [];
-        // When the profile declares a fixed set of locales, surface those —
+        // When the channel declares a fixed set of locales, surface those —
         // even if no pin exists in that locale yet — so the filter matches
-        // the profile's declared scope rather than the (possibly empty)
+        // the channel's declared scope rather than the (possibly empty)
         // intersection with the current pin set.
         if (state.scope && Array.isArray(state.scope.locales) && state.scope.locales.length) {
             state.scope.locales.forEach(function (l) {
@@ -350,6 +425,11 @@
             opt.textContent = l;
             sel.appendChild(opt);
         });
+        // Reflect the seeded filter (typically mirrored from the page-level
+        // locale chip) in the dropdown so the visible selection matches what
+        // the grid is actually filtering on. Falls back to "all" when the
+        // seeded value isn't among the rendered options.
+        sel.value = (state.filters.locale && seen[state.filters.locale]) ? state.filters.locale : '';
     }
 
     // ── Grid render ────────────────────────────────────────────────────
@@ -365,7 +445,13 @@
 
         const filtered = state.groups.filter(function (g) {
             if (state.filters.collectionId && g.collectionId !== state.filters.collectionId) return false;
-            if (state.filters.locale && g.locale !== state.filters.locale) return false;
+            // Locale filter: a pin with an empty locale is treated as
+            // cross-locale ("global"), so it always shows alongside the
+            // selected locale. Matches the preview semantics — the server
+            // includes hits with no Language alongside the locale-matched
+            // hits when running /preview, and the marketer expects the grid
+            // and preview to agree on what's "applicable here".
+            if (state.filters.locale && g.locale && g.locale !== state.filters.locale) return false;
             if (state.filters.q) {
                 const q = state.filters.q;
                 if ((g.phrase || '').toLowerCase().indexOf(q) === -1 &&
@@ -376,6 +462,10 @@
 
         const sorted = sortGroups(filtered);
 
+        // Top-level (no channel scope) is read-only: suppress per-row delete
+        // and let openOrJump send row clicks to the owning channel detail.
+        var isTopLevel = !(state.scope && state.scope.channelKey);
+
         if (sorted.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="gst-empty"><p>' +
                 GST.escHtml(GST.s('pinned.empty_grid', 'No pinned items yet. Click "Add" to create one.')) +
@@ -385,31 +475,54 @@
 
         const itemsTmpl = GST.s('pinned.items_count', '%1 items');
         const deleteLabel = GST.s('shared.delete', 'Delete');
+        const previewLabel = GST.s('channels.detail.insights.actionPreview', 'Preview this phrase');
         const trash = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
             '<path d="M3 4 H13 M5 4 V13 a1 1 0 0 0 1 1 H10 a1 1 0 0 0 1 -1 V4 M6 4 V2 a1 1 0 0 1 1 -1 H9 a1 1 0 0 1 1 1 V4 M6.5 7 V11 M9.5 7 V11"/>' +
             '</svg>';
+        // Magnifier glyph — matches the SERP input's own icon so the
+        // affordance reads as "send this phrase to the preview".
+        const eye = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
+            '<circle cx="7" cy="7" r="4.5"/>' +
+            '<line x1="10.5" y1="10.5" x2="14" y2="14"/>' +
+            '</svg>';
+        // Preview button only renders inside a channel-scoped grid — that's
+        // the only context where #gst-pin-tryit-q (the SERP input) exists.
+        // Skipping it on the top-level Pinned page keeps the actions cell
+        // tidy when the affordance would have nowhere to land.
+        var hasPreviewTarget = !isTopLevel && !!document.getElementById('gst-pin-tryit-q');
         tbody.innerHTML = sorted.map(function (g) {
+            var actionButtons = '';
+            if (hasPreviewTarget) {
+                actionButtons += '<button class="gst-rowaction" data-row-preview title="' + GST.escHtml(previewLabel) + '" aria-label="' + GST.escHtml(previewLabel) + '">' + eye + '</button>';
+            }
+            if (!isTopLevel) {
+                actionButtons += '<button class="gst-rowdelete" data-row-delete title="' + GST.escHtml(deleteLabel) + '" aria-label="' + GST.escHtml(deleteLabel) + '">' + trash + '</button>';
+            }
+            var actionsCell = '<td class="gst-table__actions">' + actionButtons + '</td>';
             return '<tr class="is-selectable" data-group-key="' + GST.escHtml(g.key) + '">' +
                 '<td><a href="#" class="gst-table__link" data-row-link>' + GST.escHtml(g.phrase || '(empty)') + '</a></td>' +
-                '<td>' + GST.escHtml(g.collectionKey || '') + '</td>' +
+                '<td class="col-collection">' + GST.escHtml(g.collectionKey || '') + '</td>' +
                 '<td>' + renderLocaleCell(g.locale) + '</td>' +
                 '<td>' + GST.escHtml(itemsTmpl.replace('%1', g.items.length)) + '</td>' +
                 '<td>' + renderActivityCell(g.hits) + '</td>' +
-                '<td class="gst-table__actions">' +
-                '<button class="gst-rowdelete" data-row-delete title="' + GST.escHtml(deleteLabel) + '" aria-label="' + GST.escHtml(deleteLabel) + '">' + trash + '</button>' +
-                '</td>' +
+                actionsCell +
                 '</tr>';
         }).join('');
 
         tbody.querySelectorAll('tr.is-selectable').forEach(function (tr) {
             tr.addEventListener('click', function (e) {
                 if (e.target.closest('a, button')) return;
-                openEditFlyout(tr.dataset.groupKey);
+                openOrJump(tr.dataset.groupKey);
             });
             const link = tr.querySelector('[data-row-link]');
             if (link) link.addEventListener('click', function (e) {
                 e.preventDefault();
-                openEditFlyout(tr.dataset.groupKey);
+                openOrJump(tr.dataset.groupKey);
+            });
+            const previewBtn = tr.querySelector('[data-row-preview]');
+            if (previewBtn) previewBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                applyGroupToPreview(tr.dataset.groupKey);
             });
             const deleteBtn = tr.querySelector('[data-row-delete]');
             if (deleteBtn) deleteBtn.addEventListener('click', function (e) {
@@ -417,6 +530,32 @@
                 deleteGroup(tr.dataset.groupKey);
             });
         });
+    }
+
+    // Drop the row's phrase into the Channel detail page's live preview.
+    // The SERP input has its own debounced input listener (wired in
+    // channels.js → wireLivePreview), so dispatching an `input` event is
+    // enough to trigger a fetch + re-render. The pin's locale is left
+    // alone — the page-level locale chip is the source of truth and
+    // marketers usually want to see how the pin performs in the locale
+    // they're currently inspecting.
+    function applyGroupToPreview(groupKey) {
+        const g = state.groups.find(function (x) { return x.key === groupKey; });
+        if (!g) return;
+        const phrase = (g.phrase || '').trim();
+        if (!phrase) return;
+        const input = document.getElementById('gst-pin-tryit-q');
+        if (!input) return;
+        input.value = phrase;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Both channel-scoped and top-level open the editor flyout. The
+    // top-level path uses a best-effort channelKey lookup (via the
+    // collectionChannelMap) for audit attribution and surfaces all
+    // matching channels as deep-links inside the flyout body.
+    function openOrJump(groupKey) {
+        openEditFlyout(groupKey);
     }
 
     // Delete every item in the group via N sequential DELETEs. Used by the
@@ -441,6 +580,7 @@
                 return;
             }
             removeItemsLocally(g.items);
+            notifyPreviewChanged();
         });
     }
 
@@ -505,7 +645,7 @@
     // doesn't look disabled.
     function renderLocaleCell(locale) {
         if (locale) return GST.escHtml(locale);
-        return GST.escHtml(GST.s('pinFlyout.localeAll', 'All locales'));
+        return GST.escHtml(GST.s('pinFlyout.localeAll', 'Global'));
     }
 
     function renderActivityCell(hits) {
@@ -527,6 +667,12 @@
     function openEditFlyout(groupKey) {
         const g = state.groups.find(function (x) { return x.key === groupKey; });
         if (!g) return;
+        // Top-level edit needs a flyout scope so subsequent CRUD ops carry
+        // an audit channelKey when one resolves to this group's collection.
+        // Channel-scoped pages keep their mount-time state.scope and leave
+        // flyoutScope null.
+        var isTop = !(state.scope && state.scope.channelKey);
+        state.flyoutScope = isTop ? buildFlyoutScopeForCollection(g.collectionId) : null;
         state.editing = {
             mode: 'edit',
             group: g,
@@ -546,6 +692,55 @@
         GST.flyout.open('pin');
     }
 
+    // Builds a flyout-only scope for a collection picked from the dropdown
+    // (create flow) or inferred from a clicked row (edit flow). channelKey
+    // is best-effort: when a registered channel resolves to this
+    // collection's key, use it for audit attribution; otherwise leave it
+    // blank and the backend skips the audit row.
+    function buildFlyoutScopeForCollection(collectionId) {
+        var c = state.collections.find(function (x) { return x.id === collectionId; });
+        if (!c) return null;
+        var key = c.key || '';
+        var channelKey = (state.collectionChannelMap || {})[key] || '';
+        return {
+            collectionId: c.id,
+            collectionKey: key,
+            channelKey: channelKey,
+            // collectionsByLocale stays empty — the collection is already
+            // known by id, so ensureCollectionForLocale short-circuits.
+            collectionsByLocale: {},
+            locales: []
+        };
+    }
+
+    // Renders a <ul> of channel×locales pairs that resolve to the given
+    // collection key. Mirrors the Collection flyout's "Matching channels"
+    // panel so the two surfaces feel like one feature.
+    function renderMatchingChannels(host, collectionKey) {
+        host.innerHTML = '';
+        var matches = (state.collectionChannelsMap || {})[collectionKey] || [];
+        if (matches.length === 0) {
+            host.innerHTML = '<p class="gst-muted">No registered channel resolves to this collection.</p>';
+            return;
+        }
+        var byChannel = {};
+        matches.forEach(function (m) {
+            (byChannel[m.channelKey] = byChannel[m.channelKey] || []).push(m.locale);
+        });
+        var items = Object.keys(byChannel).sort().map(function (pk) {
+            var locales = byChannel[pk].slice().sort();
+            var localesHtml = locales.map(function (l) {
+                return '<code class="gst-locale-chip">' + GST.escHtml(l) + '</code>';
+            }).join(' ');
+            return '<li class="gst-colfly-profrow">' +
+                '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/channels?key=' +
+                encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
+                ' <span class="gst-muted">via</span> ' + localesHtml +
+                '</li>';
+        }).join('');
+        host.innerHTML = '<ul class="gst-colfly-proflist">' + items + '</ul>';
+    }
+
     // Friendly display for a target's content key. When Graph could resolve
     // the GUID we have a real name; otherwise show the short GUID prefix so
     // the row reads as "an item" rather than wrapping a 36-char string.
@@ -561,23 +756,99 @@
     }
 
     function openCreateFlyout() {
-        // Use the first collection by default; user can re-pick later if we
-        // add a collection chooser inside the flyout (out of scope for v1).
-        const col = state.filters.collectionId
-            ? state.collections.find(function (c) { return c.id === state.filters.collectionId; })
-            : state.collections[0];
+        var isTop = !(state.scope && state.scope.channelKey);
+
+        // Reset any leftover transient scope so a previous open/cancel can't
+        // leak into this one.
+        state.flyoutScope = null;
+
+        // Top-level: surface the collection picker and seed a flyout-only
+        // scope with the chosen collection's id. Audit attribution is
+        // best-effort — when a registered channel resolves to the picked
+        // collection key, its channelKey rides along in scopeQs(); orphan
+        // collections write through without audit (backend tolerates that).
+        var collectionRow = document.getElementById('gst-pinfly-collection-row');
+        var collectionSel = document.getElementById('gst-pinfly-collection');
+        if (collectionRow && collectionSel) {
+            if (isTop) {
+                if (!state.collections.length) {
+                    window.alert('Create a collection before adding pins.');
+                    return;
+                }
+                collectionRow.hidden = false;
+                var sortedCollections = state.collections.slice().sort(function (a, b) {
+                    return (a.key || '').localeCompare(b.key || '');
+                });
+                collectionSel.innerHTML = sortedCollections.map(function (c) {
+                    var label = c.key || c.id;
+                    return '<option value="' + GST.escHtml(c.id) + '">' + GST.escHtml(label) + '</option>';
+                }).join('');
+                // Honor the grid's current collection filter as the default
+                // so "Add" from a filtered view stays in that collection.
+                var defaultId = (state.filters.collectionId && state.collections.some(function (c) { return c.id === state.filters.collectionId; }))
+                    ? state.filters.collectionId
+                    : sortedCollections[0].id;
+                collectionSel.value = defaultId;
+                state.flyoutScope = buildFlyoutScopeForCollection(defaultId);
+                collectionSel.onchange = function () {
+                    state.flyoutScope = buildFlyoutScopeForCollection(collectionSel.value);
+                    var c = state.collections.find(function (x) { return x.id === collectionSel.value; });
+                    if (c && state.editing) {
+                        state.editing.group.collectionId = c.id;
+                        state.editing.group.collectionKey = c.key || c.id;
+                    }
+                    populateFlyout(state.editing.group);
+                };
+            } else {
+                collectionRow.hidden = true;
+            }
+        }
+
+        // Pick a sensible default collection + locale. Effective scope = the
+        // flyout-only scope if present, else the (real) state.scope.
+        var effScope = state.flyoutScope || state.scope || null;
+        var defaultLocale = state.filters.locale || '';
+        var col = null;
+        // Top-level: the collection picker already populated flyoutScope
+        // with a concrete collectionId — honor it so the default lines up
+        // with whatever the dropdown shows.
+        if (isTop && effScope && effScope.collectionId) {
+            col = state.collections.find(function (c) { return c.id === effScope.collectionId; }) || null;
+        }
+        var byLoc = (effScope && effScope.collectionsByLocale) || null;
+        if (!col && !isTop && state.filters.collectionId) {
+            col = state.collections.find(function (c) { return c.id === state.filters.collectionId; }) || null;
+        }
+        if (!col && byLoc) {
+            if (defaultLocale && byLoc[defaultLocale]) {
+                col = state.collections.find(function (c) { return c.id === byLoc[defaultLocale]; }) || null;
+            }
+            if (!col) {
+                Object.keys(byLoc).some(function (l) {
+                    if (byLoc[l]) {
+                        col = state.collections.find(function (c) { return c.id === byLoc[l]; }) || null;
+                        if (col) { defaultLocale = defaultLocale || l; return true; }
+                    }
+                    return false;
+                });
+            }
+        }
         if (!col) {
-            window.alert(GST.s('pinned.load_failed', 'Could not load pinned items.'));
-            return;
+            var firstLocale = defaultLocale || (effScope && effScope.locales && effScope.locales[0]) || '';
+            defaultLocale = defaultLocale || firstLocale;
+            col = {
+                id: '',
+                key: '__pending-' + firstLocale
+            };
         }
         state.editing = {
             mode: 'create',
             group: {
                 key: '',
                 phrase: '',
-                collectionId: col.id,
-                collectionKey: col.key || col.title || col.id,
-                locale: '',
+                collectionId: col.id || '',
+                collectionKey: col.key || col.id,
+                locale: defaultLocale,
                 items: [],
                 modified: ''
             },
@@ -596,6 +867,31 @@
         // Delete button is only meaningful when editing an existing group.
         const deleteBtn = document.getElementById('gst-pinfly-delete');
         if (deleteBtn) deleteBtn.hidden = state.editing.mode !== 'edit';
+        // Collection picker only on top-level Create. Edit shows the
+        // collection as part of the matching-channels panel below.
+        const collectionRow = document.getElementById('gst-pinfly-collection-row');
+        if (collectionRow) {
+            const showPicker = state.editing.mode === 'create'
+                && !(state.scope && state.scope.channelKey);
+            collectionRow.hidden = !showPicker;
+        }
+        // Matching-channels panel only on the top-level Pinned page when
+        // editing an existing pin. Channel detail already has the channel
+        // context in the page chrome, and create-mode hasn't picked a
+        // collection yet for create flows.
+        const channelsRow = document.getElementById('gst-pinfly-channels-row');
+        const channelsHost = document.getElementById('gst-pinfly-channels');
+        if (channelsRow && channelsHost) {
+            const isTopEdit = state.editing.mode === 'edit'
+                && !(state.scope && state.scope.channelKey);
+            if (isTopEdit) {
+                renderMatchingChannels(channelsHost, g.collectionKey || '');
+                channelsRow.hidden = false;
+            } else {
+                channelsRow.hidden = true;
+                channelsHost.innerHTML = '';
+            }
+        }
         document.getElementById('gst-pinfly-phrase').value = g.phrase || '';
         // Locale dropdown — populate from collections + groups so any locale
         // the tenant uses is selectable. Repopulating per-open keeps the list
@@ -605,7 +901,7 @@
         if (g.locale && knownLocales.indexOf(g.locale) === -1) knownLocales.unshift(g.locale);
         // Empty value maps to Graph's null Language ("applies regardless of
         // locale"). Label it explicitly so it doesn't read as "no choice yet".
-        const allLabel = GST.escHtml(GST.s('pinFlyout.localeAll', 'All locales'));
+        const allLabel = GST.escHtml(GST.s('pinFlyout.localeAll', 'Global'));
         localeSel.innerHTML = '<option value=""' + (g.locale ? '' : ' selected') + '>' + allLabel + '</option>' +
             knownLocales.map(function (l) {
                 return '<option value="' + GST.escHtml(l) + '"' + (l === g.locale ? ' selected' : '') + '>' + GST.escHtml(l) + '</option>';
@@ -635,6 +931,14 @@
     function collectLocales() {
         const seen = {};
         state.groups.forEach(function (g) { if (g.locale) seen[g.locale] = true; });
+        // Surface declared-but-empty locales so the flyout picker offers them
+        // even before any pin exists for that locale — first save against one
+        // of these triggers EnsureCollection. The flyout-scope wins when set
+        // (top-level + Add Pin); else fall back to the mount-time scope.
+        var s = effectiveScope();
+        if (s && Array.isArray(s.locales)) {
+            s.locales.forEach(function (l) { if (l) seen[l] = true; });
+        }
         return Object.keys(seen).sort();
     }
 
@@ -773,6 +1077,7 @@
                 return;
             }
             removeItemsLocally(g.items);
+            notifyPreviewChanged();
         });
     }
 
@@ -798,19 +1103,60 @@
             t.effectiveTo = newEffective;
         });
 
-        const ops = diff(state.editing.originals, state.editing.targets, {
-            phrases: newPhrase,
-            language: newLocale,
-            collectionId: g.collectionId
-        });
+        // EnsureCollection — when this channel/locale pair has no backing
+        // collection yet (collectionsByLocale[newLocale] is null), materialize
+        // it server-side before the create/update ops run. The new id replaces
+        // g.collectionId on the editing group so runOps and diff use it.
+        ensureCollectionForLocale(newLocale).then(function (collectionId) {
+            if (collectionId) g.collectionId = collectionId;
 
-        runOps(ops, btn, g.collectionId).then(function (errors) {
-            if (errors > 0) {
-                window.alert(GST.s('pinned.save_failed', '%1 of %2 changes failed.')
-                    .replace('%1', errors).replace('%2', ops.length));
+            const ops = diff(state.editing.originals, state.editing.targets, {
+                phrases: newPhrase,
+                language: newLocale,
+                collectionId: g.collectionId
+            });
+
+            return runOps(ops, btn, g.collectionId).then(function (errors) {
+                if (errors > 0) {
+                    window.alert(GST.s('pinned.save_failed', '%1 of %2 changes failed.')
+                        .replace('%1', errors).replace('%2', ops.length));
+                }
+                state.flyoutScope = null;     // transient scope ends here
+                GST.flyout.close('pin');
+                loadAll();
+                notifyPreviewChanged();
+            });
+        }).catch(function (err) {
+            state.flyoutScope = null;
+            window.alert(GST.s('pinned.save_failed_generic', 'Save failed: ') + (err && err.message || ''));
+        });
+    }
+
+    // Resolve the (channel, locale) tuple to a collection id, creating the
+    // collection server-side if it doesn't exist. Caches the result back into
+    // the active scope's collectionsByLocale so subsequent saves for the same
+    // locale skip the round-trip. No-op when neither scope is channel-scoped.
+    function ensureCollectionForLocale(locale) {
+        var s = effectiveScope();
+        // Direct-collection flyout scope already has a known id — skip the
+        // EnsureCollection round-trip and use it verbatim. The save flow
+        // overwrites group.collectionId with this return value, so passing
+        // the existing id keeps everything pointing at the picked collection.
+        if (s && s.collectionId) return Promise.resolve(s.collectionId);
+        if (!s || !s.channelKey) return Promise.resolve('');
+        var map = s.collectionsByLocale || (s.collectionsByLocale = {});
+        var existing = map[locale];
+        if (existing) return Promise.resolve(existing);
+
+        var url = API + '/EnsureCollection'
+            + '?channelKey=' + encodeURIComponent(s.channelKey)
+            + '&locale=' + encodeURIComponent(locale || '');
+        return GST.postJson(url, {}).then(function (resp) {
+            if (resp && resp.collectionId) {
+                map[locale] = resp.collectionId;
+                return resp.collectionId;
             }
-            GST.flyout.close('pin');
-            loadAll();
+            return '';
         });
     }
 
@@ -937,7 +1283,7 @@
         });
     }
 
-    // Expose `init` so the Profile detail view can mount a scoped instance
+    // Expose `init` so the Channel detail view can mount a scoped instance
     // before DOMContentLoaded fires. The auto-init handler above bails when
     // `state.initialized` is already true, so calling `init({ scope })`
     // pre-empts the unscoped default.

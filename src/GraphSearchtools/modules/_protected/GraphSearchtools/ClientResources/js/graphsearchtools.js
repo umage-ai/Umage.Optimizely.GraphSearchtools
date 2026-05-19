@@ -563,7 +563,7 @@ const GST = {
 };
 
 /**
- * Shared editor-grid helpers. The Pinned editor and the profile-detail
+ * Shared editor-grid helpers. The Pinned editor and the channel-detail
  * Synonyms panel both render the same `gst-pinedit__*` table-grid shape
  * (filter + count chip + sortable headers + paged body + dirty drawer),
  * so the boilerplate around paging, sort header wiring, and the unsaved
@@ -653,7 +653,7 @@ GST.editGrid = {
     }
 };
 
-// Expose GST on window so other tool scripts (pinned.js, profiles.js, etc.)
+// Expose GST on window so other tool scripts (pinned.js, channels.js, etc.)
 // can reach the shared helpers via `window.GST.*`. Top-level `const` doesn't
 // attach to window in a classic script context — without this assignment
 // helpers like GST.s and GST.copyButton are only reachable via the lexical

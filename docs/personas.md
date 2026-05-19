@@ -29,13 +29,13 @@ moves those numbers.
   search 'sneakers'." → Pinned results.
 - "Customers keep searching 'jumper' but we call them 'sweaters' — fix the zero results."
   → Synonyms.
-- "Our top search term converts terribly. Why?" → Profile Insights / telemetry.
+- "Our top search term converts terribly. Why?" → Channel Insights / telemetry.
 - "Marketing director is asking why search feels slow today." → Health (glance, then
   forward to IT if there's a problem).
 
 **What they care about in our UI.**
 - **Speak business, not Graph.** "Pinned result for query 'sneakers'", not "boost
-  document by ID in semantic profile". GraphQL, scoring functions, vector embeddings,
+  document by ID in semantic channel". GraphQL, scoring functions, vector embeddings,
   and index internals should be hidden or behind a clear "advanced" affordance.
 - **Fast confirmation that a change took effect.** They want to see the search result
   page reorder, not parse a JSON response.
@@ -56,7 +56,7 @@ not on the hook to fix it. Surface it at a glance (a status pill, a "search is h
 indicator). Don't make them interpret latency histograms — that's a developer job.
 
 **Vocabulary they expect.** Search term, result, pin, synonym, campaign, category,
-product, page, conversion. Not: document, edge, hit, shard, profile, boost, weight,
+product, page, conversion. Not: document, edge, hit, shard, channel, boost, weight,
 semantic vector.
 
 **Implications for design.**
@@ -76,7 +76,7 @@ semantic vector.
 Stubs — flesh these out when we have a real feature aimed at them.
 
 - **The Developer / Solution Architect.** Sets up the integration, configures
-  profiles, debugs why pin X isn't ranking, owns relevancy tuning. Comfortable with
+  channels, debugs why pin X isn't ranking, owns relevancy tuning. Comfortable with
   GraphQL and the Graph schema. Cares about correctness and observability over
   marketing language.
 - **The Site Owner / Ops.** Watches Health, gets paged when Graph is down or slow.

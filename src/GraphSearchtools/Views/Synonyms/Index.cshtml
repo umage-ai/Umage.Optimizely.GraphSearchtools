@@ -12,49 +12,120 @@
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-@* Aurora Rules grid. The former "Unused" tab was rolled into the Activity
-   (30d) column + an Activity filter — same data, surfaced inline instead
-   of behind a tab switch so marketers see used-vs-unused at a glance. *@
-<div class="gst-toolbar">
-    <div class="gst-search">
-        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round"
-             stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input type="text" id="gst-syn-search"
-               placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")" />
-    </div>
-    <label class="gst-filter">
-        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</span>
-        <select class="gst-filter__select" id="gst-syn-locale-filter">
-            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
-        </select>
-    </label>
-    <div class="gst-toolbar__spacer"></div>
-    <button type="button" id="gst-syn-create" class="gst-btn gst-btn--primary">
-        + @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRow")
+@* ─────────────── Page tabs ─────────────── *@
+<nav class="gst-tabs" role="tablist" aria-label="Synonym views">
+    <button type="button" class="gst-tabs__btn is-active"
+            role="tab" aria-selected="true" data-tab="rules" id="gst-syn-tab-rules">
+        Rules
     </button>
-</div>
+    <button type="button" class="gst-tabs__btn"
+            role="tab" aria-selected="false" data-tab="changelog" id="gst-syn-tab-changelog">
+        @Loc.GetString("/graphsearchtools/tools/changelog/title")
+    </button>
+</nav>
 
-<table class="gst-table gst-syn-aurora-table">
-    <thead>
-        <tr>
-            <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
-            <th data-sort="locale">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</th>
-            <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
-            <th aria-label="Actions"></th>
-        </tr>
-    </thead>
-    <tbody id="gst-syn-aurora-rows"></tbody>
-</table>
+@* ─────────────── Rules tab ─────────────── *@
+<section class="gst-tabpanel" data-tab="rules" role="tabpanel" aria-labelledby="gst-syn-tab-rules">
+    @* Aurora Rules grid. The former "Unused" tab was rolled into the Activity
+       (30d) column + an Activity filter — same data, surfaced inline instead
+       of behind a tab switch so marketers see used-vs-unused at a glance. *@
+    <div class="gst-toolbar">
+        <div class="gst-search">
+            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="gst-syn-search"
+                   placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")" />
+        </div>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/channels/detail/synonyms/colScope")</span>
+            <select class="gst-filter__select" id="gst-syn-locale-filter">
+                <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
+            </select>
+        </label>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-syn-create" class="gst-btn gst-btn--primary">
+            + @Loc.GetString("/graphsearchtools/channels/detail/synonyms/addRow")
+        </button>
+    </div>
 
-@* Synonym flyout — shared markup; the Aurora JS opens/closes it via GST.flyout.
-   Use the absolute path so Razor's partial search doesn't spurious-404 against
-   a separate `.Views` assembly that this RCL doesn't emit. *@
-@await Html.PartialAsync("/Views/Shared/_SynonymFlyout.cshtml")
+    <table class="gst-table gst-syn-aurora-table">
+        <thead>
+            <tr>
+                <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
+                <th data-sort="locale">@Loc.GetString("/graphsearchtools/channels/detail/synonyms/colScope")</th>
+                <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
+                <th aria-label="Actions"></th>
+            </tr>
+        </thead>
+        <tbody id="gst-syn-aurora-rows"></tbody>
+    </table>
+
+    @* Synonym flyout — shared markup; the Aurora JS opens/closes it via GST.flyout.
+       Use the absolute path so Razor's partial search doesn't spurious-404 against
+       a separate `.Views` assembly that this RCL doesn't emit. *@
+    @await Html.PartialAsync("/Views/Shared/_SynonymFlyout.cshtml")
+</section>
+
+@* ─────────────── Changelog tab ─────────────── *@
+<section class="gst-tabpanel" data-tab="changelog" role="tabpanel"
+         aria-labelledby="gst-syn-tab-changelog" hidden>
+    <div class="gst-toolbar">
+        <span class="gst-muted">@Loc.GetString("/graphsearchtools/tools/changelog/synonyms_intro")</span>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-changelog-syn-refresh" class="gst-btn">@Loc.GetString("/graphsearchtools/ui/shared/refresh")</button>
+    </div>
+
+    <table class="gst-table gst-changelog-table">
+        <thead>
+            <tr>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_when")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_who")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_action")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_subject")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_locale")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_slot")</th>
+            </tr>
+        </thead>
+        <tbody id="gst-changelog-syn-rows"></tbody>
+    </table>
+</section>
 
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms-aurora.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/changelog.js")"></script>
+    <script>
+        // Mirror the Pinned page's tab-switch UX. Synonyms only has two
+        // tabs (Rules / Changelog) so we can keep the handler local.
+        (function () {
+            var buttons = document.querySelectorAll('.gst-tabs__btn[data-tab]');
+            var panels = document.querySelectorAll('.gst-tabpanel[data-tab]');
+            if (!buttons.length || !panels.length) return;
+            buttons.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var tab = b.dataset.tab;
+                    buttons.forEach(function (x) {
+                        var on = x.dataset.tab === tab;
+                        x.classList.toggle('is-active', on);
+                        x.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    panels.forEach(function (p) { p.hidden = p.dataset.tab !== tab; });
+                });
+            });
+        })();
+
+        (function () {
+            if (!window.GST || !window.GST.changelog || typeof window.GST.changelog.mount !== 'function') return;
+            window.GST.changelog.mount({
+                rowsHost: '#gst-changelog-syn-rows',
+                refreshBtn: '#gst-changelog-syn-refresh',
+                tabBtn: '#gst-syn-tab-changelog',
+                kinds: 'Synonym',
+                columns: ['when', 'who', 'action', 'subject', 'locale', 'slot']
+            });
+        })();
+    </script>
 }

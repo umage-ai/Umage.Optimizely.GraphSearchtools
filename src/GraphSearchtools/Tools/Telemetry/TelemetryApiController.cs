@@ -96,7 +96,7 @@ public sealed class TelemetryApiController : ControllerBase
             case "search":
                 sink.Record(new SearchEvent(
                     payload.Phrase ?? string.Empty,
-                    payload.ProfileKey ?? string.Empty,
+                    payload.ChannelKey ?? string.Empty,
                     payload.Locale ?? string.Empty,
                     payload.ResultCount ?? 0,
                     ts));
@@ -104,7 +104,7 @@ public sealed class TelemetryApiController : ControllerBase
             case "click":
                 sink.Record(new ClickEvent(
                     payload.Phrase ?? string.Empty,
-                    payload.ProfileKey ?? string.Empty,
+                    payload.ChannelKey ?? string.Empty,
                     payload.Locale ?? string.Empty,
                     payload.Rank ?? 0,
                     ts,
@@ -148,7 +148,7 @@ public sealed class TelemetryApiController : ControllerBase
     {
         [JsonPropertyName("kind")] public string? Kind { get; set; }
         [JsonPropertyName("phrase")] public string? Phrase { get; set; }
-        [JsonPropertyName("profileKey")] public string? ProfileKey { get; set; }
+        [JsonPropertyName("channelKey")] public string? ChannelKey { get; set; }
         [JsonPropertyName("locale")] public string? Locale { get; set; }
         [JsonPropertyName("resultCount")] public int? ResultCount { get; set; }
         [JsonPropertyName("rank")] public int? Rank { get; set; }

@@ -26,7 +26,7 @@ internal sealed class BucketColumnMap
     private static readonly Regex SafeColumnName = new(@"\A[A-Za-z][A-Za-z0-9_]{0,63}\z", RegexOptions.Compiled);
 
     public required string BucketUtc    { get; init; }
-    public required string ProfileKey   { get; init; }
+    public required string ChannelKey   { get; init; }
     public required string Locale       { get; init; }
     public required string PhraseNorm   { get; init; }
     public required string DisplayPhrase{ get; init; }
@@ -76,7 +76,7 @@ internal sealed class BucketColumnMap
             return new BucketColumnMap
             {
                 BucketUtc     = Get(nameof(SearchLogBucket.BucketUtc)),
-                ProfileKey    = Get(nameof(SearchLogBucket.ProfileKey)),
+                ChannelKey    = Get(nameof(SearchLogBucket.ChannelKey)),
                 Locale        = Get(nameof(SearchLogBucket.Locale)),
                 PhraseNorm    = Get(nameof(SearchLogBucket.PhraseNorm)),
                 DisplayPhrase = Get(nameof(SearchLogBucket.DisplayPhrase)),

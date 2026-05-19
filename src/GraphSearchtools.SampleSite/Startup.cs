@@ -53,36 +53,25 @@ public class Startup
             })
             // Single source of truth: AlloySearchService.SampleHitsQueryDocument
             // is the same string the runtime executes (modulo dynamic facet
-            // / phrase substitution), so the admin Profile detail view always
+            // / phrase substitution), so the admin Channel detail view always
             // reflects what the storefront actually sends to Optimizely Graph.
-            .AddSearchProfile("alloy-search", p => p
+            .AddSearchChannel("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
                 // Stock Alloy ships with English + Swedish content branches; the
-                // preview picker on the Profile detail surfaces both so admins
+                // preview picker on the Channel detail surfaces both so admins
                 // can verify pinned/synonym wiring per locale.
                 .Locales("en", "sv")
                 .SearchedFields("Name", "MetaDescription", "MainBody")
                 .UsesPinnedKey("alloy-{locale}")
                 .SemanticBlend(0.3, GraphRanking.Semantic)
-                .GraphQLDocumentInline(AlloySearchService.SampleHitsQueryDocument))
-            .AddSearchProfile("alloy-products", p => p
-                .DisplayName("Product cards")
-                .Description("Pinned recommendations for the product/teaser surface.")
-                .Locales("en")
-                .SearchedFields("Name", "TeaserText")
-                .UsesPinnedKey("alloy-products-{locale}"));
+                .GraphQLDocumentInline(AlloySearchService.SampleHitsQueryDocument));
 
         // Faceted site-search service used by /search. Each request issues
         // four parallel queries (hits + per-facet count sources + keyword
         // enumeration) so facet counts stay stable across a click — see
         // Services/AlloySearchService.cs and the faceted-search guidelines.
         services.AddHttpClient<AlloySearchService>();
-
-        // Featured products on the start page. Reads ProductPages with the
-        // alloy-products profile's pinned collection applied so marketers can
-        // curate the order via the GraphSearchtools admin.
-        services.AddHttpClient<FeaturedProductsService>();
 
         // Required by Wangkanai.Detection
         services.AddDetection();

@@ -11,7 +11,6 @@ using UmageAI.Optimizely.GraphSearchTools.Helpers;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
-using UmageAI.Optimizely.GraphSearchTools.Tools.Health;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 using UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
@@ -29,7 +28,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// Returns <see cref="IGraphSearchtoolsBuilder"/> so callers can chain
-    /// <c>.AddSearchProfile(...)</c>. This is a breaking change from earlier
+    /// <c>.AddSearchChannel(...)</c>. This is a breaking change from earlier
     /// previews — code that needs the underlying <see cref="IServiceCollection"/>
     /// can read it from <see cref="IGraphSearchtoolsBuilder.Services"/>.
     /// </remarks>
@@ -67,16 +66,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<LanguageSiteEnumerator>();
         services.AddScoped<PinnedService>();
         services.AddScoped<SynonymsService>();
-        services.AddHttpClient<HealthService>();
-        services.AddScoped<HealthScanService>();
         services.AddHttpClient<QueryRunnerService>();
 
-        // Phase 2.5: Search Profiles foundation. The registry collects every
-        // SearchProfile registered as a singleton (by AddSearchProfile) plus
-        // synthesises a Generic catchment.
-        services.AddSingleton<ISearchProfileRegistry, SearchProfileRegistry>();
-        services.AddSingleton<SearchProfileEditService>();
-        services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.ProfilesService>();
+        // Phase 2.5: Search Channels foundation. The registry collects every
+        // SearchChannel registered as a singleton (by AddSearchChannel).
+        services.AddSingleton<ISearchChannelRegistry, SearchChannelRegistry>();
+        services.AddSingleton<AuditLogService>();
+        services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Channels.ChannelsService>();
 
         // Phase 4 Wave 5: Search Logs UI — top phrases, zero-result phrases,
         // low-CTR phrases, raw events. Thin wrapper around ITelemetryReader
@@ -89,8 +85,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SynonymCoverageService>();
 
         // Phase 4 Wave 5 §6: Pinned Result Coverage audit. Read-only — joins
-        // Graph pinned data, IContentLoader content state, ISearchProfileRegistry
-        // (collection → profile mapping) and ITelemetryReader 7-day window.
+        // Graph pinned data, IContentLoader content state, ISearchChannelRegistry
+        // (collection → channel mapping) and ITelemetryReader 7-day window.
         services.AddScoped<PinnedCoverageService>();
 
         // Aurora refactor: Insights dashboard. Pulls from the three services
