@@ -116,7 +116,7 @@ semantic-by-scale and won't be renamed.
 | Text         | `--gst-text`, `--gst-text-secondary`, `--gst-text-muted` |
 | Brand        | `--gst-primary`, `--gst-primary-hover`, `--gst-primary-light`, `--gst-link` |
 | Status       | `--gst-success(-light)`, `--gst-warning(-light)`, `--gst-danger(-light)`, `--gst-info(-light)` |
-| Spacing      | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) |
+| Spacing      | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) / `-2xl` (48). Row density: `--gst-row-padding-compact` / `-comfortable`. |
 | Type         | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-xl` |
 | Radii        | `--gst-radius-sm` (3), `--gst-radius` (4), `--gst-radius-lg` (6) |
 | Shadows      | `--gst-shadow-sm` … `--gst-shadow-xl` |

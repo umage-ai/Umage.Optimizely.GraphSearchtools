@@ -278,7 +278,7 @@
 }
 .gst-toolbar > select {
     height: 40px;
-    padding: 0 32px 0 14px;
+    padding: 0 var(--gst-space-xl) 0 14px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
@@ -360,7 +360,7 @@
     position: relative;
     min-width: 168px;
     height: 56px;
-    padding: 8px 0;
+    padding: var(--gst-space-sm) 0;
     border: 0;
     background: transparent;
     cursor: pointer;
@@ -374,7 +374,7 @@
     font-weight: 500;
     color: var(--gst-text-secondary);
     line-height: 1.2;
-    margin-bottom: 4px;
+    margin-bottom: var(--gst-space-xs);
     pointer-events: none;
     padding-right: 28px;
 }
@@ -437,7 +437,7 @@
 
 .gst-table th {
     text-align: left;
-    padding: 12px 16px;
+    padding: 12px var(--gst-space-md);
     font-weight: 500;
     font-size: var(--gst-text-sm);
     color: var(--gst-text-secondary);
@@ -531,7 +531,7 @@
     text-align: right;
     width: 1%;
     white-space: nowrap;
-    padding-right: 8px;
+    padding-right: var(--gst-space-sm);
 }
 
 /* Aurora row-action button — single-action variant. Used for the
@@ -586,7 +586,7 @@
     border-radius: var(--gst-radius);
     box-shadow: var(--gst-shadow);
     min-width: 160px;
-    padding: 4px;
+    padding: var(--gst-space-xs);
     display: flex;
     flex-direction: column;
     animation: gst-fade-in .12s ease;
@@ -595,7 +595,7 @@
     background: transparent;
     border: 0;
     text-align: left;
-    padding: 8px 12px;
+    padding: var(--gst-space-sm) 12px;
     border-radius: var(--gst-radius-sm);
     cursor: pointer;
     font-family: var(--gst-font);
@@ -620,8 +620,8 @@
 .gst-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
+    gap: var(--gst-space-xs);
+    padding: 2px var(--gst-space-sm);
     border-radius: 10px;
     font-size: 11px;
     font-weight: 500;
@@ -893,7 +893,7 @@
    above, which renders a label above the selected value. */
 .gst-select {
     height: 40px;
-    padding: 0 32px 0 14px;
+    padding: 0 var(--gst-space-xl) 0 14px;
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
@@ -964,7 +964,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px;
+    padding: var(--gst-space-xs);
     color: var(--gst-text-muted);
     border-radius: var(--gst-radius-sm);
 }
@@ -1079,7 +1079,7 @@
     border-bottom: 1px solid #f1d6a3;
     font-size: var(--gst-text-sm);
     display: flex;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     line-height: 1.4;
 }
 .gst-flyout__notice strong { font-weight: 600; }
@@ -1136,7 +1136,7 @@
 }
 .gst-field select {
     appearance: none;
-    padding-right: 32px;
+    padding-right: var(--gst-space-xl);
     background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
@@ -1162,7 +1162,7 @@
 .gst-field__checkbox {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     cursor: pointer;
     user-select: none;
     font-size: var(--gst-text-base);
@@ -1222,12 +1222,12 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 8px;
+    margin-bottom: var(--gst-space-sm);
 }
 .gst-target-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     height: 44px;
     padding: 0 6px 0 0;
     border: 1px solid var(--gst-border);
@@ -1329,7 +1329,7 @@
     background: var(--gst-primary-light);
 }
 .gst-field__count {
-    margin-left: 4px;
+    margin-left: var(--gst-space-xs);
     font-size: var(--gst-text-xs);
     color: var(--gst-text-muted);
     font-weight: 400;
@@ -1449,14 +1449,14 @@
 .gst-tree .gst-tree { margin-left: var(--gst-space-lg); }
 
 .gst-tree__item {
-    padding: 4px 0;
+    padding: var(--gst-space-xs) 0;
 }
 
 .gst-tree__toggle {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 2px var(--gst-space-xs);
     color: var(--gst-text-muted);
     font-size: var(--gst-text-sm);
 }
@@ -1476,7 +1476,7 @@
 .gst-tree__count {
     font-size: 11px;
     color: var(--gst-text-muted);
-    margin-left: 4px;
+    margin-left: var(--gst-space-xs);
 }
 
 /* Tabs live further down with the survivor block. */
@@ -1488,7 +1488,7 @@
 
 /* ── Picker Items ───────────────────────────────────────────────── */
 .gst-picker-item {
-    padding: 8px 12px;
+    padding: var(--gst-space-sm) 12px;
     cursor: pointer;
     border-radius: var(--gst-radius-sm);
     transition: background .1s;
@@ -1520,7 +1520,7 @@
 
 /* Alert */
 .bpe-alert {
-    padding: 10px 16px;
+    padding: 10px var(--gst-space-md);
     border-radius: var(--gst-radius);
     margin-bottom: 12px;
     font-size: 13px;
@@ -1555,7 +1555,7 @@
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 4px;
+    margin-top: var(--gst-space-xs);
     background: var(--gst-surface);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
@@ -1572,7 +1572,7 @@
 .bpe-col-picker-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     padding: 7px 14px;
     cursor: pointer;
     font-size: 13px;
@@ -1588,7 +1588,7 @@
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     padding: 14px 18px;
-    margin-bottom: 16px;
+    margin-bottom: var(--gst-space-md);
     display: none;
 }
 
@@ -1596,7 +1596,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: var(--gst-space-sm);
 }
 
 .bpe-filter-row:last-child { margin-bottom: 0; }
@@ -1620,13 +1620,13 @@ td.bpe-edited {
 }
 
 td.bpe-editing {
-    padding: 4px 8px;
+    padding: var(--gst-space-xs) var(--gst-space-sm);
 }
 
 td.bpe-editing input,
 td.bpe-editing select {
     width: 100%;
-    padding: 4px 8px;
+    padding: var(--gst-space-xs) var(--gst-space-sm);
     border: 2px solid var(--gst-primary);
     border-radius: 3px;
     font-size: 13px;
@@ -1636,7 +1636,7 @@ td.bpe-editing select {
 /* Row actions */
 .bpe-row-actions {
     display: flex;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     white-space: nowrap;
 }
 
@@ -1670,7 +1670,7 @@ td.bpe-editing select {
 
 .bpe-sort-arrow {
     display: inline-block;
-    margin-left: 4px;
+    margin-left: var(--gst-space-xs);
     font-size: 11px;
     color: var(--gst-text-muted);
 }
@@ -1704,7 +1704,7 @@ td.bpe-editing select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 16px;
+    margin-top: var(--gst-space-md);
 }
 
 .bpe-pagination-info {
@@ -1715,7 +1715,7 @@ td.bpe-editing select {
 .bpe-pagination-controls {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--gst-space-xs);
 }
 
 .bpe-page-size {
@@ -1739,7 +1739,7 @@ td.bpe-editing select {
     background: var(--gst-surface);
     border-top: 2px solid var(--gst-primary);
     box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
-    padding: 12px 24px;
+    padding: 12px var(--gst-space-lg);
     display: none;
     justify-content: space-between;
     align-items: center;
@@ -2010,7 +2010,7 @@ td.bpe-editing select {
 
 .gst-cell-input {
     width: 100%;
-    padding: 5px 8px;
+    padding: 5px var(--gst-space-sm);
     border: 1px solid transparent;
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
@@ -2027,7 +2027,7 @@ td.bpe-editing select {
 
 /* Sort arrows on column headers */
 .gst-sort-arrow {
-    margin-left: 4px;
+    margin-left: var(--gst-space-xs);
     font-size: 10px;
     color: var(--gst-text-muted);
 }
@@ -2047,7 +2047,7 @@ td.bpe-editing select {
 
 .gst-pin-content-pill {
     display: inline-block;
-    padding: 4px 10px;
+    padding: var(--gst-space-xs) 10px;
     border-radius: 999px;
     font-size: var(--gst-text-xs);
     font-weight: 500;
@@ -2094,7 +2094,7 @@ td.bpe-editing select {
     cursor: pointer;
     color: var(--gst-text-muted);
     font-size: 14px;
-    padding: 4px 6px;
+    padding: var(--gst-space-xs) 6px;
     border-radius: var(--gst-radius);
     line-height: 1;
 }
@@ -2141,7 +2141,7 @@ td.bpe-editing select {
 
 .gst-health-hero {
     position: relative;
-    padding: 28px 28px 24px;
+    padding: 28px 28px var(--gst-space-lg);
     background:
         linear-gradient(135deg, var(--gst-surface) 0%, var(--gst-surface) 60%, #f9fafc 100%);
     overflow: hidden;
@@ -2227,10 +2227,10 @@ td.bpe-editing select {
 .gst-health-hero__meta {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     font-size: var(--gst-text-sm);
     color: var(--gst-text-muted);
-    margin-top: 8px;
+    margin-top: var(--gst-space-sm);
     font-family: var(--gst-font-mono);
 }
 .gst-health-hero__gateway { word-break: break-all; }
@@ -2248,7 +2248,7 @@ td.bpe-editing select {
 .gst-health-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     cursor: pointer;
     user-select: none;
 }
@@ -2265,7 +2265,7 @@ td.bpe-editing select {
     align-items: center;
     justify-content: center;
     min-width: 70px;
-    padding: 4px 10px;
+    padding: var(--gst-space-xs) 10px;
     border-radius: 999px;
     background: var(--gst-surface-hover);
     border: 1px solid var(--gst-border);
@@ -2292,7 +2292,7 @@ td.bpe-editing select {
 .gst-health-runbtn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     padding-left: 12px;
     padding-right: 14px;
 }
@@ -2341,7 +2341,7 @@ td.bpe-editing select {
     background: var(--gst-surface);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
-    padding: 16px 18px;
+    padding: var(--gst-space-md) 18px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -2357,7 +2357,7 @@ td.bpe-editing select {
 .gst-health-kpi__value {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     font-size: 24px;
     font-weight: 600;
     color: var(--gst-text);
@@ -2390,7 +2390,7 @@ td.bpe-editing select {
     margin-bottom: 12px;
 }
 .gst-health-section-head--padded {
-    padding: 16px 20px 0;
+    padding: var(--gst-space-md) 20px 0;
     margin-bottom: 0;
 }
 .gst-health-section-head__title {
@@ -2445,12 +2445,12 @@ td.bpe-editing select {
     font-family: var(--gst-font-mono);
     font-size: var(--gst-text-sm);
     color: var(--gst-text-muted);
-    margin-right: 4px;
+    margin-right: var(--gst-space-xs);
 }
 .gst-health-timeline__legend-item {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     margin-left: 12px;
     font-family: var(--gst-font);
     font-size: var(--gst-text-sm);
@@ -2539,7 +2539,7 @@ td.bpe-editing select {
 .gst-health-probe__msg {
     font-size: var(--gst-text-sm);
     color: var(--gst-text-secondary);
-    margin-top: 4px;
+    margin-top: var(--gst-space-xs);
     margin-left: 20px;
 }
 
@@ -2617,7 +2617,7 @@ td.bpe-editing select {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 4px;
+    margin-bottom: var(--gst-space-xs);
 }
 .gst-health-issue__name {
     flex: 1;
@@ -2633,7 +2633,7 @@ td.bpe-editing select {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 2px 8px;
+    padding: 2px var(--gst-space-sm);
     border-radius: 999px;
     background: var(--gst-warning-light);
     color: #5d4037;
@@ -2651,7 +2651,7 @@ td.bpe-editing select {
 .gst-health-issue__times {
     font-size: 11px;
     color: var(--gst-text-muted);
-    margin-top: 4px;
+    margin-top: var(--gst-space-xs);
 }
 .gst-health-issues__empty {
     text-align: center;
@@ -2696,7 +2696,7 @@ td.bpe-editing select {
 }
 .gst-ac-limit input {
     width: 60px;
-    padding: 6px 8px;
+    padding: 6px var(--gst-space-sm);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
@@ -2710,14 +2710,14 @@ td.bpe-editing select {
     border-top: 1px solid var(--gst-border);
 }
 .gst-ac-result {
-    padding: 8px 12px;
+    padding: var(--gst-space-sm) 12px;
     border-bottom: 1px solid var(--gst-border);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
 }
 .gst-ac-result:hover { background: var(--gst-surface-hover); }
 .gst-ac-empty {
-    padding: 16px;
+    padding: var(--gst-space-md);
     color: var(--gst-text-muted);
     text-align: center;
     font-style: italic;
@@ -2755,7 +2755,7 @@ td.bpe-editing select {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: var(--gst-space-sm);
 }
 .gst-sq-rail__title {
     font-size: 11px;
@@ -2782,8 +2782,8 @@ td.bpe-editing select {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin: 0 -4px;
-    padding: 0 4px;
+    margin: 0 -var(--gst-space-xs);
+    padding: 0 var(--gst-space-xs);
 }
 .gst-sq-rail__empty {
     text-align: center;
@@ -2842,7 +2842,7 @@ td.bpe-editing select {
 .gst-sq-preset:focus-within .gst-sq-preset__actions,
 .gst-sq-preset.is-loaded .gst-sq-preset__actions { opacity: 1; }
 .gst-sq-preset__act {
-    padding: 3px 4px !important;
+    padding: 3px var(--gst-space-xs) !important;
     color: var(--gst-text-muted);
 }
 .gst-sq-preset__act:hover { color: var(--gst-text); }
@@ -2852,7 +2852,7 @@ td.bpe-editing select {
 .gst-sq-preset__desc {
     font-size: var(--gst-text-sm);
     color: var(--gst-text-secondary);
-    margin-top: 4px;
+    margin-top: var(--gst-space-xs);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2875,7 +2875,7 @@ td.bpe-editing select {
 }
 .gst-sq-preset__pills {
     display: flex;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     flex-shrink: 0;
 }
 .gst-sq-pill {
@@ -2928,7 +2928,7 @@ td.bpe-editing select {
 .gst-sq-knob {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     font-size: var(--gst-text-xs);
     color: var(--gst-text-muted);
 }
@@ -2940,7 +2940,7 @@ td.bpe-editing select {
 }
 .gst-sq-knob input,
 .gst-sq-knob select {
-    padding: 5px 8px;
+    padding: 5px var(--gst-space-sm);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
@@ -2984,7 +2984,7 @@ td.bpe-editing select {
 .gst-sq-empty {
     text-align: center;
     color: var(--gst-text-muted);
-    padding: 24px;
+    padding: var(--gst-space-lg);
     font-style: italic;
 }
 
@@ -2992,7 +2992,7 @@ td.bpe-editing select {
 .gst-sq-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     margin-bottom: var(--gst-space-sm);
 }
 .gst-sq-field label {
@@ -3015,7 +3015,7 @@ td.bpe-editing select {
     display: flex;
     gap: var(--gst-space-sm);
     justify-content: flex-end;
-    padding: 12px 16px;
+    padding: 12px var(--gst-space-md);
     border-top: 1px solid var(--gst-border);
     background: var(--gst-surface);
 }
@@ -3028,7 +3028,7 @@ td.bpe-editing select {
 }
 .gst-combobox input[type="text"] {
     width: 100%;
-    padding: 5px 8px;
+    padding: 5px var(--gst-space-sm);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
@@ -3155,7 +3155,7 @@ td.bpe-editing select {
     color: var(--gst-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 4px;
+    margin-bottom: var(--gst-space-xs);
 }
 .gst-prof-meta dd { font-size: var(--gst-text-sm); color: var(--gst-text); }
 .gst-prof-meta dd .em { color: var(--gst-text-secondary); font-size: 11px; display: block; margin-top: 2px; }
@@ -3188,7 +3188,7 @@ td.bpe-editing select {
 
 .gst-pin-keyline {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 12px;
+    padding: var(--gst-space-sm) 12px;
     background: var(--gst-bg);
     border: 1px dashed var(--gst-border);
     border-radius: var(--gst-radius);
@@ -3235,7 +3235,7 @@ td.bpe-editing select {
     background: var(--gst-surface);
     border: 1px solid var(--gst-border);
     color: var(--gst-text);
-    padding: 4px 10px;
+    padding: var(--gst-space-xs) 10px;
     font: inherit;
     cursor: pointer;
 }
@@ -3328,7 +3328,7 @@ td.bpe-editing select {
 }
 .gst-syn-page__lang-select {
     font-size: 12px;
-    padding: 4px 8px;
+    padding: var(--gst-space-xs) var(--gst-space-sm);
     border: 1px solid var(--gst-border);
     border-radius: 4px;
     background: var(--gst-bg);
@@ -3353,7 +3353,7 @@ td.bpe-editing select {
 }
 .gst-pinedit__searchinput {
     width: 100%;
-    padding: 8px 12px 8px 34px;
+    padding: var(--gst-space-sm) 12px var(--gst-space-sm) 34px;
     border: 1px solid transparent;
     background: var(--gst-surface);
     border-radius: var(--gst-radius);
@@ -3376,7 +3376,7 @@ td.bpe-editing select {
     font-size: 11px;
     letter-spacing: 0.04em;
     color: var(--gst-text-secondary);
-    padding: 4px 8px;
+    padding: var(--gst-space-xs) var(--gst-space-sm);
     background: var(--gst-bg);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius);
@@ -3385,7 +3385,7 @@ td.bpe-editing select {
 .gst-pinedit__sep {
     width: 1px;
     align-self: stretch;
-    margin: 4px 4px;
+    margin: var(--gst-space-xs) var(--gst-space-xs);
     background: var(--gst-border);
 }
 .gst-pinedit__addbtn {
@@ -3477,13 +3477,13 @@ td.bpe-editing select {
    intentionally subdued so they don't compete with the row data, and
    are sized via the colgroup like every other cell in the table. */
 .gst-pinedit__head-filter .gst-pinedit__col {
-    padding: 4px 8px 8px;
+    padding: var(--gst-space-xs) var(--gst-space-sm) var(--gst-space-sm);
 }
 .gst-pinedit__colfilter {
     width: 100%;
     box-sizing: border-box;
     height: 26px;
-    padding: 0 8px;
+    padding: 0 var(--gst-space-sm);
     background: var(--gst-bg);
     border: 1px solid var(--gst-border-light);
     border-radius: var(--gst-radius-sm, 3px);
@@ -3673,7 +3673,7 @@ td.bpe-editing select {
     font: inherit;
     font-size: 14px;
     line-height: 1;
-    padding: 4px 8px;
+    padding: var(--gst-space-xs) var(--gst-space-sm);
     margin-left: 2px;
     border-radius: var(--gst-radius-sm);
     cursor: pointer;
@@ -3704,7 +3704,7 @@ td.bpe-editing select {
 /* Empty state */
 .gst-pinedit__empty {
     text-align: center;
-    padding: 48px 24px;
+    padding: var(--gst-space-2xl) var(--gst-space-lg);
     color: var(--gst-text-muted);
 }
 .gst-pinedit__empty p {
@@ -3730,7 +3730,7 @@ td.bpe-editing select {
 }
 
 .gst-pinedit__norows td {
-    padding: 28px 16px;
+    padding: 28px var(--gst-space-md);
     color: var(--gst-text-muted);
     font-style: italic;
     font-size: var(--gst-text-sm);
@@ -3742,7 +3742,7 @@ td.bpe-editing select {
    grid skin). Spinner + label sit on one line so the row keeps the
    grid's vertical rhythm during the load. */
 .gst-pinedit__loading td {
-    padding: 28px 16px;
+    padding: 28px var(--gst-space-md);
     color: var(--gst-text-muted);
     font-size: var(--gst-text-sm);
     text-align: center;
@@ -3752,7 +3752,7 @@ td.bpe-editing select {
     vertical-align: middle;
     width: 14px;
     height: 14px;
-    margin-right: 8px;
+    margin-right: var(--gst-space-sm);
     border: 2px solid color-mix(in srgb, var(--gst-primary) 25%, transparent);
     border-top-color: var(--gst-primary);
     border-radius: 50%;
@@ -3768,7 +3768,7 @@ td.bpe-editing select {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 16px;
+    padding: 10px var(--gst-space-md);
     background: linear-gradient(180deg, var(--gst-warning-light) 0%, #fff7ec 100%);
     border-top: 1px solid var(--gst-warning);
     animation: gst-pinedit-drawer-up 220ms ease;
@@ -3788,7 +3788,7 @@ td.bpe-editing select {
     color: var(--gst-warning);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
-    margin-right: 4px;
+    margin-right: var(--gst-space-xs);
 }
 .gst-pinedit__drawer__actions { display: flex; gap: 8px; }
 .gst-pinedit__drawer__btn {
@@ -3822,7 +3822,7 @@ td.bpe-editing select {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 8px 12px;
+    padding: var(--gst-space-sm) 12px;
     border-top: 1px solid var(--gst-border-light);
     background: var(--gst-surface);
     font-size: var(--gst-text-sm);
@@ -3831,13 +3831,13 @@ td.bpe-editing select {
 .gst-pager__btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     background: var(--gst-surface);
     border: 1px solid var(--gst-border);
     color: var(--gst-text);
     font: inherit;
     font-size: var(--gst-text-sm);
-    padding: 4px 10px;
+    padding: var(--gst-space-xs) 10px;
     border-radius: var(--gst-radius);
     cursor: pointer;
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -3938,7 +3938,7 @@ td.bpe-editing select {
     color: var(--gst-text-muted);
     letter-spacing: 0.02em;
     min-height: 14px;
-    padding: 0 4px;
+    padding: 0 var(--gst-space-xs);
     transition: color 120ms ease;
 }
 .gst-serp__stats--err {
@@ -3957,7 +3957,7 @@ td.bpe-editing select {
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    padding: 6px 4px 0;
+    padding: 6px var(--gst-space-xs) 0;
 }
 .gst-serp__syn[hidden] { display: none; }
 .gst-serp__syn-label {
@@ -3969,7 +3969,7 @@ td.bpe-editing select {
     display: inline-flex;
     align-items: baseline;
     gap: 5px;
-    padding: 2px 8px;
+    padding: 2px var(--gst-space-sm);
     border-radius: 999px;
     font-size: 11px;
     line-height: 1.6;
@@ -4024,7 +4024,7 @@ td.bpe-editing select {
 
 /* Single result card */
 .gst-serp__hit {
-    padding: 10px 4px 12px;
+    padding: 10px var(--gst-space-xs) 12px;
     border-bottom: 1px solid var(--gst-border-light);
     animation: gst-serp-rise 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
     animation-delay: var(--gst-serp-stagger, 0ms);
@@ -4044,7 +4044,7 @@ td.bpe-editing select {
 .gst-serp__hit.is-pinned + .gst-serp__hit:not(.is-pinned) {
     /* Restore the divider when an organic card follows a pinned cluster. */
     border-top: 1px solid var(--gst-border-light);
-    margin-top: 4px;
+    margin-top: var(--gst-space-xs);
     padding-top: 14px;
 }
 .gst-serp__pin-ribbon {
@@ -4122,7 +4122,7 @@ td.bpe-editing select {
 
 /* Snippet — body copy, 2-line clamp */
 .gst-serp__snippet {
-    margin: 0 0 8px;
+    margin: 0 0 var(--gst-space-sm);
     font-size: 13px;
     line-height: 1.5;
     color: var(--gst-text-secondary);
@@ -4145,12 +4145,12 @@ td.bpe-editing select {
 .gst-serp__meta {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     font-size: 11px;
     color: var(--gst-text-muted);
 }
 .gst-serp__chip {
-    padding: 2px 8px;
+    padding: 2px var(--gst-space-sm);
     border-radius: 999px;
     background: var(--gst-surface-active);
     color: var(--gst-text-secondary);
@@ -4208,7 +4208,7 @@ td.bpe-editing select {
    carrying the full HTML body of an Alloy page) scroll horizontally inside
    the box rather than stretching the page. */
 .gst-serp__json {
-    margin: 8px 0 0;
+    margin: var(--gst-space-sm) 0 0;
     padding: 12px 14px;
     background: #1d1f23;
     color: #e8e8e8;
@@ -4263,7 +4263,7 @@ td.bpe-editing select {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: var(--gst-space-xs) 10px;
     border: 1px solid var(--gst-border);
     background: var(--gst-surface);
     color: var(--gst-text-secondary);
@@ -4358,7 +4358,7 @@ td.bpe-editing select {
 /* gst-serp__json-wrap inherits the JSON inspector's open/close animation
    that previously lived on the <pre> directly. */
 .gst-serp__json-wrap {
-    margin: 8px 0 0;
+    margin: var(--gst-space-sm) 0 0;
     animation: gst-serp-json-open 180ms ease both;
 }
 .gst-serp__json-wrap[hidden] { display: none; }
@@ -4391,7 +4391,7 @@ td.bpe-editing select {
 .gst-prof-detail-header__crumb {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     margin-bottom: 6px;
     font-size: 11px;
     color: var(--gst-text-muted);
@@ -4399,7 +4399,7 @@ td.bpe-editing select {
 .gst-prof-detail-header__back {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--gst-space-xs);
     color: var(--gst-text-secondary);
     text-decoration: none;
     font-weight: 500;
@@ -4473,7 +4473,7 @@ td.bpe-editing select {
 .gst-prof-preview__heading {
     display: inline-flex;
     align-items: baseline;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     min-width: 0;
 }
 .gst-prof-preview__eyebrow {
@@ -4514,14 +4514,14 @@ td.bpe-editing select {
 .gst-prof-preview__filter {
     min-width: 0;
     height: auto;
-    padding: 4px 0;
+    padding: var(--gst-space-xs) 0;
 }
 .gst-prof-preview__filter .gst-filter__label { margin-bottom: 2px; }
 .gst-prof-preview__filter.gst-filter::after { bottom: 8px; }
 .gst-prof-chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     padding: 5px 12px;
     border-radius: 999px;
     border: 1px solid var(--gst-border);
@@ -4663,7 +4663,7 @@ td.bpe-editing select {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 36px 16px 28px;
+    padding: 36px var(--gst-space-md) 28px;
     border: 1px dashed var(--gst-border);
     border-radius: var(--gst-radius);
     background: var(--gst-bg);
@@ -4678,7 +4678,7 @@ td.bpe-editing select {
     font-size: var(--gst-text-base);
     font-weight: 600;
     color: var(--gst-text);
-    margin: 0 0 4px;
+    margin: 0 0 var(--gst-space-xs);
 }
 .gst-prof-preview__empty-body {
     font-size: var(--gst-text-sm);
@@ -4715,7 +4715,7 @@ td.bpe-editing select {
     padding: 0 14px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
 }
 .gst-prof-switcher__icon {
     display: inline-flex;
@@ -4758,8 +4758,8 @@ td.bpe-editing select {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 8px;
-    padding: 32px 24px 28px;
+    gap: var(--gst-space-sm);
+    padding: var(--gst-space-xl) var(--gst-space-lg) 28px;
     color: var(--gst-text-secondary);
 }
 .gst-prof-unwired__glyph {
@@ -4771,7 +4771,7 @@ td.bpe-editing select {
     justify-content: center;
     background: var(--gst-warning-light, rgba(201, 122, 42, 0.12));
     color: var(--gst-warning, #c97a2a);
-    margin-bottom: 4px;
+    margin-bottom: var(--gst-space-xs);
 }
 .gst-prof-unwired__title {
     font-size: 15px;
@@ -4787,7 +4787,7 @@ td.bpe-editing select {
 }
 .gst-prof-unwired__howto {
     max-width: 56ch;
-    margin: 4px 0 0;
+    margin: var(--gst-space-xs) 0 0;
     font-size: 12px;
     color: var(--gst-text-muted);
 }
@@ -4799,7 +4799,7 @@ td.bpe-editing select {
 }
 .gst-prof-unwired__code > pre {
     margin: 0;
-    padding: 12px 16px;
+    padding: 12px var(--gst-space-md);
     padding-right: 96px;
     background: var(--gst-bg);
     border: 1px solid var(--gst-border);
@@ -4831,7 +4831,7 @@ td.bpe-editing select {
 .gst-prof-syn__note {
     font-size: 11px;
     color: var(--gst-text-muted);
-    margin: 16px 0 0;
+    margin: var(--gst-space-md) 0 0;
     padding: 12px 14px 0;
     max-width: 60em;
     line-height: 1.5;
@@ -4872,7 +4872,7 @@ td.bpe-editing select {
 .gst-prof-syn__scope {
     display: inline-flex;
     align-items: center;
-    padding: 2px 8px;
+    padding: 2px var(--gst-space-sm);
     border-radius: 999px;
     font-size: 11px;
     font-weight: 500;
@@ -4903,7 +4903,7 @@ td.bpe-editing select {
 }
 
 .gst-prof-syn__help {
-    margin-top: 4px;
+    margin-top: var(--gst-space-xs);
     border-top: 1px dashed var(--gst-border-light);
     padding: 10px 14px 12px;
 }
@@ -4925,10 +4925,10 @@ td.bpe-editing select {
 }
 .gst-prof-syn__help[open] summary::before { transform: rotate(90deg); }
 .gst-prof-syn__help-dl {
-    margin: 8px 0 0;
+    margin: var(--gst-space-sm) 0 0;
     display: grid;
     grid-template-columns: max-content 1fr;
-    gap: 4px 12px;
+    gap: var(--gst-space-xs) 12px;
     font-size: var(--gst-text-sm);
     line-height: 1.5;
 }
@@ -4979,7 +4979,7 @@ td.bpe-editing select {
     display: flex;
     align-items: center;
     gap: var(--gst-space-sm);
-    padding: 6px 8px;
+    padding: 6px var(--gst-space-sm);
     background: var(--gst-surface);
     border: 1px solid var(--gst-border-light);
     border-radius: var(--gst-radius);
@@ -5079,7 +5079,7 @@ td.bpe-editing select {
 }
 .gst-prof-ins-lane__hint::before {
     content: '·';
-    margin: 0 8px 0 0;
+    margin: 0 var(--gst-space-sm) 0 0;
     color: var(--gst-border);
 }
 .gst-prof-ins-lane__count {
@@ -5111,7 +5111,7 @@ td.bpe-editing select {
     display: block;
     width: 100%;
     margin: 0;
-    padding: 8px var(--gst-space-md);
+    padding: var(--gst-space-sm) var(--gst-space-md);
     background: transparent;
     border: 0;
     border-top: 1px solid var(--gst-border-light);
@@ -5248,7 +5248,7 @@ td.bpe-editing select {
 .gst-prof-ins-row__count small {
     font-size: 10px;
     color: var(--gst-text-muted);
-    margin-left: 4px;
+    margin-left: var(--gst-space-xs);
     text-transform: lowercase;
     letter-spacing: 0.04em;
 }
@@ -5310,7 +5310,7 @@ td.bpe-editing select {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     padding: 10px 14px;
     background: color-mix(in srgb, var(--lane-accent) 5%, var(--gst-surface));
     border-top: 1px solid var(--gst-border-light);
@@ -5328,7 +5328,7 @@ td.bpe-editing select {
     display: inline-flex;
     align-items: center;
     height: 24px;
-    padding: 0 8px;
+    padding: 0 var(--gst-space-sm);
     background: var(--gst-bg);
     border: 1px solid var(--gst-border-light);
     border-radius: 3px;
@@ -5349,7 +5349,7 @@ td.bpe-editing select {
     width: 100%;
     box-sizing: border-box;
     height: 28px;
-    padding: 0 8px;
+    padding: 0 var(--gst-space-sm);
     background: var(--gst-bg);
     border: 1px solid var(--gst-border);
     border-radius: 3px;
@@ -5378,7 +5378,7 @@ td.bpe-editing select {
 .gst-prof-ins-edit__hit {
     display: flex;
     flex-direction: column;
-    padding: 6px 8px;
+    padding: 6px var(--gst-space-sm);
     cursor: pointer;
     border-top: 1px solid var(--gst-border-light);
     font-size: 12px;
@@ -5462,7 +5462,7 @@ td.bpe-editing select {
 .gst-prof-ins-lane__loading,
 .gst-prof-ins-lane__error {
     margin: 0;
-    padding: 16px var(--gst-space-md) 18px;
+    padding: var(--gst-space-md) var(--gst-space-md) 18px;
     font-size: 12px;
     color: var(--gst-text-muted);
     text-align: center;
@@ -5474,9 +5474,9 @@ td.bpe-editing select {
        are coming" without committing to any specific row count. */
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--gst-space-sm);
     align-items: stretch;
-    padding: 14px var(--gst-space-md) 16px;
+    padding: 14px var(--gst-space-md) var(--gst-space-md);
 }
 .gst-prof-ins-lane__loading::before,
 .gst-prof-ins-lane__loading::after,
@@ -5505,7 +5505,7 @@ td.bpe-editing select {
     font-size: 11px;
     line-height: 1.5;
     color: var(--gst-text-muted);
-    padding: 0 4px;
+    padding: 0 var(--gst-space-xs);
 }
 
 /* Toast-style flash that confirms a draft was seeded into another tab.
@@ -5519,7 +5519,7 @@ td.bpe-editing select {
     background: var(--gst-text);
     color: var(--gst-surface);
     font-size: 12px;
-    padding: 8px 14px;
+    padding: var(--gst-space-sm) 14px;
     border-radius: 999px;
     box-shadow: var(--gst-shadow-lg);
     opacity: 0;
@@ -5540,7 +5540,7 @@ td.bpe-editing select {
     font-weight: 600;
     text-decoration: underline;
     cursor: pointer;
-    margin-left: 8px;
+    margin-left: var(--gst-space-sm);
     pointer-events: auto;
 }
 
@@ -5560,12 +5560,12 @@ td.bpe-editing select {
     margin: 0 0 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
 }
 .gst-prof-details__sublabel {
     font-size: 11px;
     color: var(--gst-text-muted);
-    margin: 0 0 8px;
+    margin: 0 0 var(--gst-space-sm);
 }
 .gst-prof-details__meta {
     /* Two-column where space allows; folds gracefully. */
@@ -5646,7 +5646,7 @@ td.bpe-editing select {
     font: inherit;
     font-size: var(--gst-text-sm);
     font-weight: 500;
-    padding: 10px 16px;
+    padding: 10px var(--gst-space-md);
     margin-bottom: -1px;
     cursor: pointer;
     letter-spacing: 0.01em;
@@ -5680,7 +5680,7 @@ td.bpe-editing select {
     font: inherit;
     font-size: var(--gst-text-sm);
     font-weight: 500;
-    padding: 4px 12px;
+    padding: var(--gst-space-xs) 12px;
     cursor: pointer;
     letter-spacing: 0.02em;
     transition: background 120ms ease, color 120ms ease;
@@ -5708,12 +5708,12 @@ td.bpe-editing select {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: var(--gst-space-sm);
 }
 .gst-sc-edit__input {
     flex: 1 1 320px;
     min-width: 220px;
-    padding: 5px 8px;
+    padding: 5px var(--gst-space-sm);
     border: 1px solid var(--gst-border);
     border-radius: var(--gst-radius-sm, 4px);
     font: inherit;
@@ -5782,7 +5782,7 @@ td.bpe-editing select {
 
 /* ── Collections-tab flyout pieces ──────────────────────────────── */
 .gst-field__readonly {
-    padding: 6px 8px;
+    padding: 6px var(--gst-space-sm);
     background: var(--gst-bg-soft, #f5f7fb);
     border: 1px solid var(--gst-border-light, #e5e7eb);
     border-radius: 4px;
@@ -5801,7 +5801,7 @@ td.bpe-editing select {
     gap: 6px;
 }
 .gst-colfly-profrow {
-    padding: 8px 10px;
+    padding: var(--gst-space-sm) 10px;
     background: var(--gst-bg-soft, #f5f7fb);
     border: 1px solid var(--gst-border-light, #e5e7eb);
     border-radius: 4px;
