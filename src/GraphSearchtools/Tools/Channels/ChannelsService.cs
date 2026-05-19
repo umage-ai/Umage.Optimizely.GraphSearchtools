@@ -22,6 +22,7 @@ public sealed class ChannelsService
     private readonly IWebHostEnvironment _hostEnvironment;
     private readonly IGraphAdminClient _graphAdmin;
     private readonly QueryRunnerService _runner;
+    private readonly CmsLocaleResolver _localeResolver;
 
     public ChannelsService(
         ISearchChannelRegistry registry,
@@ -29,7 +30,8 @@ public sealed class ChannelsService
         LocalizationService localization,
         IWebHostEnvironment hostEnvironment,
         IGraphAdminClient graphAdmin,
-        QueryRunnerService runner)
+        QueryRunnerService runner,
+        CmsLocaleResolver localeResolver)
     {
         _registry = registry;
         _audit = audit;
@@ -37,7 +39,18 @@ public sealed class ChannelsService
         _hostEnvironment = hostEnvironment;
         _graphAdmin = graphAdmin;
         _runner = runner;
+        _localeResolver = localeResolver;
     }
+
+    /// <summary>
+    /// Channel-locale lookup. Returns the static list for declarative
+    /// channels, or the CMS-derived list when the channel opted in with
+    /// <c>LocalesFromCmsLanguages()</c>. Use this everywhere instead of
+    /// reading <c>channel.Locales</c> directly so both modes stay
+    /// transparent to the rest of the service.
+    /// </summary>
+    private IReadOnlyList<string> LocalesFor(SearchChannel channel)
+        => _localeResolver.Resolve(channel);
 
     public IReadOnlyList<ChannelSummary> ListSummaries()
         => _registry.All.Select(p => BuildSummary(p)).ToList();
@@ -101,7 +114,7 @@ public sealed class ChannelsService
             DescriptionResolved = channel.Description?.Resolve(_localization),
             IsSiteShared = IsPinnedKeySiteShared(channel),
             Sites = channel.Sites ?? Array.Empty<string>(),
-            Locales = channel.Locales ?? Array.Empty<string>(),
+            Locales = LocalesFor(channel),
             SearchedFields = channel.SearchedFields ?? Array.Empty<string>(),
             PinnedKeyFormula = ResolvePinnedKeyFormula(channel),
             RankingName = channel.Ranking.ToString(),
@@ -133,7 +146,7 @@ public sealed class ChannelsService
             DisplayName = displayName,
             DescriptionResolved = description,
             Sites = channel.Sites ?? Array.Empty<string>(),
-            Locales = channel.Locales ?? Array.Empty<string>(),
+            Locales = LocalesFor(channel),
             HasGraphQLDoc = hasDoc,
             GraphQLDocPath = channel.GraphQLDocumentPath,
             SemanticWeight = channel.SemanticWeight,

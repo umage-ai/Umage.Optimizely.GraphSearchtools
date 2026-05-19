@@ -20,9 +20,9 @@
     // Razor dynamic-model property access throws RuntimeBinderException
     // when the anonymous type doesn't declare a given property, so for
     // optional fields we walk the object's reflected props instead.
-    object Prop(string name)
+    object? Prop(string name)
     {
-        var obj = (object)Model;
+        var obj = (object?)Model;
         if (obj == null) return null;
         var p = obj.GetType().GetProperty(name);
         return p?.GetValue(obj);
