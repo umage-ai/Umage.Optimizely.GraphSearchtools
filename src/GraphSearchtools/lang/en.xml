@@ -302,11 +302,10 @@
         </detail>
         <index>
           <cols>
+            <activity>Activity (30d)</activity>
             <lastEdited>Last edited</lastEdited>
             <profile>Profile</profile>
             <scope>Sites &amp; locales</scope>
-            <status>Status</status>
-            <tuning>Tuning</tuning>
           </cols>
           <empty>
             <body>Register profiles in code via AddSearchProfile(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
@@ -319,14 +318,6 @@
             <labelLocale>Locale</labelLocale>
           </filter>
           <filterPlaceholder>Filter profiles…</filterPlaceholder>
-          <stats>
-            <coverage>Production traffic via profiles</coverage>
-            <locales>locales</locales>
-            <pinned>Pinned phrases</pinned>
-            <profiles>Profiles registered</profiles>
-            <sites>sites</sites>
-            <synonyms>Synonym entries</synonyms>
-          </stats>
           <subtitle>Marketer-facing tuning for each search surface.</subtitle>
           <title>Search Profiles</title>
         </index>

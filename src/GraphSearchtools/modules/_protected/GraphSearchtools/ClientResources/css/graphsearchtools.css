@@ -3115,27 +3115,27 @@ td.bpe-editing select {
 
 .gst-prof-scope { display: flex; flex-wrap: wrap; gap: 4px; }
 
-.gst-prof-bars { display: grid; grid-template-columns: 36px 1fr 28px; row-gap: 4px; column-gap: 8px; align-items: center; min-width: 160px; }
-.gst-prof-bars__name {
+/* Per-row activity sparkline: line fills the cell, total searches sits to
+   the right as a compact mono-numeric anchor. Sparkline needs an explicit
+   height because GST.sparkline emits an SVG sized 100% × 100% of its host. */
+.gst-prof-activity {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 140px;
+}
+.gst-prof-activity__spark {
+    height: 28px;
+    width: 100%;
+}
+.gst-prof-activity__total {
     font-family: var(--gst-font-mono);
-    font-size: 10px;
-    color: var(--gst-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-size: 12px;
+    color: var(--gst-text-secondary);
+    text-align: right;
+    min-width: 32px;
 }
-.gst-prof-bars__bar {
-    height: 4px;
-    background: var(--gst-surface-active);
-    border-radius: 2px;
-    position: relative; overflow: hidden;
-}
-.gst-prof-bars__bar::after {
-    content: ""; position: absolute; inset: 0; width: var(--w, 0%);
-    background: var(--gst-primary);
-    border-radius: 2px;
-}
-.gst-prof-bars__bar.muted::after { background: var(--gst-text-muted); }
-.gst-prof-bars__num { font-family: var(--gst-font-mono); font-size: 10px; color: var(--gst-text-secondary); text-align: right; }
 
 .gst-prof-status { display: flex; flex-direction: column; gap: 2px; }
 .gst-prof-status__line { font-size: 11px; color: var(--gst-text-muted); }
@@ -3231,7 +3231,7 @@ td.bpe-editing select {
 }
 @media (max-width: 720px) {
     .gst-pin-controls { grid-template-columns: 1fr 1fr; }
-    .gst-prof-table .col-tuning, .gst-prof-table .col-scope { display: none; }
+    .gst-prof-table .col-activity, .gst-prof-table .col-scope { display: none; }
 }
 
 /* Muted-token marker — used by Synonym Coverage to dim secondary cells. */

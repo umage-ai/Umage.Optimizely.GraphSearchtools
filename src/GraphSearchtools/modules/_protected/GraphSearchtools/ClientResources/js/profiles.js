@@ -33,22 +33,6 @@
         return Math.floor(diff / 86400) + ' ' + s('profiles.time.daysAgo', 'days ago');
     }
 
-    function statusBadge(status) {
-        var key, klass;
-        switch (status) {
-            case 'Tuned':       key = 'profiles.status.tuned';       klass = 'gst-badge--success'; break;
-            case 'NeedsReview': key = 'profiles.status.needsReview'; klass = 'gst-badge--warning'; break;
-            case 'DocMissing':  key = 'profiles.status.docMissing';  klass = 'gst-badge--danger';  break;
-            case 'FreeForm':    key = 'profiles.status.freeForm';    klass = 'gst-badge--default'; break;
-            case 'Cold':        key = 'profiles.status.cold';        klass = 'gst-badge--default'; break;
-            default:            key = 'profiles.status.cold';        klass = 'gst-badge--default';
-        }
-        // Server may also return integer enum values from JSON serializer config —
-        // map those defensively.
-        return '<span class="gst-badge ' + klass + '"><span class="gst-badge__dot"></span>'
-            + escHtml(s(key, status)) + '</span>';
-    }
-
     /** Render Sites & locales cell. */
     function scopeCell(p) {
         var sitesHtml = (p.sites && p.sites.length)
@@ -61,24 +45,16 @@
              + '<div class="gst-prof-scope" style="margin-top: 4px">' + localesHtml + '</div>';
     }
 
-    /** Render the three-bar tuning column. */
-    function tuningCell(p) {
-        // v1: actual pin / synonym counts require live Graph calls we haven't
-        // wired yet. Bars show the semantic-blend weight only; pins/syns rows
-        // collapse to "—" until the counts arrive.
-        var sw = (typeof p.semanticWeight === 'number') ? p.semanticWeight : 0;
-        var swPct = Math.max(0, Math.min(100, Math.abs(sw) * 100));
-        var swDisplay = (sw === 0) ? '—' : sw.toFixed(2);
-        return '<div class="gst-prof-bars">'
-            +     '<span class="gst-prof-bars__name">pins</span>'
-            +     '<span class="gst-prof-bars__bar" style="--w: 0%"></span>'
-            +     '<span class="gst-prof-bars__num">—</span>'
-            +     '<span class="gst-prof-bars__name">syns</span>'
-            +     '<span class="gst-prof-bars__bar muted" style="--w: 0%"></span>'
-            +     '<span class="gst-prof-bars__num">—</span>'
-            +     '<span class="gst-prof-bars__name">sem.</span>'
-            +     '<span class="gst-prof-bars__bar" style="--w: ' + swPct + '%"></span>'
-            +     '<span class="gst-prof-bars__num">' + swDisplay + '</span>'
+    /**
+     * Skeleton cell for the per-row search-activity sparkline. Real data
+     * lands in `populateActivityCells` once the InsightsApi.SearchKpis
+     * fan-out resolves; until then the host is empty and the total reads
+     * as an em-dash, matching the rest of the row's "not yet loaded" tone.
+     */
+    function activityCell(profileKey) {
+        return '<div class="gst-prof-activity" data-key="' + escHtml(profileKey || '') + '">'
+            +     '<div class="gst-prof-activity__spark"></div>'
+            +     '<div class="gst-prof-activity__total">—</div>'
             +  '</div>';
     }
 
@@ -128,13 +104,12 @@
             if (!profiles || profiles.length === 0) {
                 tableHost.innerHTML = '';
                 if (emptyEl) emptyEl.hidden = false;
-                renderStats([]);
                 if (countEl) countEl.textContent = '';
                 return;
             }
-            renderStats(profiles);
             populateFilters(profiles);
             renderTable(profiles);
+            loadActivitySparklines(profiles);
         }).catch(function(err) {
             tableHost.innerHTML = '';
             showAlert(s('profiles.requestFailed', 'Failed to load profiles.'), 'danger');
@@ -146,31 +121,6 @@
             alertEl.className = 'gst-alert gst-alert--' + (kind || 'warning');
             alertEl.textContent = msg;
             alertEl.hidden = false;
-        }
-
-        function renderStats(profiles) {
-            var sites = new Set();
-            var locales = new Set();
-            profiles.forEach(function(p) {
-                (p.sites || []).forEach(function(x) { sites.add(x); });
-                (p.locales || []).forEach(function(x) { locales.add(x); });
-            });
-
-            setText('gst-prof-stat-count', profiles.length);
-            var subParts = [];
-            if (sites.size)   subParts.push(sites.size + ' ' + s('profiles.stats.sites', 'sites'));
-            if (locales.size) subParts.push(locales.size + ' ' + s('profiles.stats.locales', 'locales'));
-            setText('gst-prof-stat-count-sub', subParts.join(' · '));
-
-            // Pinned + synonym counts require Graph calls — scaffolded with em
-            // dashes until the counts arrive (see ProfilesService note).
-            setText('gst-prof-stat-pinned', '—');
-            setText('gst-prof-stat-synonyms', '—');
-        }
-
-        function setText(id, value) {
-            var el = document.getElementById(id);
-            if (el) el.textContent = value == null ? '' : String(value);
         }
 
         function populateFilters(profiles) {
@@ -203,10 +153,9 @@
             table.className = 'gst-table gst-prof-table';
             table.innerHTML =
                 '<thead><tr>'
-                + '<th style="width: 28%">' + escHtml(s('profiles.cols.profile', 'Profile')) + '</th>'
-                + '<th style="width: 18%" class="col-scope">' + escHtml(s('profiles.cols.scope', 'Sites & locales')) + '</th>'
-                + '<th style="width: 22%" class="col-tuning">' + escHtml(s('profiles.cols.tuning', 'Tuning')) + '</th>'
-                + '<th style="width: 18%">' + escHtml(s('profiles.cols.status', 'Status')) + '</th>'
+                + '<th style="width: 26%">' + escHtml(s('profiles.cols.profile', 'Profile')) + '</th>'
+                + '<th style="width: 22%" class="col-scope">' + escHtml(s('profiles.cols.scope', 'Sites & locales')) + '</th>'
+                + '<th style="width: 32%" class="col-activity">' + escHtml(s('profiles.cols.activity', 'Activity (30d)')) + '</th>'
                 + '<th>' + escHtml(s('profiles.cols.lastEdited', 'Last edited')) + '</th>'
                 + '<th style="width: 32px"></th>'
                 + '</tr></thead><tbody></tbody>';
@@ -224,8 +173,7 @@
                 tr.innerHTML =
                     '<td>' + profileCell(p) + '</td>'
                     + '<td class="col-scope">' + scopeCell(p) + '</td>'
-                    + '<td class="col-tuning">' + tuningCell(p) + '</td>'
-                    + '<td>' + statusBadge(typeof p.status === 'number' ? statusFromInt(p.status) : p.status) + '</td>'
+                    + '<td class="col-activity">' + activityCell(p.key) + '</td>'
                     + '<td>' + lastEditedCell(p) + '</td>'
                     + '<td>' + chevronCell() + '</td>';
 
@@ -239,8 +187,59 @@
             applyFilters();
         }
 
-        function statusFromInt(i) {
-            return ['Tuned', 'NeedsReview', 'DocMissing', 'FreeForm', 'Cold'][i] || 'Cold';
+        /**
+         * Fan-out: one InsightsApi.SearchKpis call per profile, with the
+         * sparkline drawn into the row as each response lands. N+1 by design
+         * — the alternative is a bespoke batch endpoint we don't yet need at
+         * prototype scale. allSettled keeps a slow/failing profile from
+         * stalling the rest.
+         */
+        function loadActivitySparklines(profiles) {
+            if (!tableHost || !window.GST || typeof GST.sparkline !== 'function') return;
+            var BASE = window.GST_BASE_URL || '';
+
+            profiles.forEach(function(p) {
+                if (!p.key) return;
+                var host = tableHost.querySelector('.gst-prof-activity[data-key="' + cssEscape(p.key) + '"]');
+                if (!host) return;
+                var url = BASE + '/InsightsApi/SearchKpis?profileKey=' + encodeURIComponent(p.key);
+                GST.fetchJson(url).then(function(k) {
+                    renderActivityCell(host, k);
+                }).catch(function() {
+                    // Telemetry off / endpoint disabled — keep the row tidy
+                    // by collapsing to a single em-dash rather than a noisy
+                    // error state.
+                    var total = host.querySelector('.gst-prof-activity__total');
+                    if (total) total.textContent = '—';
+                });
+            });
+        }
+
+        function renderActivityCell(host, kpis) {
+            if (!host || !kpis) return;
+            var spark = host.querySelector('.gst-prof-activity__spark');
+            var total = host.querySelector('.gst-prof-activity__total');
+            var series = (kpis.sparkSearches && kpis.sparkSearches.length) ? kpis.sparkSearches : [];
+            if (spark) {
+                GST.sparkline(spark, series, {
+                    label: s('profiles.cols.activity', 'Activity (30d)'),
+                    formatTooltip: function(v, i) {
+                        var daysAgo = (series.length - 1) - i;
+                        return v + ' · ' + daysAgo + 'd ago';
+                    }
+                });
+            }
+            if (total) {
+                var n = kpis.totalSearches || 0;
+                total.textContent = (typeof GST.formatCompactInt === 'function')
+                    ? GST.formatCompactInt(n)
+                    : String(n);
+            }
+        }
+
+        function cssEscape(v) {
+            if (window.CSS && typeof CSS.escape === 'function') return CSS.escape(v);
+            return String(v).replace(/["\\]/g, '\\$&');
         }
 
         function applyFilters() {
