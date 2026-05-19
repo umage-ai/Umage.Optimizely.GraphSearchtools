@@ -132,12 +132,19 @@ public class PinnedApiControllerChannelScopeTests
 
         var editLog = new FakeAuditService();
 
+        // Resolver isn't exercised by these tests (no channel opts into
+        // LocalesFromCmsLanguages) — pass it the loosest possible mocks.
+        var sites = new Mock<EPiServer.Web.ISiteDefinitionRepository>(MockBehavior.Loose).Object;
+        var langs = new Mock<EPiServer.DataAbstraction.ILanguageBranchRepository>(MockBehavior.Loose).Object;
+        var localeResolver = new CmsLocaleResolver(sites, langs);
+
         var controller = new PinnedApiController(
             pinnedService,
             accessChecker,
             registry,
             editLog,
             loc,
+            localeResolver,
             NullLogger<PinnedApiController>.Instance);
 
         var ctx = new DefaultHttpContext

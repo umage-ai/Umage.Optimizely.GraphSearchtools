@@ -52,6 +52,7 @@ public sealed class PinnedCoverageService
     private readonly IContentLoader _contentLoader;
     private readonly ISearchChannelRegistry _registry;
     private readonly ITelemetryReader _reader;
+    private readonly CmsLocaleResolver _localeResolver;
     private readonly ILogger<PinnedCoverageService> _logger;
 
     public PinnedCoverageService(
@@ -59,12 +60,14 @@ public sealed class PinnedCoverageService
         IContentLoader contentLoader,
         ISearchChannelRegistry registry,
         ITelemetryReader reader,
+        CmsLocaleResolver localeResolver,
         ILogger<PinnedCoverageService> logger)
     {
         _graphClient = graphClient;
         _contentLoader = contentLoader;
         _registry = registry;
         _reader = reader;
+        _localeResolver = localeResolver;
         _logger = logger;
     }
 
@@ -242,12 +245,14 @@ public sealed class PinnedCoverageService
         foreach (var channel in _registry.All)
         {
             if (channel.PinnedKeyForLocale == null) continue;
-            // Probe the channel's declared locales — and an "en" fallback when
-            // the channel has none — to cover the common cases. Most production
-            // formulas are deterministic functions of locale, so this catches
-            // every collection a channel owns.
-            var locales = channel.Locales != null && channel.Locales.Count > 0
-                ? channel.Locales
+            // Probe the channel's effective locales — declared statically or
+            // derived from the CMS via LocalesFromCmsLanguages — and an "en"
+            // fallback when the channel has none. Most production formulas
+            // are deterministic functions of locale, so this catches every
+            // collection a channel owns.
+            var resolved = _localeResolver.Resolve(channel);
+            var locales = resolved.Count > 0
+                ? (IReadOnlyList<string>)resolved
                 : new[] { "en" };
             foreach (var locale in locales)
             {

@@ -32,6 +32,7 @@ public class PinnedApiController : Controller
     private readonly ISearchChannelRegistry _registry;
     private readonly AuditLogService _audit;
     private readonly LocalizationService _localization;
+    private readonly CmsLocaleResolver _localeResolver;
     private readonly ILogger<PinnedApiController> _logger;
 
     public PinnedApiController(
@@ -40,6 +41,7 @@ public class PinnedApiController : Controller
         ISearchChannelRegistry registry,
         AuditLogService audit,
         LocalizationService localization,
+        CmsLocaleResolver localeResolver,
         ILogger<PinnedApiController> logger)
     {
         _service = service;
@@ -47,6 +49,7 @@ public class PinnedApiController : Controller
         _registry = registry;
         _audit = audit;
         _localization = localization;
+        _localeResolver = localeResolver;
         _logger = logger;
     }
 
@@ -168,8 +171,11 @@ public class PinnedApiController : Controller
         foreach (var channel in _registry.All)
         {
             if (channel.PinnedKeyForLocale == null) continue;
-            var locales = channel.Locales != null && channel.Locales.Count > 0
-                ? channel.Locales
+            // Use the resolver instead of channel.Locales directly so channels
+            // that opt into LocalesFromCmsLanguages still get a populated list.
+            var resolved = _localeResolver.Resolve(channel);
+            var locales = resolved.Count > 0
+                ? (IReadOnlyList<string>)resolved
                 : new[] { "en" };
             foreach (var locale in locales)
             {
