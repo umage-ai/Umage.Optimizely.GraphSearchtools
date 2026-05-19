@@ -1,7 +1,7 @@
 @*
-    Aurora search input — magnifying-glass icon + text input wrapped in
-    .gst-search. See design-system.md → Component: Toolbar. Seven copies
-    of this markup existed before P2.1; this is the single source.
+    Aurora filter-as-you-type input wrapped in .gst-search. The placeholder
+    text is the input's label — no separate label or icon. See
+    design-system.md → Component: Toolbar.
 
     Usage:
         @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
@@ -13,6 +13,5 @@
     string placeholder = (string)(Model?.Placeholder ?? "");
 }
 <div class="gst-search">
-    @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "search", Size = 16, Class = "gst-search__icon" })
     <input type="text" id="@id" placeholder="@placeholder" />
 </div>
