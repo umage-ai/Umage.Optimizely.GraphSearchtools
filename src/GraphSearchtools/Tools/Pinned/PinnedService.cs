@@ -49,8 +49,22 @@ public sealed class PinnedService
     public Task<PinnedCollectionResult> UpdateCollectionAsync(string collectionId, PinnedCollectionUpdatePayload payload, CancellationToken ct)
         => _client.UpdateCollectionAsync(collectionId, payload, ct);
 
-    public Task DeleteCollectionAsync(string collectionId, CancellationToken ct)
-        => _client.DeleteCollectionAsync(collectionId, ct);
+    public async Task DeleteCollectionAsync(string collectionId, CancellationToken ct)
+    {
+        // The Graph API refuses to delete a non-empty collection:
+        //   400 VALIDATION_ERROR — "Pinned items must be removed before
+        //   deleting a collection."
+        // The Collections-tab flyout already confirms with the live item
+        // count before reaching us, so we drain remaining items here rather
+        // than push the cascade onto every caller.
+        var items = await LoadAllItemsAsync(collectionId, ct);
+        foreach (var item in items)
+        {
+            ct.ThrowIfCancellationRequested();
+            await _client.DeleteItemAsync(collectionId, item.Id, ct);
+        }
+        await _client.DeleteCollectionAsync(collectionId, ct);
+    }
 
     public Task<IReadOnlyList<PinnedItemResult>> GetItemsAsync(string collectionId, CancellationToken ct, int offset = 0)
         => _client.GetItemsAsync(collectionId, ct, offset);
