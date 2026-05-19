@@ -398,7 +398,7 @@
     pointer-events: none;
 }
 /* Static variant — same dimensions and typography as an interactive
-   .gst-filter but without the caret affordance. Used when a profile
+   .gst-filter but without the caret affordance. Used when a channel
    declares exactly one site/locale (or none), so the picker becomes a
    read-only label rather than a dropdown. */
 .gst-filter--static { cursor: default; }
@@ -978,7 +978,7 @@
    "edit one small thing" surfaces (Settings, scheduled publish, etc.).
    Sized for ~5–8 fields; for richer editing graduate to a detail page. */
 /* Flyout sits below the CMS platform top nav (48px, same offset the
-   profile rail already assumes). The platform nav owns a higher z-index
+   channel rail already assumes). The platform nav owns a higher z-index
    than our 1001, so we can't reliably layer above it — yielding here
    means the editor's title stays readable instead of being clipped
    under the shell. The same offset is applied to the backdrop so the
@@ -3087,10 +3087,10 @@ td.bpe-editing select {
 }
 
 /* ============================================================
-   Search Profiles (Phase 2.5) — gst-prof-* / gst-pin-*
+   Search Channels (Phase 2.5) — gst-prof-* / gst-pin-*
    ============================================================ */
 
-/* ── Profile index table (specialised .gst-table) ──────────── */
+/* ── Channel index table (specialised .gst-table) ──────────── */
 .gst-prof-table td { padding: var(--gst-space-md); }
 .gst-prof-table tr { cursor: pointer; }
 .gst-prof-table tr.is-active td {
@@ -3147,7 +3147,7 @@ td.bpe-editing select {
 }
 .gst-prof-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
 
-/* ── Profile detail layout ──────────────────────────────────── */
+/* ── Channel detail layout ──────────────────────────────────── */
 .gst-prof-layout {
     display: grid;
     /* minmax(0, 1fr) — without the explicit 0 floor, grid tracks expand to
@@ -3298,7 +3298,7 @@ td.bpe-editing select {
 
 /* ─────────────────────────────────────────────────────────────────────
    Editable data grid (gst-pinedit-*)
-   Originally built for the Pinned editor; now reused by the Profile
+   Originally built for the Pinned editor; now reused by the Channel
    detail Synonyms panel and intended as the shared shape for any
    admin-grade list-edit surface in this addon. The class prefix is
    historical — when you see `gst-pinedit__cmdbar`, `__grid`, `__row`,
@@ -3328,7 +3328,7 @@ td.bpe-editing select {
     background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
 }
 /* Standalone Synonyms tool — locale picker that selects the editable scope.
-   Profile-detail surface piggybacks on the live preview's locale chip and
+   Channel-detail surface piggybacks on the live preview's locale chip and
    doesn't render this. */
 .gst-syn-page__lang {
     display: inline-flex;
@@ -3829,7 +3829,7 @@ td.bpe-editing select {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Pager — shared by Pinned grid and Synonym list (Profile detail).
+   Pager — shared by Pinned grid and Synonym list (Channel detail).
    Compact prev / status / next strip; only renders when total > page size.
    ───────────────────────────────────────────────────────────────────── */
 .gst-pager {
@@ -3875,7 +3875,7 @@ td.bpe-editing select {
 
 /* ─────────────────────────────────────────────────────────────────────
    Phase 6 — Live preview (gst-serp-*)
-   Google-ish SERP renderer for the Profiles tab Try-it. Title in Georgia
+   Google-ish SERP renderer for the Channels tab Try-it. Title in Georgia
    for an editorial cadence; URL in mono; phrase highlights in soft amber;
    each card has a "{ }" toggle that expands the raw item JSON beneath.
    ───────────────────────────────────────────────────────────────────── */
@@ -4386,7 +4386,7 @@ td.bpe-editing select {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Profile detail workspace — 50/50 split with persistent live preview.
+   Channel detail workspace — 50/50 split with persistent live preview.
 
    Editorial split: left side is a calm, result-focused preview that
    stays anchored as the user works the right-side console. The right
@@ -4972,7 +4972,7 @@ td.bpe-editing select {
 /* ── Insights panel ──────────────────────────────────────────── */
 /*
    Three vertically-stacked lanes of phrase signal scoped to the active
-   profile: top phrases, zero-result phrases, low-CTR phrases. Each lane
+   channel: top phrases, zero-result phrases, low-CTR phrases. Each lane
    is anchored by a 2px colored rule on the left (--gst-primary / warning
    / danger) so the eye lands on severity before reading. Phrase rows are
    click-targets that drop the phrase into the live preview on the left;
@@ -5091,8 +5091,8 @@ td.bpe-editing select {
     border-bottom: 1px solid var(--gst-border-light);
     background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 220%);
 }
-/* Deep-link from a profile-scoped lane header into the matching global
-   Insights tab, pre-filtered to this profile. Quiet text-button styling so
+/* Deep-link from a channel-scoped lane header into the matching global
+   Insights tab, pre-filtered to this channel. Quiet text-button styling so
    it doesn't compete with the lane content. */
 .gst-prof-ins-lane__deeplink {
     font-size: 11px;
@@ -5648,6 +5648,13 @@ td.bpe-editing select {
 /* ── Pinned panel: editor lives flush in the panel ───────────── */
 .gst-prof-panel[data-panel="pinned"] .gst-pinedit { padding-top: 4px; }
 
+/* Channel-scoped Pinned: hide the Collection column. Inside a single
+   channel the collection is determined by the locale, so the column is
+   redundant. Scoped to .gst-prof-panel so the top-level Pinned tool —
+   which spans many channels and needs the column to disambiguate —
+   keeps its full width. */
+.gst-prof-panel[data-panel="pinned"] .col-collection { display: none; }
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1280px) {
     /* Tighten the column padding before we collapse to single-column. */
@@ -5671,7 +5678,7 @@ td.bpe-editing select {
 /* ── Page tabs ──────────────────────────────────────────────────── */
 /* A lighter sibling of gst-prof-switcher meant for page-level tab bars
    that sit directly under the page header (e.g. Synonyms → Rules/Unused,
-   Pinned → Pins/Audit). Same visual language as the profile switcher so
+   Pinned → Pins/Audit). Same visual language as the channel switcher so
    the marketer doesn't have to learn two affordances. */
 .gst-tabs {
     display: flex;
@@ -5703,7 +5710,7 @@ td.bpe-editing select {
 .gst-tabpanel[hidden] { display: none; }
 
 /* ── Synonym Coverage inline editor ─────────────────────────────── */
-/* Mirrors the Profile Insights inline editor (gst-prof-ins-edit*) but
+/* Mirrors the Channel Insights inline editor (gst-prof-ins-edit*) but
    sized for a table row: the editor sits in a colspan <td> directly
    under the suggested row so the marketer can add or update the rule
    without leaving the Unused tab. */
@@ -5746,8 +5753,8 @@ td.bpe-editing select {
    tabs. Read-only rows (no flyout, no ⋯ menu, no row-click) — the
    classic Aurora behaviours are intentionally absent per the
    design-system rule that telemetry surfaces don't borrow them.
-   Visual treatment: first column reads as the row's name, profile
-   cell is a quiet link to /Profiles/Detail, numeric columns get
+   Visual treatment: first column reads as the row's name, channel
+   cell is a quiet link to /Channels/Detail, numeric columns get
    the shared .num right-alignment + tabular numerals.
 */
 .gst-ins-aurora-table tbody tr { cursor: default; }
@@ -5762,11 +5769,11 @@ td.bpe-editing select {
     white-space: nowrap;
 }
 
-.gst-ins-row__profile {
+.gst-ins-row__channel {
     color: var(--gst-link) !important;
     text-decoration: none;
 }
-.gst-ins-row__profile:hover { text-decoration: underline; }
+.gst-ins-row__channel:hover { text-decoration: underline; }
 
 /* Small count chip riding inside a .gst-tab label — "Top phrases · 23".
    Stays muted so it reads as metadata, not part of the tab name. */
@@ -5799,7 +5806,7 @@ td.bpe-editing select {
 }
 .gst-field__readonly.gst-mono { font-family: var(--gst-font-mono); font-size: 12px; }
 
-.gst-colfly-profiles { margin-top: 4px; }
+.gst-colfly-channels { margin-top: 4px; }
 .gst-colfly-proflist {
     list-style: none;
     margin: 0;

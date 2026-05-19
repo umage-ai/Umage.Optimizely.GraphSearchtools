@@ -19,7 +19,7 @@
  *     • shared  → PUT    /PinnedApi/UpdateItem (priority + active)
  *
  * Conflict check on save: scan groups across all collections for the same
- * phrase+locale; warn if found in another collection (cross-profile overlap).
+ * phrase+locale; warn if found in another collection (cross-channel overlap).
  */
 (function () {
     const API = window.GST_BASE_URL + '/PinnedApi';
@@ -27,16 +27,23 @@
     const INSIGHTS_API = window.GST_BASE_URL + '/InsightsApi';
     const PINNED_STRINGS = (window.GST_STRINGS && window.GST_STRINGS.pinned) || {};
 
-    // Editing happens either inside a Profile detail tab (state.scope) or
+    // Editing happens either inside a Channel detail tab (state.scope) or
     // via the top-level + Add flyout, which seeds state.flyoutScope from the
-    // profile-picker. Flyout scope wins so a save attributes to whatever the
+    // channel-picker. Flyout scope wins so a save attributes to whatever the
     // picker has selected.
     function effectiveScope() { return state.flyoutScope || state.scope || null; }
 
+    // Tell the Channel detail's live preview that a mutation just landed so
+    // it can repaint against the new state. No-op when the listener isn't
+    // mounted (top-level Pinned page has no preview to refresh).
+    function notifyPreviewChanged() {
+        document.dispatchEvent(new CustomEvent('gst:preview-refresh'));
+    }
+
     function scopeQs() {
         var s = effectiveScope();
-        if (s && s.profileKey) {
-            return '&profileKey=' + encodeURIComponent(s.profileKey);
+        if (s && s.channelKey) {
+            return '&channelKey=' + encodeURIComponent(s.channelKey);
         }
         return '';
     }
@@ -52,21 +59,21 @@
     // ── Page state ─────────────────────────────────────────────────────
     const state = {
         initialized: false,
-        // Optional profile-scoping: when set, the grid limits itself to the
-        // profile's collection (`scope.collectionId`) and locales
+        // Optional channel-scoping: when set, the grid limits itself to the
+        // channel's collection (`scope.collectionId`) and locales
         // (`scope.locales`), and skips the unscoped collection filter. The
-        // Profile detail page wires this; the top-level Pinned page leaves
-        // it null. `scope.profileKey` is appended to write URLs so the
-        // PinnedApi can resolve the profile context for auditing.
+        // Channel detail page wires this; the top-level Pinned page leaves
+        // it null. `scope.channelKey` is appended to write URLs so the
+        // PinnedApi can resolve the channel context for auditing.
         scope: null,
-        // Top-level only: registered profiles fetched on init, used by the
-        // flyout's matching-profiles panel so the user can jump to the
-        // owning Profile detail from a pin row.
-        availableProfiles: [],
-        // Top-level only: full collection→[{profileKey, locale}, ...] map
-        // (CollectionProfiles endpoint). Used by the pin flyout's
-        // matching-profiles panel — same shape as the Collection flyout's.
-        collectionProfilesMap: {},
+        // Top-level only: registered channels fetched on init, used by the
+        // flyout's matching-channels panel so the user can jump to the
+        // owning Channel detail from a pin row.
+        availableChannels: [],
+        // Top-level only: full collection→[{channelKey, locale}, ...] map
+        // (CollectionChannels endpoint). Used by the pin flyout's
+        // matching-channels panel — same shape as the Collection flyout's.
+        collectionChannelsMap: {},
         collections: [],
         items: [],          // flat list of every pinned item, normalised
         groups: [],         // aggregated rows
@@ -81,7 +88,7 @@
         editing: null       // current group being edited in the flyout
     };
 
-    // Auto-init for the top-level Pinned page only. On Profile detail the
+    // Auto-init for the top-level Pinned page only. On Channel detail the
     // page has a `.gst-prof-switcher` element and mounts the Pinned tab
     // lazily on click via `GST.pinned.aurora.init({ scope })` — auto-init
     // would race ahead with no scope and the scoped call would no-op.
@@ -95,7 +102,7 @@
     function init(opts) {
         opts = opts || {};
         // Re-init: if a scoped caller arrives after auto-init has already
-        // taken effect (e.g. user clicks the Pinned tab on Profile detail
+        // taken effect (e.g. user clicks the Pinned tab on Channel detail
         // after DOMContentLoaded), update the scope and reload instead of
         // silently dropping the call.
         if (state.initialized) {
@@ -123,7 +130,7 @@
             state.filters.locale = localeFilter.value;
             renderGrid();
         });
-        // Profile detail's page-level locale chip (#gst-pin-locale) lives in
+        // Channel detail's page-level locale chip (#gst-pin-locale) lives in
         // the Try-It header and is the page's single locale source of truth
         // — Insights listens to it too. Mirror its value into the Pinned
         // grid's filter so changing the chip narrows the grid in lockstep.
@@ -136,7 +143,7 @@
             };
             localeChip.addEventListener('change', syncFromChip);
             // Seed once at init so the grid opens scoped to the chip's
-            // initial value (typically the profile's first declared locale).
+            // initial value (typically the channel's first declared locale).
             if (localeChip.value) {
                 state.filters.locale = localeChip.value;
             }
@@ -191,29 +198,29 @@
         renderLoading(tbody);
 
         // Top-level (no scope) needs both:
-        //   * The collection→profile map so each row deep-links to its owner.
-        //   * The list of registered profiles so the Add-Pin flyout can offer
-        //     a profile picker.
-        var isTop = !(state.scope && state.scope.profileKey);
+        //   * The collection→channel map so each row deep-links to its owner.
+        //   * The list of registered channels so the Add-Pin flyout can offer
+        //     a channel picker.
+        var isTop = !(state.scope && state.scope.channelKey);
         var mapPromise = isTop
-            ? GST.fetchJson(API + '/ProfileMap').catch(function () { return {}; })
+            ? GST.fetchJson(API + '/ChannelMap').catch(function () { return {}; })
             : Promise.resolve({});
-        var profilesPromise = isTop
-            ? GST.fetchJson('/EPiServer/cms/graphsearchtools/api/profiles').catch(function () { return []; })
+        var channelsPromise = isTop
+            ? GST.fetchJson('/EPiServer/cms/graphsearchtools/api/channels').catch(function () { return []; })
             : Promise.resolve([]);
-        var collectionProfilesPromise = isTop
-            ? GST.fetchJson(API + '/CollectionProfiles').catch(function () { return {}; })
+        var collectionChannelsPromise = isTop
+            ? GST.fetchJson(API + '/CollectionChannels').catch(function () { return {}; })
             : Promise.resolve({});
 
-        Promise.all([GST.fetchJson(API + '/Collections'), mapPromise, profilesPromise, collectionProfilesPromise])
+        Promise.all([GST.fetchJson(API + '/Collections'), mapPromise, channelsPromise, collectionChannelsPromise])
             .then(function (results) {
                 var collections = results[0];
-                state.collectionProfileMap = results[1] || {};
-                state.availableProfiles = results[2] || [];
-                state.collectionProfilesMap = results[3] || {};
+                state.collectionChannelMap = results[1] || {};
+                state.availableChannels = results[2] || [];
+                state.collectionChannelsMap = results[3] || {};
                 let all = collections || [];
-                // Profile-scoped: narrow the collection set to the (possibly
-                // multiple) collections backing this profile's locales. Nulls
+                // Channel-scoped: narrow the collection set to the (possibly
+                // multiple) collections backing this channel's locales. Nulls
                 // in the map are locales without a backing collection yet —
                 // skip them on the read side; EnsureCollection materializes
                 // them on first save.
@@ -290,7 +297,7 @@
                     if (!phrase) return;
                     const hits = (typeof r.count === 'number') ? r.count : 0;
                     // Same phrase can land multiple times under different
-                    // profile/locale splits — accumulate rather than
+                    // channel/locale splits — accumulate rather than
                     // overwrite, matching the SynonymCoverage roll-up.
                     map[phrase] = (map[phrase] || 0) + hits;
                     total += hits;
@@ -377,7 +384,7 @@
     function populateCollectionFilter() {
         const sel = document.getElementById('gst-pin-collection-filter');
         if (!sel) return;
-        // Profile-scoped view hides the site/collection filter container
+        // Channel-scoped view hides the site/collection filter container
         // upstream (it doesn't apply when the grid is locked to one
         // collection), but the <select> may still exist as a hidden
         // sentinel — leave it untouched so a future re-open of the panel
@@ -397,9 +404,9 @@
         if (!sel) return;
         const seen = {};
         const locales = [];
-        // When the profile declares a fixed set of locales, surface those —
+        // When the channel declares a fixed set of locales, surface those —
         // even if no pin exists in that locale yet — so the filter matches
-        // the profile's declared scope rather than the (possibly empty)
+        // the channel's declared scope rather than the (possibly empty)
         // intersection with the current pin set.
         if (state.scope && Array.isArray(state.scope.locales) && state.scope.locales.length) {
             state.scope.locales.forEach(function (l) {
@@ -455,9 +462,9 @@
 
         const sorted = sortGroups(filtered);
 
-        // Top-level (no profile scope) is read-only: suppress per-row delete
-        // and let openOrJump send row clicks to the owning profile detail.
-        var isTopLevel = !(state.scope && state.scope.profileKey);
+        // Top-level (no channel scope) is read-only: suppress per-row delete
+        // and let openOrJump send row clicks to the owning channel detail.
+        var isTopLevel = !(state.scope && state.scope.channelKey);
 
         if (sorted.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="gst-empty"><p>' +
@@ -468,7 +475,7 @@
 
         const itemsTmpl = GST.s('pinned.items_count', '%1 items');
         const deleteLabel = GST.s('shared.delete', 'Delete');
-        const previewLabel = GST.s('profiles.detail.insights.actionPreview', 'Preview this phrase');
+        const previewLabel = GST.s('channels.detail.insights.actionPreview', 'Preview this phrase');
         const trash = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
             '<path d="M3 4 H13 M5 4 V13 a1 1 0 0 0 1 1 H10 a1 1 0 0 0 1 -1 V4 M6 4 V2 a1 1 0 0 1 1 -1 H9 a1 1 0 0 1 1 1 V4 M6.5 7 V11 M9.5 7 V11"/>' +
             '</svg>';
@@ -478,7 +485,7 @@
             '<circle cx="7" cy="7" r="4.5"/>' +
             '<line x1="10.5" y1="10.5" x2="14" y2="14"/>' +
             '</svg>';
-        // Preview button only renders inside a profile-scoped grid — that's
+        // Preview button only renders inside a channel-scoped grid — that's
         // the only context where #gst-pin-tryit-q (the SERP input) exists.
         // Skipping it on the top-level Pinned page keeps the actions cell
         // tidy when the affordance would have nowhere to land.
@@ -494,7 +501,7 @@
             var actionsCell = '<td class="gst-table__actions">' + actionButtons + '</td>';
             return '<tr class="is-selectable" data-group-key="' + GST.escHtml(g.key) + '">' +
                 '<td><a href="#" class="gst-table__link" data-row-link>' + GST.escHtml(g.phrase || '(empty)') + '</a></td>' +
-                '<td>' + GST.escHtml(g.collectionKey || '') + '</td>' +
+                '<td class="col-collection">' + GST.escHtml(g.collectionKey || '') + '</td>' +
                 '<td>' + renderLocaleCell(g.locale) + '</td>' +
                 '<td>' + GST.escHtml(itemsTmpl.replace('%1', g.items.length)) + '</td>' +
                 '<td>' + renderActivityCell(g.hits) + '</td>' +
@@ -525,9 +532,9 @@
         });
     }
 
-    // Drop the row's phrase into the Profile detail page's live preview.
+    // Drop the row's phrase into the Channel detail page's live preview.
     // The SERP input has its own debounced input listener (wired in
-    // profiles.js → wireLivePreview), so dispatching an `input` event is
+    // channels.js → wireLivePreview), so dispatching an `input` event is
     // enough to trigger a fetch + re-render. The pin's locale is left
     // alone — the page-level locale chip is the source of truth and
     // marketers usually want to see how the pin performs in the locale
@@ -543,10 +550,10 @@
         input.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    // Both profile-scoped and top-level open the editor flyout. The
-    // top-level path uses a best-effort profileKey lookup (via the
-    // collectionProfileMap) for audit attribution and surfaces all
-    // matching profiles as deep-links inside the flyout body.
+    // Both channel-scoped and top-level open the editor flyout. The
+    // top-level path uses a best-effort channelKey lookup (via the
+    // collectionChannelMap) for audit attribution and surfaces all
+    // matching channels as deep-links inside the flyout body.
     function openOrJump(groupKey) {
         openEditFlyout(groupKey);
     }
@@ -573,6 +580,7 @@
                 return;
             }
             removeItemsLocally(g.items);
+            notifyPreviewChanged();
         });
     }
 
@@ -660,10 +668,10 @@
         const g = state.groups.find(function (x) { return x.key === groupKey; });
         if (!g) return;
         // Top-level edit needs a flyout scope so subsequent CRUD ops carry
-        // an audit profileKey when one resolves to this group's collection.
-        // Profile-scoped pages keep their mount-time state.scope and leave
+        // an audit channelKey when one resolves to this group's collection.
+        // Channel-scoped pages keep their mount-time state.scope and leave
         // flyoutScope null.
-        var isTop = !(state.scope && state.scope.profileKey);
+        var isTop = !(state.scope && state.scope.channelKey);
         state.flyoutScope = isTop ? buildFlyoutScopeForCollection(g.collectionId) : null;
         state.editing = {
             mode: 'edit',
@@ -685,19 +693,19 @@
     }
 
     // Builds a flyout-only scope for a collection picked from the dropdown
-    // (create flow) or inferred from a clicked row (edit flow). profileKey
-    // is best-effort: when a registered profile resolves to this
+    // (create flow) or inferred from a clicked row (edit flow). channelKey
+    // is best-effort: when a registered channel resolves to this
     // collection's key, use it for audit attribution; otherwise leave it
     // blank and the backend skips the audit row.
     function buildFlyoutScopeForCollection(collectionId) {
         var c = state.collections.find(function (x) { return x.id === collectionId; });
         if (!c) return null;
         var key = c.key || '';
-        var profileKey = (state.collectionProfileMap || {})[key] || '';
+        var channelKey = (state.collectionChannelMap || {})[key] || '';
         return {
             collectionId: c.id,
             collectionKey: key,
-            profileKey: profileKey,
+            channelKey: channelKey,
             // collectionsByLocale stays empty — the collection is already
             // known by id, so ensureCollectionForLocale short-circuits.
             collectionsByLocale: {},
@@ -705,27 +713,27 @@
         };
     }
 
-    // Renders a <ul> of profile×locales pairs that resolve to the given
-    // collection key. Mirrors the Collection flyout's "Matching profiles"
+    // Renders a <ul> of channel×locales pairs that resolve to the given
+    // collection key. Mirrors the Collection flyout's "Matching channels"
     // panel so the two surfaces feel like one feature.
-    function renderMatchingProfiles(host, collectionKey) {
+    function renderMatchingChannels(host, collectionKey) {
         host.innerHTML = '';
-        var matches = (state.collectionProfilesMap || {})[collectionKey] || [];
+        var matches = (state.collectionChannelsMap || {})[collectionKey] || [];
         if (matches.length === 0) {
-            host.innerHTML = '<p class="gst-muted">No registered profile resolves to this collection.</p>';
+            host.innerHTML = '<p class="gst-muted">No registered channel resolves to this collection.</p>';
             return;
         }
-        var byProfile = {};
+        var byChannel = {};
         matches.forEach(function (m) {
-            (byProfile[m.profileKey] = byProfile[m.profileKey] || []).push(m.locale);
+            (byChannel[m.channelKey] = byChannel[m.channelKey] || []).push(m.locale);
         });
-        var items = Object.keys(byProfile).sort().map(function (pk) {
-            var locales = byProfile[pk].slice().sort();
+        var items = Object.keys(byChannel).sort().map(function (pk) {
+            var locales = byChannel[pk].slice().sort();
             var localesHtml = locales.map(function (l) {
                 return '<code class="gst-locale-chip">' + GST.escHtml(l) + '</code>';
             }).join(' ');
             return '<li class="gst-colfly-profrow">' +
-                '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/profiles?key=' +
+                '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/channels?key=' +
                 encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
                 ' <span class="gst-muted">via</span> ' + localesHtml +
                 '</li>';
@@ -748,7 +756,7 @@
     }
 
     function openCreateFlyout() {
-        var isTop = !(state.scope && state.scope.profileKey);
+        var isTop = !(state.scope && state.scope.channelKey);
 
         // Reset any leftover transient scope so a previous open/cancel can't
         // leak into this one.
@@ -756,8 +764,8 @@
 
         // Top-level: surface the collection picker and seed a flyout-only
         // scope with the chosen collection's id. Audit attribution is
-        // best-effort — when a registered profile resolves to the picked
-        // collection key, its profileKey rides along in scopeQs(); orphan
+        // best-effort — when a registered channel resolves to the picked
+        // collection key, its channelKey rides along in scopeQs(); orphan
         // collections write through without audit (backend tolerates that).
         var collectionRow = document.getElementById('gst-pinfly-collection-row');
         var collectionSel = document.getElementById('gst-pinfly-collection');
@@ -860,28 +868,28 @@
         const deleteBtn = document.getElementById('gst-pinfly-delete');
         if (deleteBtn) deleteBtn.hidden = state.editing.mode !== 'edit';
         // Collection picker only on top-level Create. Edit shows the
-        // collection as part of the matching-profiles panel below.
+        // collection as part of the matching-channels panel below.
         const collectionRow = document.getElementById('gst-pinfly-collection-row');
         if (collectionRow) {
             const showPicker = state.editing.mode === 'create'
-                && !(state.scope && state.scope.profileKey);
+                && !(state.scope && state.scope.channelKey);
             collectionRow.hidden = !showPicker;
         }
-        // Matching-profiles panel only on the top-level Pinned page when
-        // editing an existing pin. Profile detail already has the profile
+        // Matching-channels panel only on the top-level Pinned page when
+        // editing an existing pin. Channel detail already has the channel
         // context in the page chrome, and create-mode hasn't picked a
         // collection yet for create flows.
-        const profilesRow = document.getElementById('gst-pinfly-profiles-row');
-        const profilesHost = document.getElementById('gst-pinfly-profiles');
-        if (profilesRow && profilesHost) {
+        const channelsRow = document.getElementById('gst-pinfly-channels-row');
+        const channelsHost = document.getElementById('gst-pinfly-channels');
+        if (channelsRow && channelsHost) {
             const isTopEdit = state.editing.mode === 'edit'
-                && !(state.scope && state.scope.profileKey);
+                && !(state.scope && state.scope.channelKey);
             if (isTopEdit) {
-                renderMatchingProfiles(profilesHost, g.collectionKey || '');
-                profilesRow.hidden = false;
+                renderMatchingChannels(channelsHost, g.collectionKey || '');
+                channelsRow.hidden = false;
             } else {
-                profilesRow.hidden = true;
-                profilesHost.innerHTML = '';
+                channelsRow.hidden = true;
+                channelsHost.innerHTML = '';
             }
         }
         document.getElementById('gst-pinfly-phrase').value = g.phrase || '';
@@ -1069,6 +1077,7 @@
                 return;
             }
             removeItemsLocally(g.items);
+            notifyPreviewChanged();
         });
     }
 
@@ -1094,7 +1103,7 @@
             t.effectiveTo = newEffective;
         });
 
-        // EnsureCollection — when this profile/locale pair has no backing
+        // EnsureCollection — when this channel/locale pair has no backing
         // collection yet (collectionsByLocale[newLocale] is null), materialize
         // it server-side before the create/update ops run. The new id replaces
         // g.collectionId on the editing group so runOps and diff use it.
@@ -1115,6 +1124,7 @@
                 state.flyoutScope = null;     // transient scope ends here
                 GST.flyout.close('pin');
                 loadAll();
+                notifyPreviewChanged();
             });
         }).catch(function (err) {
             state.flyoutScope = null;
@@ -1122,10 +1132,10 @@
         });
     }
 
-    // Resolve the (profile, locale) tuple to a collection id, creating the
+    // Resolve the (channel, locale) tuple to a collection id, creating the
     // collection server-side if it doesn't exist. Caches the result back into
     // the active scope's collectionsByLocale so subsequent saves for the same
-    // locale skip the round-trip. No-op when neither scope is profile-scoped.
+    // locale skip the round-trip. No-op when neither scope is channel-scoped.
     function ensureCollectionForLocale(locale) {
         var s = effectiveScope();
         // Direct-collection flyout scope already has a known id — skip the
@@ -1133,13 +1143,13 @@
         // overwrites group.collectionId with this return value, so passing
         // the existing id keeps everything pointing at the picked collection.
         if (s && s.collectionId) return Promise.resolve(s.collectionId);
-        if (!s || !s.profileKey) return Promise.resolve('');
+        if (!s || !s.channelKey) return Promise.resolve('');
         var map = s.collectionsByLocale || (s.collectionsByLocale = {});
         var existing = map[locale];
         if (existing) return Promise.resolve(existing);
 
         var url = API + '/EnsureCollection'
-            + '?profileKey=' + encodeURIComponent(s.profileKey)
+            + '?channelKey=' + encodeURIComponent(s.channelKey)
             + '&locale=' + encodeURIComponent(locale || '');
         return GST.postJson(url, {}).then(function (resp) {
             if (resp && resp.collectionId) {
@@ -1273,7 +1283,7 @@
         });
     }
 
-    // Expose `init` so the Profile detail view can mount a scoped instance
+    // Expose `init` so the Channel detail view can mount a scoped instance
     // before DOMContentLoaded fires. The auto-init handler above bails when
     // `state.initialized` is already true, so calling `init({ scope })`
     // pre-empts the unscoped default.

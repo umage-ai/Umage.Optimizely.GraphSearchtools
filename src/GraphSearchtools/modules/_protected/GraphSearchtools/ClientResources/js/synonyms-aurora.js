@@ -10,8 +10,8 @@
  *     and merge into a single rule list with locale-tagged rows.
  *   • Save reassembles the affected locale's blob and PUTs it back.
  *
- * Locale discovery: the JS asks the Profiles registry for the union of all
- * declared locales. As a fallback (no Profiles), it uses the Graph locales
+ * Locale discovery: the JS asks the Channels registry for the union of all
+ * declared locales. As a fallback (no Channels), it uses the Graph locales
  * endpoint.
  *
  * Rule format:
@@ -22,12 +22,19 @@
     const API = window.GST_BASE_URL + '/SynonymsApi';
     const COVERAGE_API = window.GST_BASE_URL + '/SynonymCoverageApi/Index';
     const GRAPH_LOCALES_API = window.GST_BASE_URL + '/SitesApi/Locales';
-    const PROFILES_API = '/EPiServer/cms/graphsearchtools/api/profiles';
+    const CHANNELS_API = '/EPiServer/cms/graphsearchtools/api/channels';
+
+    // Tell the Channel detail's live preview that a mutation just landed so
+    // it can repaint against the new state. No-op when the listener isn't
+    // mounted (top-level Synonyms tool has no preview to refresh).
+    function notifyPreviewChanged() {
+        document.dispatchEvent(new CustomEvent('gst:preview-refresh'));
+    }
 
     const state = {
         initialized: false,
-        // Optional scope. When the Profile detail view mounts the grid, it
-        // passes `scope.locales` to narrow the rule list to the profile's
+        // Optional scope. When the Channel detail view mounts the grid, it
+        // passes `scope.locales` to narrow the rule list to the channel's
         // declared languages (plus the tenant-global pool, which always
         // applies). Top-level synonyms tool leaves this null.
         scope: null,
@@ -47,7 +54,7 @@
         editing: null
     };
 
-    // Auto-init for the top-level Synonyms page. The Profile detail page
+    // Auto-init for the top-level Synonyms page. The Channel detail page
     // calls `GST.synonyms.aurora.init({ scope })` from its own JS before
     // DOMContentLoaded fires, so this handler becomes a no-op there.
     document.addEventListener('DOMContentLoaded', function () {
@@ -71,7 +78,7 @@
             state.filters.locale = localeF.value;
             renderGrid();
         });
-        // Profile detail's page-level locale chip (#gst-pin-locale) is the
+        // Channel detail's page-level locale chip (#gst-pin-locale) is the
         // single source of truth for which language the marketer is
         // inspecting — Pinned and Insights both mirror it. Seed and follow
         // the chip here too so opening Synonyms with preview="en" lands on
@@ -195,35 +202,44 @@
     }
 
     function discoverLocales() {
-        // Profile-scoped: the active profile declares exactly which locales
+        // Channel-scoped: the active channel declares exactly which locales
         // it cares about. Use that list verbatim so the editable scopes
-        // match the profile's surface — fewer empty rule blobs to fetch and
+        // match the channel's surface — fewer empty rule blobs to fetch and
         // a tighter Scope filter dropdown.
         if (state.scope && Array.isArray(state.scope.locales) && state.scope.locales.length) {
             return Promise.resolve(state.scope.locales.slice());
         }
-        // Top-level synonyms tool: prefer the Profiles registry's union of
+        // Top-level synonyms tool: prefer the Channels registry's union of
         // declared locales; fall back to Graph's introspection endpoint,
         // then to a hardcoded shortlist.
-        return GST.fetchJson(PROFILES_API)
-            .then(function (profiles) {
+        return GST.fetchJson(CHANNELS_API)
+            .then(function (channels) {
                 const seen = {};
-                (profiles || []).forEach(function (p) {
+                (channels || []).forEach(function (p) {
                     (p.locales || []).forEach(function (l) { if (l) seen[l] = true; });
                 });
                 const arr = Object.keys(seen).sort();
                 return arr.length ? arr : null;
             })
             .catch(function () { return null; })
-            .then(function (fromProfiles) {
-                if (fromProfiles && fromProfiles.length) return fromProfiles;
+            .then(function (fromChannels) {
+                if (fromChannels && fromChannels.length) return fromChannels;
                 return GST.fetchJson(GRAPH_LOCALES_API).catch(function () { return ['en']; });
             });
     }
 
+    // Aurora reads + writes slot "one" exclusively. Optimizely Graph stores
+    // synonyms in named slots; the registered GraphQL query asks for
+    // `synonyms: ONE`, so any rule we want the storefront to apply has to
+    // land in that slot. (The legacy synonyms.js editor passed slot:'one'
+    // explicitly; the Aurora migration dropped it, which silently routed
+    // every saved rule into the no-slot bucket where no query reads from.)
+    const SLOT = 'one';
+
     function fetchBlob(locale) {
-        const q = locale === 'Global' ? '' : '?languageRouting=' + encodeURIComponent(locale);
-        return GST.fetchJson(API + '/Get' + q)
+        const parts = ['slot=' + encodeURIComponent(SLOT)];
+        if (locale !== 'Global') parts.push('languageRouting=' + encodeURIComponent(locale));
+        return GST.fetchJson(API + '/Get?' + parts.join('&'))
             .then(function (resp) { return (resp && resp.content) || ''; })
             .catch(function () { return ''; });
     }
@@ -265,7 +281,7 @@
         if (!sel) return;
         // Derive scopes from the rules we actually parsed rather than the
         // upstream locale discovery: avoids surfacing scopes that have no
-        // rules (e.g. Graph's synthetic `NEUTRAL`/`ALL` enums, or profile-
+        // rules (e.g. Graph's synthetic `NEUTRAL`/`ALL` enums, or channel-
         // declared locales whose synonym blob doesn't exist yet), and keeps
         // the option set in sync after a reload that adds or removes a scope.
         const seen = {};
@@ -323,13 +339,13 @@
         const sorted = sortRules(filtered);
         if (sorted.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="gst-empty"><p>' +
-                GST.escHtml(GST.s('profiles.detail.synonyms.emptyHeadline', 'No rules yet — add one to start.')) +
+                GST.escHtml(GST.s('channels.detail.synonyms.emptyHeadline', 'No rules yet — add one to start.')) +
                 '</p></td></tr>';
             return;
         }
 
         const deleteLabel = GST.s('shared.delete', 'Delete');
-        const previewLabel = GST.s('profiles.detail.insights.actionPreview', 'Preview this phrase');
+        const previewLabel = GST.s('channels.detail.insights.actionPreview', 'Preview this phrase');
         const trash = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
             '<path d="M3 4 H13 M5 4 V13 a1 1 0 0 0 1 1 H10 a1 1 0 0 0 1 -1 V4 M6 4 V2 a1 1 0 0 1 1 -1 H9 a1 1 0 0 1 1 1 V4 M6.5 7 V11 M9.5 7 V11"/>' +
             '</svg>';
@@ -338,7 +354,7 @@
             '<line x1="10.5" y1="10.5" x2="14" y2="14"/>' +
             '</svg>';
         // Preview button only renders when there's a SERP target to send the
-        // phrase to — i.e. inside a profile-scoped synonyms tab. The top-level
+        // phrase to — i.e. inside a channel-scoped synonyms tab. The top-level
         // Synonyms page has no live preview surface, so omit the affordance.
         const hasPreviewTarget = !!document.getElementById('gst-pin-tryit-q');
         tbody.innerHTML = sorted.map(function (r) {
@@ -419,6 +435,7 @@
                 state.blobs[r.locale] = blobBody;
                 populateLocaleFilter();
                 renderGrid();
+                notifyPreviewChanged();
             })
             .catch(function (err) {
                 console.error('Delete synonym failed', err);
@@ -584,24 +601,32 @@
             } else {
                 GST.flyout.close('syn');
                 loadAll();
+                notifyPreviewChanged();
             }
         });
     }
 
     function saveBlob(locale, body) {
-        // Synonyms PUT expects text/plain. Build the URL with the routing query
-        // when not the Global scope.
-        const q = locale === 'Global' ? '' : '?languageRouting=' + encodeURIComponent(locale);
-        return fetch(API + '/Update' + q, {
+        // Server uses [FromBody] so the slot in the JSON payload is what
+        // actually routes the upstream PUT. Mirror it into the query string
+        // too so a future controller refactor that switches to [FromQuery]
+        // doesn't silently drop slot routing.
+        const parts = ['slot=' + encodeURIComponent(SLOT)];
+        if (locale !== 'Global') parts.push('languageRouting=' + encodeURIComponent(locale));
+        return fetch(API + '/Update?' + parts.join('&'), {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ content: body, languageRouting: locale === 'Global' ? null : locale })
+            body: JSON.stringify({
+                content: body,
+                languageRouting: locale === 'Global' ? null : locale,
+                slot: SLOT
+            })
         }).then(function (r) {
             if (!r.ok) throw new Error('Update failed ' + r.status);
         });
     }
 
-    // Expose `init` so the Profile detail view can mount a scoped instance
+    // Expose `init` so the Channel detail view can mount a scoped instance
     // before DOMContentLoaded fires.
     window.GST = window.GST || {};
     window.GST.synonyms = window.GST.synonyms || {};
