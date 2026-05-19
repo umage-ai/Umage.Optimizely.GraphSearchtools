@@ -7,36 +7,73 @@
    ======================================================================== */
 
 :root {
-    /* Colors - Aurora neutrals. Page sits on white; the only chrome between
-       sections is whitespace and 1px hair-rules. */
-    --gst-bg: #ffffff;
-    --gst-surface: #ffffff;
-    --gst-surface-hover: #f5f6f8;
-    --gst-surface-active: #ebedf0;
-    --gst-border: #e2e4e9;        /* row rules, input borders */
-    --gst-border-light: #eef0f3;  /* internal dividers */
-    --gst-text: #1d1f24;          /* body text */
-    --gst-text-secondary: #595d65;/* subtitles, column headers */
-    --gst-text-muted: #8c9099;    /* placeholders, captions */
+    /* ============================================================
+       Tier 1 — primitive palette. Brand-agnostic, intent-free. Named
+       by colour family + shade only. NEVER reference these directly
+       in component CSS — consume the semantic --gst-color-* tokens
+       below. The W3C three-tier rationale lives in design-system.md →
+       Design tokens.
+       ============================================================ */
+    /* Neutrals — page sits on white; chrome between sections is
+       whitespace plus 1px hair-rules. */
+    --gst-gray-0:    #ffffff;
+    --gst-gray-100:  #f5f6f8;
+    --gst-gray-150:  #eef0f3;
+    --gst-gray-200:  #ebedf0;
+    --gst-gray-300:  #e2e4e9;
+    --gst-gray-500:  #8c9099;
+    --gst-gray-700:  #595d65;
+    --gst-gray-900:  #1d1f24;
+    /* Brand + link blues. The "Create New…" button in Aurora is solid
+       #0042ff (blue-600); in-text links lean lighter (#0070ee) for
+       contrast against neutral text. */
+    --gst-blue-50:   #e6ecff;
+    --gst-blue-500:  #0070ee;
+    --gst-blue-600:  #0042ff;
+    --gst-blue-650:  #0055b8;
+    --gst-blue-700:  #0032c4;
+    --gst-blue-800:  #0061a8;
+    /* Status palette */
+    --gst-green-50:  #e6f4ea;
+    --gst-green-600: #1b873f;
+    --gst-amber-50:  #fff4e0;
+    --gst-amber-700: #b76e00;
+    --gst-red-50:    #fbeaea;
+    --gst-red-600:   #cc1f1a;
+    --gst-cyan-50:   #e2f0fa;
 
-    /* Colors - Optimizely brand blue. The "Create New..." button in Aurora
-       is solid #0042FF; in-text links lean lighter (#0070EE) for contrast
-       against neutral text. */
-    --gst-primary: #0042ff;
-    --gst-primary-hover: #0032c4;
-    --gst-primary-light: #e6ecff;
-    --gst-link: #0070ee;
-    --gst-link-hover: #0055b8;
-
-    /* Colors - Semantic */
-    --gst-success: #1b873f;
-    --gst-success-light: #e6f4ea;
-    --gst-warning: #b76e00;
-    --gst-warning-light: #fff4e0;
-    --gst-danger: #cc1f1a;
-    --gst-danger-light: #fbeaea;
-    --gst-info: #0061a8;
-    --gst-info-light: #e2f0fa;
+    /* ============================================================
+       Tier 2 — semantic. Role / intent. This is the layer component
+       CSS reads from. Themes swap by re-pointing aliases here, not
+       by editing components.
+       ============================================================ */
+    /* Surfaces */
+    --gst-color-bg:              var(--gst-gray-0);
+    --gst-color-surface:         var(--gst-gray-0);
+    --gst-color-surface-hover:   var(--gst-gray-100);
+    --gst-color-surface-active:  var(--gst-gray-200);
+    /* Borders */
+    --gst-color-border:          var(--gst-gray-300);
+    --gst-color-border-light:    var(--gst-gray-150);
+    /* Text */
+    --gst-color-text:            var(--gst-gray-900);
+    --gst-color-text-secondary:  var(--gst-gray-700);
+    --gst-color-text-muted:      var(--gst-gray-500);
+    /* Brand */
+    --gst-color-primary:         var(--gst-blue-600);
+    --gst-color-primary-hover:   var(--gst-blue-700);
+    --gst-color-primary-light:   var(--gst-blue-50);
+    --gst-color-link:            var(--gst-blue-500);
+    --gst-color-link-hover:      var(--gst-blue-650);
+    /* Status */
+    --gst-color-success:         var(--gst-green-600);
+    --gst-color-success-light:   var(--gst-green-50);
+    --gst-color-warning:         var(--gst-amber-700);
+    --gst-color-warning-light:   var(--gst-amber-50);
+    --gst-color-danger:          var(--gst-red-600);
+    --gst-color-danger-light:    var(--gst-red-50);
+    --gst-color-info:            var(--gst-blue-800);
+    --gst-color-info-light:      var(--gst-cyan-50);
 
     /* Spacing */
     --gst-space-xs: 4px;
@@ -85,16 +122,16 @@
 .gst-shell {
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
-    color: var(--gst-text);
-    background: var(--gst-bg);
+    color: var(--gst-color-text);
+    background: var(--gst-color-bg);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 .gst-header {
-    background: var(--gst-surface);
-    border-bottom: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border-bottom: 1px solid var(--gst-color-border);
     padding: 0 var(--gst-space-lg);
     height: 48px;
     display: flex;
@@ -111,7 +148,7 @@
     gap: var(--gst-space-sm);
     font-weight: 600;
     font-size: var(--gst-text-lg);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     text-decoration: none;
     white-space: nowrap;
 }
@@ -119,7 +156,7 @@
 .gst-header__icon {
     width: 20px;
     height: 20px;
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
 }
 
 .gst-header__nav {
@@ -130,7 +167,7 @@
 
 .gst-header__nav a {
     padding: var(--gst-space-sm) var(--gst-space-md);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     text-decoration: none;
     font-size: var(--gst-text-sm);
     font-weight: 500;
@@ -138,8 +175,8 @@
     white-space: nowrap;
     transition: background .15s, color .15s;
 }
-.gst-header__nav a:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
-.gst-header__nav a.active { background: var(--gst-primary-light); color: var(--gst-primary); }
+.gst-header__nav a:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-text); }
+.gst-header__nav a.active { background: var(--gst-color-primary-light); color: var(--gst-color-primary); }
 
 .gst-main {
     flex: 1;
@@ -175,13 +212,13 @@
     font-weight: 300;
     line-height: 1.15;
     letter-spacing: -0.01em;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     margin-bottom: var(--gst-space-sm);
 }
 
 .gst-page-header > p,
 .gst-page-header__title p {
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     font-size: var(--gst-text-base);
     line-height: 1.5;
     max-width: 720px;
@@ -197,7 +234,7 @@
    stacking container. Variants opt back into chrome where it adds value
    (e.g. detail panels, dialog-like surfaces). */
 .gst-card {
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     padding: 0;
 }
 .gst-card + .gst-card { margin-top: var(--gst-space-xl); }
@@ -205,7 +242,7 @@
 /* Optional elevated treatment for surfaces that aren't on the main page
    flow (popovers anchored as cards, detail aside panels, etc.). */
 .gst-card--elevated {
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-lg);
     box-shadow: var(--gst-shadow-sm);
     padding: var(--gst-space-lg);
@@ -218,7 +255,7 @@
 
 .gst-card__header {
     padding: var(--gst-space-md) 0;
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -260,12 +297,12 @@
     width: 260px;
     height: 40px;
     padding: 0 14px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
     font-family: var(--gst-font);
-    color: var(--gst-text);
-    background: var(--gst-surface);
+    color: var(--gst-color-text);
+    background: var(--gst-color-surface);
     outline: none;
     transition: border-color .15s, box-shadow .15s;
 }
@@ -273,18 +310,18 @@
 .gst-toolbar > input[type="search"]:hover { border-color: #c8ccd2; }
 .gst-toolbar > input[type="text"]:focus,
 .gst-toolbar > input[type="search"]:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-toolbar > select {
     height: 40px;
     padding: 0 var(--gst-space-xl) 0 14px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
     font-family: var(--gst-font);
-    color: var(--gst-text);
-    background: var(--gst-surface);
+    color: var(--gst-color-text);
+    background: var(--gst-color-surface);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -295,8 +332,8 @@
 }
 .gst-toolbar > select:hover { border-color: #c8ccd2; }
 .gst-toolbar > select:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 
 /* ── Search ─────────────────────────────────────────────────────────────
@@ -314,7 +351,7 @@
     transform: translateY(-50%);
     width: 16px;
     height: 16px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     pointer-events: none;
     transition: color .15s;
 }
@@ -323,22 +360,22 @@
     width: 100%;
     height: 40px;
     padding: 0 14px 0 38px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
     font-family: var(--gst-font);
-    color: var(--gst-text);
-    background: var(--gst-surface);
+    color: var(--gst-color-text);
+    background: var(--gst-color-surface);
     outline: none;
     transition: border-color .15s, box-shadow .15s;
 }
-.gst-search input::placeholder { color: var(--gst-text-muted); }
+.gst-search input::placeholder { color: var(--gst-color-text-muted); }
 .gst-search input:hover { border-color: #c8ccd2; }
 .gst-search input:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
-.gst-search:focus-within .gst-search__icon { color: var(--gst-primary); }
+.gst-search:focus-within .gst-search__icon { color: var(--gst-color-primary); }
 
 /* ── Filter dropdown (label-above-value, Aurora style) ──────────────────
    The Aurora Content Types page renders filters as a small uppercase-ish
@@ -367,12 +404,12 @@
     transition: opacity .15s;
 }
 .gst-filter:hover { opacity: 0.9; }
-.gst-filter:focus-within .gst-filter__select { color: var(--gst-primary); }
+.gst-filter:focus-within .gst-filter__select { color: var(--gst-color-primary); }
 .gst-filter__label {
     display: block;
     font-size: var(--gst-text-xs);
     font-weight: 500;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     line-height: 1.2;
     margin-bottom: var(--gst-space-xs);
     pointer-events: none;
@@ -386,7 +423,7 @@
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
     font-weight: 500;
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
     cursor: pointer;
     outline: none;
     width: 100%;
@@ -415,7 +452,7 @@
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
     font-weight: 500;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     line-height: 1.2;
     padding-right: 28px;
 }
@@ -430,18 +467,18 @@
     width: 100%;
     border-collapse: collapse;
     font-size: var(--gst-text-base);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 
-.gst-table thead tr { border-bottom: 1px solid var(--gst-border); }
+.gst-table thead tr { border-bottom: 1px solid var(--gst-color-border); }
 
 .gst-table th {
     text-align: left;
     padding: 12px var(--gst-space-md);
     font-weight: 500;
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
-    background: var(--gst-surface);
+    color: var(--gst-color-text-secondary);
+    background: var(--gst-color-surface);
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
@@ -451,7 +488,7 @@
     letter-spacing: 0;
     transition: color .15s;
 }
-.gst-table th:hover { color: var(--gst-text); }
+.gst-table th:hover { color: var(--gst-color-text); }
 .gst-table th[data-sort-dir]::after {
     content: '';
     display: inline-block;
@@ -461,17 +498,17 @@
     border-right: 4px solid transparent;
     vertical-align: middle;
 }
-.gst-table th[data-sort-dir="asc"]::after  { border-bottom: 5px solid var(--gst-text); }
-.gst-table th[data-sort-dir="desc"]::after { border-top: 5px solid var(--gst-text); }
+.gst-table th[data-sort-dir="asc"]::after  { border-bottom: 5px solid var(--gst-color-text); }
+.gst-table th[data-sort-dir="desc"]::after { border-top: 5px solid var(--gst-color-text); }
 
 .gst-table td {
     padding: var(--gst-row-padding-compact);
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     vertical-align: middle;
 }
 
 .gst-table tbody tr { transition: background .12s; }
-.gst-table tbody tr:hover td { background: var(--gst-surface-hover); }
+.gst-table tbody tr:hover td { background: var(--gst-color-surface-hover); }
 /* Rows the JS makes openable (whole-row click → flyout/detail) carry
    .is-selectable; promote the hand cursor across the entire row so it's
    not just the first-column link that reads as clickable. */
@@ -485,22 +522,22 @@
    default `a` color with higher selector specificity than a single class. */
 .gst-table__link,
 .gst-table tbody tr > td:first-child a:not([class]) {
-    color: var(--gst-link) !important;
+    color: var(--gst-color-link) !important;
     text-decoration: none;
     font-weight: 500;
 }
 .gst-table__link:hover,
 .gst-table tbody tr > td:first-child a:not([class]):hover {
-    color: var(--gst-link-hover) !important;
+    color: var(--gst-color-link-hover) !important;
     text-decoration: underline;
 }
 
 .gst-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Row variants */
-.gst-table tr.gst-row--orphaned td { background: var(--gst-danger-light); }
-.gst-table tr.gst-row--inherited td { background: var(--gst-success-light); }
-.gst-table tr.gst-row--system td { color: var(--gst-text-muted); }
+.gst-table tr.gst-row--orphaned td { background: var(--gst-color-danger-light); }
+.gst-table tr.gst-row--inherited td { background: var(--gst-color-success-light); }
+.gst-table tr.gst-row--system td { color: var(--gst-color-text-muted); }
 
 /* Row overflow menu — the "⋯" affordance at the end of each Aurora row.
    Renders as a button that only reveals its background on hover. */
@@ -513,12 +550,12 @@
     background: transparent;
     border: 0;
     border-radius: 50%;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     cursor: pointer;
     transition: background .12s, color .12s;
     padding: 0;
 }
-.gst-rowmenu:hover { background: var(--gst-surface-active); color: var(--gst-text); }
+.gst-rowmenu:hover { background: var(--gst-color-surface-active); color: var(--gst-color-text); }
 .gst-rowmenu::before {
     content: '';
     width: 14px;
@@ -547,12 +584,12 @@
     background: transparent;
     border: 0;
     border-radius: 50%;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     cursor: pointer;
     transition: background .12s, color .12s;
     padding: 0;
 }
-.gst-rowdelete:hover { background: var(--gst-danger-light); color: var(--gst-danger); }
+.gst-rowdelete:hover { background: var(--gst-color-danger-light); color: var(--gst-color-danger); }
 .gst-rowdelete svg { width: 16px; height: 16px; }
 
 /* Neutral row-action button — same chassis as .gst-rowdelete but with a
@@ -568,12 +605,12 @@
     background: transparent;
     border: 0;
     border-radius: 50%;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     cursor: pointer;
     transition: background .12s, color .12s;
     padding: 0;
 }
-.gst-rowaction:hover { background: var(--gst-surface-hover); color: var(--gst-primary); }
+.gst-rowaction:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-primary); }
 .gst-rowaction svg { width: 16px; height: 16px; }
 
 /* Row-menu popover anchored under the ⋯ button. Renders as a small,
@@ -581,8 +618,8 @@
    opening a new menu closes any prior one. */
 .gst-rowmenu__popover {
     z-index: 1100;
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     box-shadow: var(--gst-shadow);
     min-width: 160px;
@@ -600,11 +637,11 @@
     cursor: pointer;
     font-family: var(--gst-font);
     font-size: var(--gst-text-sm);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
-.gst-rowmenu__item:hover { background: var(--gst-surface-hover); }
-.gst-rowmenu__item--danger { color: var(--gst-danger); }
-.gst-rowmenu__item--danger:hover { background: var(--gst-danger-light); }
+.gst-rowmenu__item:hover { background: var(--gst-color-surface-hover); }
+.gst-rowmenu__item--danger { color: var(--gst-color-danger); }
+.gst-rowmenu__item--danger:hover { background: var(--gst-color-danger-light); }
 
 /* Aurora "Activity (30d)" column in the Synonyms grid (and any other
    compact-count column that uses .num). Without a width cap the cell
@@ -627,11 +664,11 @@
     font-weight: 500;
     line-height: 1.4;
 }
-.gst-badge--default { background: var(--gst-surface-active); color: var(--gst-text-secondary); }
-.gst-badge--primary { background: var(--gst-primary-light); color: var(--gst-primary); }
-.gst-badge--success { background: var(--gst-success-light); color: var(--gst-success); }
-.gst-badge--warning { background: var(--gst-warning-light); color: var(--gst-warning); }
-.gst-badge--danger  { background: var(--gst-danger-light);  color: var(--gst-danger); }
+.gst-badge--default { background: var(--gst-color-surface-active); color: var(--gst-color-text-secondary); }
+.gst-badge--primary { background: var(--gst-color-primary-light); color: var(--gst-color-primary); }
+.gst-badge--success { background: var(--gst-color-success-light); color: var(--gst-color-success); }
+.gst-badge--warning { background: var(--gst-color-warning-light); color: var(--gst-color-warning); }
+.gst-badge--danger  { background: var(--gst-color-danger-light);  color: var(--gst-color-danger); }
 
 /* ── Buttons ────────────────────────────────────────────────────────────
    The "Create New..." button in Aurora is solid brand blue, ~40px tall,
@@ -647,10 +684,10 @@
     gap: 6px;
     height: 40px;
     padding: 0 18px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
-    background: var(--gst-surface);
-    color: var(--gst-text);
+    background: var(--gst-color-surface);
+    color: var(--gst-color-text);
     font-size: var(--gst-text-base);
     font-family: var(--gst-font);
     font-weight: 500;
@@ -661,36 +698,36 @@
     text-decoration: none;
     white-space: nowrap;
 }
-.gst-btn:hover { background: var(--gst-surface-hover); border-color: #c8ccd2; }
-.gst-btn:active { background: var(--gst-surface-active); }
+.gst-btn:hover { background: var(--gst-color-surface-hover); border-color: #c8ccd2; }
+.gst-btn:active { background: var(--gst-color-surface-active); }
 .gst-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
-    border-color: var(--gst-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
+    border-color: var(--gst-color-primary);
 }
 
 .gst-btn--primary {
-    background: var(--gst-primary);
+    background: var(--gst-color-primary);
     color: #fff;
-    border-color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
 }
 .gst-btn--primary:hover {
-    background: var(--gst-primary-hover);
-    border-color: var(--gst-primary-hover);
+    background: var(--gst-color-primary-hover);
+    border-color: var(--gst-color-primary-hover);
 }
 .gst-btn--primary:focus-visible {
     box-shadow: 0 0 0 3px rgba(0, 66, 255, .22);
-    border-color: var(--gst-primary-hover);
+    border-color: var(--gst-color-primary-hover);
 }
 
 .gst-btn--danger {
-    color: var(--gst-danger);
-    border-color: var(--gst-border);
+    color: var(--gst-color-danger);
+    border-color: var(--gst-color-border);
 }
 .gst-btn--danger:hover {
-    background: var(--gst-danger);
+    background: var(--gst-color-danger);
     color: #fff;
-    border-color: var(--gst-danger);
+    border-color: var(--gst-color-danger);
 }
 .gst-btn--danger:disabled { opacity: 0.6; cursor: default; }
 
@@ -701,12 +738,12 @@
     padding: 6px 10px;
     border: 0;
     background: transparent;
-    color: var(--gst-link);
+    color: var(--gst-color-link);
 }
 .gst-btn--text:hover {
-    background: var(--gst-primary-light);
+    background: var(--gst-color-primary-light);
     border: 0;
-    color: var(--gst-link-hover);
+    color: var(--gst-color-link-hover);
 }
 
 .gst-btn--sm { height: 28px; padding: 0 12px; font-size: var(--gst-text-sm); }
@@ -723,18 +760,18 @@
     gap: 0;
     flex-wrap: wrap;
     margin-bottom: var(--gst-space-xl);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-lg);
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     overflow: hidden;
 }
 
 .gst-stat {
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     padding: var(--gst-space-md) var(--gst-space-lg);
     min-width: 160px;
     flex: 1 1 0;
-    border-right: 1px solid var(--gst-border-light);
+    border-right: 1px solid var(--gst-color-border-light);
 }
 .gst-stat:last-child { border-right: 0; }
 
@@ -743,13 +780,13 @@
     font-weight: 300;
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     line-height: 1.1;
 }
 
 .gst-stat__label {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     margin-top: 6px;
 }
 
@@ -764,9 +801,9 @@
     display: flex;
     gap: 0;
     margin-bottom: var(--gst-space-xl);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-lg);
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     overflow: hidden;
     flex-wrap: wrap;
 }
@@ -775,7 +812,7 @@
     flex: 1 1 0;
     min-width: 200px;
     padding: var(--gst-space-md) var(--gst-space-lg);
-    border-right: 1px solid var(--gst-border-light);
+    border-right: 1px solid var(--gst-color-border-light);
     display: flex;
     flex-direction: column;
     gap: var(--gst-space-sm);
@@ -784,7 +821,7 @@
 
 .gst-kpi__label {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 
 .gst-kpi__value {
@@ -792,7 +829,7 @@
     font-weight: 300;
     letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     line-height: 1.1;
 }
 
@@ -810,7 +847,7 @@
 }
 .gst-sparkline__line {
     fill: none;
-    stroke: var(--gst-primary);
+    stroke: var(--gst-color-primary);
     stroke-width: 1.5;
     stroke-linejoin: round;
     stroke-linecap: round;
@@ -827,11 +864,11 @@
     cursor: pointer;
 }
 .gst-sparkline__hit.is-clickable:hover {
-    fill: var(--gst-primary-light);
+    fill: var(--gst-color-primary-light);
     opacity: 0.4;
 }
 .gst-sparkline__cursor {
-    stroke: var(--gst-primary);
+    stroke: var(--gst-color-primary);
     stroke-width: 2;
     stroke-linecap: butt;
     vector-effect: non-scaling-stroke;
@@ -845,8 +882,8 @@
     gap: var(--gst-space-xs);
     padding: 2px var(--gst-space-sm);
     border-radius: 999px;
-    background: var(--gst-primary-light);
-    color: var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary);
     font-size: var(--gst-text-sm);
     font-weight: 500;
 }
@@ -866,7 +903,7 @@
     /* All-zero series: show a muted dotted baseline rather than a flat
        line touching the bottom, which would read as "broken chart". */
     background:
-        linear-gradient(to right, var(--gst-border) 50%, transparent 50%) repeat-x
+        linear-gradient(to right, var(--gst-color-border) 50%, transparent 50%) repeat-x
         center / 6px 1px;
 }
 
@@ -878,11 +915,11 @@
     font-size: var(--gst-text-sm);
     cursor: pointer;
     user-select: none;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 
 .gst-toggle input[type="checkbox"] {
-    accent-color: var(--gst-primary);
+    accent-color: var(--gst-color-primary);
     width: 14px;
     height: 14px;
 }
@@ -894,12 +931,12 @@
 .gst-select {
     height: 40px;
     padding: 0 var(--gst-space-xl) 0 14px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
     font-family: var(--gst-font);
-    color: var(--gst-text);
-    background: var(--gst-surface);
+    color: var(--gst-color-text);
+    background: var(--gst-color-surface);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -910,8 +947,8 @@
 }
 .gst-select:hover { border-color: #c8ccd2; }
 .gst-select:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-select--sm { height: 28px; padding: 0 26px 0 10px; font-size: var(--gst-text-sm); }
 
@@ -933,7 +970,7 @@
 .gst-dialog-backdrop[hidden] { display: none; }
 
 .gst-dialog {
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     border-radius: var(--gst-radius-lg);
     box-shadow: var(--gst-shadow-xl);
     width: 90vw;
@@ -949,7 +986,7 @@
 
 .gst-dialog__header {
     padding: var(--gst-space-md) var(--gst-space-lg);
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -965,10 +1002,10 @@
     border: none;
     cursor: pointer;
     padding: var(--gst-space-xs);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     border-radius: var(--gst-radius-sm);
 }
-.gst-dialog__close:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-dialog__close:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-text); }
 .gst-dialog__close svg { width: 18px; height: 18px; }
 
 .gst-dialog__body {
@@ -1008,7 +1045,7 @@
     bottom: 0;
     width: 480px;
     max-width: 100vw;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     box-shadow: var(--gst-shadow-xl);
     display: flex;
     flex-direction: column;
@@ -1019,7 +1056,7 @@
 
 .gst-flyout__header {
     padding: var(--gst-space-md) var(--gst-space-lg);
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1040,7 +1077,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1049,7 +1086,7 @@
     font-size: 18px;
     line-height: 1;
 }
-.gst-flyout__close:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-flyout__close:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-text); }
 
 .gst-flyout__body {
     padding: var(--gst-space-lg);
@@ -1059,12 +1096,12 @@
 
 .gst-flyout__footer {
     padding: var(--gst-space-md) var(--gst-space-lg);
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     display: flex;
     align-items: center;
     gap: var(--gst-space-sm);
     flex-shrink: 0;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
 }
 .gst-flyout__footer__spacer { flex: 1; }
 
@@ -1073,7 +1110,7 @@
 .gst-flyout__notice {
     margin: var(--gst-space-md) calc(var(--gst-space-lg) * -1) 0;
     padding: var(--gst-space-sm) var(--gst-space-lg);
-    background: var(--gst-warning-light);
+    background: var(--gst-color-warning-light);
     color: #5d4037;
     border-top: 1px solid #f1d6a3;
     border-bottom: 1px solid #f1d6a3;
@@ -1103,11 +1140,11 @@
 .gst-field__label {
     font-size: var(--gst-text-sm);
     font-weight: 500;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 .gst-field__hint {
     font-size: var(--gst-text-xs);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     margin-top: 2px;
 }
 .gst-field input[type="text"],
@@ -1118,12 +1155,12 @@
     width: 100%;
     height: 40px;
     padding: 0 14px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
     font-family: var(--gst-font);
-    color: var(--gst-text);
-    background: var(--gst-surface);
+    color: var(--gst-color-text);
+    background: var(--gst-color-surface);
     outline: none;
     transition: border-color .15s, box-shadow .15s;
 }
@@ -1148,8 +1185,8 @@
 .gst-field input:focus,
 .gst-field textarea:focus,
 .gst-field select:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-field-row {
     display: grid;
@@ -1166,9 +1203,9 @@
     cursor: pointer;
     user-select: none;
     font-size: var(--gst-text-base);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
-.gst-field__checkbox input { accent-color: var(--gst-primary); width: 16px; height: 16px; }
+.gst-field__checkbox input { accent-color: var(--gst-color-primary); width: 16px; height: 16px; }
 
 .gst-field__radio-group {
     display: flex;
@@ -1181,9 +1218,9 @@
     cursor: pointer;
     user-select: none;
     font-size: var(--gst-text-base);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
-.gst-field__radio input { accent-color: var(--gst-primary); }
+.gst-field__radio input { accent-color: var(--gst-color-primary); }
 
 /* "Content picker" surrogate — looks like an input but renders an icon +
    label + caret to suggest it opens a modal. Used in the prototype for
@@ -1194,10 +1231,10 @@
     gap: 10px;
     height: 40px;
     padding: 0 14px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
-    background: var(--gst-surface);
-    color: var(--gst-text);
+    background: var(--gst-color-surface);
+    color: var(--gst-color-text);
     font-size: var(--gst-text-base);
     cursor: pointer;
     transition: border-color .15s;
@@ -1212,8 +1249,8 @@
     height: 6px;
     background: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23595d65' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
 }
-.gst-field__picker__icon { color: var(--gst-text-secondary); }
-.gst-field__picker--empty { color: var(--gst-text-muted); }
+.gst-field__picker__icon { color: var(--gst-color-text-secondary); }
+.gst-field__picker--empty { color: var(--gst-color-text-muted); }
 
 /* Target list — the multi-target editor inside the pin flyout. Each row
    is a content reference with a grip handle, name, and remove (×) affordance.
@@ -1230,9 +1267,9 @@
     gap: var(--gst-space-sm);
     height: 44px;
     padding: 0 6px 0 0;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     transition: border-color .12s, background .12s, transform .12s, box-shadow .12s;
 }
 .gst-target-row:hover { border-color: #c8ccd2; }
@@ -1249,7 +1286,7 @@
     align-items: center;
     justify-content: center;
     cursor: grab;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     user-select: none;
 }
 .gst-target-row__drag:active { cursor: grabbing; }
@@ -1265,8 +1302,8 @@
     width: 28px;
     height: 28px;
     border-radius: 4px;
-    background: var(--gst-primary-light);
-    color: var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1281,14 +1318,14 @@
 }
 .gst-target-row__name {
     font-size: var(--gst-text-base);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .gst-target-row__sub {
     font-size: var(--gst-text-xs);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1300,7 +1337,7 @@
     border: 0;
     background: none;
     cursor: pointer;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     border-radius: 50%;
     font-size: 18px;
     line-height: 1;
@@ -1309,14 +1346,14 @@
     justify-content: center;
     transition: background .12s, color .12s;
 }
-.gst-target-row__remove:hover { background: var(--gst-danger-light); color: var(--gst-danger); }
+.gst-target-row__remove:hover { background: var(--gst-color-danger-light); color: var(--gst-color-danger); }
 
 .gst-target-list__add {
     height: 40px;
-    border: 1px dashed var(--gst-primary);
+    border: 1px dashed var(--gst-color-primary);
     border-radius: var(--gst-radius);
     background: transparent;
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
     font-family: var(--gst-font);
     font-size: var(--gst-text-base);
     font-weight: 500;
@@ -1326,12 +1363,12 @@
 }
 .gst-target-list__add:hover {
     border-style: solid;
-    background: var(--gst-primary-light);
+    background: var(--gst-color-primary-light);
 }
 .gst-field__count {
     margin-left: var(--gst-space-xs);
     font-size: var(--gst-text-xs);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-weight: 400;
 }
 
@@ -1344,16 +1381,16 @@
     line-height: 1.5;
 }
 .gst-alert a { color: inherit; font-weight: 600; }
-.gst-alert--info { background: var(--gst-info-light); color: var(--gst-info); border: 1px solid var(--gst-info); }
-.gst-alert--warning { background: var(--gst-warning-light); color: #5d4037; border: 1px solid var(--gst-warning); }
-.gst-alert--danger { background: var(--gst-danger-light); color: var(--gst-danger); border: 1px solid var(--gst-danger); }
-.gst-alert--success { background: var(--gst-success-light); color: var(--gst-success); border: 1px solid var(--gst-success); }
+.gst-alert--info { background: var(--gst-color-info-light); color: var(--gst-color-info); border: 1px solid var(--gst-color-info); }
+.gst-alert--warning { background: var(--gst-color-warning-light); color: #5d4037; border: 1px solid var(--gst-color-warning); }
+.gst-alert--danger { background: var(--gst-color-danger-light); color: var(--gst-color-danger); border: 1px solid var(--gst-color-danger); }
+.gst-alert--success { background: var(--gst-color-success-light); color: var(--gst-color-success); border: 1px solid var(--gst-color-success); }
 
 /* ── Empty State ────────────────────────────────────────────────── */
 .gst-empty {
     text-align: center;
     padding: var(--gst-space-xl) var(--gst-space-lg);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 
 .gst-empty svg { width: 40px; height: 40px; margin-bottom: var(--gst-space-sm); opacity: .4; }
@@ -1363,15 +1400,15 @@
 .gst-loading {
     text-align: center;
     padding: var(--gst-space-xl);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 
 .gst-spinner {
     display: inline-block;
     width: 24px;
     height: 24px;
-    border: 3px solid var(--gst-border);
-    border-top-color: var(--gst-primary);
+    border: 3px solid var(--gst-color-border);
+    border-top-color: var(--gst-color-primary);
     border-radius: 50%;
     animation: gst-spin .6s linear infinite;
 }
@@ -1386,12 +1423,12 @@
 }
 
 .gst-tool-card {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-lg);
     padding: var(--gst-space-lg);
     text-decoration: none;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     transition: box-shadow .18s, border-color .18s, transform .18s;
     display: flex;
     flex-direction: column;
@@ -1405,13 +1442,13 @@
     position: absolute;
     inset: 0 0 auto 0;
     height: 2px;
-    background: var(--gst-primary);
+    background: var(--gst-color-primary);
     opacity: 0;
     transition: opacity .18s;
 }
 .gst-tool-card:hover {
     box-shadow: var(--gst-shadow);
-    border-color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
     transform: translateY(-2px);
 }
 .gst-tool-card:hover::before { opacity: 1; }
@@ -1423,7 +1460,7 @@
 .gst-tool-card__icon {
     width: 28px;
     height: 28px;
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
     margin-bottom: var(--gst-space-xs);
 }
 
@@ -1435,7 +1472,7 @@
 
 .gst-tool-card__desc {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     line-height: 1.55;
 }
 
@@ -1457,7 +1494,7 @@
     border: none;
     cursor: pointer;
     padding: 2px var(--gst-space-xs);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
 }
 
@@ -1471,11 +1508,11 @@
     font-size: var(--gst-text-sm);
     cursor: pointer;
 }
-.gst-tree__label:hover { color: var(--gst-primary); }
+.gst-tree__label:hover { color: var(--gst-color-primary); }
 
 .gst-tree__count {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-left: var(--gst-space-xs);
 }
 
@@ -1497,16 +1534,16 @@
     gap: 6px;
     font-size: var(--gst-text-sm);
 }
-.gst-picker-item:hover { background: var(--gst-surface-hover); }
+.gst-picker-item:hover { background: var(--gst-color-surface-hover); }
 .gst-picker-item--selected {
-    background: var(--gst-primary-light) !important;
-    outline: 2px solid var(--gst-primary);
+    background: var(--gst-color-primary-light) !important;
+    outline: 2px solid var(--gst-color-primary);
     outline-offset: -2px;
 }
 
 /* ── Utility ────────────────────────────────────────────────────── */
 .gst-mono { font-family: var(--gst-font-mono); font-size: 12px; }
-.gst-muted { color: var(--gst-text-muted); }
+.gst-muted { color: var(--gst-color-text-muted); }
 .gst-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; }
 .gst-flex { display: flex; align-items: center; gap: var(--gst-space-sm); }
 .gst-gap-md { gap: var(--gst-space-md); }
@@ -1528,14 +1565,14 @@
 }
 
 .bpe-alert--visible { display: block; }
-.bpe-alert--success { background: var(--gst-success-light); color: var(--gst-success); border: 1px solid var(--gst-success); }
-.bpe-alert--error { background: var(--gst-danger-light); color: var(--gst-danger); border: 1px solid var(--gst-danger); }
+.bpe-alert--success { background: var(--gst-color-success-light); color: var(--gst-color-success); border: 1px solid var(--gst-color-success); }
+.bpe-alert--error { background: var(--gst-color-danger-light); color: var(--gst-color-danger); border: 1px solid var(--gst-color-danger); }
 
 /* Toolbar extras */
 .bpe-toolbar-sep {
     width: 1px;
     height: 28px;
-    background: var(--gst-border);
+    background: var(--gst-color-border);
 }
 
 .bpe-toolbar-check {
@@ -1543,7 +1580,7 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     cursor: pointer;
 }
 
@@ -1556,8 +1593,8 @@
     top: 100%;
     left: 0;
     margin-top: var(--gst-space-xs);
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     min-width: 240px;
@@ -1576,16 +1613,16 @@
     padding: 7px 14px;
     cursor: pointer;
     font-size: 13px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 
-.bpe-col-picker-item:hover { background: var(--gst-surface-hover); }
+.bpe-col-picker-item:hover { background: var(--gst-color-surface-hover); }
 .bpe-col-picker-item input[type="checkbox"] { margin: 0; }
 
 /* Filter bar */
 .bpe-filter-bar {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     padding: 14px 18px;
     margin-bottom: var(--gst-space-md);
@@ -1612,11 +1649,11 @@ td.bpe-editable {
 }
 
 td.bpe-editable:hover {
-    background: var(--gst-primary-light);
+    background: var(--gst-color-primary-light);
 }
 
 td.bpe-edited {
-    background: var(--gst-warning-light) !important;
+    background: var(--gst-color-warning-light) !important;
 }
 
 td.bpe-editing {
@@ -1627,7 +1664,7 @@ td.bpe-editing input,
 td.bpe-editing select {
     width: 100%;
     padding: var(--gst-space-xs) var(--gst-space-sm);
-    border: 2px solid var(--gst-primary);
+    border: 2px solid var(--gst-color-primary);
     border-radius: 3px;
     font-size: 13px;
     outline: none;
@@ -1641,22 +1678,22 @@ td.bpe-editing select {
 }
 
 .bpe-btn-row-save {
-    border-color: var(--gst-primary) !important;
-    color: var(--gst-primary) !important;
+    border-color: var(--gst-color-primary) !important;
+    color: var(--gst-color-primary) !important;
 }
 
 .bpe-btn-row-save:hover {
-    background: var(--gst-primary) !important;
+    background: var(--gst-color-primary) !important;
     color: #fff !important;
 }
 
 .bpe-btn-row-publish {
-    border-color: var(--gst-success) !important;
-    color: var(--gst-success) !important;
+    border-color: var(--gst-color-success) !important;
+    color: var(--gst-color-success) !important;
 }
 
 .bpe-btn-row-publish:hover {
-    background: var(--gst-success) !important;
+    background: var(--gst-color-success) !important;
     color: #fff !important;
 }
 
@@ -1666,18 +1703,18 @@ td.bpe-editing select {
     user-select: none;
 }
 
-.bpe-sortable:hover { background: var(--gst-surface-hover); }
+.bpe-sortable:hover { background: var(--gst-color-surface-hover); }
 
 .bpe-sort-arrow {
     display: inline-block;
     margin-left: var(--gst-space-xs);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 
 .bpe-sorted-asc .bpe-sort-arrow,
 .bpe-sorted-desc .bpe-sort-arrow {
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
 }
 
 /* Reference count badge */
@@ -1686,19 +1723,19 @@ td.bpe-editing select {
     align-items: center;
     gap: 3px;
     padding: 1px 6px;
-    background: var(--gst-surface-hover);
+    background: var(--gst-color-surface-hover);
     border-radius: 10px;
     font-size: 11px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     cursor: pointer;
 }
 
-.bpe-ref-count:hover { background: var(--gst-surface-active); }
+.bpe-ref-count:hover { background: var(--gst-color-surface-active); }
 
 /* Pagination */
 .bpe-pagination {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     padding: 12px 18px;
     display: flex;
@@ -1709,7 +1746,7 @@ td.bpe-editing select {
 
 .bpe-pagination-info {
     font-size: 13px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 
 .bpe-pagination-controls {
@@ -1726,7 +1763,7 @@ td.bpe-editing select {
 
 .bpe-page-size label {
     font-size: 13px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     margin: 0;
 }
 
@@ -1736,8 +1773,8 @@ td.bpe-editing select {
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--gst-surface);
-    border-top: 2px solid var(--gst-primary);
+    background: var(--gst-color-surface);
+    border-top: 2px solid var(--gst-color-primary);
     box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
     padding: 12px var(--gst-space-lg);
     display: none;
@@ -1751,7 +1788,7 @@ td.bpe-editing select {
 .bpe-pending-info {
     font-size: 14px;
     font-weight: 500;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 
 .bpe-pending-actions {
@@ -1760,24 +1797,24 @@ td.bpe-editing select {
 }
 
 .bpe-btn-discard {
-    background: var(--gst-surface) !important;
-    color: var(--gst-danger) !important;
-    border: 1px solid var(--gst-danger) !important;
+    background: var(--gst-color-surface) !important;
+    color: var(--gst-color-danger) !important;
+    border: 1px solid var(--gst-color-danger) !important;
 }
 
 .bpe-btn-discard:hover {
-    background: var(--gst-danger) !important;
+    background: var(--gst-color-danger) !important;
     color: #fff !important;
 }
 
 .bpe-btn-success {
-    background: var(--gst-success) !important;
+    background: var(--gst-color-success) !important;
     color: #fff !important;
-    border: 1px solid var(--gst-success) !important;
+    border: 1px solid var(--gst-color-success) !important;
 }
 
 .bpe-btn-success:hover {
-    background: var(--gst-success) !important;
+    background: var(--gst-color-success) !important;
     filter: brightness(0.9);
 }
 
@@ -1932,7 +1969,7 @@ td.bpe-editing select {
     bottom: 0;
     width: 380px;
     max-width: 90vw;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     box-shadow: var(--gst-shadow-xl);
     display: flex;
     flex-direction: column;
@@ -1946,7 +1983,7 @@ td.bpe-editing select {
     display: flex;
     align-items: center;
     padding: var(--gst-space-md) var(--gst-space-lg);
-    border-bottom: 1px solid var(--gst-border);
+    border-bottom: 1px solid var(--gst-color-border);
     gap: var(--gst-space-sm);
 }
 .gst-help-drawer__title {
@@ -1974,7 +2011,7 @@ td.bpe-editing select {
 }
 .gst-help-drawer__close:hover {
     opacity: 1;
-    background: var(--gst-surface-hover);
+    background: var(--gst-color-surface-hover);
 }
 .gst-help-drawer__close svg {
     width: 16px;
@@ -1986,7 +2023,7 @@ td.bpe-editing select {
     padding: var(--gst-space-lg);
     font-size: var(--gst-text-sm);
     line-height: 1.6;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     white-space: pre-wrap;
 }
 
@@ -1994,14 +2031,14 @@ td.bpe-editing select {
 .gst-help-popover {
     position: fixed;
     z-index: 9100;
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     box-shadow: var(--gst-shadow-lg);
     padding: 12px 14px;
     font-size: var(--gst-text-sm);
     line-height: 1.5;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     max-width: 260px;
     word-break: break-word;
 }
@@ -2018,26 +2055,26 @@ td.bpe-editing select {
     box-sizing: border-box;
     font-family: var(--gst-font);
 }
-.gst-cell-input:hover { border-color: var(--gst-border); }
+.gst-cell-input:hover { border-color: var(--gst-color-border); }
 .gst-cell-input:focus {
-    border-color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
     outline: none;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
 }
 
 /* Sort arrows on column headers */
 .gst-sort-arrow {
     margin-left: var(--gst-space-xs);
     font-size: 10px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
-.gst-sort-arrow.is-active { color: var(--gst-primary); }
+.gst-sort-arrow.is-active { color: var(--gst-color-primary); }
 
 /* Row dirty / new states (shared) */
 .gst-pin-row.is-dirty td,
-.gst-syn-row.is-dirty td { background: var(--gst-warning-light); }
+.gst-syn-row.is-dirty td { background: var(--gst-color-warning-light); }
 .gst-pin-row.is-new td,
-.gst-syn-row.is-new td   { background: var(--gst-success-light); }
+.gst-syn-row.is-new td   { background: var(--gst-color-success-light); }
 
 /* Pinned: content cell + dropdown */
 .gst-pin-content-col { min-width: 280px; }
@@ -2057,9 +2094,9 @@ td.bpe-editing select {
     white-space: nowrap;
     cursor: pointer;
 }
-.gst-pin-content-pill.is-page    { background: var(--gst-primary-light); color: var(--gst-primary); }
-.gst-pin-content-pill.is-product { background: var(--gst-success-light); color: var(--gst-success); }
-.gst-pin-content-pill.is-unknown { background: var(--gst-surface-active); color: var(--gst-text-secondary); }
+.gst-pin-content-pill.is-page    { background: var(--gst-color-primary-light); color: var(--gst-color-primary); }
+.gst-pin-content-pill.is-product { background: var(--gst-color-success-light); color: var(--gst-color-success); }
+.gst-pin-content-pill.is-unknown { background: var(--gst-color-surface-active); color: var(--gst-color-text-secondary); }
 
 .gst-pin-search-dropdown {
     display: none;
@@ -2070,8 +2107,8 @@ td.bpe-editing select {
     z-index: 20;
     max-height: 220px;
     overflow-y: auto;
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: 0 0 var(--gst-radius) var(--gst-radius);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
 }
@@ -2081,26 +2118,26 @@ td.bpe-editing select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--gst-border);
+    border-bottom: 1px solid var(--gst-color-border);
 }
-.gst-search-hit:hover    { background: var(--gst-primary-light); }
-.gst-search-hit-name     { font-size: var(--gst-text-sm); color: var(--gst-text); }
-.gst-search-hit-meta     { font-size: var(--gst-text-xs); color: var(--gst-text-muted); white-space: nowrap; margin-left: 12px; }
+.gst-search-hit:hover    { background: var(--gst-color-primary-light); }
+.gst-search-hit-name     { font-size: var(--gst-text-sm); color: var(--gst-color-text); }
+.gst-search-hit-meta     { font-size: var(--gst-text-xs); color: var(--gst-color-text-muted); white-space: nowrap; margin-left: 12px; }
 
 .gst-pin-delete-btn,
 .gst-pin-save-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: 14px;
     padding: var(--gst-space-xs) 6px;
     border-radius: var(--gst-radius);
     line-height: 1;
 }
-.gst-pin-delete-btn:hover { color: var(--gst-danger); background: var(--gst-danger-light); }
-.gst-pin-save-btn:hover   { color: var(--gst-primary); background: var(--gst-primary-light); }
-.gst-pin-save-btn.is-dirty { color: var(--gst-primary); }
+.gst-pin-delete-btn:hover { color: var(--gst-color-danger); background: var(--gst-color-danger-light); }
+.gst-pin-save-btn:hover   { color: var(--gst-color-primary); background: var(--gst-color-primary-light); }
+.gst-pin-save-btn.is-dirty { color: var(--gst-color-primary); }
 
 /* Synonyms */
 .gst-syn-actions-col { width: 50px; cursor: default; }
@@ -2112,9 +2149,9 @@ td.bpe-editing select {
     margin-top: var(--gst-space-md);
     gap: var(--gst-space-md);
 }
-.gst-syn-footer__help { flex: 1; font-size: var(--gst-text-xs); color: var(--gst-text-muted); line-height: 1.5; }
+.gst-syn-footer__help { flex: 1; font-size: var(--gst-text-xs); color: var(--gst-color-text-muted); line-height: 1.5; }
 .gst-syn-footer__help code {
-    background: var(--gst-surface-active);
+    background: var(--gst-color-surface-active);
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 11px;
@@ -2129,13 +2166,13 @@ td.bpe-editing select {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--gst-text-muted);
+    background: var(--gst-color-text-muted);
     flex-shrink: 0;
 }
-.gst-health-dot.is-green   { background: var(--gst-success); box-shadow: 0 0 0 3px var(--gst-success-light); }
-.gst-health-dot.is-amber   { background: var(--gst-warning); box-shadow: 0 0 0 3px var(--gst-warning-light); }
-.gst-health-dot.is-red     { background: var(--gst-danger);  box-shadow: 0 0 0 3px var(--gst-danger-light); }
-.gst-health-dot.is-unknown { background: var(--gst-text-muted); box-shadow: 0 0 0 3px var(--gst-border-light); }
+.gst-health-dot.is-green   { background: var(--gst-color-success); box-shadow: 0 0 0 3px var(--gst-color-success-light); }
+.gst-health-dot.is-amber   { background: var(--gst-color-warning); box-shadow: 0 0 0 3px var(--gst-color-warning-light); }
+.gst-health-dot.is-red     { background: var(--gst-color-danger);  box-shadow: 0 0 0 3px var(--gst-color-danger-light); }
+.gst-health-dot.is-unknown { background: var(--gst-color-text-muted); box-shadow: 0 0 0 3px var(--gst-color-border-light); }
 
 /* ── Hero ──────────────────────────────────────────────────────── */
 
@@ -2143,7 +2180,7 @@ td.bpe-editing select {
     position: relative;
     padding: 28px 28px var(--gst-space-lg);
     background:
-        linear-gradient(135deg, var(--gst-surface) 0%, var(--gst-surface) 60%, #f9fafc 100%);
+        linear-gradient(135deg, var(--gst-color-surface) 0%, var(--gst-color-surface) 60%, #f9fafc 100%);
     overflow: hidden;
     display: grid;
     grid-template-columns: 1fr auto;
@@ -2182,7 +2219,7 @@ td.bpe-editing select {
     position: absolute;
     inset: 18px;
     border-radius: 50%;
-    background: var(--gst-text-muted);
+    background: var(--gst-color-text-muted);
     transition: background 280ms ease;
 }
 .gst-health-hero__pulse-ring {
@@ -2190,16 +2227,16 @@ td.bpe-editing select {
     inset: 0;
     border-radius: 50%;
     border: 2px solid currentColor;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     opacity: 0;
 }
-.gst-health-hero[data-status="green"] .gst-health-hero__pulse-dot { background: var(--gst-success); }
-.gst-health-hero[data-status="amber"] .gst-health-hero__pulse-dot { background: var(--gst-warning); }
-.gst-health-hero[data-status="red"]   .gst-health-hero__pulse-dot { background: var(--gst-danger); }
-.gst-health-hero[data-status="green"] .gst-health-hero__pulse-ring { color: var(--gst-success); animation: gstHealthPulse 2.4s ease-out infinite; }
-.gst-health-hero[data-status="amber"] .gst-health-hero__pulse-ring { color: var(--gst-warning); animation: gstHealthPulse 1.6s ease-out infinite; }
-.gst-health-hero[data-status="red"]   .gst-health-hero__pulse-ring { color: var(--gst-danger);  animation: gstHealthPulse 1.2s ease-out infinite; }
-.gst-health-hero[data-status="checking"] .gst-health-hero__pulse-ring { color: var(--gst-info); animation: gstHealthPulse 0.9s linear infinite; }
+.gst-health-hero[data-status="green"] .gst-health-hero__pulse-dot { background: var(--gst-color-success); }
+.gst-health-hero[data-status="amber"] .gst-health-hero__pulse-dot { background: var(--gst-color-warning); }
+.gst-health-hero[data-status="red"]   .gst-health-hero__pulse-dot { background: var(--gst-color-danger); }
+.gst-health-hero[data-status="green"] .gst-health-hero__pulse-ring { color: var(--gst-color-success); animation: gstHealthPulse 2.4s ease-out infinite; }
+.gst-health-hero[data-status="amber"] .gst-health-hero__pulse-ring { color: var(--gst-color-warning); animation: gstHealthPulse 1.6s ease-out infinite; }
+.gst-health-hero[data-status="red"]   .gst-health-hero__pulse-ring { color: var(--gst-color-danger);  animation: gstHealthPulse 1.2s ease-out infinite; }
+.gst-health-hero[data-status="checking"] .gst-health-hero__pulse-ring { color: var(--gst-color-info); animation: gstHealthPulse 0.9s linear infinite; }
 
 @keyframes gstHealthPulse {
     0%   { transform: scale(0.7); opacity: 0.6; }
@@ -2214,14 +2251,14 @@ td.bpe-editing select {
     font-weight: 700;
     letter-spacing: 0.18em;
     line-height: 1;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
-.gst-health-hero[data-status="green"] .gst-health-hero__status { color: var(--gst-success); }
-.gst-health-hero[data-status="amber"] .gst-health-hero__status { color: var(--gst-warning); }
-.gst-health-hero[data-status="red"]   .gst-health-hero__status { color: var(--gst-danger); }
+.gst-health-hero[data-status="green"] .gst-health-hero__status { color: var(--gst-color-success); }
+.gst-health-hero[data-status="amber"] .gst-health-hero__status { color: var(--gst-color-warning); }
+.gst-health-hero[data-status="red"]   .gst-health-hero__status { color: var(--gst-color-danger); }
 .gst-health-hero__subtitle {
     font-size: var(--gst-text-base);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     margin-top: 2px;
 }
 .gst-health-hero__meta {
@@ -2229,7 +2266,7 @@ td.bpe-editing select {
     align-items: center;
     gap: var(--gst-space-sm);
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-top: var(--gst-space-sm);
     font-family: var(--gst-font-mono);
 }
@@ -2254,7 +2291,7 @@ td.bpe-editing select {
 }
 .gst-health-toggle__label {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 600;
@@ -2267,9 +2304,9 @@ td.bpe-editing select {
     min-width: 70px;
     padding: var(--gst-space-xs) 10px;
     border-radius: 999px;
-    background: var(--gst-surface-hover);
-    border: 1px solid var(--gst-border);
-    color: var(--gst-text-muted);
+    background: var(--gst-color-surface-hover);
+    border: 1px solid var(--gst-color-border);
+    color: var(--gst-color-text-muted);
     font-family: var(--gst-font-mono);
     font-size: 11px;
     font-weight: 600;
@@ -2278,13 +2315,13 @@ td.bpe-editing select {
 }
 .gst-health-toggle__pill::before { content: attr(data-off); }
 .gst-health-toggle input:checked + .gst-health-toggle__pill {
-    background: var(--gst-info-light);
-    border-color: var(--gst-info);
-    color: var(--gst-info);
+    background: var(--gst-color-info-light);
+    border-color: var(--gst-color-info);
+    color: var(--gst-color-info);
 }
 .gst-health-toggle input:checked + .gst-health-toggle__pill::before { content: attr(data-on); }
 .gst-health-toggle input:focus-visible + .gst-health-toggle__pill {
-    outline: 2px solid var(--gst-primary);
+    outline: 2px solid var(--gst-color-primary);
     outline-offset: 2px;
 }
 
@@ -2314,14 +2351,14 @@ td.bpe-editing select {
     right: 0;
     bottom: 0;
     height: 2px;
-    background: var(--gst-border-light);
+    background: var(--gst-color-border-light);
     overflow: hidden;
 }
 .gst-health-hero__progress-bar {
     display: block;
     width: 100%;
     height: 100%;
-    background: var(--gst-info);
+    background: var(--gst-color-info);
     transform-origin: left center;
     transform: scaleX(0);
 }
@@ -2338,8 +2375,8 @@ td.bpe-editing select {
     .gst-health-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .gst-health-kpi {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     padding: var(--gst-space-md) 18px;
     display: flex;
@@ -2352,7 +2389,7 @@ td.bpe-editing select {
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 600;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-health-kpi__value {
     display: flex;
@@ -2360,7 +2397,7 @@ td.bpe-editing select {
     gap: var(--gst-space-sm);
     font-size: 24px;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     line-height: 1.1;
 }
 .gst-health-kpi__value--num {
@@ -2372,12 +2409,12 @@ td.bpe-editing select {
 .gst-health-kpi__unit {
     font-size: 13px;
     font-weight: 500;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     letter-spacing: 0;
 }
 .gst-health-kpi__sub {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 
 /* ── Section heads (used by sparkline + probes + history) ──────── */
@@ -2398,11 +2435,11 @@ td.bpe-editing select {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     font-weight: 700;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 .gst-health-section-head__legend {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-family: var(--gst-font-mono);
 }
 
@@ -2415,8 +2452,8 @@ td.bpe-editing select {
     background: linear-gradient(to bottom,
         transparent 0,
         transparent calc(100% - 1px),
-        var(--gst-border-light) calc(100% - 1px),
-        var(--gst-border-light) 100%);
+        var(--gst-color-border-light) calc(100% - 1px),
+        var(--gst-color-border-light) 100%);
 }
 .gst-health-timeline__canvas svg {
     width: 100%;
@@ -2427,16 +2464,16 @@ td.bpe-editing select {
     transition: opacity 140ms ease;
 }
 .gst-health-timeline__bar:hover { opacity: 0.7; }
-.gst-health-timeline__bar.is-green { fill: var(--gst-success); }
-.gst-health-timeline__bar.is-amber { fill: var(--gst-warning); }
-.gst-health-timeline__bar.is-red   { fill: var(--gst-danger); }
+.gst-health-timeline__bar.is-green { fill: var(--gst-color-success); }
+.gst-health-timeline__bar.is-amber { fill: var(--gst-color-warning); }
+.gst-health-timeline__bar.is-red   { fill: var(--gst-color-danger); }
 .gst-health-timeline__empty {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
     font-style: italic;
 }
@@ -2444,7 +2481,7 @@ td.bpe-editing select {
 .gst-health-timeline__yaxis {
     font-family: var(--gst-font-mono);
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-right: var(--gst-space-xs);
 }
 .gst-health-timeline__legend-item {
@@ -2456,7 +2493,7 @@ td.bpe-editing select {
     font-size: var(--gst-text-sm);
     text-transform: none;
     letter-spacing: 0;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-weight: 500;
 }
 .gst-health-timeline__legend-item::before {
@@ -2466,10 +2503,10 @@ td.bpe-editing select {
     height: 10px;
     border-radius: 2px;
 }
-.gst-health-timeline__legend-item.is-green::before { background: var(--gst-success); }
-.gst-health-timeline__legend-item.is-amber::before { background: var(--gst-warning); }
+.gst-health-timeline__legend-item.is-green::before { background: var(--gst-color-success); }
+.gst-health-timeline__legend-item.is-amber::before { background: var(--gst-color-warning); }
 .gst-health-timeline__legend-item.is-red::before {
-    background: var(--gst-danger);
+    background: var(--gst-color-danger);
     width: 3px;
     border-radius: 1px;
 }
@@ -2482,7 +2519,7 @@ td.bpe-editing select {
 }
 .gst-health-probe {
     padding: 14px 20px;
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     transition: background 140ms ease;
     position: relative;
 }
@@ -2496,11 +2533,11 @@ td.bpe-editing select {
     background: transparent;
     transition: background 140ms ease;
 }
-.gst-health-probe.is-green::before { background: var(--gst-success); }
-.gst-health-probe.is-amber::before { background: var(--gst-warning); }
-.gst-health-probe.is-red::before   { background: var(--gst-danger); }
-.gst-health-probe:hover { background: var(--gst-surface-hover); }
-.gst-health-probe:first-child { border-top: 1px solid var(--gst-border); }
+.gst-health-probe.is-green::before { background: var(--gst-color-success); }
+.gst-health-probe.is-amber::before { background: var(--gst-color-warning); }
+.gst-health-probe.is-red::before   { background: var(--gst-color-danger); }
+.gst-health-probe:hover { background: var(--gst-color-surface-hover); }
+.gst-health-probe:first-child { border-top: 1px solid var(--gst-color-border); }
 
 .gst-health-probe__head {
     display: flex;
@@ -2510,20 +2547,20 @@ td.bpe-editing select {
 .gst-health-probe__name {
     flex: 1;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-size: var(--gst-text-base);
 }
 .gst-health-probe__latency {
     font-family: var(--gst-font-mono);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-size: 15px;
     letter-spacing: -0.01em;
 }
 .gst-health-probe__unit {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-left: 2px;
     font-weight: 500;
     letter-spacing: 0;
@@ -2531,14 +2568,14 @@ td.bpe-editing select {
 .gst-health-probe__target {
     font-family: var(--gst-font-mono);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-top: 6px;
     margin-left: 20px;
     word-break: break-all;
 }
 .gst-health-probe__msg {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     margin-top: var(--gst-space-xs);
     margin-left: 20px;
 }
@@ -2550,7 +2587,7 @@ td.bpe-editing select {
     display: flex;
     gap: 0;
     padding: 0 20px;
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
 }
 .gst-health-issues__tab {
     appearance: none;
@@ -2560,7 +2597,7 @@ td.bpe-editing select {
     font-family: var(--gst-font);
     font-size: var(--gst-text-sm);
     font-weight: 600;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: color 140ms ease, border-color 140ms ease;
@@ -2568,10 +2605,10 @@ td.bpe-editing select {
     align-items: center;
     gap: 6px;
 }
-.gst-health-issues__tab:hover { color: var(--gst-text); }
+.gst-health-issues__tab:hover { color: var(--gst-color-text); }
 .gst-health-issues__tab.is-active {
-    color: var(--gst-text);
-    border-bottom-color: var(--gst-primary);
+    color: var(--gst-color-text);
+    border-bottom-color: var(--gst-color-primary);
 }
 .gst-health-issues__count {
     display: inline-flex;
@@ -2580,16 +2617,16 @@ td.bpe-editing select {
     min-width: 20px;
     padding: 1px 6px;
     border-radius: 999px;
-    background: var(--gst-surface-active);
-    color: var(--gst-text-muted);
+    background: var(--gst-color-surface-active);
+    color: var(--gst-color-text-muted);
     font-family: var(--gst-font-mono);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.04em;
 }
 .gst-health-issues__tab.is-active .gst-health-issues__count {
-    background: var(--gst-primary-light);
-    color: var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary);
 }
 .gst-health-issues__list {
     display: flex;
@@ -2597,7 +2634,7 @@ td.bpe-editing select {
 }
 .gst-health-issue {
     padding: 12px 20px;
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     transition: background 140ms ease;
     position: relative;
 }
@@ -2608,11 +2645,11 @@ td.bpe-editing select {
     top: 0;
     bottom: 0;
     width: 3px;
-    background: var(--gst-warning);
+    background: var(--gst-color-warning);
 }
-.gst-health-issue.is-resolved::before { background: var(--gst-success); }
-.gst-health-issue:hover { background: var(--gst-surface-hover); }
-.gst-health-issue:first-child { border-top: 1px solid var(--gst-border); }
+.gst-health-issue.is-resolved::before { background: var(--gst-color-success); }
+.gst-health-issue:hover { background: var(--gst-color-surface-hover); }
+.gst-health-issue:first-child { border-top: 1px solid var(--gst-color-border); }
 .gst-health-issue__head {
     display: flex;
     align-items: center;
@@ -2622,11 +2659,11 @@ td.bpe-editing select {
 .gst-health-issue__name {
     flex: 1;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-size: var(--gst-text-base);
 }
 .gst-health-issue__name a { color: inherit; text-decoration: none; }
-.gst-health-issue__name a:hover { color: var(--gst-primary); text-decoration: underline; }
+.gst-health-issue__name a:hover { color: var(--gst-color-primary); text-decoration: underline; }
 .gst-health-issue__reason {
     font-family: var(--gst-font-mono);
     font-size: 10px;
@@ -2635,27 +2672,27 @@ td.bpe-editing select {
     text-transform: uppercase;
     padding: 2px var(--gst-space-sm);
     border-radius: 999px;
-    background: var(--gst-warning-light);
+    background: var(--gst-color-warning-light);
     color: #5d4037;
 }
 .gst-health-issue.is-resolved .gst-health-issue__reason {
-    background: var(--gst-success-light);
-    color: var(--gst-success);
+    background: var(--gst-color-success-light);
+    color: var(--gst-color-success);
 }
 .gst-health-issue__meta {
     font-family: var(--gst-font-mono);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     word-break: break-all;
 }
 .gst-health-issue__times {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-top: var(--gst-space-xs);
 }
 .gst-health-issues__empty {
     text-align: center;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     padding: 28px 20px;
     font-style: italic;
     font-size: var(--gst-text-sm);
@@ -2663,7 +2700,7 @@ td.bpe-editing select {
 
 /* Auto-mode meta line in the hero */
 .gst-health-hero__sep--auto { margin-left: 4px; }
-.gst-health-hero__auto-status { color: var(--gst-info); }
+.gst-health-hero__auto-status { color: var(--gst-color-info); }
 
 @media (max-width: 720px) {
     .gst-health-hero { grid-template-columns: 1fr; }
@@ -2677,27 +2714,27 @@ td.bpe-editing select {
     flex: 1;
     min-width: 240px;
     padding: 7px 10px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-md);
     font-family: var(--gst-font);
     outline: none;
 }
 .gst-ac-input:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-ac-limit {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: var(--gst-text-xs);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-ac-limit input {
     width: 60px;
     padding: 6px var(--gst-space-sm);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
@@ -2707,18 +2744,18 @@ td.bpe-editing select {
     list-style: none;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--gst-border);
+    border-top: 1px solid var(--gst-color-border);
 }
 .gst-ac-result {
     padding: var(--gst-space-sm) 12px;
-    border-bottom: 1px solid var(--gst-border);
+    border-bottom: 1px solid var(--gst-color-border);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
 }
-.gst-ac-result:hover { background: var(--gst-surface-hover); }
+.gst-ac-result:hover { background: var(--gst-color-surface-hover); }
 .gst-ac-empty {
     padding: var(--gst-space-md);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     text-align: center;
     font-style: italic;
 }
@@ -2762,20 +2799,20 @@ td.bpe-editing select {
     text-transform: uppercase;
     letter-spacing: 0.14em;
     font-weight: 700;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 .gst-sq-rail__filter {
     width: 100%;
     padding: 6px 10px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
     outline: none;
 }
 .gst-sq-rail__filter:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-sq-rail__list {
     overflow-y: auto;
@@ -2787,7 +2824,7 @@ td.bpe-editing select {
 }
 .gst-sq-rail__empty {
     text-align: center;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
     padding: 18px 12px;
     font-style: italic;
@@ -2796,27 +2833,27 @@ td.bpe-editing select {
 /* ── Preset card ──────────────────────────────────────────────── */
 
 .gst-sq-preset {
-    border: 1px solid var(--gst-border-light);
+    border: 1px solid var(--gst-color-border-light);
     border-left: 3px solid transparent;
     border-radius: var(--gst-radius);
     padding: 10px 12px;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
     outline: none;
 }
 .gst-sq-preset:hover {
-    background: var(--gst-surface-hover);
-    border-left-color: var(--gst-primary);
+    background: var(--gst-color-surface-hover);
+    border-left-color: var(--gst-color-primary);
 }
 .gst-sq-preset:focus-visible {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-sq-preset.is-loaded {
-    background: var(--gst-primary-light);
-    border-color: var(--gst-primary);
-    border-left-color: var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    border-color: var(--gst-color-primary);
+    border-left-color: var(--gst-color-primary);
 }
 .gst-sq-preset__head {
     display: flex;
@@ -2826,7 +2863,7 @@ td.bpe-editing select {
 .gst-sq-preset__name {
     flex: 1;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-size: var(--gst-text-base);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2843,15 +2880,15 @@ td.bpe-editing select {
 .gst-sq-preset.is-loaded .gst-sq-preset__actions { opacity: 1; }
 .gst-sq-preset__act {
     padding: 3px var(--gst-space-xs) !important;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
-.gst-sq-preset__act:hover { color: var(--gst-text); }
-.gst-sq-preset__act--danger:hover { color: var(--gst-danger); }
+.gst-sq-preset__act:hover { color: var(--gst-color-text); }
+.gst-sq-preset__act--danger:hover { color: var(--gst-color-danger); }
 .gst-sq-preset__act svg { width: 13px; height: 13px; }
 
 .gst-sq-preset__desc {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     margin-top: var(--gst-space-xs);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2867,7 +2904,7 @@ td.bpe-editing select {
 .gst-sq-preset__phrase {
     font-family: var(--gst-font-mono);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2882,8 +2919,8 @@ td.bpe-editing select {
     display: inline-block;
     padding: 1px 7px;
     border-radius: 999px;
-    background: var(--gst-surface-active);
-    color: var(--gst-text-secondary);
+    background: var(--gst-color-surface-active);
+    color: var(--gst-color-text-secondary);
     font-family: var(--gst-font-mono);
     font-size: 10px;
     font-weight: 600;
@@ -2905,15 +2942,15 @@ td.bpe-editing select {
     flex: 1;
     min-width: 240px;
     padding: 7px 10px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-md);
     font-family: var(--gst-font);
     outline: none;
 }
 .gst-sq-query:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 
 .gst-sq-knobs {
@@ -2921,7 +2958,7 @@ td.bpe-editing select {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: var(--gst-space-md);
     padding: var(--gst-space-sm) 0 0;
-    border-top: 1px solid var(--gst-border);
+    border-top: 1px solid var(--gst-color-border);
     margin-top: var(--gst-space-md);
 }
 .gst-sq-knobs--locked .gst-sq-knob { opacity: 0.55; }
@@ -2930,18 +2967,18 @@ td.bpe-editing select {
     flex-direction: column;
     gap: var(--gst-space-xs);
     font-size: var(--gst-text-xs);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-sq-knob span output {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     margin-left: 6px;
 }
 .gst-sq-knob input,
 .gst-sq-knob select {
     padding: 5px var(--gst-space-sm);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
@@ -2957,8 +2994,8 @@ td.bpe-editing select {
     margin-bottom: var(--gst-space-sm);
 }
 .gst-sq-query-text {
-    background: var(--gst-surface-active);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface-active);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     padding: 12px;
     font-family: var(--gst-font-mono);
@@ -2966,16 +3003,16 @@ td.bpe-editing select {
     margin-bottom: var(--gst-space-sm);
     overflow-x: auto;
     white-space: pre;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 
-.gst-sq-results__table .gst-sq-col-rank   { width: 40px; color: var(--gst-text-muted); }
+.gst-sq-results__table .gst-sq-col-rank   { width: 40px; color: var(--gst-color-text-muted); }
 .gst-sq-results__table .gst-sq-col-type   { width: 160px; }
 .gst-sq-results__table .gst-sq-col-lang   { width: 60px; }
 .gst-sq-results__table .gst-sq-col-score  { width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
 .gst-sq-results__table .gst-sq-col-snippet {
     font-size: var(--gst-text-xs);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     max-width: 480px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2983,7 +3020,7 @@ td.bpe-editing select {
 }
 .gst-sq-empty {
     text-align: center;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     padding: var(--gst-space-lg);
     font-style: italic;
 }
@@ -2998,12 +3035,12 @@ td.bpe-editing select {
 .gst-sq-field label {
     font-size: var(--gst-text-xs);
     font-weight: 500;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 .gst-sq-field input,
 .gst-sq-field select {
     padding: 6px 10px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
@@ -3016,8 +3053,8 @@ td.bpe-editing select {
     gap: var(--gst-space-sm);
     justify-content: flex-end;
     padding: 12px var(--gst-space-md);
-    border-top: 1px solid var(--gst-border);
-    background: var(--gst-surface);
+    border-top: 1px solid var(--gst-color-border);
+    background: var(--gst-color-surface);
 }
 
 /* ── Combobox (filterable text-input dropdown) ─────────────────── */
@@ -3029,16 +3066,16 @@ td.bpe-editing select {
 .gst-combobox input[type="text"] {
     width: 100%;
     padding: 5px var(--gst-space-sm);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-sm);
     font-family: var(--gst-font);
     outline: none;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
 }
 .gst-combobox input[type="text"]:focus {
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 3px var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
 .gst-combobox-dropdown {
     position: absolute;
@@ -3049,8 +3086,8 @@ td.bpe-editing select {
     z-index: 30;
     max-height: 260px;
     overflow-y: auto;
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
 }
@@ -3058,14 +3095,14 @@ td.bpe-editing select {
     padding: 6px 10px;
     cursor: pointer;
     font-size: var(--gst-text-sm);
-    color: var(--gst-text);
-    border-bottom: 1px solid var(--gst-border);
+    color: var(--gst-color-text);
+    border-bottom: 1px solid var(--gst-color-border);
 }
 .gst-combobox-item:last-child { border-bottom: none; }
 .gst-combobox-item:hover,
 .gst-combobox-item.is-highlighted {
-    background: var(--gst-primary-light);
-    color: var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary);
 }
 
 /* ============================================================
@@ -3079,24 +3116,24 @@ td.bpe-editing select {
    row-selectable cursor + hover are inherited from .gst-table.is-selectable. */
 .gst-nav-table td { padding: var(--gst-row-padding-comfortable); }
 .gst-nav-table tr.is-active td {
-    background: var(--gst-primary-light);
-    box-shadow: inset 3px 0 0 var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    box-shadow: inset 3px 0 0 var(--gst-color-primary);
 }
-.gst-nav-table tr.is-active:hover td { background: var(--gst-primary-light); }
+.gst-nav-table tr.is-active:hover td { background: var(--gst-color-primary-light); }
 
 .gst-prof-name { display: flex; flex-direction: column; gap: 2px; }
 .gst-prof-name__title {
     font-size: var(--gst-text-base);
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     display: flex; align-items: center; gap: 6px;
 }
 .gst-prof-name__title .gst-prof-name__sub {
     font-weight: 400;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
 }
-.gst-prof-name__key { font-family: var(--gst-font-mono); font-size: 11px; color: var(--gst-text-muted); }
+.gst-prof-name__key { font-family: var(--gst-font-mono); font-size: 11px; color: var(--gst-color-text-muted); }
 
 .gst-prof-scope { display: flex; flex-wrap: wrap; gap: 4px; }
 
@@ -3117,20 +3154,20 @@ td.bpe-editing select {
 .gst-prof-activity__total {
     font-family: var(--gst-font-mono);
     font-size: 12px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     text-align: right;
     min-width: 32px;
 }
 
 .gst-prof-status { display: flex; flex-direction: column; gap: 2px; }
-.gst-prof-status__line { font-size: 11px; color: var(--gst-text-muted); }
+.gst-prof-status__line { font-size: 11px; color: var(--gst-color-text-muted); }
 
 .gst-prof-arrow {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     transition: color .15s, transform .15s;
     width: 16px; height: 16px;
 }
-.gst-nav-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
+.gst-nav-table tr:hover .gst-prof-arrow { color: var(--gst-color-primary); transform: translateX(2px); }
 
 /* ── Channel detail layout ──────────────────────────────────── */
 .gst-prof-layout {
@@ -3152,14 +3189,14 @@ td.bpe-editing select {
 .gst-prof-meta { display: flex; flex-direction: column; gap: var(--gst-space-md); margin: 0; }
 .gst-prof-meta dt {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-bottom: var(--gst-space-xs);
 }
-.gst-prof-meta dd { font-size: var(--gst-text-sm); color: var(--gst-text); }
-.gst-prof-meta dd .em { color: var(--gst-text-secondary); font-size: 11px; display: block; margin-top: 2px; }
-.gst-prof-meta__missing { color: var(--gst-danger); }
+.gst-prof-meta dd { font-size: var(--gst-text-sm); color: var(--gst-color-text); }
+.gst-prof-meta dd .em { color: var(--gst-color-text-secondary); font-size: 11px; display: block; margin-top: 2px; }
+.gst-prof-meta__missing { color: var(--gst-color-danger); }
 
 /* ── Detail page tabs (specialised .gst-tabs) ───────────────── */
 .gst-prof-tabs { margin: 0; padding: 0 var(--gst-space-lg); }
@@ -3180,7 +3217,7 @@ td.bpe-editing select {
 .gst-pin-controls .gst-field { display: flex; flex-direction: column; gap: 4px; }
 .gst-pin-controls .gst-field label {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -3189,25 +3226,25 @@ td.bpe-editing select {
 .gst-pin-keyline {
     display: flex; align-items: center; gap: 8px;
     padding: var(--gst-space-sm) 12px;
-    background: var(--gst-bg);
-    border: 1px dashed var(--gst-border);
+    background: var(--gst-color-bg);
+    border: 1px dashed var(--gst-color-border);
     border-radius: var(--gst-radius);
     margin-top: var(--gst-space-md);
     font-size: var(--gst-text-sm);
 }
 .gst-pin-keyline__label {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 .gst-pin-keyline__value {
     font-family: var(--gst-font-mono);
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
     font-weight: 600;
 }
-.gst-pin-keyline__hint { margin-left: auto; color: var(--gst-text-muted); font-size: 11px; }
-.gst-pin-keyline__hint code { font-family: var(--gst-font-mono); color: var(--gst-text-secondary); }
+.gst-pin-keyline__hint { margin-left: auto; color: var(--gst-color-text-muted); font-size: 11px; }
+.gst-pin-keyline__hint code { font-family: var(--gst-font-mono); color: var(--gst-color-text-secondary); }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 1100px) {
@@ -3220,7 +3257,7 @@ td.bpe-editing select {
 }
 
 /* Muted-token marker — used by Synonym Coverage to dim secondary cells. */
-.gst-rl-dim { color: var(--gst-text-muted); }
+.gst-rl-dim { color: var(--gst-color-text-muted); }
 
 /* ── Search Logs (Phase 4 Wave 5) ─────────────────────────────────── */
 /*
@@ -3232,9 +3269,9 @@ td.bpe-editing select {
 .gst-sl-toolbar { display: flex; align-items: center; gap: var(--gst-space-sm); padding: var(--gst-space-sm); }
 .gst-sl-pillgroup { display: inline-flex; gap: 0; }
 .gst-sl-pill {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
-    color: var(--gst-text);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
+    color: var(--gst-color-text);
     padding: var(--gst-space-xs) 10px;
     font: inherit;
     cursor: pointer;
@@ -3242,11 +3279,11 @@ td.bpe-editing select {
 .gst-sl-pill + .gst-sl-pill { border-left: none; }
 .gst-sl-pill:first-child { border-radius: 4px 0 0 4px; }
 .gst-sl-pill:last-child { border-radius: 0 4px 4px 0; }
-.gst-sl-pill:hover { background: var(--gst-surface-hover); }
+.gst-sl-pill:hover { background: var(--gst-color-surface-hover); }
 .gst-sl-pill--active {
-    background: var(--gst-primary);
+    background: var(--gst-color-primary);
     color: var(--gst-on-primary);
-    border-color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
 }
 
 .gst-sl-grid {
@@ -3258,28 +3295,28 @@ td.bpe-editing select {
 .gst-sl-card--wide { grid-column: 1 / -1; }
 .gst-sl-card__head {
     padding: var(--gst-space-sm) var(--gst-space-md);
-    border-bottom: 1px solid var(--gst-border);
+    border-bottom: 1px solid var(--gst-color-border);
 }
-.gst-sl-card__head h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gst-text-secondary); }
+.gst-sl-card__head h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gst-color-text-secondary); }
 
 .gst-sl-table { width: 100%; }
 .gst-sl-table td.num, .gst-sl-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .gst-sl-table--raw td { font-size: 12px; }
 .gst-sl-action-col { width: 1%; white-space: nowrap; text-align: right; }
-.gst-sl-link { color: var(--gst-link); text-decoration: none; font-size: 12px; }
+.gst-sl-link { color: var(--gst-color-link); text-decoration: none; font-size: 12px; }
 .gst-sl-link:hover { text-decoration: underline; }
 
 .gst-sl-empty { padding: var(--gst-space-md); margin-bottom: var(--gst-space-md); }
 .gst-sl-empty h2 { margin: 0 0 6px; font-size: 14px; }
-.gst-sl-empty p { margin: 0; color: var(--gst-text-muted); font-size: 13px; }
+.gst-sl-empty p { margin: 0; color: var(--gst-color-text-muted); font-size: 13px; }
 
 /* ── Synonym Coverage (Phase 4 Wave 5) ────────────────────────────── */
 .gst-sc-toolbar { margin-bottom: var(--gst-space-md); }
-.gst-sc-meta { color: var(--gst-text-muted); font-size: 12px; }
+.gst-sc-meta { color: var(--gst-color-text-muted); font-size: 12px; }
 .gst-sc-actions-col { width: 1%; white-space: nowrap; text-align: right; }
 .gst-sc-row td { vertical-align: middle; }
 .gst-sc-row .gst-mono { font-size: 12px; }
-.gst-card__subtitle { color: var(--gst-text-muted); font-size: 12px; margin: 4px 0 0; }
+.gst-card__subtitle { color: var(--gst-color-text-muted); font-size: 12px; margin: 4px 0 0; }
 
 /* ─────────────────────────────────────────────────────────────────────
    Editable data grid (gst-pinedit-*)
@@ -3294,8 +3331,8 @@ td.bpe-editing select {
    ───────────────────────────────────────────────────────────────────── */
 
 .gst-pinedit {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-lg);
     overflow: hidden;
     display: flex;
@@ -3309,8 +3346,8 @@ td.bpe-editing select {
     flex-wrap: wrap;
     gap: var(--gst-space-sm);
     padding: 10px 14px;
-    border-bottom: 1px solid var(--gst-border);
-    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+    border-bottom: 1px solid var(--gst-color-border);
+    background: linear-gradient(180deg, var(--gst-color-surface) 0%, var(--gst-color-bg) 100%);
 }
 /* Standalone Synonyms tool — locale picker that selects the editable scope.
    Channel-detail surface piggybacks on the live preview's locale chip and
@@ -3320,7 +3357,7 @@ td.bpe-editing select {
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-syn-page__lang-label {
     text-transform: uppercase;
@@ -3329,10 +3366,10 @@ td.bpe-editing select {
 .gst-syn-page__lang-select {
     font-size: 12px;
     padding: var(--gst-space-xs) var(--gst-space-sm);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: 4px;
-    background: var(--gst-bg);
-    color: var(--gst-text);
+    background: var(--gst-color-bg);
+    color: var(--gst-color-text);
 }
 .gst-pinedit__searchbox {
     position: relative;
@@ -3348,25 +3385,25 @@ td.bpe-editing select {
 .gst-pinedit__searchglyph {
     position: absolute;
     left: 12px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     pointer-events: none;
 }
 .gst-pinedit__searchinput {
     width: 100%;
     padding: var(--gst-space-sm) 12px var(--gst-space-sm) 34px;
     border: 1px solid transparent;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     border-radius: var(--gst-radius);
     font: inherit;
     font-size: var(--gst-text-sm);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     transition: border-color 120ms ease, box-shadow 120ms ease;
     box-sizing: border-box;
 }
-.gst-pinedit__searchinput:hover { border-color: var(--gst-border); }
+.gst-pinedit__searchinput:hover { border-color: var(--gst-color-border); }
 .gst-pinedit__searchinput:focus {
     outline: none;
-    border-color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
 }
 
@@ -3375,10 +3412,10 @@ td.bpe-editing select {
     font-variant-numeric: tabular-nums;
     font-size: 11px;
     letter-spacing: 0.04em;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     padding: var(--gst-space-xs) var(--gst-space-sm);
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     white-space: nowrap;
 }
@@ -3386,15 +3423,15 @@ td.bpe-editing select {
     width: 1px;
     align-self: stretch;
     margin: var(--gst-space-xs) var(--gst-space-xs);
-    background: var(--gst-border);
+    background: var(--gst-color-border);
 }
 .gst-pinedit__addbtn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 7px 14px;
-    border: 1px solid var(--gst-primary);
-    background: var(--gst-primary);
+    border: 1px solid var(--gst-color-primary);
+    background: var(--gst-color-primary);
     color: #fff;
     border-radius: var(--gst-radius);
     cursor: pointer;
@@ -3403,7 +3440,7 @@ td.bpe-editing select {
     font-weight: 500;
     transition: background-color 120ms ease, transform 120ms ease;
 }
-.gst-pinedit__addbtn:hover { background: var(--gst-primary-hover); border-color: var(--gst-primary-hover); }
+.gst-pinedit__addbtn:hover { background: var(--gst-color-primary-hover); border-color: var(--gst-color-primary-hover); }
 .gst-pinedit__addbtn:active { transform: translateY(1px); }
 .gst-pinedit__addbtn__plus { font-size: 14px; line-height: 1; }
 
@@ -3429,17 +3466,17 @@ td.bpe-editing select {
     position: sticky;
     top: 0;
     z-index: 5;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
 }
 .gst-pinedit__col {
     text-align: left;
     padding: 0;
-    background: var(--gst-bg);
-    border-bottom: 1px solid var(--gst-border);
+    background: var(--gst-color-bg);
+    border-bottom: 1px solid var(--gst-color-border);
 }
 .gst-pinedit__head-sort .gst-pinedit__col {
     border-bottom: none;
-    background: var(--gst-bg);
+    background: var(--gst-color-bg);
 }
 .gst-pinedit__sortbtn {
     width: 100%;
@@ -3454,11 +3491,11 @@ td.bpe-editing select {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     cursor: pointer;
     transition: color 120ms ease;
 }
-.gst-pinedit__sortbtn:hover { color: var(--gst-text); }
+.gst-pinedit__sortbtn:hover { color: var(--gst-color-text); }
 .gst-pinedit__caret {
     width: 0; height: 0;
     border-left: 4px solid transparent;
@@ -3469,7 +3506,7 @@ td.bpe-editing select {
     transition: opacity 120ms ease, transform 120ms ease;
 }
 .gst-pinedit__col.is-asc .gst-pinedit__sortbtn,
-.gst-pinedit__col.is-desc .gst-pinedit__sortbtn { color: var(--gst-primary); }
+.gst-pinedit__col.is-desc .gst-pinedit__sortbtn { color: var(--gst-color-primary); }
 .gst-pinedit__col.is-asc .gst-pinedit__caret { opacity: 1; transform: rotate(180deg); }
 .gst-pinedit__col.is-desc .gst-pinedit__caret { opacity: 1; }
 
@@ -3484,24 +3521,24 @@ td.bpe-editing select {
     box-sizing: border-box;
     height: 26px;
     padding: 0 var(--gst-space-sm);
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border-light);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: var(--gst-radius-sm, 3px);
     font: inherit;
     font-size: 12px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 .gst-pinedit__colfilter:focus {
     outline: none;
-    border-color: var(--gst-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--gst-primary) 18%, transparent);
+    border-color: var(--gst-color-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--gst-color-primary) 18%, transparent);
 }
 
 /* Column widths come from the <colgroup> in the Razor view. */
 
 /* Rows */
 .gst-pinedit__row {
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     transition: background-color 120ms ease;
     /* DO NOT add `position: relative` here — Chromium responds by injecting
        an anonymous layout slot for any pseudo-element, which shifts the
@@ -3509,18 +3546,18 @@ td.bpe-editing select {
        dirty/new "rail" lives on the first cell's left border instead so we
        don't need a positioned containing block on the row. */
 }
-.gst-pinedit__row:hover { background: var(--gst-surface-hover); }
-.gst-pinedit__row.is-dirty { background: var(--gst-warning-light); }
-.gst-pinedit__row.is-new   { background: var(--gst-success-light); }
+.gst-pinedit__row:hover { background: var(--gst-color-surface-hover); }
+.gst-pinedit__row.is-dirty { background: var(--gst-color-warning-light); }
+.gst-pinedit__row.is-new   { background: var(--gst-color-success-light); }
 /* Status rail — the first cell of a dirty/new row carries a 3px inset
    shadow on its left edge. Targets `:first-child` rather than a column
    modifier so the rail works for any consumer of the grid (pinned,
    synonyms, future tools) without each one having to opt in. */
 .gst-pinedit__row.is-dirty > .gst-pinedit__cell:first-child {
-    box-shadow: inset 3px 0 0 0 var(--gst-warning);
+    box-shadow: inset 3px 0 0 0 var(--gst-color-warning);
 }
 .gst-pinedit__row.is-new > .gst-pinedit__cell:first-child {
-    box-shadow: inset 3px 0 0 0 var(--gst-success);
+    box-shadow: inset 3px 0 0 0 var(--gst-color-success);
 }
 
 .gst-pinedit__cell {
@@ -3538,15 +3575,15 @@ td.bpe-editing select {
     background: transparent;
     font: inherit;
     font-size: var(--gst-text-sm);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     box-sizing: border-box;
     transition: border-color 120ms ease, background-color 120ms ease;
 }
-.gst-pinedit__input:hover { border-color: var(--gst-border); background: var(--gst-surface); }
+.gst-pinedit__input:hover { border-color: var(--gst-color-border); background: var(--gst-color-surface); }
 .gst-pinedit__input:focus {
     outline: none;
-    border-color: var(--gst-primary);
-    background: var(--gst-surface);
+    border-color: var(--gst-color-primary);
+    background: var(--gst-color-surface);
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.10);
 }
 /* Target pill — name display with edit affordance */
@@ -3556,10 +3593,10 @@ td.bpe-editing select {
     gap: 6px;
     max-width: 100%;
     padding: 5px 10px 5px 12px;
-    border: 1px solid var(--gst-border-light);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: 999px;
-    background: var(--gst-bg);
-    color: var(--gst-text);
+    background: var(--gst-color-bg);
+    color: var(--gst-color-text);
     font: inherit;
     font-size: var(--gst-text-sm);
     cursor: pointer;
@@ -3571,28 +3608,28 @@ td.bpe-editing select {
    side by side. */
 .gst-pinedit__target[hidden] { display: none; }
 .gst-pinedit__target:hover {
-    border-color: var(--gst-primary);
-    background: var(--gst-primary-light);
+    border-color: var(--gst-color-primary);
+    background: var(--gst-color-primary-light);
 }
 .gst-pinedit__target:focus { outline: none; box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.18); }
-.gst-pinedit__target.is-empty { font-style: italic; color: var(--gst-text-muted); }
+.gst-pinedit__target.is-empty { font-style: italic; color: var(--gst-color-text-muted); }
 .gst-pinedit__target__name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 280px;
 }
-.gst-pinedit__target__name--placeholder { color: var(--gst-text-muted); font-style: italic; }
+.gst-pinedit__target__name--placeholder { color: var(--gst-color-text-muted); font-style: italic; }
 .gst-pinedit__target__edit {
     margin-left: auto;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: 11px;
     line-height: 1;
 }
 
 .gst-pinedit__input--target { /* take full cell width when in edit mode */
-    background: var(--gst-surface);
-    border-color: var(--gst-primary);
+    background: var(--gst-color-surface);
+    border-color: var(--gst-color-primary);
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.10);
 }
 
@@ -3606,8 +3643,8 @@ td.bpe-editing select {
     z-index: 30;
     max-height: 280px;
     overflow-y: auto;
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     box-shadow: var(--gst-shadow-lg);
 }
@@ -3618,14 +3655,14 @@ td.bpe-editing select {
     gap: 12px;
     padding: 9px 12px;
     cursor: pointer;
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     transition: background-color 100ms ease;
 }
 .gst-pinedit__typeahead__hit:last-child { border-bottom: none; }
-.gst-pinedit__typeahead__hit:hover { background: var(--gst-primary-light); }
+.gst-pinedit__typeahead__hit:hover { background: var(--gst-color-primary-light); }
 .gst-pinedit__typeahead__name {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -3635,12 +3672,12 @@ td.bpe-editing select {
 .gst-pinedit__typeahead__meta {
     font-family: var(--gst-font-mono);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     white-space: nowrap;
 }
 .gst-pinedit__typeahead__none {
     padding: 12px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
     font-style: italic;
     text-align: center;
@@ -3660,16 +3697,16 @@ td.bpe-editing select {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.gst-pinedit__chip.is-page      { background: var(--gst-primary-light); color: var(--gst-primary); }
-.gst-pinedit__chip.is-product   { background: var(--gst-success-light); color: var(--gst-success); }
-.gst-pinedit__chip.is-editorial { background: var(--gst-warning-light); color: var(--gst-warning); }
-.gst-pinedit__chip.is-other     { background: var(--gst-surface-active); color: var(--gst-text-secondary); }
+.gst-pinedit__chip.is-page      { background: var(--gst-color-primary-light); color: var(--gst-color-primary); }
+.gst-pinedit__chip.is-product   { background: var(--gst-color-success-light); color: var(--gst-color-success); }
+.gst-pinedit__chip.is-editorial { background: var(--gst-color-warning-light); color: var(--gst-color-warning); }
+.gst-pinedit__chip.is-other     { background: var(--gst-color-surface-active); color: var(--gst-color-text-secondary); }
 
 /* Actions */
 .gst-pinedit__action {
     background: transparent;
     border: 1px solid transparent;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font: inherit;
     font-size: 14px;
     line-height: 1;
@@ -3680,9 +3717,9 @@ td.bpe-editing select {
     transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
 .gst-pinedit__action--save:hover {
-    color: var(--gst-primary);
-    background: var(--gst-primary-light);
-    border-color: var(--gst-primary-light);
+    color: var(--gst-color-primary);
+    background: var(--gst-color-primary-light);
+    border-color: var(--gst-color-primary-light);
 }
 /* Per-row Save only surfaces once the row is dirty. Pin rows set
    `is-dirty` on the row's <tr>; the synonyms editor shares the same
@@ -3692,20 +3729,20 @@ td.bpe-editing select {
 }
 .gst-pinedit__row.is-dirty .gst-pinedit__action--save {
     display: inline-flex;
-    color: var(--gst-primary);
-    border-color: var(--gst-primary);
+    color: var(--gst-color-primary);
+    border-color: var(--gst-color-primary);
 }
 .gst-pinedit__action--delete:hover {
-    color: var(--gst-danger);
-    background: var(--gst-danger-light);
-    border-color: var(--gst-danger-light);
+    color: var(--gst-color-danger);
+    background: var(--gst-color-danger-light);
+    border-color: var(--gst-color-danger-light);
 }
 
 /* Empty state */
 .gst-pinedit__empty {
     text-align: center;
     padding: var(--gst-space-2xl) var(--gst-space-lg);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-pinedit__empty p {
     margin: 0 0 12px;
@@ -3714,8 +3751,8 @@ td.bpe-editing select {
 }
 .gst-pinedit__empty-add {
     background: transparent;
-    border: 1px dashed var(--gst-border);
-    color: var(--gst-text-secondary);
+    border: 1px dashed var(--gst-color-border);
+    color: var(--gst-color-text-secondary);
     font: inherit;
     font-size: var(--gst-text-sm);
     padding: 6px 14px;
@@ -3724,14 +3761,14 @@ td.bpe-editing select {
     transition: border-color 120ms ease, color 120ms ease;
 }
 .gst-pinedit__empty-add:hover {
-    border-color: var(--gst-primary);
-    color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
+    color: var(--gst-color-primary);
     border-style: solid;
 }
 
 .gst-pinedit__norows td {
     padding: 28px var(--gst-space-md);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-style: italic;
     font-size: var(--gst-text-sm);
     text-align: center;
@@ -3743,7 +3780,7 @@ td.bpe-editing select {
    grid's vertical rhythm during the load. */
 .gst-pinedit__loading td {
     padding: 28px var(--gst-space-md);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
     text-align: center;
 }
@@ -3753,8 +3790,8 @@ td.bpe-editing select {
     width: 14px;
     height: 14px;
     margin-right: var(--gst-space-sm);
-    border: 2px solid color-mix(in srgb, var(--gst-primary) 25%, transparent);
-    border-top-color: var(--gst-primary);
+    border: 2px solid color-mix(in srgb, var(--gst-color-primary) 25%, transparent);
+    border-top-color: var(--gst-color-primary);
     border-radius: 50%;
     animation: gst-spin 720ms linear infinite;
 }
@@ -3769,8 +3806,8 @@ td.bpe-editing select {
     justify-content: space-between;
     gap: 12px;
     padding: 10px var(--gst-space-md);
-    background: linear-gradient(180deg, var(--gst-warning-light) 0%, #fff7ec 100%);
-    border-top: 1px solid var(--gst-warning);
+    background: linear-gradient(180deg, var(--gst-color-warning-light) 0%, #fff7ec 100%);
+    border-top: 1px solid var(--gst-color-warning);
     animation: gst-pinedit-drawer-up 220ms ease;
 }
 /* `display: flex` above beats the user-agent default that powers [hidden],
@@ -3782,19 +3819,19 @@ td.bpe-editing select {
 }
 .gst-pinedit__drawer__count {
     font-size: var(--gst-text-sm);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 .gst-pinedit__drawer__count strong {
-    color: var(--gst-warning);
+    color: var(--gst-color-warning);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     margin-right: var(--gst-space-xs);
 }
 .gst-pinedit__drawer__actions { display: flex; gap: 8px; }
 .gst-pinedit__drawer__btn {
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
-    color: var(--gst-text);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
+    color: var(--gst-color-text);
     font: inherit;
     font-size: var(--gst-text-sm);
     padding: 6px 14px;
@@ -3802,15 +3839,15 @@ td.bpe-editing select {
     cursor: pointer;
     transition: background-color 120ms ease, border-color 120ms ease;
 }
-.gst-pinedit__drawer__btn:hover { border-color: var(--gst-text-secondary); }
+.gst-pinedit__drawer__btn:hover { border-color: var(--gst-color-text-secondary); }
 .gst-pinedit__drawer__btn--primary {
-    background: var(--gst-primary);
-    border-color: var(--gst-primary);
+    background: var(--gst-color-primary);
+    border-color: var(--gst-color-primary);
     color: #fff;
 }
 .gst-pinedit__drawer__btn--primary:hover {
-    background: var(--gst-primary-hover);
-    border-color: var(--gst-primary-hover);
+    background: var(--gst-color-primary-hover);
+    border-color: var(--gst-color-primary-hover);
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -3823,8 +3860,8 @@ td.bpe-editing select {
     justify-content: center;
     gap: 10px;
     padding: var(--gst-space-sm) 12px;
-    border-top: 1px solid var(--gst-border-light);
-    background: var(--gst-surface);
+    border-top: 1px solid var(--gst-color-border-light);
+    background: var(--gst-color-surface);
     font-size: var(--gst-text-sm);
 }
 .gst-pager[hidden] { display: none; }
@@ -3832,9 +3869,9 @@ td.bpe-editing select {
     display: inline-flex;
     align-items: center;
     gap: var(--gst-space-xs);
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
-    color: var(--gst-text);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
+    color: var(--gst-color-text);
     font: inherit;
     font-size: var(--gst-text-sm);
     padding: var(--gst-space-xs) 10px;
@@ -3843,16 +3880,16 @@ td.bpe-editing select {
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 .gst-pager__btn:hover:not(:disabled) {
-    border-color: var(--gst-primary);
-    color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
+    color: var(--gst-color-primary);
 }
 .gst-pager__btn:disabled {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     cursor: not-allowed;
     opacity: 0.55;
 }
 .gst-pager__status {
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     font-variant-numeric: tabular-nums;
     min-width: 96px;
     text-align: center;
@@ -3891,16 +3928,16 @@ td.bpe-editing select {
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: 999px;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 .gst-serp__input:focus-within {
-    border-color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
     box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.10);
 }
-.gst-serp__glyph { color: var(--gst-text-muted); flex-shrink: 0; }
+.gst-serp__glyph { color: var(--gst-color-text-muted); flex-shrink: 0; }
 .gst-serp__input input {
     flex: 1;
     border: none;
@@ -3908,10 +3945,10 @@ td.bpe-editing select {
     background: transparent;
     font: inherit;
     font-size: var(--gst-text-sm);
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     min-width: 0;
 }
-.gst-serp__input input::placeholder { color: var(--gst-text-muted); font-style: italic; }
+.gst-serp__input input::placeholder { color: var(--gst-color-text-muted); font-style: italic; }
 
 /* Loading spinner — sits at the trailing edge of the input pill, opposite
    the magnifier glyph, only while the preview fetch is in flight. */
@@ -3920,7 +3957,7 @@ td.bpe-editing select {
     width: 14px;
     height: 14px;
     border: 2px solid rgba(21, 101, 192, 0.18);
-    border-top-color: var(--gst-primary);
+    border-top-color: var(--gst-color-primary);
     border-radius: 50%;
     flex-shrink: 0;
     animation: gst-serp-spin 0.7s linear infinite;
@@ -3935,14 +3972,14 @@ td.bpe-editing select {
 .gst-serp__stats {
     font-family: var(--gst-font-mono);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     letter-spacing: 0.02em;
     min-height: 14px;
     padding: 0 var(--gst-space-xs);
     transition: color 120ms ease;
 }
 .gst-serp__stats--err {
-    color: var(--gst-danger);
+    color: var(--gst-color-danger);
     font-style: italic;
     letter-spacing: 0;
 }
@@ -3962,7 +3999,7 @@ td.bpe-editing select {
 .gst-serp__syn[hidden] { display: none; }
 .gst-serp__syn-label {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     letter-spacing: 0.02em;
 }
 .gst-serp__syn-chip {
@@ -3973,24 +4010,24 @@ td.bpe-editing select {
     border-radius: 999px;
     font-size: 11px;
     line-height: 1.6;
-    border: 1px solid var(--gst-border);
-    background: var(--gst-bg);
-    color: var(--gst-text-secondary);
+    border: 1px solid var(--gst-color-border);
+    background: var(--gst-color-bg);
+    color: var(--gst-color-text-secondary);
     cursor: help;
 }
 .gst-serp__syn-chip.is-replacement {
-    border-color: var(--gst-primary);
-    background: var(--gst-primary-light);
-    color: var(--gst-primary);
+    border-color: var(--gst-color-primary);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary);
 }
 .gst-serp__syn-chip.is-equivalent {
-    border-color: var(--gst-border);
-    background: var(--gst-surface);
+    border-color: var(--gst-color-border);
+    background: var(--gst-color-surface);
 }
 .gst-serp__syn-src { font-weight: 600; }
 .gst-serp__syn-op {
     font-family: var(--gst-font-mono);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-serp__syn-exp {
     font-family: var(--gst-font-mono);
@@ -4013,19 +4050,19 @@ td.bpe-editing select {
 /* Empty state */
 .gst-serp__empty {
     padding: 18px 12px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: var(--gst-text-sm);
     font-style: italic;
     text-align: center;
-    border: 1px dashed var(--gst-border-light);
+    border: 1px dashed var(--gst-color-border-light);
     border-radius: var(--gst-radius);
-    background: var(--gst-bg);
+    background: var(--gst-color-bg);
 }
 
 /* Single result card */
 .gst-serp__hit {
     padding: 10px var(--gst-space-xs) 12px;
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     animation: gst-serp-rise 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
     animation-delay: var(--gst-serp-stagger, 0ms);
     position: relative;
@@ -4039,11 +4076,11 @@ td.bpe-editing select {
     padding-left: 14px;
     border-radius: var(--gst-radius);
     border-bottom-color: transparent;
-    box-shadow: inset 3px 0 0 0 var(--gst-primary);
+    box-shadow: inset 3px 0 0 0 var(--gst-color-primary);
 }
 .gst-serp__hit.is-pinned + .gst-serp__hit:not(.is-pinned) {
     /* Restore the divider when an organic card follows a pinned cluster. */
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     margin-top: var(--gst-space-xs);
     padding-top: 14px;
 }
@@ -4051,7 +4088,7 @@ td.bpe-editing select {
     position: absolute;
     top: 6px;
     right: 0;
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
     line-height: 0;
     opacity: 0.85;
 }
@@ -4086,7 +4123,7 @@ td.bpe-editing select {
 .gst-serp__title:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .gst-serp__title:visited { color: var(--gst-serp-link-visited); }
 .gst-serp__title.is-disabled {
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     cursor: default;
     pointer-events: none;
 }
@@ -4098,11 +4135,11 @@ td.bpe-editing select {
     font-variant-numeric: tabular-nums;
     font-size: 10px;
     letter-spacing: 0.04em;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     padding: 2px 7px;
-    border: 1px solid var(--gst-border-light);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: 999px;
-    background: var(--gst-bg);
+    background: var(--gst-color-bg);
 }
 
 /* URL line — Google-green mono with leading chevron */
@@ -4116,7 +4153,7 @@ td.bpe-editing select {
     white-space: nowrap;
 }
 .gst-serp__url-glyph {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-right: 2px;
 }
 
@@ -4125,7 +4162,7 @@ td.bpe-editing select {
     margin: 0 0 var(--gst-space-sm);
     font-size: 13px;
     line-height: 1.5;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -4147,18 +4184,18 @@ td.bpe-editing select {
     align-items: center;
     gap: var(--gst-space-sm);
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-serp__chip {
     padding: 2px var(--gst-space-sm);
     border-radius: 999px;
-    background: var(--gst-surface-active);
-    color: var(--gst-text-secondary);
+    background: var(--gst-color-surface-active);
+    color: var(--gst-color-text-secondary);
     font-weight: 500;
     letter-spacing: 0.02em;
 }
 .gst-serp__chip--pinned {
-    background: var(--gst-primary);
+    background: var(--gst-color-primary);
     color: #fff;
     text-transform: uppercase;
     font-size: 10px;
@@ -4178,24 +4215,24 @@ td.bpe-editing select {
     align-items: center;
     gap: 6px;
     padding: 3px 10px;
-    border: 1px solid var(--gst-border-light);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: 999px;
-    background: var(--gst-surface);
-    color: var(--gst-text-secondary);
+    background: var(--gst-color-surface);
+    color: var(--gst-color-text-secondary);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
     transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
 }
 .gst-serp__json-toggle:hover {
-    color: var(--gst-text);
-    border-color: var(--gst-text-muted);
-    background: var(--gst-bg);
+    color: var(--gst-color-text);
+    border-color: var(--gst-color-text-muted);
+    background: var(--gst-color-bg);
 }
 .gst-serp__json-toggle.is-open {
-    color: var(--gst-primary);
-    border-color: var(--gst-primary);
-    background: var(--gst-primary-light);
+    color: var(--gst-color-primary);
+    border-color: var(--gst-color-primary);
+    background: var(--gst-color-primary-light);
 }
 .gst-serp__json-toggle__brace {
     font-family: var(--gst-font-mono);
@@ -4264,9 +4301,9 @@ td.bpe-editing select {
     align-items: center;
     gap: 6px;
     padding: var(--gst-space-xs) 10px;
-    border: 1px solid var(--gst-border);
-    background: var(--gst-surface);
-    color: var(--gst-text-secondary);
+    border: 1px solid var(--gst-color-border);
+    background: var(--gst-color-surface);
+    color: var(--gst-color-text-secondary);
     font: inherit;
     font-size: 11px;
     font-weight: 500;
@@ -4276,9 +4313,9 @@ td.bpe-editing select {
     transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease, transform 120ms ease;
 }
 .gst-copybtn:hover {
-    color: var(--gst-primary);
-    border-color: var(--gst-primary);
-    background: var(--gst-primary-light);
+    color: var(--gst-color-primary);
+    border-color: var(--gst-color-primary);
+    background: var(--gst-color-primary-light);
 }
 .gst-copybtn:active { transform: translateY(1px); }
 .gst-copybtn:focus-visible {
@@ -4286,9 +4323,9 @@ td.bpe-editing select {
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.18);
 }
 .gst-copybtn.is-copied {
-    color: var(--gst-success);
-    border-color: var(--gst-success);
-    background: var(--gst-success-light);
+    color: var(--gst-color-success);
+    border-color: var(--gst-color-success);
+    background: var(--gst-color-success-light);
 }
 .gst-copybtn__icon { flex-shrink: 0; }
 .gst-copybtn__label { line-height: 1; }
@@ -4394,27 +4431,27 @@ td.bpe-editing select {
     gap: var(--gst-space-sm);
     margin-bottom: 6px;
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-prof-detail-header__back {
     display: inline-flex;
     align-items: center;
     gap: var(--gst-space-xs);
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     text-decoration: none;
     font-weight: 500;
     transition: color 120ms ease;
 }
-.gst-prof-detail-header__back:hover { color: var(--gst-primary); }
-.gst-prof-detail-header__sep { color: var(--gst-text-muted); }
+.gst-prof-detail-header__back:hover { color: var(--gst-color-primary); }
+.gst-prof-detail-header__sep { color: var(--gst-color-text-muted); }
 .gst-prof-detail-header__key {
     font-family: var(--gst-font-mono);
     font-size: 11px;
-    color: var(--gst-text-secondary);
-    background: var(--gst-bg);
+    color: var(--gst-color-text-secondary);
+    background: var(--gst-color-bg);
     padding: 2px 7px;
     border-radius: 999px;
-    border: 1px solid var(--gst-border-light);
+    border: 1px solid var(--gst-color-border-light);
 }
 .gst-prof-detail-header h1 {
     font-size: var(--gst-text-2xl);
@@ -4431,8 +4468,8 @@ td.bpe-editing select {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0;
     align-items: stretch;
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-lg);
     box-shadow: var(--gst-shadow-sm);
     /* Clip the rounded corners without making this a scroll container;
@@ -4447,8 +4484,8 @@ td.bpe-editing select {
        dividers or shadows. */
     background:
         radial-gradient(circle at 0% 0%, rgba(21, 101, 192, 0.025), transparent 55%),
-        var(--gst-surface);
-    border-right: 1px solid var(--gst-border-light);
+        var(--gst-color-surface);
+    border-right: 1px solid var(--gst-color-border-light);
     min-width: 0;
     align-self: stretch;
 }
@@ -4467,8 +4504,8 @@ td.bpe-editing select {
     flex-wrap: wrap;
     padding: 0 var(--gst-space-lg);
     min-height: 44px;
-    border-bottom: 1px solid var(--gst-border-light);
-    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+    border-bottom: 1px solid var(--gst-color-border-light);
+    background: linear-gradient(180deg, var(--gst-color-surface) 0%, var(--gst-color-bg) 100%);
 }
 .gst-prof-preview__heading {
     display: inline-flex;
@@ -4481,13 +4518,13 @@ td.bpe-editing select {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
     opacity: 0.85;
 }
 .gst-prof-preview__title {
     font-size: var(--gst-text-sm);
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     margin: 0;
     letter-spacing: 0.01em;
     text-transform: uppercase;
@@ -4524,24 +4561,24 @@ td.bpe-editing select {
     gap: var(--gst-space-sm);
     padding: 5px 12px;
     border-radius: 999px;
-    border: 1px solid var(--gst-border);
-    background: var(--gst-surface);
+    border: 1px solid var(--gst-color-border);
+    background: var(--gst-color-surface);
     font-size: 12px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     line-height: 1.4;
     /* accent-color tints the dropdown highlight so the popup's selected
        row picks up the brand colour instead of the OS default blue. */
-    accent-color: var(--gst-primary);
+    accent-color: var(--gst-color-primary);
 }
 .gst-prof-chip__label {
     font-size: 10px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-weight: 600;
 }
 .gst-prof-chip__value {
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-weight: 600;
     letter-spacing: 0.005em;
 }
@@ -4555,12 +4592,12 @@ td.bpe-editing select {
                 background-color 160ms ease;
 }
 .gst-prof-chip--input:hover {
-    border-color: var(--gst-text-muted);
-    background: var(--gst-surface-hover);
+    border-color: var(--gst-color-text-muted);
+    background: var(--gst-color-surface-hover);
 }
 .gst-prof-chip--input:focus-within {
-    border-color: var(--gst-primary);
-    background: var(--gst-surface);
+    border-color: var(--gst-color-primary);
+    background: var(--gst-color-surface);
     box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.16),
                 0 1px 2px rgba(15, 20, 28, 0.04);
 }
@@ -4602,16 +4639,16 @@ td.bpe-editing select {
        Padding gives the popup rows breathing room (Firefox renders this
        fully; Chromium honours the typography even where padding is
        capped) so the option list feels less cramped under the pill. */
-    color: var(--gst-text);
-    background: var(--gst-surface);
+    color: var(--gst-color-text);
+    background: var(--gst-color-surface);
     font-family: var(--gst-font);
     font-size: 13px;
     font-weight: 500;
     padding: 6px 14px;
 }
 .gst-prof-chip__select option:checked {
-    background: var(--gst-primary-light);
-    color: var(--gst-primary-hover);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary-hover);
     font-weight: 600;
 }
 .gst-prof-chip__caret {
@@ -4619,7 +4656,7 @@ td.bpe-editing select {
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     pointer-events: none;
     /* Sit above the transparent <select> so the glyph is visible — but
        pointer-events:none lets the click pass through to the select. */
@@ -4627,14 +4664,14 @@ td.bpe-editing select {
     transition: transform 200ms cubic-bezier(.34, 1.56, .64, 1),
                 color 160ms ease;
 }
-.gst-prof-chip--input:hover .gst-prof-chip__caret { color: var(--gst-text); }
+.gst-prof-chip--input:hover .gst-prof-chip__caret { color: var(--gst-color-text); }
 .gst-prof-chip--input:focus-within .gst-prof-chip__caret {
     transform: translateY(-50%) rotate(180deg);
-    color: var(--gst-primary);
+    color: var(--gst-color-primary);
 }
 .gst-prof-chip--static {
-    background: var(--gst-bg);
-    border-color: var(--gst-border-light);
+    background: var(--gst-color-bg);
+    border-color: var(--gst-color-border-light);
 }
 /* The hidden form holders for the disabled selector — pinned.js still
    reads .value off them so the runtime resolves the right pinned key. */
@@ -4664,20 +4701,20 @@ td.bpe-editing select {
     align-items: center;
     text-align: center;
     padding: 36px var(--gst-space-md) 28px;
-    border: 1px dashed var(--gst-border);
+    border: 1px dashed var(--gst-color-border);
     border-radius: var(--gst-radius);
-    background: var(--gst-bg);
-    color: var(--gst-text-secondary);
+    background: var(--gst-color-bg);
+    color: var(--gst-color-text-secondary);
 }
 .gst-prof-preview__empty-glyph {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-bottom: 10px;
     opacity: 0.7;
 }
 .gst-prof-preview__empty-title {
     font-size: var(--gst-text-base);
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     margin: 0 0 var(--gst-space-xs);
 }
 .gst-prof-preview__empty-body {
@@ -4690,7 +4727,7 @@ td.bpe-editing select {
 /* ── RIGHT — tools console ───────────────────────────────────── */
 .gst-prof-console {
     min-width: 0;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     align-self: stretch;
 }
 
@@ -4707,8 +4744,8 @@ td.bpe-editing select {
     padding: 0 var(--gst-space-lg);
     min-height: 44px;
     align-items: stretch;
-    border-bottom: 1px solid var(--gst-border-light);
-    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+    border-bottom: 1px solid var(--gst-color-border-light);
+    background: linear-gradient(180deg, var(--gst-color-surface) 0%, var(--gst-color-bg) 100%);
     margin-bottom: 0;
 }
 .gst-prof-switcher .gst-tabs__btn {
@@ -4730,7 +4767,7 @@ td.bpe-editing select {
    navigation so the user can see the explanation, but the icon and
    label are dimmed and a small "muted" dot trails the label. */
 .gst-prof-switcher .gst-tabs__btn.is-unwired {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-prof-switcher .gst-tabs__btn.is-unwired .gst-prof-switcher__icon { opacity: 0.4; }
 .gst-prof-switcher .gst-tabs__btn.is-unwired::after {
@@ -4739,11 +4776,11 @@ td.bpe-editing select {
     height: 5px;
     margin-left: 6px;
     border-radius: 50%;
-    background: var(--gst-warning, #c97a2a);
+    background: var(--gst-color-warning, #c97a2a);
     flex-shrink: 0;
 }
 .gst-prof-switcher .gst-tabs__btn.is-unwired.is-active {
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 .gst-prof-switcher .gst-tabs__btn.is-unwired.is-active .gst-prof-switcher__icon { opacity: 0.7; }
 
@@ -4760,7 +4797,7 @@ td.bpe-editing select {
     text-align: center;
     gap: var(--gst-space-sm);
     padding: var(--gst-space-xl) var(--gst-space-lg) 28px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
 }
 .gst-prof-unwired__glyph {
     width: 48px;
@@ -4769,14 +4806,14 @@ td.bpe-editing select {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--gst-warning-light, rgba(201, 122, 42, 0.12));
-    color: var(--gst-warning, #c97a2a);
+    background: var(--gst-color-warning-light, rgba(201, 122, 42, 0.12));
+    color: var(--gst-color-warning, #c97a2a);
     margin-bottom: var(--gst-space-xs);
 }
 .gst-prof-unwired__title {
     font-size: 15px;
     font-weight: 600;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     margin: 0;
 }
 .gst-prof-unwired__body {
@@ -4789,7 +4826,7 @@ td.bpe-editing select {
     max-width: 56ch;
     margin: var(--gst-space-xs) 0 0;
     font-size: 12px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
 }
 .gst-prof-unwired__code {
     width: 100%;
@@ -4801,8 +4838,8 @@ td.bpe-editing select {
     margin: 0;
     padding: 12px var(--gst-space-md);
     padding-right: 96px;
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: 12px;
     line-height: 1.5;
@@ -4830,12 +4867,12 @@ td.bpe-editing select {
    for global rules viewed from a language-scoped panel. */
 .gst-prof-syn__note {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin: var(--gst-space-md) 0 0;
     padding: 12px 14px 0;
     max-width: 60em;
     line-height: 1.5;
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     font-style: italic;
 }
 
@@ -4852,18 +4889,18 @@ td.bpe-editing select {
     font-family: var(--gst-font-mono);
     font-size: 12px;
     font-weight: 700;
-    background: var(--gst-bg);
-    color: var(--gst-text-muted);
-    border: 1px solid var(--gst-border-light);
+    background: var(--gst-color-bg);
+    color: var(--gst-color-text-muted);
+    border: 1px solid var(--gst-color-border-light);
 }
 .gst-prof-syn__kind.is-replacement {
-    background: var(--gst-primary-light);
-    color: var(--gst-primary);
+    background: var(--gst-color-primary-light);
+    color: var(--gst-color-primary);
     border-color: rgba(21, 101, 192, 0.25);
 }
 .gst-prof-syn__kind.is-equivalent {
-    background: var(--gst-success-light);
-    color: var(--gst-success);
+    background: var(--gst-color-success-light);
+    color: var(--gst-color-success);
     border-color: rgba(46, 125, 50, 0.25);
 }
 
@@ -4878,14 +4915,14 @@ td.bpe-editing select {
     font-weight: 500;
     letter-spacing: 0.02em;
     text-transform: lowercase;
-    color: var(--gst-text-secondary);
-    background: var(--gst-surface-active);
-    border: 1px solid var(--gst-border-light);
+    color: var(--gst-color-text-secondary);
+    background: var(--gst-color-surface-active);
+    border: 1px solid var(--gst-color-border-light);
     user-select: none;
 }
 .gst-prof-syn__scope.is-global {
-    color: var(--gst-warning);
-    background: var(--gst-warning-light);
+    color: var(--gst-color-warning);
+    background: var(--gst-color-warning-light);
     border-color: rgba(217, 119, 6, 0.22);
 }
 
@@ -4894,7 +4931,7 @@ td.bpe-editing select {
    cell still shows the dirty/new rail when applicable; readonly rows
    never become dirty so there's no conflict. */
 .gst-pinedit__row.is-readonly .gst-pinedit__input {
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     cursor: default;
 }
 .gst-pinedit__row.is-readonly .gst-pinedit__input:hover {
@@ -4904,12 +4941,12 @@ td.bpe-editing select {
 
 .gst-prof-syn__help {
     margin-top: var(--gst-space-xs);
-    border-top: 1px dashed var(--gst-border-light);
+    border-top: 1px dashed var(--gst-color-border-light);
     padding: 10px 14px 12px;
 }
 .gst-prof-syn__help summary {
     cursor: pointer;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     font-size: var(--gst-text-sm);
     font-weight: 500;
     list-style: none;
@@ -4920,7 +4957,7 @@ td.bpe-editing select {
     content: '›';
     display: inline-block;
     width: 14px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     transition: transform 140ms ease;
 }
 .gst-prof-syn__help[open] summary::before { transform: rotate(90deg); }
@@ -4932,15 +4969,15 @@ td.bpe-editing select {
     font-size: var(--gst-text-sm);
     line-height: 1.5;
 }
-.gst-prof-syn__help-dl dt { font-weight: 600; color: var(--gst-text); }
-.gst-prof-syn__help-dl dd { margin: 0; color: var(--gst-text-secondary); }
+.gst-prof-syn__help-dl dt { font-weight: 600; color: var(--gst-color-text); }
+.gst-prof-syn__help-dl dd { margin: 0; color: var(--gst-color-text-secondary); }
 .gst-prof-syn__help-dl code {
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border-light);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border-light);
     padding: 1px 6px;
     border-radius: 3px;
     font-size: 11px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-family: var(--gst-font-mono);
 }
 
@@ -4948,8 +4985,9 @@ td.bpe-editing select {
 /*
    Three vertically-stacked lanes of phrase signal scoped to the active
    channel: top phrases, zero-result phrases, low-CTR phrases. Each lane
-   is anchored by a 2px colored rule on the left (--gst-primary / warning
-   / danger) so the eye lands on severity before reading. Phrase rows are
+   is anchored by a 2px colored rule on the left (--gst-color-primary /
+   -warning / -danger) so the eye lands on severity before reading. Phrase
+   rows are
    click-targets that drop the phrase into the live preview on the left;
    hover reveals secondary CTAs to seed a draft pin or synonym row.
 
@@ -4980,16 +5018,16 @@ td.bpe-editing select {
     align-items: center;
     gap: var(--gst-space-sm);
     padding: 6px var(--gst-space-sm);
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border-light);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: var(--gst-radius);
 }
 .gst-prof-ins__bar-spacer { flex: 1; }
 .gst-prof-ins__refresh {
     appearance: none;
     background: transparent;
-    border: 1px solid var(--gst-border);
-    color: var(--gst-text-secondary);
+    border: 1px solid var(--gst-color-border);
+    color: var(--gst-color-text-secondary);
     width: 28px; height: 28px;
     border-radius: 50%;
     display: inline-flex;
@@ -4999,8 +5037,8 @@ td.bpe-editing select {
     transition: color 140ms ease, border-color 140ms ease, transform 200ms ease;
 }
 .gst-prof-ins__refresh:hover {
-    color: var(--gst-primary);
-    border-color: var(--gst-primary);
+    color: var(--gst-color-primary);
+    border-color: var(--gst-color-primary);
 }
 .gst-prof-ins__refresh.is-spinning svg {
     animation: gst-prof-ins-spin 800ms linear infinite;
@@ -5019,15 +5057,15 @@ td.bpe-editing select {
 .gst-prof-ins-lane {
     /* Each lane carries an accent color in --lane-accent, applied to the
        left rule inside the head and to the bar fills inside its rows. */
-    --lane-accent: var(--gst-primary);
-    background: var(--gst-surface);
-    border: 1px solid var(--gst-border-light);
+    --lane-accent: var(--gst-color-primary);
+    background: var(--gst-color-surface);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: var(--gst-radius);
     overflow: hidden;
 }
-.gst-prof-ins-lane--top    { --lane-accent: var(--gst-primary); }
-.gst-prof-ins-lane--zero   { --lane-accent: var(--gst-danger); }
-.gst-prof-ins-lane--lowctr { --lane-accent: var(--gst-warning); }
+.gst-prof-ins-lane--top    { --lane-accent: var(--gst-color-primary); }
+.gst-prof-ins-lane--zero   { --lane-accent: var(--gst-color-danger); }
+.gst-prof-ins-lane--lowctr { --lane-accent: var(--gst-color-warning); }
 
 .gst-prof-ins-lane__head {
     display: grid;
@@ -5035,8 +5073,8 @@ td.bpe-editing select {
     align-items: baseline;
     gap: 10px;
     padding: 10px var(--gst-space-md) 10px 0;
-    border-bottom: 1px solid var(--gst-border-light);
-    background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 220%);
+    border-bottom: 1px solid var(--gst-color-border-light);
+    background: linear-gradient(180deg, var(--gst-color-surface) 0%, var(--gst-color-bg) 220%);
 }
 /* Deep-link from a channel-scoped lane header into the matching global
    Insights tab, pre-filtered to this channel. Quiet text-button styling so
@@ -5044,7 +5082,7 @@ td.bpe-editing select {
 .gst-prof-ins-lane__deeplink {
     font-size: 11px;
     font-weight: 600;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     text-decoration: none;
     letter-spacing: 0.04em;
     padding: 2px 6px;
@@ -5054,7 +5092,7 @@ td.bpe-editing select {
 .gst-prof-ins-lane__deeplink:hover,
 .gst-prof-ins-lane__deeplink:focus-visible {
     color: var(--lane-accent);
-    background: var(--gst-surface-hover);
+    background: var(--gst-color-surface-hover);
     outline: none;
 }
 .gst-prof-ins-lane__rule {
@@ -5069,29 +5107,29 @@ td.bpe-editing select {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 .gst-prof-ins-lane__hint {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     letter-spacing: 0.01em;
     /* Hint text gets a subtle separator dot before it. */
 }
 .gst-prof-ins-lane__hint::before {
     content: '·';
     margin: 0 var(--gst-space-sm) 0 0;
-    color: var(--gst-border);
+    color: var(--gst-color-border);
 }
 .gst-prof-ins-lane__count {
     font-variant-numeric: tabular-nums;
     font-size: 11px;
     font-weight: 600;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     letter-spacing: 0.04em;
 }
 .gst-prof-ins-lane__count::after {
     content: ' · ' attr(data-window);
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-weight: 500;
     margin-left: 2px;
 }
@@ -5114,8 +5152,8 @@ td.bpe-editing select {
     padding: var(--gst-space-sm) var(--gst-space-md);
     background: transparent;
     border: 0;
-    border-top: 1px solid var(--gst-border-light);
-    color: var(--gst-text-muted);
+    border-top: 1px solid var(--gst-color-border-light);
+    color: var(--gst-color-text-muted);
     font: inherit;
     font-size: 12px;
     text-align: center;
@@ -5124,8 +5162,8 @@ td.bpe-editing select {
 }
 .gst-prof-ins-lane__more:hover,
 .gst-prof-ins-lane__more:focus-visible {
-    background: var(--gst-surface-hover);
-    color: var(--lane-accent, var(--gst-text));
+    background: var(--gst-color-surface-hover);
+    color: var(--lane-accent, var(--gst-color-text));
 }
 
 /* ── Phrase row ──────────────────────────────────────────────── */
@@ -5140,17 +5178,17 @@ td.bpe-editing select {
     align-items: center;
     gap: 14px;
     padding: 9px var(--gst-space-md) 9px 14px;
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     cursor: pointer;
     position: relative;
     transition: background 120ms ease;
 }
 .gst-prof-ins-row:first-child { border-top: 0; }
 .gst-prof-ins-row:hover {
-    background: var(--gst-surface-hover);
+    background: var(--gst-color-surface-hover);
 }
 .gst-prof-ins-row.is-active {
-    background: color-mix(in srgb, var(--lane-accent) 8%, var(--gst-surface));
+    background: color-mix(in srgb, var(--lane-accent) 8%, var(--gst-color-surface));
 }
 .gst-prof-ins-row.is-active::before {
     content: '';
@@ -5162,7 +5200,7 @@ td.bpe-editing select {
 
 .gst-prof-ins-row__phrase {
     font-size: 13px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-weight: 500;
     min-width: 0;
     overflow: hidden;
@@ -5177,7 +5215,7 @@ td.bpe-editing select {
 .gst-prof-ins-row__bar {
     height: 4px;
     border-radius: 2px;
-    background: var(--gst-border-light);
+    background: var(--gst-color-border-light);
     position: relative;
     overflow: hidden;
 }
@@ -5237,17 +5275,17 @@ td.bpe-editing select {
 .gst-prof-ins-row__count {
     font-variant-numeric: tabular-nums;
     font-size: 12px;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     text-align: right;
     min-width: 32px;
 }
 .gst-prof-ins-row__count strong {
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-weight: 600;
 }
 .gst-prof-ins-row__count small {
     font-size: 10px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin-left: var(--gst-space-xs);
     text-transform: lowercase;
     letter-spacing: 0.04em;
@@ -5279,7 +5317,7 @@ td.bpe-editing select {
     padding: 0;
     background: transparent;
     border: 1px solid transparent;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     border-radius: 4px;
     cursor: pointer;
     display: inline-flex;
@@ -5292,9 +5330,9 @@ td.bpe-editing select {
     height: 14px;
 }
 .gst-prof-ins-row__icon:hover:not(:disabled) {
-    background: var(--gst-surface);
-    border-color: var(--gst-border);
-    color: var(--lane-accent, var(--gst-text));
+    background: var(--gst-color-surface);
+    border-color: var(--gst-color-border);
+    color: var(--lane-accent, var(--gst-color-text));
 }
 .gst-prof-ins-row__icon:disabled {
     opacity: .35;
@@ -5312,9 +5350,9 @@ td.bpe-editing select {
     flex-wrap: wrap;
     gap: var(--gst-space-sm);
     padding: 10px 14px;
-    background: color-mix(in srgb, var(--lane-accent) 5%, var(--gst-surface));
-    border-top: 1px solid var(--gst-border-light);
-    border-bottom: 1px solid var(--gst-border-light);
+    background: color-mix(in srgb, var(--lane-accent) 5%, var(--gst-color-surface));
+    border-top: 1px solid var(--gst-color-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     position: relative;
 }
 .gst-prof-ins-edit::before {
@@ -5329,15 +5367,15 @@ td.bpe-editing select {
     align-items: center;
     height: 24px;
     padding: 0 var(--gst-space-sm);
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border-light);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: 3px;
     font-size: 12px;
     font-weight: 500;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 .gst-prof-ins-edit__arrow {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: 14px;
 }
 .gst-prof-ins-edit__picker {
@@ -5350,12 +5388,12 @@ td.bpe-editing select {
     box-sizing: border-box;
     height: 28px;
     padding: 0 var(--gst-space-sm);
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border);
     border-radius: 3px;
     font: inherit;
     font-size: 13px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
 }
 .gst-prof-ins-edit__input:focus {
     outline: none;
@@ -5370,8 +5408,8 @@ td.bpe-editing select {
     z-index: 30;
     max-height: 200px;
     overflow-y: auto;
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border);
     border-radius: 3px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
 }
@@ -5380,13 +5418,13 @@ td.bpe-editing select {
     flex-direction: column;
     padding: 6px var(--gst-space-sm);
     cursor: pointer;
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
     font-size: 12px;
 }
 .gst-prof-ins-edit__hit:first-child { border-top: 0; }
-.gst-prof-ins-edit__hit:hover { background: var(--gst-surface-hover); }
+.gst-prof-ins-edit__hit:hover { background: var(--gst-color-surface-hover); }
 .gst-prof-ins-edit__hit small {
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: 11px;
 }
 .gst-prof-ins-edit__save,
@@ -5399,13 +5437,13 @@ td.bpe-editing select {
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    border: 1px solid var(--gst-border);
-    background: var(--gst-bg);
-    color: var(--gst-text);
+    border: 1px solid var(--gst-color-border);
+    background: var(--gst-color-bg);
+    color: var(--gst-color-text);
     transition: background 120ms ease, border-color 120ms ease;
 }
 .gst-prof-ins-edit__cancel:hover {
-    background: var(--gst-surface-hover);
+    background: var(--gst-color-surface-hover);
 }
 .gst-prof-ins-edit__save {
     background: var(--lane-accent);
@@ -5436,7 +5474,7 @@ td.bpe-editing select {
    flex-basis: 100%) so the input stays single-line. */
 .gst-prof-ins-edit__tip {
     flex: 1 0 100%;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     font-size: 11.5px;
     line-height: 1.4;
     margin-top: 2px;
@@ -5464,11 +5502,11 @@ td.bpe-editing select {
     margin: 0;
     padding: var(--gst-space-md) var(--gst-space-md) 18px;
     font-size: 12px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     text-align: center;
     line-height: 1.5;
 }
-.gst-prof-ins-lane__error { color: var(--gst-danger); }
+.gst-prof-ins-lane__error { color: var(--gst-color-danger); }
 .gst-prof-ins-lane__loading {
     /* Three skeleton bars stacked vertically — gives a sense of "phrases
        are coming" without committing to any specific row count. */
@@ -5485,9 +5523,9 @@ td.bpe-editing select {
     height: 12px;
     border-radius: 3px;
     background: linear-gradient(90deg,
-        var(--gst-border-light) 0%,
-        var(--gst-surface-hover) 50%,
-        var(--gst-border-light) 100%);
+        var(--gst-color-border-light) 0%,
+        var(--gst-color-surface-hover) 50%,
+        var(--gst-color-border-light) 100%);
     background-size: 200% 100%;
     animation: gst-prof-ins-shimmer 1100ms ease-in-out infinite;
 }
@@ -5504,7 +5542,7 @@ td.bpe-editing select {
     margin: 0;
     font-size: 11px;
     line-height: 1.5;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     padding: 0 var(--gst-space-xs);
 }
 
@@ -5516,8 +5554,8 @@ td.bpe-editing select {
     bottom: 16px;
     left: 50%;
     transform: translate(-50%, 8px);
-    background: var(--gst-text);
-    color: var(--gst-surface);
+    background: var(--gst-color-text);
+    color: var(--gst-color-surface);
     font-size: 12px;
     padding: var(--gst-space-sm) 14px;
     border-radius: 999px;
@@ -5552,7 +5590,7 @@ td.bpe-editing select {
 .gst-prof-details__section + .gst-prof-details__section {
     margin-top: var(--gst-space-lg);
     padding-top: var(--gst-space-md);
-    border-top: 1px solid var(--gst-border-light);
+    border-top: 1px solid var(--gst-color-border-light);
 }
 .gst-prof-details__title {
     font-size: var(--gst-text-base);
@@ -5564,7 +5602,7 @@ td.bpe-editing select {
 }
 .gst-prof-details__sublabel {
     font-size: 11px;
-    color: var(--gst-text-muted);
+    color: var(--gst-color-text-muted);
     margin: 0 0 var(--gst-space-sm);
 }
 .gst-prof-details__meta {
@@ -5575,8 +5613,8 @@ td.bpe-editing select {
 }
 .gst-prof-details__shared { margin-top: var(--gst-space-md); }
 .gst-prof-details__doc {
-    background: var(--gst-bg);
-    border: 1px solid var(--gst-border-light);
+    background: var(--gst-color-bg);
+    border: 1px solid var(--gst-color-border-light);
     border-radius: var(--gst-radius);
     padding: var(--gst-space-md);
     overflow-x: auto;
@@ -5611,7 +5649,7 @@ td.bpe-editing select {
 }
 @media (max-width: 1100px) {
     .gst-prof-workspace { grid-template-columns: minmax(0, 1fr); }
-    .gst-prof-preview { border-right: 0; border-bottom: 1px solid var(--gst-border-light); }
+    .gst-prof-preview { border-right: 0; border-bottom: 1px solid var(--gst-color-border-light); }
 }
 @media (max-width: 720px) {
     .gst-prof-preview__pickers { width: 100%; }
@@ -5634,7 +5672,7 @@ td.bpe-editing select {
     display: flex;
     gap: 0;
     align-items: stretch;
-    border-bottom: 1px solid var(--gst-border-light);
+    border-bottom: 1px solid var(--gst-color-border-light);
     margin-bottom: var(--gst-space-lg);
 }
 .gst-tabs__btn {
@@ -5642,7 +5680,7 @@ td.bpe-editing select {
     background: transparent;
     border: 0;
     border-bottom: 2px solid transparent;
-    color: var(--gst-text-secondary);
+    color: var(--gst-color-text-secondary);
     font: inherit;
     font-size: var(--gst-text-sm);
     font-weight: 500;
@@ -5652,10 +5690,10 @@ td.bpe-editing select {
     letter-spacing: 0.01em;
     transition: color 140ms ease, border-color 140ms ease;
 }
-.gst-tabs__btn:hover { color: var(--gst-text); }
+.gst-tabs__btn:hover { color: var(--gst-color-text); }
 .gst-tabs__btn.is-active {
-    color: var(--gst-primary);
-    border-bottom-color: var(--gst-primary);
+    color: var(--gst-color-primary);
+    border-bottom-color: var(--gst-color-primary);
 }
 .gst-tabpanel[hidden] { display: none; }
 
@@ -5667,16 +5705,16 @@ td.bpe-editing select {
    design-system.md → Component: Segmented. */
 .gst-segmented {
     display: inline-flex;
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     overflow: hidden;
 }
 .gst-segmented__btn {
     appearance: none;
-    background: var(--gst-surface);
+    background: var(--gst-color-surface);
     border: 0;
-    border-right: 1px solid var(--gst-border);
-    color: var(--gst-text-secondary);
+    border-right: 1px solid var(--gst-color-border);
+    color: var(--gst-color-text-secondary);
     font: inherit;
     font-size: var(--gst-text-sm);
     font-weight: 500;
@@ -5686,13 +5724,13 @@ td.bpe-editing select {
     transition: background 120ms ease, color 120ms ease;
 }
 .gst-segmented__btn:last-child { border-right: 0; }
-.gst-segmented__btn:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-segmented__btn:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-text); }
 .gst-segmented__btn.is-active {
-    background: var(--gst-primary);
+    background: var(--gst-color-primary);
     color: #fff;
     cursor: default;
 }
-.gst-segmented__btn.is-active:hover { background: var(--gst-primary); }
+.gst-segmented__btn.is-active:hover { background: var(--gst-color-primary); }
 
 /* ── Synonym Coverage inline editor ─────────────────────────────── */
 /* Mirrors the Channel Insights inline editor (gst-prof-ins-edit*) but
@@ -5701,7 +5739,7 @@ td.bpe-editing select {
    without leaving the Unused tab. */
 .gst-sc-edit-row > .gst-sc-edit-cell {
     background: var(--gst-bg-soft, #f5f7fb);
-    border-top: 1px dashed var(--gst-border-light, #e5e7eb);
+    border-top: 1px dashed var(--gst-color-border-light, #e5e7eb);
     padding: 10px 14px;
 }
 .gst-sc-edit {
@@ -5714,24 +5752,24 @@ td.bpe-editing select {
     flex: 1 1 320px;
     min-width: 220px;
     padding: 5px var(--gst-space-sm);
-    border: 1px solid var(--gst-border);
+    border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius-sm, 4px);
     font: inherit;
     font-size: 13px;
 }
-.gst-sc-edit__input:focus { outline: 2px solid var(--gst-primary); outline-offset: -1px; }
-.gst-sc-edit__input:disabled { background: var(--gst-bg, #fafbfc); color: var(--gst-text-muted, #888); }
+.gst-sc-edit__input:focus { outline: 2px solid var(--gst-color-primary); outline-offset: -1px; }
+.gst-sc-edit__input:disabled { background: var(--gst-color-bg, #fafbfc); color: var(--gst-color-text-muted, #888); }
 .gst-sc-edit__tip {
     flex-basis: 100%;
-    color: var(--gst-text-muted, #6b7280);
+    color: var(--gst-color-text-muted, #6b7280);
     font-size: 11px;
     margin-top: 2px;
 }
 .gst-sc-edit__ok {
-    color: var(--gst-success, #2f7a3a);
+    color: var(--gst-color-success, #2f7a3a);
     font-weight: 600;
 }
-.gst-btn.is-active { background: var(--gst-bg-soft, #eef1f6); border-color: var(--gst-primary); color: var(--gst-primary); }
+.gst-btn.is-active { background: var(--gst-bg-soft, #eef1f6); border-color: var(--gst-color-primary); color: var(--gst-color-primary); }
 
 /* ── Insights Aurora-style telemetry table ───────────────────────
    Variant of .gst-table used on the global Insights tool's three
@@ -5743,11 +5781,11 @@ td.bpe-editing select {
    the shared .num right-alignment + tabular numerals.
 */
 .gst-ins-aurora-table tbody tr { cursor: default; }
-.gst-ins-aurora-table tbody tr:hover td { background: var(--gst-surface-hover); }
+.gst-ins-aurora-table tbody tr:hover td { background: var(--gst-color-surface-hover); }
 
 .gst-ins-row__phrase {
     font-weight: 500;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     max-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -5755,7 +5793,7 @@ td.bpe-editing select {
 }
 
 .gst-ins-row__channel {
-    color: var(--gst-link) !important;
+    color: var(--gst-color-link) !important;
     text-decoration: none;
 }
 .gst-ins-row__channel:hover { text-decoration: underline; }
@@ -5767,8 +5805,8 @@ td.bpe-editing select {
     margin-left: 6px;
     padding: 1px 6px;
     border-radius: 9px;
-    background: var(--gst-surface-active);
-    color: var(--gst-text-muted);
+    background: var(--gst-color-surface-active);
+    color: var(--gst-color-text-muted);
     font-size: 11px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
@@ -5776,17 +5814,17 @@ td.bpe-editing select {
     vertical-align: 1px;
 }
 .gst-tabs__btn.is-active .gst-tab__count {
-    background: color-mix(in srgb, var(--gst-primary) 12%, transparent);
-    color: var(--gst-primary);
+    background: color-mix(in srgb, var(--gst-color-primary) 12%, transparent);
+    color: var(--gst-color-primary);
 }
 
 /* ── Collections-tab flyout pieces ──────────────────────────────── */
 .gst-field__readonly {
     padding: 6px var(--gst-space-sm);
     background: var(--gst-bg-soft, #f5f7fb);
-    border: 1px solid var(--gst-border-light, #e5e7eb);
+    border: 1px solid var(--gst-color-border-light, #e5e7eb);
     border-radius: 4px;
-    color: var(--gst-text);
+    color: var(--gst-color-text);
     font-size: var(--gst-text-sm);
 }
 .gst-field__readonly.gst-mono { font-family: var(--gst-font-mono); font-size: 12px; }
@@ -5803,7 +5841,7 @@ td.bpe-editing select {
 .gst-colfly-profrow {
     padding: var(--gst-space-sm) 10px;
     background: var(--gst-bg-soft, #f5f7fb);
-    border: 1px solid var(--gst-border-light, #e5e7eb);
+    border: 1px solid var(--gst-color-border-light, #e5e7eb);
     border-radius: 4px;
     font-size: var(--gst-text-sm);
     line-height: 1.6;
@@ -5812,8 +5850,8 @@ td.bpe-editing select {
     display: inline-block;
     padding: 1px 6px;
     margin: 0 2px;
-    background: color-mix(in srgb, var(--gst-primary) 10%, transparent);
-    color: var(--gst-primary);
+    background: color-mix(in srgb, var(--gst-color-primary) 10%, transparent);
+    color: var(--gst-color-primary);
     border-radius: 3px;
     font-family: var(--gst-font-mono);
     font-size: 11px;

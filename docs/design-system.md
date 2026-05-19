@@ -44,14 +44,12 @@ touching component code.
 See [`design-system-methodologies.md`](./design-system-methodologies.md)
 for the broader rationale and how this model compares to alternatives.
 
-> **Current state.** The tier model is committed in this doc but the CSS
-> file (`graphsearchtools.css`) is still flat — every token sits at what
-> will become the semantic tier. A follow-up PR will introduce primitives
-> underneath and rename the current names to `--gst-color-*`. **For new
-> code today, keep using the names in the table at the bottom of this
-> section.** Don't pre-emptively invent `--gst-color-*` names — the
-> migration rewrites callsites in bulk, and a third spelling in the
-> codebase would defeat the point.
+> **Current state.** The three-tier model is live in
+> `graphsearchtools.css`: primitives sit at the top of `:root`,
+> semantic tokens use the `--gst-color-*` prefix and alias primitives,
+> and component CSS reads from the semantic tier. Use `--gst-color-*`
+> for any new colour reference; never reach into the primitive layer
+> from component CSS.
 
 ### Tier 1 — primitive
 
@@ -104,20 +102,19 @@ divergence appears.
 
 ### Token groups (today)
 
-The names below are what's in the CSS right now. After the migration
-they'll live at the semantic tier with a `--gst-color-*` prefix on the
-colour groups; spacing / type / radii / shadows are already
-semantic-by-scale and won't be renamed.
+Semantic tokens live at the `--gst-color-*` tier and alias the primitives
+above them. Non-colour tokens (spacing / type / radii / shadows) stay flat
+because they're already semantic-by-scale.
 
 | Group        | Examples |
 |--------------|----------|
-| Surfaces     | `--gst-bg`, `--gst-surface`, `--gst-surface-hover`, `--gst-surface-active` |
-| Borders      | `--gst-border`, `--gst-border-light` |
-| Text         | `--gst-text`, `--gst-text-secondary`, `--gst-text-muted` |
-| Brand        | `--gst-primary`, `--gst-primary-hover`, `--gst-primary-light`, `--gst-link` |
-| Status       | `--gst-success(-light)`, `--gst-warning(-light)`, `--gst-danger(-light)`, `--gst-info(-light)` |
+| Surfaces     | `--gst-color-bg`, `--gst-color-surface`, `--gst-color-surface-hover`, `--gst-color-surface-active` |
+| Borders      | `--gst-color-border`, `--gst-color-border-light` |
+| Text         | `--gst-color-text`, `--gst-color-text-secondary`, `--gst-color-text-muted` |
+| Brand        | `--gst-color-primary`, `--gst-color-primary-hover`, `--gst-color-primary-light`, `--gst-color-link`, `--gst-color-link-hover` |
+| Status       | `--gst-color-success(-light)`, `--gst-color-warning(-light)`, `--gst-color-danger(-light)`, `--gst-color-info(-light)` |
 | Spacing      | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) / `-2xl` (48). Row density: `--gst-row-padding-compact` / `-comfortable`. |
-| Type         | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-xl` |
+| Type         | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-4xl` |
 | Radii        | `--gst-radius-sm` (3), `--gst-radius` (4), `--gst-radius-lg` (6) |
 | Shadows      | `--gst-shadow-sm` … `--gst-shadow-xl` |
 
