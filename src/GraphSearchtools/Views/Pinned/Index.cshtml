@@ -12,59 +12,219 @@
 
 <div id="gst-alert" class="gst-alert" hidden></div>
 
-@* ─────────────── Aurora pins grid ─────────────── *@
-@* One row per (phrase, collection, locale) group; targets are managed
-   inside the flyout. The grid is read-only at this level; the ⋯ menu and
-   row click open the PinFlyout for editing. *@
-<div class="gst-toolbar">
-    <div class="gst-search">
-        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round"
-             stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input type="text" id="gst-pin-search"
-               placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
-    </div>
-    <label class="gst-filter">
-        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</span>
-        <select class="gst-filter__select" id="gst-pin-collection-filter">
-            <option value="">@Loc.GetString("/graphsearchtools/tools/pinned/all_sites")</option>
-        </select>
-    </label>
-    <label class="gst-filter">
-        <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
-        <select class="gst-filter__select" id="gst-pin-locale-filter">
-            <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
-        </select>
-    </label>
-    <div class="gst-toolbar__spacer"></div>
-    <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
-        + @Loc.GetString("/graphsearchtools/tools/pinned/add")
+@* ─────────────── Page tabs ─────────────── *@
+<nav class="gst-tabs" role="tablist" aria-label="Pinned views">
+    <button type="button" class="gst-tabs__btn is-active"
+            role="tab" aria-selected="true" data-tab="pins" id="gst-pin-tab-pins">
+        Pins
     </button>
-</div>
+    <button type="button" class="gst-tabs__btn"
+            role="tab" aria-selected="false" data-tab="collections" id="gst-pin-tab-collections">
+        Collections
+    </button>
+    <button type="button" class="gst-tabs__btn"
+            role="tab" aria-selected="false" data-tab="changelog" id="gst-pin-tab-changelog">
+        @Loc.GetString("/graphsearchtools/tools/changelog/title")
+    </button>
+</nav>
 
-<table class="gst-table gst-pin-aurora-table">
-    <thead>
-        <tr>
-            <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
-            <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
-            <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
-            <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
-            <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
-            <th aria-label="Actions"></th>
-        </tr>
-    </thead>
-    <tbody id="gst-pin-aurora-rows"></tbody>
-</table>
+@* ─────────────── Pins tab (existing Aurora grid) ─────────────── *@
+<section class="gst-tabpanel" data-tab="pins" role="tabpanel" aria-labelledby="gst-pin-tab-pins">
+    <div class="gst-toolbar">
+        <div class="gst-search">
+            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="gst-pin-search"
+                   placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
+        </div>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</span>
+            <select class="gst-filter__select" id="gst-pin-collection-filter">
+                <option value="">@Loc.GetString("/graphsearchtools/tools/pinned/all_sites")</option>
+            </select>
+        </label>
+        <label class="gst-filter">
+            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</span>
+            <select class="gst-filter__select" id="gst-pin-locale-filter">
+                <option value="">@Loc.GetString("/graphsearchtools/ui/shared/all")</option>
+            </select>
+        </label>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
+            + @Loc.GetString("/graphsearchtools/tools/pinned/add")
+        </button>
+    </div>
 
-@* Pin flyout — shared markup; the Aurora JS opens/closes it via GST.flyout.
-   Use the absolute path so Razor's partial search (which expects a separate
-   GraphSearchtools.Views assembly that this RCL doesn't emit) doesn't
-   spurious-404. *@
-@await Html.PartialAsync("/Views/Shared/_PinFlyout.cshtml")
+    <table class="gst-table gst-pin-aurora-table">
+        <thead>
+            <tr>
+                <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
+                <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
+                <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
+                <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
+                <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
+                <th aria-label="Actions"></th>
+            </tr>
+        </thead>
+        <tbody id="gst-pin-aurora-rows"></tbody>
+    </table>
+
+    @await Html.PartialAsync("/Views/Shared/_PinFlyout.cshtml")
+</section>
+
+@* ─────────────── Collections tab ─────────────── *@
+<section class="gst-tabpanel" data-tab="collections" role="tabpanel"
+         aria-labelledby="gst-pin-tab-collections" hidden>
+    <div class="gst-toolbar">
+        <div class="gst-search">
+            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="gst-col-search" placeholder="Filter by collection key…" />
+        </div>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-col-create" class="gst-btn gst-btn--primary">
+            + Add Collection
+        </button>
+    </div>
+
+    <table class="gst-table gst-col-aurora-table">
+        <thead>
+            <tr>
+                <th data-sort="key">Key</th>
+                <th data-sort="items">Items</th>
+                <th data-sort="channels">Matching channels</th>
+                <th data-sort="updated">Last updated</th>
+                <th aria-label="Actions"></th>
+            </tr>
+        </thead>
+        <tbody id="gst-col-aurora-rows"></tbody>
+    </table>
+
+    @* ─────────────── New-collection flyout ─────────────── *@
+    <div id="gst-flyout-colcreate-backdrop" class="gst-flyout-backdrop" hidden></div>
+    <aside id="gst-flyout-colcreate" class="gst-flyout" hidden role="dialog"
+           aria-modal="true" aria-labelledby="gst-flyout-colcreate-title">
+        <header class="gst-flyout__header">
+            <h2 id="gst-flyout-colcreate-title" class="gst-flyout__title">New collection</h2>
+            <button type="button" class="gst-flyout__close"
+                    data-flyout-close="colcreate" aria-label="Close">×</button>
+        </header>
+        <div class="gst-flyout__body">
+            <div class="gst-field">
+                <label class="gst-field__label" for="gst-colcreate-key">Key</label>
+                <input id="gst-colcreate-key" name="key" type="text" autocomplete="off" />
+                <span class="gst-field__hint">
+                    The Graph collection key (e.g. <code>alloy-en</code>). Typically matches a
+                    channel's <code>UsesPinnedKey</code> formula output.
+                </span>
+            </div>
+            <div class="gst-field">
+                <label class="gst-field__check">
+                    <input id="gst-colcreate-active" name="isActive" type="checkbox" checked />
+                    <span>Active</span>
+                </label>
+                <span class="gst-field__hint">Inactive collections are kept by Graph but not served.</span>
+            </div>
+        </div>
+        <footer class="gst-flyout__footer">
+            <div class="gst-flyout__footer__spacer"></div>
+            <button type="button" class="gst-btn" data-flyout-close="colcreate">Cancel</button>
+            <button type="button" class="gst-btn gst-btn--primary" id="gst-colcreate-save">Create</button>
+        </footer>
+    </aside>
+
+    @* ─────────────── Collection-detail flyout ─────────────── *@
+    <div id="gst-flyout-collection-backdrop" class="gst-flyout-backdrop" hidden></div>
+    <aside id="gst-flyout-collection" class="gst-flyout" hidden role="dialog"
+           aria-modal="true" aria-labelledby="gst-flyout-col-title">
+        <header class="gst-flyout__header">
+            <h2 id="gst-flyout-col-title" class="gst-flyout__title">Collection</h2>
+            <button type="button" class="gst-flyout__close"
+                    data-flyout-close="collection" aria-label="Close">×</button>
+        </header>
+        <div class="gst-flyout__body">
+            <div class="gst-field">
+                <label class="gst-field__label">Key</label>
+                <div id="gst-colfly-key" class="gst-field__readonly"></div>
+            </div>
+            <div class="gst-field">
+                <label class="gst-field__label">Collection id</label>
+                <div id="gst-colfly-id" class="gst-field__readonly gst-mono"></div>
+            </div>
+            <div class="gst-field">
+                <label class="gst-field__label">Items</label>
+                <div id="gst-colfly-items" class="gst-field__readonly"></div>
+            </div>
+            <div class="gst-field">
+                <label class="gst-field__label">Matching channels</label>
+                <div id="gst-colfly-channels" class="gst-colfly-channels">
+                    <p class="gst-muted" data-empty>No registered channel resolves to this collection.</p>
+                </div>
+                <span class="gst-field__hint">
+                    Channels whose <code>UsesPinnedKey</code> formula resolves to this collection key
+                    for one of their declared locales.
+                </span>
+            </div>
+        </div>
+        <footer class="gst-flyout__footer">
+            @* Delete is destructive — left-aligned in danger styling. Drops
+               the collection AND every pin inside it; the JS confirms with
+               the live item count + a warning when any channel still
+               resolves here. *@
+            <button type="button" class="gst-btn gst-btn--danger" id="gst-colfly-delete">Delete collection</button>
+            <div class="gst-flyout__footer__spacer"></div>
+            <button type="button" class="gst-btn" data-flyout-close="collection">Close</button>
+        </footer>
+    </aside>
+</section>
+
+@* ─────────────── Changelog tab ─────────────── *@
+<section class="gst-tabpanel" data-tab="changelog" role="tabpanel"
+         aria-labelledby="gst-pin-tab-changelog" hidden>
+    <div class="gst-toolbar">
+        <span class="gst-muted">@Loc.GetString("/graphsearchtools/tools/changelog/pinned_intro")</span>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-changelog-pin-refresh" class="gst-btn">@Loc.GetString("/graphsearchtools/ui/shared/refresh")</button>
+    </div>
+
+    <table class="gst-table gst-changelog-table">
+        <thead>
+            <tr>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_when")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_who")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_kind")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_action")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_subject")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_channel")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_locale")</th>
+            </tr>
+        </thead>
+        <tbody id="gst-changelog-pin-rows"></tbody>
+    </table>
+</section>
 
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-aurora.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-collections.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/changelog.js")"></script>
+    <script>
+        (function () {
+            if (!window.GST || !window.GST.changelog || typeof window.GST.changelog.mount !== 'function') return;
+            window.GST.changelog.mount({
+                rowsHost: '#gst-changelog-pin-rows',
+                refreshBtn: '#gst-changelog-pin-refresh',
+                tabBtn: '#gst-pin-tab-changelog',
+                kinds: 'PinnedItem,Collection',
+                columns: ['when', 'who', 'kind', 'action', 'subject', 'channel', 'locale']
+            });
+        })();
+    </script>
 }

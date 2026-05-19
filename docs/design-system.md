@@ -281,7 +281,7 @@ Reference: `Views/Shared/_PinFlyout.cshtml`, `components.js` lines 73–212,
 A horizontal row of headline metric tiles. Each tile stacks a small label,
 a large value, and an inline 30-day sparkline (a single SVG line, not
 bars). Used for "here's the number, here's the trend" surfaces — the
-Insights tool's search-activity card and the Profile detail header are
+Insights tool's search-activity card and the Channel detail header are
 the reference implementations.
 
 **Use when** showing 3–5 cluster-summed numbers that share the same window
@@ -339,7 +339,7 @@ GST.sparkline(hostElementOrSelector, [12, 45, 0, 56, ...], {
 
 ### Card-level render helper
 
-Both the global Insights tool and the Profile detail page mount this
+Both the global Insights tool and the Channel detail page mount this
 component, so the rendering is centralised:
 
 ```js
@@ -353,8 +353,8 @@ default. If a future surface needs different labels, pass
 `{ strings: customMap }`.
 
 Reference: `Views/Insights/Index.cshtml` (the `data-card="kpis"` block,
-global aggregate), `Views/Profiles/Detail.cshtml` (the `#gst-prof-kpis`
-host, profile-scoped), `GST.renderKpiCard` + `GST.sparkline` in
+global aggregate), `Views/Channels/Detail.cshtml` (the `#gst-prof-kpis`
+host, channel-scoped), `GST.renderKpiCard` + `GST.sparkline` in
 `components.js`.
 
 ---
@@ -400,12 +400,12 @@ These show up in the codebase but haven't been promoted to shared components
 — either because they appear in only one place, or because the abstraction
 isn't stable. Don't copy them into a second tool without a doc entry first.
 
-- **Live preview pane** (Profiles detail) — the right-hand 50/50 SERP
-  preview. Specific to Profiles today.
-- **Tab strip** (Profiles detail sub-tabs, Pinned Audit tab) — there are
+- **Live preview pane** (Channels detail) — the right-hand 50/50 SERP
+  preview. Specific to Channels today.
+- **Tab strip** (Channels detail sub-tabs, Pinned Audit tab) — there are
   two slightly different implementations. Needs reconciliation before
   promotion.
-- **Stat cards** (Insights, Profiles header strip) — currently two flavours.
+- **Stat cards** (Insights, Channels header strip) — currently two flavours.
   Pick one, then add an entry.
 - **Drag-reorder list** (multi-target pins in `_PinFlyout`) — works but
   desktop-mouse only. Promote when touch support lands.

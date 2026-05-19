@@ -119,8 +119,8 @@ public sealed class QueryRunnerService
 
     /// <summary>
     /// Sends a fully-formed GraphQL document to Graph as-is. Used by callers
-    /// that already produced an executable query (e.g. the Profiles preview,
-    /// which substitutes placeholders into the registered profile's document)
+    /// that already produced an executable query (e.g. the Channels preview,
+    /// which substitutes placeholders into the registered channel's document)
     /// and don't want the runner's <c>SavedQueries.DefaultQuery</c> /
     /// built-in template fallbacks.
     /// </summary>
@@ -376,7 +376,7 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
     /// Returns a pretty-printed copy of the source <see cref="JsonElement"/>,
     /// or null if serialization fails. Used to feed the SERP preview's
     /// "show JSON" detail toggle so editors can inspect every field the
-    /// registered profile projects, not just the heuristic-selected ones.
+    /// registered channel projects, not just the heuristic-selected ones.
     /// </summary>
     private static string? PrettyJson(JsonElement element)
     {

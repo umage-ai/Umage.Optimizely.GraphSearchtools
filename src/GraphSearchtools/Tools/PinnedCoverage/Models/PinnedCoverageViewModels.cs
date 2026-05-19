@@ -48,13 +48,13 @@ public sealed record PinnedIssue
     public string CollectionKey { get; init; } = string.Empty;
 
     /// <summary>
-    /// Search profile this collection maps to, or <c>null</c> when the
-    /// collection key doesn't match any registered profile (Generic catchment
-    /// or legacy pin). Used to deep-link "Fix in profile" to the right
+    /// Search channel this collection maps to, or <c>null</c> when the
+    /// collection key doesn't match any registered channel (Generic catchment
+    /// or legacy pin). Used to deep-link "Fix in channel" to the right
     /// detail page.
     /// </summary>
-    [JsonPropertyName("profileKey")]
-    public string? ProfileKey { get; init; }
+    [JsonPropertyName("channelKey")]
+    public string? ChannelKey { get; init; }
 
     /// <summary>The phrase(s) the pin matches; verbatim from the Graph item.</summary>
     [JsonPropertyName("phrase")]
@@ -80,7 +80,7 @@ public sealed record PinnedIssue
 /// <summary>
 /// One overlap row — a phrase pinned in two-or-more collections. The
 /// collections list carries the raw collection keys (not the localized
-/// profile names) because some collections aren't profile-bound and we want
+/// channel names) because some collections aren't channel-bound and we want
 /// the row to be diagnostic even then.
 /// </summary>
 public sealed record PinnedOverlap

@@ -33,24 +33,6 @@ public interface IGraphAdminClient
     Task<IReadOnlyList<ContentSearchHit>> ResolveByGuidsAsync(IReadOnlyList<string> guids, IReadOnlyList<string> contentTypes, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Returns up to <paramref name="limit"/> autocomplete suggestions for
-    /// <paramref name="value"/>, drawn from <c>{typeName}.autocomplete.{field}</c>.
-    /// The available types and fields are tenant-specific because they depend
-    /// on what the host marked <c>Searchable</c> in the CMS content model;
-    /// use <see cref="GetAutocompleteSchemaAsync"/> to discover them.
-    /// </summary>
-    Task<IReadOnlyList<string>> AutocompleteAsync(string typeName, string field, string value, string? locale, int limit, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Discovers the root content types that expose an <c>autocomplete</c>
-    /// field, plus the scalar string fields supported under each type's
-    /// autocomplete. Object-typed sub-fields (e.g. <c>ContentLink</c>,
-    /// <c>Language</c>) are excluded — only fields that accept
-    /// <c>(value, limit)</c> directly are returned.
-    /// </summary>
-    Task<IReadOnlyList<AutocompleteFieldDescriptor>> GetAutocompleteSchemaAsync(CancellationToken cancellationToken);
-
-    /// <summary>
     /// Returns the locale codes known to Optimizely Graph by introspecting the
     /// <c>Locales</c> enum in the schema. The enum is generated from registered
     /// languages and reflects what Graph itself can serve — not what the host
@@ -58,5 +40,3 @@ public interface IGraphAdminClient
     /// </summary>
     Task<IReadOnlyList<string>> GetGraphLocalesAsync(CancellationToken cancellationToken);
 }
-
-public sealed record AutocompleteFieldDescriptor(string TypeName, IReadOnlyList<string> Fields);

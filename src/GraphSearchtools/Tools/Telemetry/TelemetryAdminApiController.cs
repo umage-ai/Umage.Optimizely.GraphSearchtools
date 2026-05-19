@@ -35,31 +35,31 @@ public sealed class TelemetryAdminApiController : Controller
 
     [HttpGet]
     public Task<IActionResult> Top([FromQuery] DateTime? since, [FromQuery] DateTime? until,
-        [FromQuery] int? take, [FromQuery] string? profileKey, [FromQuery] string? locale,
+        [FromQuery] int? take, [FromQuery] string? channelKey, [FromQuery] string? locale,
         CancellationToken cancellationToken)
-        => RunAsync(q => _reader.TopPhrasesAsync(q, cancellationToken), since, until, take, profileKey, locale, "Top");
+        => RunAsync(q => _reader.TopPhrasesAsync(q, cancellationToken), since, until, take, channelKey, locale, "Top");
 
     [HttpGet]
     public Task<IActionResult> ZeroResult([FromQuery] DateTime? since, [FromQuery] DateTime? until,
-        [FromQuery] int? take, [FromQuery] string? profileKey, [FromQuery] string? locale,
+        [FromQuery] int? take, [FromQuery] string? channelKey, [FromQuery] string? locale,
         CancellationToken cancellationToken)
-        => RunAsync(q => _reader.ZeroResultPhrasesAsync(q, cancellationToken), since, until, take, profileKey, locale, "ZeroResult");
+        => RunAsync(q => _reader.ZeroResultPhrasesAsync(q, cancellationToken), since, until, take, channelKey, locale, "ZeroResult");
 
     [HttpGet]
     public Task<IActionResult> LowCtr([FromQuery] DateTime? since, [FromQuery] DateTime? until,
-        [FromQuery] int? take, [FromQuery] string? profileKey, [FromQuery] string? locale,
+        [FromQuery] int? take, [FromQuery] string? channelKey, [FromQuery] string? locale,
         CancellationToken cancellationToken)
-        => RunAsync(q => _reader.LowCtrPhrasesAsync(q, cancellationToken), since, until, take, profileKey, locale, "LowCtr");
+        => RunAsync(q => _reader.LowCtrPhrasesAsync(q, cancellationToken), since, until, take, channelKey, locale, "LowCtr");
 
     [HttpGet]
     public async Task<IActionResult> Recent([FromQuery] DateTime? since, [FromQuery] DateTime? until,
-        [FromQuery] int? take, [FromQuery] string? profileKey, [FromQuery] string? locale,
+        [FromQuery] int? take, [FromQuery] string? channelKey, [FromQuery] string? locale,
         CancellationToken cancellationToken)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var query = BuildQuery(since, until, take, profileKey, locale);
+            var query = BuildQuery(since, until, take, channelKey, locale);
             var rows = await _reader.RecentRawAsync(query, cancellationToken);
             return Ok(rows);
         }
@@ -72,13 +72,13 @@ public sealed class TelemetryAdminApiController : Controller
 
     private async Task<IActionResult> RunAsync(
         Func<TelemetryQuery, Task<IReadOnlyList<PhraseAggregate>>> reader,
-        DateTime? since, DateTime? until, int? take, string? profileKey, string? locale,
+        DateTime? since, DateTime? until, int? take, string? channelKey, string? locale,
         string action)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var query = BuildQuery(since, until, take, profileKey, locale);
+            var query = BuildQuery(since, until, take, channelKey, locale);
             var rows = await reader(query);
             return Ok(rows);
         }
@@ -89,7 +89,7 @@ public sealed class TelemetryAdminApiController : Controller
         }
     }
 
-    private static TelemetryQuery BuildQuery(DateTime? since, DateTime? until, int? take, string? profileKey, string? locale)
+    private static TelemetryQuery BuildQuery(DateTime? since, DateTime? until, int? take, string? channelKey, string? locale)
     {
         var untilUtc = (until ?? DateTime.UtcNow).ToUniversalTime();
         var sinceUtc = (since ?? untilUtc.AddHours(-24)).ToUniversalTime();
@@ -98,7 +98,7 @@ public sealed class TelemetryAdminApiController : Controller
             sinceUtc,
             untilUtc,
             clampedTake,
-            string.IsNullOrWhiteSpace(profileKey) ? null : profileKey,
+            string.IsNullOrWhiteSpace(channelKey) ? null : channelKey,
             string.IsNullOrWhiteSpace(locale) ? null : locale);
     }
 

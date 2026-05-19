@@ -29,7 +29,7 @@ This proposal restructures telemetry around three ideas:
   *some* `ITelemetryReader` for aggregates; how the data got there is the
   reader's problem.
 - **The local sink writes aggregates, not raw rows.** Per-minute buckets keyed
-  by `(phrase, profile, locale, node)` collapse 1000 RPS into ~hundreds of
+  by `(phrase, channel, locale, node)` collapse 1000 RPS into ~hundreds of
   upserts per minute per node.
 - **The hot path never blocks on storage.** A bounded in-memory channel
   decouples the HTTP handler from the flusher; under overload we drop, never
@@ -85,7 +85,7 @@ This proposal restructures telemetry around three ideas:
                        Search Logs UI,
                        Pinned Coverage,
                        Synonym Coverage,
-                       Profile Insights
+                       Channel Insights
 ```
 
 The CMS-side write pipeline (the centre column) is **opt-out**: customers who
@@ -120,12 +120,12 @@ public sealed record TelemetryQuery(
     DateTime SinceUtc,
     DateTime UntilUtc,
     int Take,
-    string? ProfileKey = null,
+    string? ChannelKey = null,
     string? Locale = null);
 
 public sealed record PhraseAggregate(
     string Phrase, int Hits, double ZeroResultRate, double Ctr,
-    string Locale, string ProfileKey);
+    string Locale, string ChannelKey);
 ```
 
 We ship two implementations:
@@ -193,7 +193,7 @@ hour and pretending the present is empty. Default capacity 64K events
 ### 3.2. Bucket flusher
 
 A `BackgroundService` reads from the channel and folds events into an
-in-memory dictionary keyed by `(minute, phraseNorm, profileKey, locale)`.
+in-memory dictionary keyed by `(minute, phraseNorm, channelKey, locale)`.
 Each value carries `Hits`, `Zeroes`, and `Clicks[1..3]`.
 
 ```csharp
@@ -243,7 +243,7 @@ public class SearchLogBucket : IDynamicData
 
     [EPiServerDataIndex] public DateTime BucketUtc { get; set; }   // minute-truncated
     [EPiServerDataIndex] public string PhraseNorm { get; set; }    // trim/lower
-    [EPiServerDataIndex] public string ProfileKey { get; set; }
+    [EPiServerDataIndex] public string ChannelKey { get; set; }
     [EPiServerDataIndex] public string Locale { get; set; }
     [EPiServerDataIndex] public string NodeId { get; set; }
 
@@ -270,8 +270,8 @@ needs override the value.
 ```csharp
 var rows = store.Items<SearchLogBucket>()
     .Where(b => b.BucketUtc >= q.SinceUtc && b.BucketUtc < q.UntilUtc)
-    .Where(filterByProfile/locale)
-    .GroupBy(b => new { b.PhraseNorm, b.ProfileKey, b.Locale })
+    .Where(filterByChannel/locale)
+    .GroupBy(b => new { b.PhraseNorm, b.ChannelKey, b.Locale })
     .Select(g => new PhraseAggregate(...));
 ```
 
@@ -292,11 +292,11 @@ The new contract: the host SDK echoes back the bucket key on the click event.
 
 ```jsonc
 // Search event
-{ "kind": "search", "phrase": "warranty", "profileKey": "kb-search",
+{ "kind": "search", "phrase": "warranty", "channelKey": "kb-search",
   "locale": "en", "resultCount": 12, "ts": "..." }
 
 // Click event (sent on result click, after the search event)
-{ "kind": "click", "phrase": "warranty", "profileKey": "kb-search",
+{ "kind": "click", "phrase": "warranty", "channelKey": "kb-search",
   "locale": "en", "rank": 1, "originalBucketUtc": "..." }
 ```
 
@@ -333,7 +333,7 @@ Five things degrade meaningfully relative to "raw rows for everything":
    result volume; broken systems have a lot, but those are exactly the ones
    we want to see in full.
 3. **New aggregations after the fact.** The bucket schema bakes in the
-   dimensions: phrase, profile, locale. Adding "split by user-agent class"
+   dimensions: phrase, channel, locale. Adding "split by user-agent class"
    tomorrow means starting collection over for that dimension. *Mitigation:*
    accept it. The current dimensions are the ones every Phase 4 UI uses;
    we'll add dimensions intentionally with a schema bump if we ever need to.

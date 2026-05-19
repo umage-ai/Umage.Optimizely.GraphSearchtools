@@ -9,8 +9,8 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 /// <summary>
 /// Read-only REST API for the Insights dashboard. Mounted under
 /// <c>{basePath}/InsightsApi/{action}</c>. The same endpoints serve both the
-/// global Insights view and the per-profile Insights sub-tab —
-/// <c>profileKey</c> / <c>locale</c> are optional filters.
+/// global Insights view and the per-channel Insights sub-tab —
+/// <c>channelKey</c> / <c>locale</c> are optional filters.
 /// </summary>
 [Authorize(Policy = "codeart:graphsearchtools")]
 public class InsightsApiController : Controller
@@ -33,13 +33,13 @@ public class InsightsApiController : Controller
     }
 
     /// <summary>
-    /// <c>GET InsightsApi/TopPhrases?days=7&amp;take=25&amp;profileKey=…&amp;locale=…</c>
+    /// <c>GET InsightsApi/TopPhrases?days=7&amp;take=25&amp;channelKey=…&amp;locale=…</c>
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> TopPhrases(
         [FromQuery] int days = 7,
         [FromQuery] int? take = null,
-        [FromQuery] string? profileKey = null,
+        [FromQuery] string? channelKey = null,
         [FromQuery] string? locale = null,
         [FromQuery] DateTime? date = null,
         CancellationToken cancellationToken = default)
@@ -47,7 +47,7 @@ public class InsightsApiController : Controller
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, date, cancellationToken);
+            var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, channelKey, locale, date, cancellationToken);
             return Ok(rows);
         }
         catch (Exception ex)
@@ -57,13 +57,13 @@ public class InsightsApiController : Controller
     }
 
     /// <summary>
-    /// <c>GET InsightsApi/ZeroResultPhrases?days=7&amp;take=25&amp;profileKey=…&amp;locale=…</c>
+    /// <c>GET InsightsApi/ZeroResultPhrases?days=7&amp;take=25&amp;channelKey=…&amp;locale=…</c>
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> ZeroResultPhrases(
         [FromQuery] int days = 7,
         [FromQuery] int? take = null,
-        [FromQuery] string? profileKey = null,
+        [FromQuery] string? channelKey = null,
         [FromQuery] string? locale = null,
         [FromQuery] DateTime? date = null,
         CancellationToken cancellationToken = default)
@@ -71,7 +71,7 @@ public class InsightsApiController : Controller
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, date, cancellationToken);
+            var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, channelKey, locale, date, cancellationToken);
             return Ok(rows);
         }
         catch (Exception ex)
@@ -81,22 +81,22 @@ public class InsightsApiController : Controller
     }
 
     /// <summary>
-    /// <c>GET InsightsApi/SearchKpis?profileKey=…</c> — 30-day totals +
+    /// <c>GET InsightsApi/SearchKpis?channelKey=…</c> — 30-day totals +
     /// sparkline series for searches, CTR, and zero-result searches. Window
     /// is fixed at <see cref="InsightsService.SearchKpisWindowDays"/>; the
-    /// page-level 7d/30d toggle does not apply. When <c>profileKey</c> is
-    /// supplied, results are scoped to that profile (Profile detail surface);
+    /// page-level 7d/30d toggle does not apply. When <c>channelKey</c> is
+    /// supplied, results are scoped to that channel (Channel detail surface);
     /// without it, the response is the cluster-wide aggregate (Insights tool).
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> SearchKpis(
-        [FromQuery] string? profileKey = null,
+        [FromQuery] string? channelKey = null,
         CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.SearchKpisAsync(profileKey, cancellationToken));
+            return Ok(await _service.SearchKpisAsync(channelKey, cancellationToken));
         }
         catch (Exception ex)
         {
@@ -105,20 +105,20 @@ public class InsightsApiController : Controller
     }
 
     /// <summary>
-    /// <c>GET InsightsApi/LowCtrPhrases?days=7&amp;take=25&amp;profileKey=…&amp;locale=…</c>
+    /// <c>GET InsightsApi/LowCtrPhrases?days=7&amp;take=25&amp;channelKey=…&amp;locale=…</c>
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> LowCtrPhrases(
         [FromQuery] int days = 7,
         [FromQuery] int? take = null,
-        [FromQuery] string? profileKey = null,
+        [FromQuery] string? channelKey = null,
         [FromQuery] string? locale = null,
         CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            var rows = await _service.LowCtrPhrasesAsync(days, take ?? DefaultTake, profileKey, locale, cancellationToken);
+            var rows = await _service.LowCtrPhrasesAsync(days, take ?? DefaultTake, channelKey, locale, cancellationToken);
             return Ok(rows);
         }
         catch (Exception ex)

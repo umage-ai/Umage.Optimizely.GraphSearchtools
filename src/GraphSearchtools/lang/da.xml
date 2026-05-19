@@ -16,9 +16,7 @@
               <Overview>Access the Graph Search Tools overview dashboard.</Overview>
               <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
               <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
-              <Health>Run Optimizely Graph health probes — gateway, credentials, query endpoint, index population.</Health>
-              <Autocomplete>Test Optimizely Graph autocomplete suggestions.</Autocomplete>
-              <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
+              <Channels>Manage Search Channels — pinned results, synonyms, ranking per registered search surface.</Channels>
               <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
             </permissions>
           </GraphSearchtools>
@@ -29,12 +27,10 @@
       <menu>
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
-        <profiles>Search profiles</profiles>
+        <channels>Search channels</channels>
         <insights>Insights</insights>
         <pinned>Pinned</pinned>
         <synonyms>Synonyms</synonyms>
-        <health>Health</health>
-        <autocomplete>Autocomplete check</autocomplete>
         <savedqueries>Saved Queries</savedqueries>
       </menu>
 
@@ -43,10 +39,10 @@
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
         </overview>
-        <profiles>
-          <title>Search profiles</title>
-          <description>Tune each registered search surface — pins, synonyms, and insights scoped to one profile.</description>
-        </profiles>
+        <channels>
+          <title>Search channels</title>
+          <description>Tune each registered search surface — pins, synonyms, and insights scoped to one channel.</description>
+        </channels>
         <pinned>
           <title>Pinned</title>
           <description>Pin specific content to the top of the results for chosen phrases, per collection and locale.</description>
@@ -63,52 +59,6 @@
           <add>Add</add>
           <col_rule>Rule</col_rule>
         </synonyms>
-        <health>
-          <title>Health</title>
-          <description>Live diagnostics for Optimizely Graph — gateway reach, credentials, and index population. Auto-mode runs a background scan every 5 minutes against your published pages and flags any that are missing from Graph.</description>
-          <run>Run check</run>
-          <auto_label>Auto</auto_label>
-          <auto_off>OFF</auto_off>
-          <auto_on>ON 5m</auto_on>
-          <kpi_status>Status</kpi_status>
-          <kpi_avg_latency>Avg latency</kpi_avg_latency>
-          <kpi_verified>Content verified</kpi_verified>
-          <kpi_session_label>last check</kpi_session_label>
-          <kpi_verified_of>of %1 page(s)</kpi_verified_of>
-          <kpi_verified_unknown>No catalog data</kpi_verified_unknown>
-          <kpi_open_issues>Open issues</kpi_open_issues>
-          <kpi_issues_clean>All clear</kpi_issues_clean>
-          <kpi_issues_count>%1 page(s) need attention</kpi_issues_count>
-          <timeline_title>Scan timeline</timeline_title>
-          <timeline_legend_clean>Clean</timeline_legend_clean>
-          <timeline_legend_missing>Content missing</timeline_legend_missing>
-          <timeline_legend_down>Probes failed</timeline_legend_down>
-          <timeline_empty>No scans yet — enable Auto or click Run check.</timeline_empty>
-          <probes_title>Probes</probes_title>
-          <probe_target>Target</probe_target>
-          <probe_message>Detail</probe_message>
-          <issues_title>Issues</issues_title>
-          <issues_open>Open</issues_open>
-          <issues_resolved>Recently resolved</issues_resolved>
-          <issues_empty>No issues — every page in the rotation has been verified in Graph.</issues_empty>
-          <issue_first_seen>First seen</issue_first_seen>
-          <issue_last_seen>Last seen</issue_last_seen>
-          <issue_resolved_at>Resolved</issue_resolved_at>
-          <issue_open_in_cms>Open in CMS</issue_open_in_cms>
-          <issue_reason_missing>Missing from Graph</issue_reason_missing>
-          <issue_reason_removed>Removed from CMS</issue_reason_removed>
-        </health>
-        <autocomplete>
-          <title>Autocomplete check</title>
-          <description>Verify what the Optimizely Graph autocomplete returns for a given content type and field. The dropdowns reflect the live Graph schema for this environment.</description>
-          <placeholder>Type to see suggestions…</placeholder>
-          <type>Type</type>
-          <type_placeholder>Search content types…</type_placeholder>
-          <field>Field</field>
-          <field_placeholder>Search fields…</field_placeholder>
-          <locale_label>Locale</locale_label>
-          <limit>Limit</limit>
-        </autocomplete>
         <savedqueries>
           <title>Saved Queries</title>
           <description>Run Optimizely Graph queries interactively, then save the phrase + ranking knobs as a named preset so you (or another editor) can re-run them with one click.</description>
@@ -148,7 +98,7 @@
         </savedqueries>
         <insights>
           <title>Insights</title>
-          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every profile.</description>
+          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every channel.</description>
           <window_7d>Last 7d</window_7d>
           <window_30d>Last 30d</window_30d>
           <top_title>Top phrases</top_title>
@@ -164,12 +114,12 @@
           <kpi_days_ago>%1d ago</kpi_days_ago>
           <kpi_tooltip>%1: %2</kpi_tooltip>
           <activity_title>Recent activity</activity_title>
-          <activity_subtitle>Latest edits across every profile.</activity_subtitle>
+          <activity_subtitle>Latest edits across every channel.</activity_subtitle>
           <col_phrase>Phrase</col_phrase>
           <col_count>Count</col_count>
           <col_zero>Zero results</col_zero>
           <col_locale>Locale</col_locale>
-          <col_profile>Profile</col_profile>
+          <col_channel>Channel</col_channel>
           <col_when>When</col_when>
           <col_kind>Kind</col_kind>
           <col_action>Action</col_action>
@@ -183,20 +133,16 @@
       </tools>
 
       <!--
-        Phase 2.5 — Search Profiles. Keys are alphabetised by element path
-        inside <profiles> so additions stay mechanical to merge.
+        Phase 2.5 — Search Channels. Keys are alphabetised by element path
+        inside <channels> so additions stay mechanical to merge.
       -->
-      <profiles>
+      <channels>
         <api>
-          <profileKeyRequired>profileKey is required when search profiles are registered.</profileKeyRequired>
+          <channelKeyRequired>channelKey is required when search channels are registered.</channelKeyRequired>
         </api>
-        <generic>
-          <name>Generic</name>
-          <desc>Catchment for pinned collections and synonym groups that don't match a registered profile.</desc>
-        </generic>
         <registration>
-          <invalidKey>Profile key must match [a-z0-9-]+.</invalidKey>
-          <unknownSite>Site '{0}' is not registered with the CMS — profile will still load.</unknownSite>
+          <invalidKey>Channel key must match [a-z0-9-]+.</invalidKey>
+          <unknownSite>Site '{0}' is not registered with the CMS — channel will still load.</unknownSite>
         </registration>
         <detail>
           <audit>
@@ -210,10 +156,10 @@
             </col>
             <empty>No edits recorded yet.</empty>
           </audit>
-          <backToList>Back to all profiles</backToList>
+          <backToList>Back to all channels</backToList>
           <comingSoon>Editor lands in a follow-up PR.</comingSoon>
           <meta>
-            <allLocales>all locales</allLocales>
+            <allLocales>Global</allLocales>
             <allSites>all sites</allSites>
             <docInline>inline (registered in code)</docInline>
             <docNotFound>File not found in the host project.</docNotFound>
@@ -225,7 +171,7 @@
             <sites>Site</sites>
           </meta>
           <overview>
-            <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
+            <graphqlEmpty>No GraphQL document registered for this channel.</graphqlEmpty>
             <graphqlInlineNote>Registered inline — admin reflects the same query string the runtime executes.</graphqlInlineNote>
             <graphqlPathNote>Loaded from the host project.</graphqlPathNote>
             <graphqlTitle>GraphQL query</graphqlTitle>
@@ -233,7 +179,7 @@
           <pinned>
             <serpPlaceholder>Search the live index…</serpPlaceholder>
             <sharedSite>Shared across sites</sharedSite>
-            <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
+            <tryDisabled>Try-it disabled — no GraphQL document declared for this channel.</tryDisabled>
           </pinned>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
@@ -247,7 +193,7 @@
             <synonyms>Synonyms</synonyms>
           </tabs>
           <kpis>
-            <sectionLabel>Profile at a glance</sectionLabel>
+            <sectionLabel>Channel at a glance</sectionLabel>
           </kpis>
           <insights>
             <windowLabel>Time window</windowLabel>
@@ -265,21 +211,21 @@
             <showMore>Show more</showMore>
             <actionPreview>Preview this phrase</actionPreview>
             <actionPin>Pin a result for this phrase</actionPin>
-            <actionPinDisabled>This profile doesn't apply pinned results.</actionPinDisabled>
+            <actionPinDisabled>This channel doesn't apply pinned results.</actionPinDisabled>
             <actionSynonym>Add a synonym for this phrase</actionSynonym>
-            <actionSynonymDisabled>This profile doesn't apply synonyms.</actionSynonymDisabled>
+            <actionSynonymDisabled>This channel doesn't apply synonyms.</actionSynonymDisabled>
             <ctrLabel>CTR</ctrLabel>
             <hitsLabel>hits</hitsLabel>
-            <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
+            <footnote>Telemetry comes from the storefront. Phrases are scoped to this channel and grouped case-insensitively.</footnote>
           </insights>
           <workspace>
-            <consoleLabel>Profile tools</consoleLabel>
+            <consoleLabel>Channel tools</consoleLabel>
             <livePreviewEyebrow>Try-it</livePreviewEyebrow>
             <livePreviewTitle>Live preview</livePreviewTitle>
             <previewDisabledTitle>Preview unavailable</previewDisabledTitle>
             <previewLabel>Live preview</previewLabel>
             <scopeLabel>Scope</scopeLabel>
-            <switcherLabel>Profile tools</switcherLabel>
+            <switcherLabel>Channel tools</switcherLabel>
           </workspace>
           <synonyms>
             <addRow>Add rule</addRow>
@@ -288,50 +234,50 @@
           </synonyms>
           <details>
             <auditTitle>Audit log</auditTitle>
-            <metaTitle>Profile metadata</metaTitle>
+            <metaTitle>Channel metadata</metaTitle>
           </details>
           <unwiredPinned>
             <tabTitle>Pinned results not wired into this query</tabTitle>
             <title>Pinned results not wired into this query</title>
-            <body>This profile&apos;s registered GraphQL query doesn&apos;t include the usePinned directive, so any pins saved here won&apos;t reach the storefront SERP.</body>
+            <body>This channel&apos;s registered GraphQL query doesn&apos;t include the usePinned directive, so any pins saved here won&apos;t reach the storefront SERP.</body>
             <howto>To enable, add the directive to your storefront query:</howto>
           </unwiredPinned>
           <unwiredSynonyms>
             <tabTitle>Synonyms not wired into this query</tabTitle>
             <title>Synonyms not wired into this query</title>
-            <body>This profile&apos;s registered GraphQL query doesn&apos;t opt in to Graph&apos;s synonym pool, so synonym rules won&apos;t be applied at storefront query time.</body>
+            <body>This channel&apos;s registered GraphQL query doesn&apos;t opt in to Graph&apos;s synonym pool, so synonym rules won&apos;t be applied at storefront query time.</body>
             <howto>To enable, pass synonyms: ONE inside _fulltext (use TWO if you maintain a staging slot):</howto>
           </unwiredSynonyms>
         </detail>
         <index>
           <cols>
             <lastEdited>Last edited</lastEdited>
-            <profile>Profile</profile>
+            <channel>Channel</channel>
             <scope>Sites &amp; locales</scope>
             <status>Status</status>
             <tuning>Tuning</tuning>
           </cols>
           <empty>
-            <body>Register profiles in code via AddSearchProfile(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
-            <title>No profiles registered yet</title>
+            <body>Register channels in code via AddSearchChannel(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
+            <title>No channels registered yet</title>
           </empty>
           <filter>
-            <allLocales>All locales</allLocales>
+            <allLocales>Global</allLocales>
             <allSites>All sites</allSites>
           </filter>
-          <filterPlaceholder>Filter profiles…</filterPlaceholder>
+          <filterPlaceholder>Filter channels…</filterPlaceholder>
           <stats>
-            <coverage>Production traffic via profiles</coverage>
+            <coverage>Production traffic via channels</coverage>
             <locales>locales</locales>
             <pinned>Pinned phrases</pinned>
-            <profiles>Profiles registered</profiles>
+            <channels>Channels registered</channels>
             <sites>sites</sites>
             <synonyms>Synonym entries</synonyms>
           </stats>
           <subtitle>Marketer-facing tuning for each search surface.</subtitle>
-          <title>Search Profiles</title>
+          <title>Search Channels</title>
         </index>
-        <requestFailed>Failed to load profiles.</requestFailed>
+        <requestFailed>Failed to load channels.</requestFailed>
         <status>
           <cold>Cold</cold>
           <docMissing>GraphQL doc missing</docMissing>
@@ -345,7 +291,7 @@
           <justNow>just now</justNow>
           <minutesAgo>min ago</minutesAgo>
         </time>
-      </profiles>
+      </channels>
 
       <ui>
         <shared>
@@ -419,7 +365,7 @@
           <targetsAdd>+ Add target</targetsAdd>
           <targetsHint>Targets are pinned to the top of the results in the order shown. Drag the grip handle to reorder, click × to remove.</targetsHint>
           <localeLabel>Locale</localeLabel>
-          <localeAll>All locales</localeAll>
+          <localeAll>Global</localeAll>
           <effectiveLabel>Effective until</effectiveLabel>
           <effectiveHint>Blank = never.</effectiveHint>
           <activate>Activate</activate>
@@ -443,38 +389,6 @@
           <save>Save</save>
           <cancel>Cancel</cancel>
         </synFlyout>
-        <health>
-          <request_failed>Health check failed</request_failed>
-          <probing>Probing…</probing>
-          <gateway_unset>Gateway not configured</gateway_unset>
-          <checked_just_now>Just now</checked_just_now>
-          <checked_seconds_ago>%1s ago</checked_seconds_ago>
-          <checked_minutes_ago>%1m ago</checked_minutes_ago>
-          <status_healthy>HEALTHY</status_healthy>
-          <status_degraded>DEGRADED</status_degraded>
-          <status_down>DOWN</status_down>
-          <status_unknown>UNKNOWN</status_unknown>
-          <status_running>CHECKING</status_running>
-          <subtitle_healthy>All probes passed.</subtitle_healthy>
-          <subtitle_degraded>Reachable with warnings.</subtitle_degraded>
-          <subtitle_down>Connection problem.</subtitle_down>
-          <subtitle_unknown>Unknown status.</subtitle_unknown>
-          <auto_enabled>Background scan enabled — runs every 5 minutes.</auto_enabled>
-          <auto_disabled>Background scan paused.</auto_disabled>
-          <last_scan_at>Last scan %1</last_scan_at>
-          <last_scan_never>Never scanned</last_scan_never>
-          <bar_tooltip>%1 — %2 / %3 probes, %4 / %5 pages, %6</bar_tooltip>
-        </health>
-        <autocomplete>
-          <request_failed>Autocomplete failed</request_failed>
-          <schema_failed>Could not load schema</schema_failed>
-          <no_results>No suggestions.</no_results>
-          <no_types>No autocomplete types</no_types>
-          <no_fields>No fields</no_fields>
-          <all_locales>ALL</all_locales>
-          <returned_for>Returned %1 in %2 ms</returned_for>
-          <error_pick_type_and_field>Pick a type and a field first.</error_pick_type_and_field>
-        </autocomplete>
         <savedqueries>
           <request_failed>Request failed</request_failed>
           <no_items>No saved queries yet.</no_items>

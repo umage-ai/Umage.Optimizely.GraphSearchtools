@@ -113,9 +113,9 @@ internal static class Program
             var phraseIdx = sampler.Sample(rng);
             var spec = phrases[phraseIdx];
             var locale = Locales[rng.Next(Locales.Length)];
-            var profile = Profiles[rng.Next(Profiles.Length)];
+            var channel = Channels[rng.Next(Channels.Length)];
 
-            // resultCount draws from the keyword's profile so "real" terms
+            // resultCount draws from the keyword's channel so "real" terms
             // mostly hit and "intentional zero" terms always miss — the
             // distribution makes the analytics surfaces feel realistic.
             var resultCount = spec.AlwaysZero || rng.NextDouble() < spec.ZeroResultRate
@@ -126,7 +126,7 @@ internal static class Program
             var bucketUtc = TruncateToMinute(ts);
 
             var sw = Stopwatch.StartNew();
-            var status = await PostAsync(http, BuildSearchPayload(spec.Phrase, profile, locale, resultCount, ts), ct);
+            var status = await PostAsync(http, BuildSearchPayload(spec.Phrase, channel, locale, resultCount, ts), ct);
             sw.Stop();
             metrics.RecordSearch(sw.Elapsed, status);
 
@@ -140,7 +140,7 @@ internal static class Program
                 // within a 2-minute window so OriginalBucketUtc still maps cleanly.
                 var clickTs = ts.AddSeconds(rng.Next(2, 90));
                 var clickSw = Stopwatch.StartNew();
-                var clickStatus = await PostAsync(http, BuildClickPayload(spec.Phrase, profile, locale, rank, clickTs, bucketUtc), ct);
+                var clickStatus = await PostAsync(http, BuildClickPayload(spec.Phrase, channel, locale, rank, clickTs, bucketUtc), ct);
                 clickSw.Stop();
                 metrics.RecordClick(clickSw.Elapsed, clickStatus);
             }
@@ -208,25 +208,25 @@ internal static class Program
         catch (HttpRequestException) { return 0; } // network failure sentinel
     }
 
-    private static string BuildSearchPayload(string phrase, string profile, string locale, int resultCount, DateTime ts)
+    private static string BuildSearchPayload(string phrase, string channel, string locale, int resultCount, DateTime ts)
     {
         // Hand-rolled to dodge per-request serializer overhead — this is a load
         // generator, not the system under test.
         var iso = ts.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        return $"{{\"kind\":\"search\",\"phrase\":\"{Escape(phrase)}\",\"profileKey\":\"{profile}\",\"locale\":\"{locale}\",\"resultCount\":{resultCount},\"ts\":\"{iso}\"}}";
+        return $"{{\"kind\":\"search\",\"phrase\":\"{Escape(phrase)}\",\"channelKey\":\"{channel}\",\"locale\":\"{locale}\",\"resultCount\":{resultCount},\"ts\":\"{iso}\"}}";
     }
 
-    private static string BuildClickPayload(string phrase, string profile, string locale, int rank, DateTime ts, DateTime originalBucketUtc)
+    private static string BuildClickPayload(string phrase, string channel, string locale, int rank, DateTime ts, DateTime originalBucketUtc)
     {
         var tsIso = ts.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         var bucketIso = originalBucketUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        return $"{{\"kind\":\"click\",\"phrase\":\"{Escape(phrase)}\",\"profileKey\":\"{profile}\",\"locale\":\"{locale}\",\"rank\":{rank},\"ts\":\"{tsIso}\",\"originalBucketUtc\":\"{bucketIso}\"}}";
+        return $"{{\"kind\":\"click\",\"phrase\":\"{Escape(phrase)}\",\"channelKey\":\"{channel}\",\"locale\":\"{locale}\",\"rank\":{rank},\"ts\":\"{tsIso}\",\"originalBucketUtc\":\"{bucketIso}\"}}";
     }
 
     private static string Escape(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
     /// <summary>
-    /// One synthetic search term plus its "realism profile" — how often the
+    /// One synthetic search term plus its "realism channel" — how often the
     /// term returns zero results. <see cref="AlwaysZero"/> short-circuits the
     /// dice for terms that should always miss (typos, deliberately
     /// uncovered topics) so the zero-result analytics surfaces fill up.
@@ -306,10 +306,10 @@ internal static class Program
     private static DateTime TruncateToMinute(DateTime utc) => new(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, 0, DateTimeKind.Utc);
 
     private static readonly string[] Locales = { "en", "sv" };
-    // Default to the Alloy SampleSite's registered profile so load-test data
-    // appears in the per-profile Insights tab without further wiring. Sites
-    // with multiple profiles can supply --profiles on the command line.
-    private static readonly string[] Profiles = { "alloy-search" };
+    // Default to the Alloy SampleSite's registered channel so load-test data
+    // appears in the per-channel Insights tab without further wiring. Sites
+    // with multiple channels can supply --channels on the command line.
+    private static readonly string[] Channels = { "alloy-search" };
 
     private static async Task ProbeReadPathAsync(HttpClient http, DateTime sinceUtc, DateTime untilUtc)
     {

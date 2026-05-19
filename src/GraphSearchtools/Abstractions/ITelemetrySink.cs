@@ -11,7 +11,7 @@ public interface ITelemetrySink
 {
     /// <summary>
     /// Records a search event for later aggregation into a (minute, phrase,
-    /// profile, locale) bucket.
+    /// channel, locale) bucket.
     /// </summary>
     void Record(in SearchEvent searchEvent);
 

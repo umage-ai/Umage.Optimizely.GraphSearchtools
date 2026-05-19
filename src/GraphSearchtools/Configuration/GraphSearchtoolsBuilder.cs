@@ -10,10 +10,10 @@ internal sealed class GraphSearchtoolsBuilder : IGraphSearchtoolsBuilder
     public GraphSearchtoolsBuilder(IServiceCollection services)
     {
         Services = services ?? throw new ArgumentNullException(nameof(services));
-        Profiles = new List<SearchProfile>();
+        Channels = new List<SearchChannel>();
     }
 
     public IServiceCollection Services { get; }
 
-    public IList<SearchProfile> Profiles { get; }
+    public IList<SearchChannel> Channels { get; }
 }

@@ -11,11 +11,11 @@ namespace UmageAI.Optimizely.GraphSearchTools.SampleSite.Controllers;
 public class SearchPageController : PageControllerBase<SearchPage>
 {
     /// <summary>
-    /// Profile key the storefront search runs under. Matches the registration
-    /// in <c>Startup.AddSearchProfile("alloy-search", …)</c> so telemetry rolls
-    /// up against the same profile that admins tune in the addon UI.
+    /// Channel key the storefront search runs under. Matches the registration
+    /// in <c>Startup.AddSearchChannel("alloy-search", …)</c> so telemetry rolls
+    /// up against the same channel that admins tune in the addon UI.
     /// </summary>
-    private const string ProfileKey = "alloy-search";
+    private const string ChannelKey = "alloy-search";
 
     private readonly AlloySearchService _search;
     private readonly ITelemetrySink _telemetry;
@@ -89,7 +89,7 @@ public class SearchPageController : PageControllerBase<SearchPage>
             {
                 _telemetry.Record(new SearchEvent(
                     Phrase: trimmedPhrase,
-                    ProfileKey: ProfileKey,
+                    ChannelKey: ChannelKey,
                     Locale: (locale ?? string.Empty).ToLowerInvariant(),
                     ResultCount: result?.Configured == true && model.ErrorMessage == null
                         ? result.Total

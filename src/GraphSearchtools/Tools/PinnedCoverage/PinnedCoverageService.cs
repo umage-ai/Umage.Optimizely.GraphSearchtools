@@ -50,14 +50,14 @@ public sealed class PinnedCoverageService
 
     private readonly IGraphAdminClient _graphClient;
     private readonly IContentLoader _contentLoader;
-    private readonly ISearchProfileRegistry _registry;
+    private readonly ISearchChannelRegistry _registry;
     private readonly ITelemetryReader _reader;
     private readonly ILogger<PinnedCoverageService> _logger;
 
     public PinnedCoverageService(
         IGraphAdminClient graphClient,
         IContentLoader contentLoader,
-        ISearchProfileRegistry registry,
+        ISearchChannelRegistry registry,
         ITelemetryReader reader,
         ILogger<PinnedCoverageService> logger)
     {
@@ -99,7 +99,7 @@ public sealed class PinnedCoverageService
             }
         }
 
-        var profileLookup = BuildProfileLookup();
+        var channelLookup = BuildChannelLookup();
 
         // Per-phrase aggregates over the activity window. The aggregate-first
         // ingest doesn't carry the click target id, so we lose the legacy
@@ -122,7 +122,7 @@ public sealed class PinnedCoverageService
         foreach (var (col, item) in pairs)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var profileKey = ResolveProfileKeyForCollection(col, profileLookup);
+            var channelKey = ResolveChannelKeyForCollection(col, channelLookup);
 
             // Issue: target unpublished or deleted.
             var targetState = ResolveTargetState(item.TargetKey);
@@ -132,7 +132,7 @@ public sealed class PinnedCoverageService
                 {
                     Kind = "Deleted",
                     CollectionKey = col.Key,
-                    ProfileKey = profileKey,
+                    ChannelKey = channelKey,
                     Phrase = item.Phrases,
                     TargetId = item.TargetKey ?? string.Empty,
                     TargetName = null,
@@ -146,7 +146,7 @@ public sealed class PinnedCoverageService
                 {
                     Kind = "Unpublished",
                     CollectionKey = col.Key,
-                    ProfileKey = profileKey,
+                    ChannelKey = channelKey,
                     Phrase = item.Phrases,
                     TargetId = item.TargetKey ?? string.Empty,
                     TargetName = targetState.Name,
@@ -163,7 +163,7 @@ public sealed class PinnedCoverageService
                 {
                     Kind = "Expired",
                     CollectionKey = col.Key,
-                    ProfileKey = profileKey,
+                    ChannelKey = channelKey,
                     Phrase = item.Phrases,
                     TargetId = item.TargetKey ?? string.Empty,
                     TargetName = targetState.Name,
@@ -184,7 +184,7 @@ public sealed class PinnedCoverageService
                 {
                     Kind = "NoActivity",
                     CollectionKey = col.Key,
-                    ProfileKey = profileKey,
+                    ChannelKey = channelKey,
                     Phrase = item.Phrases,
                     TargetId = item.TargetKey ?? string.Empty,
                     TargetName = targetState.Name,
@@ -205,7 +205,7 @@ public sealed class PinnedCoverageService
                 {
                     Kind = "LowCtr",
                     CollectionKey = col.Key,
-                    ProfileKey = profileKey,
+                    ChannelKey = channelKey,
                     Phrase = item.Phrases,
                     TargetId = item.TargetKey ?? string.Empty,
                     TargetName = targetState.Name,
@@ -229,45 +229,45 @@ public sealed class PinnedCoverageService
     }
 
     /// <summary>
-    /// Map collection.Key → profile-key by invoking each registered profile's
-    /// <see cref="SearchProfile.PinnedKeyForLocale"/> against every locale the
-    /// profile declares. The profile-keyed lookup is profile-keys-only (no
+    /// Map collection.Key → channel-key by invoking each registered channel's
+    /// <see cref="SearchChannel.PinnedKeyForLocale"/> against every locale the
+    /// channel declares. The channel-keyed lookup is channel-keys-only (no
     /// generic) — Generic-bound collections are deliberately surfaced as
-    /// <c>null</c> ProfileKey so the UI links to the Generic profile detail
+    /// <c>null</c> ChannelKey so the UI links to the Generic channel detail
     /// rather than no-op.
     /// </summary>
-    private Dictionary<string, string> BuildProfileLookup()
+    private Dictionary<string, string> BuildChannelLookup()
     {
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var profile in _registry.All)
+        foreach (var channel in _registry.All)
         {
-            if (profile.PinnedKeyForLocale == null) continue;
-            // Probe the profile's declared locales — and an "en" fallback when
-            // the profile has none — to cover the common cases. Most production
+            if (channel.PinnedKeyForLocale == null) continue;
+            // Probe the channel's declared locales — and an "en" fallback when
+            // the channel has none — to cover the common cases. Most production
             // formulas are deterministic functions of locale, so this catches
-            // every collection a profile owns.
-            var locales = profile.Locales != null && profile.Locales.Count > 0
-                ? profile.Locales
+            // every collection a channel owns.
+            var locales = channel.Locales != null && channel.Locales.Count > 0
+                ? channel.Locales
                 : new[] { "en" };
             foreach (var locale in locales)
             {
                 string? key;
-                try { key = profile.PinnedKeyForLocale(locale); }
+                try { key = channel.PinnedKeyForLocale(locale); }
                 catch { key = null; }
                 if (string.IsNullOrEmpty(key)) continue;
-                // First-write-wins: if two profiles share a key, the earlier
+                // First-write-wins: if two channels share a key, the earlier
                 // registration takes precedence. The UI exposes the conflict
                 // through the overlap table anyway.
-                map.TryAdd(key, profile.Key);
+                map.TryAdd(key, channel.Key);
             }
         }
         return map;
     }
 
-    private static string? ResolveProfileKeyForCollection(PinnedCollectionResult col, Dictionary<string, string> lookup)
+    private static string? ResolveChannelKeyForCollection(PinnedCollectionResult col, Dictionary<string, string> lookup)
     {
         if (string.IsNullOrEmpty(col.Key)) return null;
-        return lookup.TryGetValue(col.Key, out var profileKey) ? profileKey : null;
+        return lookup.TryGetValue(col.Key, out var channelKey) ? channelKey : null;
     }
 
     private (string Kind, string? Name) ResolveTargetState(string targetKey)
@@ -309,8 +309,8 @@ public sealed class PinnedCoverageService
     }
 
     /// <summary>
-    /// Hits-weighted CTR across the per-(profile, locale) aggregates a single
-    /// normalized phrase produces. Reader returns one row per (phrase, profile,
+    /// Hits-weighted CTR across the per-(channel, locale) aggregates a single
+    /// normalized phrase produces. Reader returns one row per (phrase, channel,
     /// locale) tuple, each with its own per-row CTR; collapsing them naively
     /// (mean of CTRs) over-weights low-traffic rows. Weight by hits instead so
     /// the audit reflects the true engagement rate the phrase earns.

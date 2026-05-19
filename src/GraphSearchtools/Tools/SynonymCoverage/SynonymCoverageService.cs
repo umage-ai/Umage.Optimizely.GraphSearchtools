@@ -88,7 +88,7 @@ public sealed class SynonymCoverageService
             if (key.Length == 0) continue;
             loggedPhrases.Add(key);
             // Same phrase can arrive multiple times with different locale /
-            // profile splits — accumulate rather than overwrite.
+            // channel splits — accumulate rather than overwrite.
             hitsByPhrase.TryGetValue(key, out var prev);
             hitsByPhrase[key] = prev + p.Hits;
         }
@@ -98,7 +98,7 @@ public sealed class SynonymCoverageService
         // Pruning candidates: synonym entries whose trigger terms are all
         // absent from the log set. The former "suggested adds" pass (zero-
         // result phrases that look like missing synonyms) belongs in the
-        // per-profile insights pipeline rather than the global synonyms tool
+        // per-channel insights pipeline rather than the global synonyms tool
         // — dropped from this analyzer along with the standalone UI.
         var unused = FindUnusedEntries(entries, loggedPhrases);
 

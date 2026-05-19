@@ -2,7 +2,7 @@
  * Graph Search Tools — standalone Synonyms tool bootstrap.
  *
  * The grid widget itself lives in synonyms-grid.js (shared with the
- * Profile-detail Synonyms tab). This file just wires the standalone
+ * Channel-detail Synonyms tab). This file just wires the standalone
  * surface's language picker (one blob at a time, no merge with global)
  * and populates the picker options from /SitesApi/Locales.
  */

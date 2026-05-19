@@ -374,8 +374,8 @@
     // ── KPI card renderer ──────────────────────────────────────────
     // Fills a .gst-kpis host with three tiles (Searches / CTR / Zero
     // results) sourced from an InsightsSearchKpis payload. Both the
-    // global Insights tool and the per-profile detail surface call this
-    // — same wire format, same visual treatment, only the profileKey on
+    // global Insights tool and the per-channel detail surface call this
+    // — same wire format, same visual treatment, only the channelKey on
     // the API call differs.
     //
     // Usage:
@@ -383,7 +383,7 @@
     //   GST.renderKpiCard(hostEl, kpisFromApi, { strings: customStrings });
     //
     // The helper reads localized labels from window.GST_STRINGS.insights
-    // by default; pass `opts.strings` to override (e.g. a profile-scoped
+    // by default; pass `opts.strings` to override (e.g. a channel-scoped
     // namespace if one is added later).
     GST.renderKpiCard = function (host, kpis, opts) {
         const el = typeof host === 'string' ? document.querySelector(host) : host;
