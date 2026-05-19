@@ -1,11 +1,11 @@
 /**
- * Insights — global cross-profile view.
+ * Insights — global cross-channel view.
  *
  * Page layout:
  *   1. 30d KPI strip    — GET InsightsApi/SearchKpis (always 30d, sparklines).
  *                         Clicking a sparkline day filters the active lane
  *                         tab to that single UTC day.
- *   2. Toolbar          — Window select (7d/30d), Profile select, Locale
+ *   2. Toolbar          — Window select (7d/30d), Channel select, Locale
  *                         select. Lives below the KPIs because these
  *                         controls only scope the tables.
  *   3. Tab strip        — one tab per lane (Top / Zero-result / Low-CTR),
@@ -15,17 +15,17 @@
  *                            Zero   → GET InsightsApi/ZeroResultPhrases
  *                            Low    → GET InsightsApi/LowCtrPhrases
  *
- * Toolbar inputs (window / profile / locale) apply to whichever tab is
+ * Toolbar inputs (window / channel / locale) apply to whichever tab is
  * currently visible; switching them marks other tabs stale so they re-fetch
  * on next select. Default sort is hits-desc; column header clicks re-sort
  * client-side without a re-fetch. Deep-link via
- *   #tab=top&profile=<key>&locale=<code>&days=30&sort=hits:desc
+ *   #tab=top&channel=<key>&locale=<code>&days=30&sort=hits:desc
  */
 (function () {
     var BASE = window.GST_BASE_URL || '';
     var API = BASE + '/InsightsApi';
-    // Profiles list lives at an absolute, well-known route — not under BASE.
-    var PROFILES_API = '/EPiServer/cms/graphsearchtools/api/profiles';
+    // Channels list lives at an absolute, well-known route — not under BASE.
+    var CHANNELS_API = '/EPiServer/cms/graphsearchtools/api/channels';
     var STRINGS = (window.GST_STRINGS && window.GST_STRINGS.insights) || {};
 
     var LANE_ENDPOINT = {
@@ -43,9 +43,9 @@
     // Columns each lane's table can actually sort on. Used to validate the
     // user's per-lane sort pick against what the lane can actually render.
     var LANE_SORT_COLS = {
-        top:    ['phrase', 'profile', 'locale', 'hits', 'zero'],
-        zero:   ['phrase', 'profile', 'locale', 'hits'],
-        lowctr: ['phrase', 'profile', 'locale', 'hits', 'ctr']
+        top:    ['phrase', 'channel', 'locale', 'hits', 'zero'],
+        zero:   ['phrase', 'channel', 'locale', 'hits'],
+        lowctr: ['phrase', 'channel', 'locale', 'hits', 'ctr']
     };
     // Per-lane default sort applied until the user explicitly clicks a header
     // on that lane. Low-CTR opens to its load-bearing signal (worst CTR first)
@@ -59,7 +59,7 @@
     var state = {
         tab: 'top',
         days: 7,
-        profile: '',
+        channel: '',
         locale: '',
         // Free-text filter on row.phrase, applied client-side over the
         // cached rows. Intentionally not in the URL hash — scratch usage,
@@ -91,13 +91,13 @@
         readHash();
         wireTabs();
         wirePhraseFilter();
-        wireProfileFilter();
+        wireChannelFilter();
         wireLocaleFilter();
         wireWindowFilter();
         wireSortHeaders();
         applySortIndicatorToActiveTab();
         reloadKpis();
-        loadProfiles().finally(function () {
+        loadChannels().finally(function () {
             // Selects are populated now (or only the "All" option if the load
             // failed). Activate the visual tab state, then prefetch every
             // lane in parallel so all three count chips populate on first
@@ -157,13 +157,13 @@
         });
     }
 
-    function wireProfileFilter() {
-        var sel = document.getElementById('gst-insights-profile-filter');
+    function wireChannelFilter() {
+        var sel = document.getElementById('gst-insights-channel-filter');
         if (!sel) return;
         sel.addEventListener('change', function () {
             var k = sel.value || '';
-            if (k === state.profile) return;
-            state.profile = k;
+            if (k === state.channel) return;
+            state.channel = k;
             writeHash();
             invalidateAll();
             reloadKpis();
@@ -184,16 +184,16 @@
         });
     }
 
-    // Load /api/profiles once, populate both the Profile and Locale dropdowns.
-    // Locale options are unioned from every profile's declared locale list —
-    // a profile that doesn't list a locale won't surface it as a filter even
+    // Load /api/channels once, populate both the Channel and Locale dropdowns.
+    // Locale options are unioned from every channel's declared locale list —
+    // a channel that doesn't list a locale won't surface it as a filter even
     // if telemetry exists for it; that's a reasonable simplification given
     // those rows would be vestigial anyway.
-    function loadProfiles() {
-        var profSel = document.getElementById('gst-insights-profile-filter');
+    function loadChannels() {
+        var profSel = document.getElementById('gst-insights-channel-filter');
         var locSel  = document.getElementById('gst-insights-locale-filter');
         if (!profSel && !locSel) return Promise.resolve();
-        return GST.fetchJson(PROFILES_API).then(function (rows) {
+        return GST.fetchJson(CHANNELS_API).then(function (rows) {
             if (!Array.isArray(rows)) return;
             var locales = {};
             rows.forEach(function (p) {
@@ -282,7 +282,7 @@
         var get;
         switch (s.col) {
             case 'phrase':  get = function (r) { return (r.phrase || '').toLowerCase(); }; break;
-            case 'profile': get = function (r) { return (r.profileKey || '').toLowerCase(); }; break;
+            case 'channel': get = function (r) { return (r.channelKey || '').toLowerCase(); }; break;
             case 'locale':  get = function (r) { return (r.locale || '').toLowerCase(); }; break;
             case 'zero':    get = function (r) { return r.zeroResults || 0; }; break;
             case 'ctr':     get = function (r) { return r.ctr || 0; }; break;
@@ -331,7 +331,7 @@
     function updateAllTabCounts() { LANES.forEach(updateTabCountFromCache); }
 
     // Fetch every lane in parallel. Counts on every tab can then reflect the
-    // current server-side filter state (profile/locale/window/date) — not just
+    // current server-side filter state (channel/locale/window/date) — not just
     // the active tab's. Inactive tabs paint their hidden tbodies as a side
     // effect, which makes subsequent tab switches instant.
     function fetchAllLanes() { LANES.forEach(fetchLane); }
@@ -346,7 +346,7 @@
             var k = decodeURIComponent(bits[0] || '');
             var v = decodeURIComponent(bits[1] || '');
             if (k === 'tab' && LANES.indexOf(v) !== -1) state.tab = v;
-            else if (k === 'profile') state.profile = v;
+            else if (k === 'channel') state.channel = v;
             else if (k === 'locale') state.locale = v;
             else if (k === 'days') {
                 var d = parseInt(v, 10);
@@ -368,7 +368,7 @@
     function writeHash() {
         var bits = [];
         bits.push('tab=' + encodeURIComponent(state.tab));
-        if (state.profile) bits.push('profile=' + encodeURIComponent(state.profile));
+        if (state.channel) bits.push('channel=' + encodeURIComponent(state.channel));
         if (state.locale)  bits.push('locale=' + encodeURIComponent(state.locale));
         if (state.days !== 7) bits.push('days=' + state.days);
         // Persist the active lane's explicit sort pick, if any — and only
@@ -390,8 +390,8 @@
     function syncToolbarToState() {
         var winSel = document.getElementById('gst-insights-window-filter');
         if (winSel) winSel.value = String(state.days);
-        var profSel = document.getElementById('gst-insights-profile-filter');
-        if (profSel) profSel.value = state.profile || '';
+        var profSel = document.getElementById('gst-insights-channel-filter');
+        if (profSel) profSel.value = state.channel || '';
         var locSel = document.getElementById('gst-insights-locale-filter');
         if (locSel) locSel.value = state.locale || '';
         document.querySelectorAll('.gst-tab[data-tab]').forEach(function (b) {
@@ -410,7 +410,7 @@
     function reloadKpis() {
         renderKpisLoading();
         var url = API + '/SearchKpis';
-        if (state.profile) url += '?profileKey=' + encodeURIComponent(state.profile);
+        if (state.channel) url += '?channelKey=' + encodeURIComponent(state.channel);
         GST.fetchJson(url).then(renderKpis).catch(renderKpisError);
     }
 
@@ -522,7 +522,7 @@
         var url = API + LANE_ENDPOINT[lane]
             + '?days=' + state.days
             + '&take=' + MAX_ROWS;
-        if (state.profile) url += '&profileKey=' + encodeURIComponent(state.profile);
+        if (state.channel) url += '&channelKey=' + encodeURIComponent(state.channel);
         if (state.locale)  url += '&locale=' + encodeURIComponent(state.locale);
         if (state.dateFilter) url += '&date=' + isoDayString(state.dateFilter);
 
@@ -570,7 +570,7 @@
         tbody.appendChild(frag);
     }
 
-    // Shared cell helpers — phrase, profile link, locale, hits are common to
+    // Shared cell helpers — phrase, channel link, locale, hits are common to
     // every lane; CTR and Zero-result are lane-specific tails.
 
     function cell(text, opts) {
@@ -581,22 +581,22 @@
         return td;
     }
 
-    function profileCell(profileKey) {
+    function channelCell(channelKey) {
         var td = document.createElement('td');
-        if (!profileKey) {
+        if (!channelKey) {
             td.className = 'gst-muted';
             td.textContent = '—';
             return td;
         }
         var a = document.createElement('a');
-        a.className = 'gst-ins-row__profile';
-        // ProfilesController is rooted at /EPiServer/cms/graphsearchtools/profiles
+        a.className = 'gst-ins-row__channel';
+        // ChannelsController is rooted at /EPiServer/cms/graphsearchtools/channels
         // (not under the module resource base), and the detail page reads
         // ?key=<id> from the index action — matches how Index.cshtml and
-        // profiles.js build the same link.
-        a.href = '/EPiServer/cms/graphsearchtools/profiles?key=' + encodeURIComponent(profileKey);
-        a.textContent = profileKey;
-        a.title = STRINGS.open_profile || 'Open this profile';
+        // channels.js build the same link.
+        a.href = '/EPiServer/cms/graphsearchtools/channels?key=' + encodeURIComponent(channelKey);
+        a.textContent = channelKey;
+        a.title = STRINGS.open_channel || 'Open this channel';
         td.appendChild(a);
         return td;
     }
@@ -612,8 +612,8 @@
         phraseTd.textContent = row.phrase || '';
         tr.appendChild(phraseTd);
 
-        // 2: profile (link), 3: locale, 4: hits (numeric, right-aligned).
-        tr.appendChild(profileCell(row.profileKey));
+        // 2: channel (link), 3: locale, 4: hits (numeric, right-aligned).
+        tr.appendChild(channelCell(row.channelKey));
         tr.appendChild(cell(row.locale || '—', { cls: row.locale ? '' : 'gst-muted' }));
         tr.appendChild(cell(hits.toLocaleString(), { cls: 'num' }));
 

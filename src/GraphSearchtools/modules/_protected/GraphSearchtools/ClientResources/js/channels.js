@@ -1,17 +1,16 @@
 /**
- * Graph Search Tools — Search Profiles UI (Phase 2.5)
+ * Graph Search Tools — Search Channels UI (Phase 2.5)
  *
  * Two entry points:
- *   GST.profiles.index({ detailUrlBase })   — wires up the index table.
- *   GST.profiles.detail({ profileKey })     — wires up the detail page tabs +
- *                                              fetches the audit log.
+ *   GST.channels.index({ detailUrlBase })   — wires up the index table.
+ *   GST.channels.detail({ channelKey })     — wires up the detail page tabs.
  *
- * Read-only against the JSON API at /EPiServer/cms/graphsearchtools/api/profiles.
+ * Read-only against the JSON API at /EPiServer/cms/graphsearchtools/api/channels.
  */
 (function() {
     'use strict';
 
-    var API_BASE = '/EPiServer/cms/graphsearchtools/api/profiles';
+    var API_BASE = '/EPiServer/cms/graphsearchtools/api/channels';
 
     function s(path, fallback) {
         return GST.s(path, fallback);
@@ -27,20 +26,20 @@
         var d = new Date(iso);
         if (isNaN(d.getTime())) return '—';
         var diff = (Date.now() - d.getTime()) / 1000;
-        if (diff < 60)        return s('profiles.time.justNow', 'just now');
-        if (diff < 3600)      return Math.floor(diff / 60) + ' ' + s('profiles.time.minutesAgo', 'min ago');
-        if (diff < 86400)     return Math.floor(diff / 3600) + ' ' + s('profiles.time.hoursAgo', 'hrs ago');
-        return Math.floor(diff / 86400) + ' ' + s('profiles.time.daysAgo', 'days ago');
+        if (diff < 60)        return s('channels.time.justNow', 'just now');
+        if (diff < 3600)      return Math.floor(diff / 60) + ' ' + s('channels.time.minutesAgo', 'min ago');
+        if (diff < 86400)     return Math.floor(diff / 3600) + ' ' + s('channels.time.hoursAgo', 'hrs ago');
+        return Math.floor(diff / 86400) + ' ' + s('channels.time.daysAgo', 'days ago');
     }
 
     /** Render Sites & locales cell. */
     function scopeCell(p) {
         var sitesHtml = (p.sites && p.sites.length)
             ? p.sites.map(function(x) { return '<span class="gst-badge gst-badge--default">' + escHtml(x) + '</span>'; }).join('')
-            : '<span class="gst-badge gst-badge--default">' + escHtml(s('profiles.detail.meta.allSites', 'all sites')) + '</span>';
+            : '<span class="gst-badge gst-badge--default">' + escHtml(s('channels.detail.meta.allSites', 'all sites')) + '</span>';
         var localesHtml = (p.locales && p.locales.length)
             ? p.locales.map(function(x) { return '<span class="gst-badge gst-badge--primary">' + escHtml(x) + '</span>'; }).join('')
-            : '<span class="gst-badge gst-badge--default">' + escHtml(s('profiles.detail.meta.allLocales', 'all locales')) + '</span>';
+            : '<span class="gst-badge gst-badge--default">' + escHtml(s('channels.detail.meta.allLocales', 'all locales')) + '</span>';
         return '<div class="gst-prof-scope">' + sitesHtml + '</div>'
              + '<div class="gst-prof-scope" style="margin-top: 4px">' + localesHtml + '</div>';
     }
@@ -51,14 +50,14 @@
      * fan-out resolves; until then the host is empty and the total reads
      * as an em-dash, matching the rest of the row's "not yet loaded" tone.
      */
-    function activityCell(profileKey) {
-        return '<div class="gst-prof-activity" data-key="' + escHtml(profileKey || '') + '">'
+    function activityCell(channelKey) {
+        return '<div class="gst-prof-activity" data-key="' + escHtml(channelKey || '') + '">'
             +     '<div class="gst-prof-activity__spark"></div>'
             +     '<div class="gst-prof-activity__total">—</div>'
             +  '</div>';
     }
 
-    function profileCell(p) {
+    function channelCell(p) {
         var subPath = p.graphQLDocPath
             ? p.key + ' · ' + p.graphQLDocPath
             : p.key;
@@ -86,7 +85,7 @@
         opts = opts || {};
         // Detail URL is the index URL with a `?key=...` query so the CMS
         // shell maps both surfaces to the same registered menu item.
-        var detailUrlBase = opts.detailUrlBase || '/EPiServer/cms/graphsearchtools/profiles?key=';
+        var detailUrlBase = opts.detailUrlBase || '/EPiServer/cms/graphsearchtools/channels?key=';
 
         var tableHost  = document.getElementById('gst-prof-table-host');
         var emptyEl    = document.getElementById('gst-prof-empty');
@@ -100,20 +99,20 @@
 
         GST.showLoading(tableHost);
 
-        GST.fetchJson(API_BASE).then(function(profiles) {
-            if (!profiles || profiles.length === 0) {
+        GST.fetchJson(API_BASE).then(function(channels) {
+            if (!channels || channels.length === 0) {
                 tableHost.innerHTML = '';
                 if (emptyEl) emptyEl.hidden = false;
                 if (countEl) countEl.textContent = '';
                 return;
             }
-            populateFilters(profiles);
-            renderTable(profiles);
-            loadActivitySparklines(profiles);
+            populateFilters(channels);
+            renderTable(channels);
+            loadActivitySparklines(channels);
         }).catch(function(err) {
             tableHost.innerHTML = '';
-            showAlert(s('profiles.requestFailed', 'Failed to load profiles.'), 'danger');
-            console.error('Profiles list failed', err);
+            showAlert(s('channels.requestFailed', 'Failed to load channels.'), 'danger');
+            console.error('Channels list failed', err);
         });
 
         function showAlert(msg, kind) {
@@ -123,10 +122,10 @@
             alertEl.hidden = false;
         }
 
-        function populateFilters(profiles) {
+        function populateFilters(channels) {
             var sites = new Set();
             var locales = new Set();
-            profiles.forEach(function(p) {
+            channels.forEach(function(p) {
                 (p.sites || []).forEach(function(x) { sites.add(x); });
                 (p.locales || []).forEach(function(x) { locales.add(x); });
             });
@@ -148,22 +147,22 @@
             });
         }
 
-        function renderTable(profiles) {
+        function renderTable(channels) {
             var table = document.createElement('table');
             table.className = 'gst-table gst-prof-table';
             table.innerHTML =
                 '<thead><tr>'
-                + '<th style="width: 26%">' + escHtml(s('profiles.cols.profile', 'Profile')) + '</th>'
-                + '<th style="width: 22%" class="col-scope">' + escHtml(s('profiles.cols.scope', 'Sites & locales')) + '</th>'
-                + '<th style="width: 32%" class="col-activity">' + escHtml(s('profiles.cols.activity', 'Activity (30d)')) + '</th>'
-                + '<th>' + escHtml(s('profiles.cols.lastEdited', 'Last edited')) + '</th>'
+                + '<th style="width: 26%">' + escHtml(s('channels.cols.channel', 'Channel')) + '</th>'
+                + '<th style="width: 22%" class="col-scope">' + escHtml(s('channels.cols.scope', 'Sites & locales')) + '</th>'
+                + '<th style="width: 32%" class="col-activity">' + escHtml(s('channels.cols.activity', 'Activity (30d)')) + '</th>'
+                + '<th>' + escHtml(s('channels.cols.lastEdited', 'Last edited')) + '</th>'
                 + '<th style="width: 32px"></th>'
                 + '</tr></thead><tbody></tbody>';
             tableHost.innerHTML = '';
             tableHost.appendChild(table);
 
             var tbody = table.querySelector('tbody');
-            profiles.forEach(function(p) {
+            channels.forEach(function(p) {
                 var tr = document.createElement('tr');
                 tr.dataset.key = p.key || '';
                 tr.dataset.search = ((p.displayName || '') + ' ' + (p.key || '') + ' ' + (p.descriptionResolved || '')).toLowerCase();
@@ -171,7 +170,7 @@
                 tr.dataset.locales = (p.locales || []).join('|');
 
                 tr.innerHTML =
-                    '<td>' + profileCell(p) + '</td>'
+                    '<td>' + channelCell(p) + '</td>'
                     + '<td class="col-scope">' + scopeCell(p) + '</td>'
                     + '<td class="col-activity">' + activityCell(p.key) + '</td>'
                     + '<td>' + lastEditedCell(p) + '</td>'
@@ -188,21 +187,21 @@
         }
 
         /**
-         * Fan-out: one InsightsApi.SearchKpis call per profile, with the
+         * Fan-out: one InsightsApi.SearchKpis call per channel, with the
          * sparkline drawn into the row as each response lands. N+1 by design
          * — the alternative is a bespoke batch endpoint we don't yet need at
-         * prototype scale. allSettled keeps a slow/failing profile from
+         * prototype scale. allSettled keeps a slow/failing channel from
          * stalling the rest.
          */
-        function loadActivitySparklines(profiles) {
+        function loadActivitySparklines(channels) {
             if (!tableHost || !window.GST || typeof GST.sparkline !== 'function') return;
             var BASE = window.GST_BASE_URL || '';
 
-            profiles.forEach(function(p) {
+            channels.forEach(function(p) {
                 if (!p.key) return;
                 var host = tableHost.querySelector('.gst-prof-activity[data-key="' + cssEscape(p.key) + '"]');
                 if (!host) return;
-                var url = BASE + '/InsightsApi/SearchKpis?profileKey=' + encodeURIComponent(p.key);
+                var url = BASE + '/InsightsApi/SearchKpis?channelKey=' + encodeURIComponent(p.key);
                 GST.fetchJson(url).then(function(k) {
                     renderActivityCell(host, k);
                 }).catch(function() {
@@ -222,7 +221,7 @@
             var series = (kpis.sparkSearches && kpis.sparkSearches.length) ? kpis.sparkSearches : [];
             if (spark) {
                 GST.sparkline(spark, series, {
-                    label: s('profiles.cols.activity', 'Activity (30d)'),
+                    label: s('channels.cols.activity', 'Activity (30d)'),
                     formatTooltip: function(v, i) {
                         var daysAgo = (series.length - 1) - i;
                         return v + ' · ' + daysAgo + 'd ago';
@@ -258,7 +257,7 @@
                 if (show) visible++;
             });
             if (countEl) {
-                countEl.textContent = visible + ' ' + s('profiles.cols.profile', 'profiles').toLowerCase();
+                countEl.textContent = visible + ' ' + s('channels.cols.channel', 'channels').toLowerCase();
             }
         }
 
@@ -277,7 +276,7 @@
      */
     function detail(opts) {
         opts = opts || {};
-        var key = opts.profileKey || '';
+        var key = opts.channelKey || '';
         var synonymsMounted = false;
         var insightsMounted = false;
 
@@ -359,10 +358,6 @@
                 if (target === 'pinned') mountPinned();
                 if (target === 'synonyms') mountSynonyms();
                 if (target === 'insights') mountInsights();
-                // Audit lives in the Activity tab now (Aurora Phase 3C);
-                // keep loading it for `details` too so deep-links via the
-                // legacy tab name still work for at least one release.
-                if (target === 'activity' || target === 'details') loadAudit(key);
             });
         });
 
@@ -371,9 +366,9 @@
             if (btn) btn.click();
         }
 
-        // Aurora Pinned grid — profile-scoped via the JS module's `init({scope})`
-        // entry point. Resolves the profile's collection id up-front via
-        // /api/profiles/{key}/pinned so the Aurora grid only walks the
+        // Aurora Pinned grid — channel-scoped via the JS module's `init({scope})`
+        // entry point. Resolves the channel's collection id up-front via
+        // /api/channels/{key}/pinned so the Aurora grid only walks the
         // matching collection. Returns a Promise that resolves after init
         // has run so callers (the Insights "open pin flyout" shim) can wait
         // before reaching for the create button's wired-up click handler.
@@ -402,7 +397,7 @@
                 results.forEach(function (r) { collectionsByLocale[r.locale] = r.collectionId; });
                 window.GST.pinned.aurora.init({
                     scope: {
-                        profileKey: key,
+                        channelKey: key,
                         collectionsByLocale: collectionsByLocale,
                         locales: opts.locales || []
                     }
@@ -411,7 +406,7 @@
             return pinnedMountPromise;
         }
 
-        // Aurora Synonyms grid — profile-scoped via `init({scope.locales})`.
+        // Aurora Synonyms grid — channel-scoped via `init({scope.locales})`.
         // Synonyms are tenant-global in Optimizely Graph so there's no
         // collection narrowing; the scope only filters which locale pools
         // are surfaced in the Scope filter dropdown.
@@ -509,7 +504,7 @@
             if (insightsMounted) return;
             insightsMounted = true;
             insightsCtl = mountInsightsPanel({
-                profileKey: key,
+                channelKey: key,
                 hasGraphQLDoc: !!opts.hasGraphQLDoc,
                 queryAppliesPinned: typeof opts.queryAppliesPinned === 'boolean' ? opts.queryAppliesPinned : !!opts.hasGraphQLDoc,
                 queryAppliesSynonyms: typeof opts.queryAppliesSynonyms === 'boolean' ? opts.queryAppliesSynonyms : true,
@@ -520,7 +515,7 @@
         }
 
         // SERP-style live preview. Listens to the try-it input + locale chip
-        // and renders /api/profiles/{key}/preview into #gst-pin-tryit-results.
+        // and renders /api/channels/{key}/preview into #gst-pin-tryit-results.
         // The Aurora migration deleted the legacy wiring from pinned.js but
         // left the markup + endpoint + CSS in place; this is the minimum
         // wireup that brings the preview back to life. The richer synonym-
@@ -548,7 +543,7 @@
                 statsEl.classList.toggle('gst-serp__stats--err', !!isError);
             }
             function formatStats(shown, total, ms) {
-                if (!total && !shown) return s('profiles.detail.pinned.serpEmpty', 'No matches.') + ' · ' + ms + ' ms';
+                if (!total && !shown) return s('channels.detail.pinned.serpEmpty', 'No matches.') + ' · ' + ms + ' ms';
                 if (!total || total === shown) return shown + ' hits · ' + ms + ' ms';
                 return shown + ' of ' + total + ' hits · ' + ms + ' ms';
             }
@@ -628,12 +623,12 @@
                 if (!hit.url) title.classList.add('is-disabled');
                 title.target = hit.url ? '_blank' : '_self';
                 title.rel = 'noopener noreferrer';
-                title.appendChild(highlightFragment(hit.name || s('profiles.detail.pinned.serpUntitled', '(untitled)'), phrase));
+                title.appendChild(highlightFragment(hit.name || s('channels.detail.pinned.serpUntitled', '(untitled)'), phrase));
                 head.appendChild(title);
                 if (hit.score) {
                     var score = document.createElement('span');
                     score.className = 'gst-serp__score';
-                    score.title = s('profiles.detail.pinned.serpScoreTooltip', 'Graph relevance score');
+                    score.title = s('channels.detail.pinned.serpScoreTooltip', 'Graph relevance score');
                     score.textContent = formatScore(hit.score);
                     head.appendChild(score);
                 }
@@ -662,9 +657,9 @@
                 if (isPinned) {
                     var pinChip = document.createElement('span');
                     pinChip.className = 'gst-serp__chip gst-serp__chip--pinned';
-                    pinChip.textContent = s('profiles.detail.pinned.serpPinnedBadge', 'Pinned');
-                    pinChip.title = s('profiles.detail.pinned.serpPinnedTooltip',
-                        'This result is locked to the top by a pin in this profile.');
+                    pinChip.textContent = s('channels.detail.pinned.serpPinnedBadge', 'Pinned');
+                    pinChip.title = s('channels.detail.pinned.serpPinnedTooltip',
+                        'This result is locked to the top by a pin in this channel.');
                     meta.appendChild(pinChip);
                 }
                 if (hit.contentType) {
@@ -688,7 +683,7 @@
                 if (!hits.length) {
                     var empty = document.createElement('li');
                     empty.className = 'gst-serp__empty';
-                    empty.textContent = s('profiles.detail.pinned.serpEmptyHelp',
+                    empty.textContent = s('channels.detail.pinned.serpEmptyHelp',
                         'No content matched this phrase. Try a different term, or pin a target above.');
                     resultsEl.appendChild(empty);
                     return;
@@ -725,7 +720,7 @@
                     if (qInput.value.trim() !== lastQuery) return;
                     setLoading(false);
                     resultsEl.innerHTML = '';
-                    setStats((err && err.message) || s('profiles.detail.pinned.previewFailed', 'preview failed'), true);
+                    setStats((err && err.message) || s('channels.detail.pinned.previewFailed', 'preview failed'), true);
                 });
             }
 
@@ -744,14 +739,29 @@
                     }
                 });
             }
+            // Pin / synonym mutations elsewhere on the page dispatch
+            // `gst:preview-refresh` so the SERP repaints against the new
+            // state without forcing the marketer to retype. Delay gives
+            // Graph's read replica a beat after the admin API write;
+            // resetting lastQuery bypasses the staleness guard so an
+            // identical-text re-run still goes through (the server-side
+            // per-call nonce handles Graph's response-byte cache).
+            document.addEventListener('gst:preview-refresh', function () {
+                if (qInput.value.trim().length < 2) return;
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function () {
+                    lastQuery = '';
+                    run();
+                }, 300);
+            });
         }
     }
 
     /** ---------------- INSIGHTS PANEL ---------------- */
     /*
-     * Three lanes of phrase-level signal scoped to the active profile:
+     * Three lanes of phrase-level signal scoped to the active channel:
      * top phrases, zero-result phrases, low-CTR phrases. Backed by the
-     * Search Logs API with a profileKey filter (the controller adds the
+     * Search Logs API with a channelKey filter (the controller adds the
      * filter when the param is present, so global Search Logs UI is
      * unaffected).
      *
@@ -769,8 +779,8 @@
         opts = opts || {};
         var BASE = window.GST_BASE_URL || '';
         var SEARCHLOGS_API = BASE + '/SearchLogsApi';
-        var profileKey = opts.profileKey || '';
-        if (!profileKey) return;
+        var channelKey = opts.channelKey || '';
+        if (!channelKey) return;
 
         var root = document.getElementById('gst-prof-ins');
         var alertEl = document.getElementById('gst-prof-ins-alert');
@@ -893,14 +903,14 @@
                 + '?since=' + encodeURIComponent(new Date(sinceMs).toISOString())
                 + '&until=' + encodeURIComponent(new Date(untilMs).toISOString())
                 + '&take=' + state.takes[lane]
-                + '&profileKey=' + encodeURIComponent(profileKey);
+                + '&channelKey=' + encodeURIComponent(channelKey);
             var loc = activeLocale();
             if (loc) url += '&locale=' + encodeURIComponent(loc);
             return GST.fetchJson(url);
         }
 
         // Show-more bumps just one lane's take and re-renders that lane.
-        // The reader caches the underlying aggregate per (window, profile,
+        // The reader caches the underlying aggregate per (window, channel,
         // locale) for 30s, so the bigger take re-runs only the in-memory
         // sort-and-take — no DB roundtrip on the hot path.
         function showMore(lane) {
@@ -983,7 +993,7 @@
 
             if (payload && payload._err) {
                 listEl.innerHTML = '<li class="gst-prof-ins-lane__error">'
-                    + escHtml(s('profiles.detail.insights.loadFailed', 'Failed to load insights.'))
+                    + escHtml(s('channels.detail.insights.loadFailed', 'Failed to load insights.'))
                     + '</li>';
                 if (countEl) {
                     countEl.textContent = '—';
@@ -999,9 +1009,9 @@
             }
 
             if (rows.length === 0) {
-                var emptyKey = lane === 'zero' ? 'profiles.detail.insights.emptyZero'
-                    : lane === 'lowctr' ? 'profiles.detail.insights.emptyLowCtr'
-                    : 'profiles.detail.insights.empty';
+                var emptyKey = lane === 'zero' ? 'channels.detail.insights.emptyZero'
+                    : lane === 'lowctr' ? 'channels.detail.insights.emptyLowCtr'
+                    : 'channels.detail.insights.empty';
                 var defaultEmpty = lane === 'zero' ? 'No zero-result phrases — every search found something.'
                     : lane === 'lowctr' ? 'Not enough sessions to score CTR yet.'
                     : 'No traffic in this window yet.';
@@ -1036,7 +1046,7 @@
             btn.type = 'button';
             btn.id = 'gst-prof-ins-' + lane + '-more';
             btn.className = 'gst-prof-ins-lane__more';
-            btn.textContent = s('profiles.detail.insights.showMore', 'Show more');
+            btn.textContent = s('channels.detail.insights.showMore', 'Show more');
             btn.addEventListener('click', function () {
                 showMore(lane);
             });
@@ -1074,7 +1084,7 @@
                 ctrEl.className = 'gst-prof-ins-row__ctr';
                 var pct = Math.round((row.ctr || 0) * 100);
                 ctrEl.innerHTML = '<span class="gst-prof-ins-row__ctr-num">' + pct + '%</span>'
-                    + ' ' + escHtml(s('profiles.detail.insights.ctrLabel', 'CTR'));
+                    + ' ' + escHtml(s('channels.detail.insights.ctrLabel', 'CTR'));
                 barEl.appendChild(ctrEl);
             } else {
                 var w = Math.max(4, Math.round(((row.hits || 0) / maxHits) * 100));
@@ -1086,12 +1096,12 @@
             var countEl = document.createElement('span');
             countEl.className = 'gst-prof-ins-row__count';
             countEl.innerHTML = '<strong>' + escHtml(String(row.hits || 0)) + '</strong>'
-                + '<small>' + escHtml(s('profiles.detail.insights.hitsLabel', 'hits')) + '</small>';
+                + '<small>' + escHtml(s('channels.detail.insights.hitsLabel', 'hits')) + '</small>';
             li.appendChild(countEl);
 
             // 4: actions — three icon buttons (preview / pin / synonym) on
             //    every row regardless of lane. Pin and synonym are disabled
-            //    when the active profile's GraphQL doc doesn't apply them
+            //    when the active channel's GraphQL doc doesn't apply them
             //    (so the buttons are still visible for affordance, but a
             //    tooltip explains why they can't be used here).
             var actEl = document.createElement('span');
@@ -1100,7 +1110,7 @@
             actEl.appendChild(makeIconButton(
                 'preview',
                 GST.icons.search,
-                s('profiles.detail.insights.actionPreview', 'Preview this phrase'),
+                s('channels.detail.insights.actionPreview', 'Preview this phrase'),
                 false,
                 function (ev) { ev.stopPropagation(); applyToPreview(row.phrase); }
             ));
@@ -1109,8 +1119,8 @@
                 'pin',
                 GST.icons.pin,
                 opts.queryAppliesPinned
-                    ? s('profiles.detail.insights.actionPin', 'Pin a result for this phrase')
-                    : s('profiles.detail.insights.actionPinDisabled', 'This profile doesn\'t apply pinned results.'),
+                    ? s('channels.detail.insights.actionPin', 'Pin a result for this phrase')
+                    : s('channels.detail.insights.actionPinDisabled', 'This channel doesn\'t apply pinned results.'),
                 !opts.queryAppliesPinned,
                 function (ev) { ev.stopPropagation(); toggleInlineEditor(li, row, 'pin'); }
             ));
@@ -1119,8 +1129,8 @@
                 'synonym',
                 GST.icons.synonym,
                 opts.queryAppliesSynonyms
-                    ? s('profiles.detail.insights.actionSynonym', 'Add a synonym for this phrase')
-                    : s('profiles.detail.insights.actionSynonymDisabled', 'This profile doesn\'t apply synonyms.'),
+                    ? s('channels.detail.insights.actionSynonym', 'Add a synonym for this phrase')
+                    : s('channels.detail.insights.actionSynonymDisabled', 'This channel doesn\'t apply synonyms.'),
                 !opts.queryAppliesSynonyms,
                 function (ev) { ev.stopPropagation(); toggleInlineEditor(li, row, 'synonym'); }
             ));
@@ -1288,77 +1298,25 @@
         };
     }
 
-    var _auditLoaded = false;
-
     /**
-     * Load the 30-day search-activity KPIs for this profile and render them
+     * Load the 30-day search-activity KPIs for this channel and render them
      * into the #gst-prof-kpis host. Shares the renderer (and therefore the
      * visual treatment) with the global Insights tool — the only difference
-     * is the ?profileKey scope on the API call.
+     * is the ?channelKey scope on the API call.
      */
-    function loadKpis(profileKey, opts) {
+    function loadKpis(channelKey, opts) {
         if (!window.GST || typeof window.GST.renderKpiCard !== 'function') return;
         var host = document.getElementById('gst-prof-kpis');
         if (!host) return;
         opts = opts || {};
         var BASE = window.GST_BASE_URL || '';
-        var url = BASE + '/InsightsApi/SearchKpis?profileKey=' + encodeURIComponent(profileKey);
+        var url = BASE + '/InsightsApi/SearchKpis?channelKey=' + encodeURIComponent(channelKey);
         GST.renderKpiCardLoading(host);
         GST.fetchJson(url)
             .then(function (k) { GST.renderKpiCard(host, k, { onDateSelect: opts.onDateSelect }); })
             .catch(function () { GST.renderKpiCardError(host); });
     }
 
-    function loadAudit(key) {
-        if (_auditLoaded) return;
-        _auditLoaded = true;
-
-        var host = document.getElementById('gst-prof-audit-host');
-        var badge = document.getElementById('gst-prof-audit-badge');
-        if (!host) return;
-
-        GST.showLoading(host);
-
-        GST.fetchJson(API_BASE + '/' + encodeURIComponent(key) + '/audit?take=100').then(function(rows) {
-            if (!rows || rows.length === 0) {
-                GST.showEmpty(host, s('profiles.detail.audit.empty', 'No edits recorded yet.'));
-                if (badge) badge.hidden = true;
-                return;
-            }
-            renderAudit(host, rows);
-            if (badge) {
-                badge.hidden = false;
-                badge.textContent = rows.length;
-            }
-        }).catch(function(err) {
-            host.innerHTML = '<p class="gst-muted">' + escHtml(s('profiles.requestFailed', 'Failed to load audit log.')) + '</p>';
-            console.error('Audit log failed', err);
-        });
-    }
-
-    function renderAudit(host, rows) {
-        var html = '<table class="gst-table gst-prof-audit-table"><thead><tr>'
-            + '<th>' + escHtml(s('profiles.detail.audit.col.when', 'When')) + '</th>'
-            + '<th>' + escHtml(s('profiles.detail.audit.col.who', 'Who')) + '</th>'
-            + '<th>' + escHtml(s('profiles.detail.audit.col.kind', 'Kind')) + '</th>'
-            + '<th>' + escHtml(s('profiles.detail.audit.col.action', 'Action')) + '</th>'
-            + '<th>' + escHtml(s('profiles.detail.audit.col.subject', 'Subject')) + '</th>'
-            + '<th>' + escHtml(s('profiles.detail.audit.col.locale', 'Locale')) + '</th>'
-            + '</tr></thead><tbody>';
-        rows.forEach(function(r) {
-            html += '<tr>'
-                + '<td>' + escHtml(relativeTime(r.at)) + '</td>'
-                + '<td>' + escHtml(r.actorName || r.actorId || '—') + '</td>'
-                + '<td>' + escHtml(r.kind || '—') + '</td>'
-                + '<td>' + escHtml(r.action || '—') + '</td>'
-                + '<td>' + escHtml(r.subject || '—') + '</td>'
-                + '<td>' + escHtml(r.locale || '—') + '</td>'
-                + '</tr>';
-        });
-        html += '</tbody></table>';
-        host.innerHTML = html;
-    }
-
     window.GST = window.GST || {};
-    window.GST.profiles = { index: index, detail: detail };
+    window.GST.channels = { index: index, detail: detail };
 })();

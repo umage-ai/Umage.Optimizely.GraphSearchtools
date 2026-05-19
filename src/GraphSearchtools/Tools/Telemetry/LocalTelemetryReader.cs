@@ -11,13 +11,13 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 /// <summary>
 /// Reads aggregates straight from the DDS bucket store. Cross-instance sums
 /// are done at query time — every reader collapses per-node minute buckets
-/// down to one row per (phrase, profile, locale).
+/// down to one row per (phrase, channel, locale).
 /// </summary>
 internal sealed class LocalTelemetryReader : ITelemetryReader
 {
     /// <summary>
     /// How long an aggregate result stays cached. Long enough that the three
-    /// concurrent lanes (Top / ZeroResult / LowCtr) on a typical Profile
+    /// concurrent lanes (Top / ZeroResult / LowCtr) on a typical Channel
     /// Insights page render share one underlying read; short enough that a
     /// click on the refresh button after a few seconds returns fresh data.
     /// Also masks the cost of cold long-window queries (30d) for adjacent
@@ -45,7 +45,7 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
         _logger = logger;
     }
 
-    private readonly record struct CacheKey(DateTime SinceUtc, DateTime UntilUtc, string? ProfileKey, string? Locale);
+    private readonly record struct CacheKey(DateTime SinceUtc, DateTime UntilUtc, string? ChannelKey, string? Locale);
     private sealed record CacheEntry(CacheKey Key, DateTime ExpiresAt, IReadOnlyList<PhraseAggregate> Rows);
 
     private static DateTime BucketTimestamp(DateTime utc)
@@ -125,7 +125,7 @@ internal sealed class LocalTelemetryReader : ITelemetryReader
 
         // Column names are whitelist-validated by BucketColumnMap; the store
         // name literal is constant. Direct interpolation is safe here.
-        var profileFilter = !string.IsNullOrEmpty(query.ProfileKey) ? $" AND {map.ProfileKey} = @profile" : string.Empty;
+        var channelFilter = !string.IsNullOrEmpty(query.ChannelKey) ? $" AND {map.ChannelKey} = @channel" : string.Empty;
         var localeFilter  = !string.IsNullOrEmpty(query.Locale)     ? $" AND {map.Locale} = @locale"      : string.Empty;
         var sql = $@"
 SELECT
@@ -136,7 +136,7 @@ SELECT
 FROM tblBigTable
 WHERE StoreName = 'GraphSearchtools_SearchLogBucket'
   AND {map.BucketUtc} >= @since
-  AND {map.BucketUtc} <  @until{profileFilter}{localeFilter}
+  AND {map.BucketUtc} <  @until{channelFilter}{localeFilter}
 GROUP BY CAST({map.BucketUtc} AS date)
 ORDER BY DayUtc ASC";
 
@@ -148,8 +148,8 @@ ORDER BY DayUtc ASC";
             cmd.CommandText = sql;
             cmd.Parameters.Add(new SqlParameter("@since", System.Data.SqlDbType.DateTime) { Value = query.SinceUtc });
             cmd.Parameters.Add(new SqlParameter("@until", System.Data.SqlDbType.DateTime) { Value = query.UntilUtc });
-            if (!string.IsNullOrEmpty(query.ProfileKey))
-                cmd.Parameters.Add(new SqlParameter("@profile", query.ProfileKey));
+            if (!string.IsNullOrEmpty(query.ChannelKey))
+                cmd.Parameters.Add(new SqlParameter("@channel", query.ChannelKey));
             if (!string.IsNullOrEmpty(query.Locale))
                 cmd.Parameters.Add(new SqlParameter("@locale", query.Locale));
 
@@ -180,8 +180,8 @@ ORDER BY DayUtc ASC";
         var q = store.Items<SearchLogBucket>()
             .Where(b => b.BucketUtc >= query.SinceUtc && b.BucketUtc < query.UntilUtc);
 
-        if (!string.IsNullOrEmpty(query.ProfileKey))
-            q = q.Where(b => b.ProfileKey == query.ProfileKey);
+        if (!string.IsNullOrEmpty(query.ChannelKey))
+            q = q.Where(b => b.ChannelKey == query.ChannelKey);
         if (!string.IsNullOrEmpty(query.Locale))
             q = q.Where(b => b.Locale == query.Locale);
 
@@ -204,8 +204,8 @@ ORDER BY DayUtc ASC";
             .Where(r => r.TimestampUtc >= query.SinceUtc && r.TimestampUtc < query.UntilUtc)
             .ToList();
 
-        if (!string.IsNullOrEmpty(query.ProfileKey))
-            rows = rows.Where(r => r.ProfileKey == query.ProfileKey).ToList();
+        if (!string.IsNullOrEmpty(query.ChannelKey))
+            rows = rows.Where(r => r.ChannelKey == query.ChannelKey).ToList();
         if (!string.IsNullOrEmpty(query.Locale))
             rows = rows.Where(r => r.Locale == query.Locale).ToList();
 
@@ -216,7 +216,7 @@ ORDER BY DayUtc ASC";
                 r.TimestampUtc,
                 r.Kind,
                 r.Phrase,
-                r.ProfileKey,
+                r.ChannelKey,
                 r.Locale,
                 r.ResultCount,
                 r.ClickRank,
@@ -227,10 +227,10 @@ ORDER BY DayUtc ASC";
 
     /// <summary>
     /// <see cref="LoadAggregated"/> with a short TTL cache keyed on
-    /// (window, profile, locale). The three lanes
+    /// (window, channel, locale). The three lanes
     /// (<see cref="TopPhrasesAsync"/>, <see cref="ZeroResultPhrasesAsync"/>,
     /// <see cref="LowCtrPhrasesAsync"/>) all run the same window query but
-    /// post-process differently — caching the aggregate means a Profile
+    /// post-process differently — caching the aggregate means a Channel
     /// Insights page render fans out to one read, not three.
     /// </summary>
     private IReadOnlyList<PhraseAggregate> LoadAggregatedCached(TelemetryQuery query)
@@ -241,7 +241,7 @@ ORDER BY DayUtc ASC";
         var key = new CacheKey(
             BucketTimestamp(query.SinceUtc),
             BucketTimestamp(query.UntilUtc),
-            query.ProfileKey,
+            query.ChannelKey,
             query.Locale);
 
         lock (_cacheLock)
@@ -278,7 +278,7 @@ ORDER BY DayUtc ASC";
         var connectionString = _configuration.GetConnectionString("EPiServerDB");
         if (string.IsNullOrEmpty(connectionString)) return null;
 
-        var sql = BuildAggregateSql(map, includeProfile: !string.IsNullOrEmpty(query.ProfileKey), includeLocale: !string.IsNullOrEmpty(query.Locale));
+        var sql = BuildAggregateSql(map, includeChannel: !string.IsNullOrEmpty(query.ChannelKey), includeLocale: !string.IsNullOrEmpty(query.Locale));
 
         try
         {
@@ -288,8 +288,8 @@ ORDER BY DayUtc ASC";
             cmd.CommandText = sql;
             cmd.Parameters.Add(new SqlParameter("@since", System.Data.SqlDbType.DateTime) { Value = query.SinceUtc });
             cmd.Parameters.Add(new SqlParameter("@until", System.Data.SqlDbType.DateTime) { Value = query.UntilUtc });
-            if (!string.IsNullOrEmpty(query.ProfileKey))
-                cmd.Parameters.Add(new SqlParameter("@profile", query.ProfileKey));
+            if (!string.IsNullOrEmpty(query.ChannelKey))
+                cmd.Parameters.Add(new SqlParameter("@channel", query.ChannelKey));
             if (!string.IsNullOrEmpty(query.Locale))
                 cmd.Parameters.Add(new SqlParameter("@locale", query.Locale));
 
@@ -298,7 +298,7 @@ ORDER BY DayUtc ASC";
             while (reader.Read())
             {
                 var phraseNorm = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
-                var profileKey = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                var channelKey = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
                 var locale     = reader.IsDBNull(2) ? string.Empty : reader.GetString(2);
                 var hits       = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
                 var zeroes     = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
@@ -307,7 +307,7 @@ ORDER BY DayUtc ASC";
 
                 var zeroRate = hits == 0 ? (zeroes > 0 ? 1.0 : 0.0) : (double)zeroes / hits;
                 var ctr = hits == 0 ? 0.0 : (double)clicks / hits;
-                rows.Add(new PhraseAggregate(display, hits, zeroRate, ctr, locale, profileKey));
+                rows.Add(new PhraseAggregate(display, hits, zeroRate, ctr, locale, channelKey));
             }
             return rows;
         }
@@ -322,17 +322,17 @@ ORDER BY DayUtc ASC";
         }
     }
 
-    private static string BuildAggregateSql(BucketColumnMap m, bool includeProfile, bool includeLocale)
+    private static string BuildAggregateSql(BucketColumnMap m, bool includeChannel, bool includeLocale)
     {
         // Column names come from a whitelist-validated source (see
         // BucketColumnMap.ResolveAsync), so direct interpolation is safe.
         // The literal store name is constant, also safe.
-        var profileFilter = includeProfile ? $" AND {m.ProfileKey} = @profile" : string.Empty;
+        var channelFilter = includeChannel ? $" AND {m.ChannelKey} = @channel" : string.Empty;
         var localeFilter = includeLocale ? $" AND {m.Locale} = @locale" : string.Empty;
         return $@"
 SELECT
     {m.PhraseNorm}    AS PhraseNorm,
-    {m.ProfileKey}    AS ProfileKey,
+    {m.ChannelKey}    AS ChannelKey,
     {m.Locale}        AS Locale,
     SUM({m.Hits})     AS Hits,
     SUM({m.Zeroes})   AS Zeroes,
@@ -341,8 +341,8 @@ SELECT
 FROM tblBigTable
 WHERE StoreName = 'GraphSearchtools_SearchLogBucket'
   AND {m.BucketUtc} >= @since
-  AND {m.BucketUtc} <  @until{profileFilter}{localeFilter}
-GROUP BY {m.PhraseNorm}, {m.ProfileKey}, {m.Locale}";
+  AND {m.BucketUtc} <  @until{channelFilter}{localeFilter}
+GROUP BY {m.PhraseNorm}, {m.ChannelKey}, {m.Locale}";
     }
 
     /// <summary>
@@ -379,7 +379,7 @@ GROUP BY {m.PhraseNorm}, {m.ProfileKey}, {m.Locale}";
     /// Pulls bucket rows for the window, optionally filtered, and collapses
     /// them across NodeId so a phrase appears once even when it was seen on
     /// many instances. Filters are chained into the LINQ expression so DDS
-    /// picks the most selective index (BucketUtc range, then ProfileKey or
+    /// picks the most selective index (BucketUtc range, then ChannelKey or
     /// Locale equality) instead of materialising every row in the window.
     /// </summary>
     private List<PhraseAggregate> LoadAggregated(TelemetryQuery query)
@@ -388,14 +388,14 @@ GROUP BY {m.PhraseNorm}, {m.ProfileKey}, {m.Locale}";
         var q = store.Items<SearchLogBucket>()
             .Where(b => b.BucketUtc >= query.SinceUtc && b.BucketUtc < query.UntilUtc);
 
-        if (!string.IsNullOrEmpty(query.ProfileKey))
-            q = q.Where(b => b.ProfileKey == query.ProfileKey);
+        if (!string.IsNullOrEmpty(query.ChannelKey))
+            q = q.Where(b => b.ChannelKey == query.ChannelKey);
         if (!string.IsNullOrEmpty(query.Locale))
             q = q.Where(b => b.Locale == query.Locale);
 
         return q
             .ToList()
-            .GroupBy(b => new { b.PhraseNorm, b.ProfileKey, b.Locale })
+            .GroupBy(b => new { b.PhraseNorm, b.ChannelKey, b.Locale })
             .Select(g =>
             {
                 var hits = g.Sum(b => b.Hits);
@@ -406,7 +406,7 @@ GROUP BY {m.PhraseNorm}, {m.ProfileKey}, {m.Locale}";
                     .FirstOrDefault() ?? g.Key.PhraseNorm;
                 var zeroRate = hits == 0 ? (zeroes > 0 ? 1.0 : 0.0) : (double)zeroes / hits;
                 var ctr = hits == 0 ? 0.0 : (double)clicks / hits;
-                return new PhraseAggregate(display, hits, zeroRate, ctr, g.Key.Locale, g.Key.ProfileKey);
+                return new PhraseAggregate(display, hits, zeroRate, ctr, g.Key.Locale, g.Key.ChannelKey);
             })
             .ToList();
     }

@@ -32,9 +32,9 @@ public class GraphSearchtoolsController : Controller
 
     /// <summary>
     /// Top-level Pinned tool — collection-axis browser. Reads collections + items
-    /// from Graph and joins with the profile registry so each row carries its
-    /// resolved profile. Prototype is read-only; edits still happen inside
-    /// Profile detail tabs.
+    /// from Graph and joins with the channel registry so each row carries its
+    /// resolved channel. Prototype is read-only; edits still happen inside
+    /// Channel detail tabs.
     /// </summary>
     [HttpGet]
     public IActionResult Pinned()
@@ -46,7 +46,7 @@ public class GraphSearchtoolsController : Controller
 
     /// <summary>
     /// Top-level Synonyms tool — talks straight to Graph's synonym admin.
-    /// Profile-agnostic by design: Graph synonyms live in a tenant-global pool.
+    /// Channel-agnostic by design: Graph synonyms live in a tenant-global pool.
     /// </summary>
     [HttpGet]
     public IActionResult Synonyms()
@@ -56,13 +56,13 @@ public class GraphSearchtoolsController : Controller
         return View("/Views/Synonyms/Index.cshtml");
     }
 
-    /// <summary>Legacy URL — Synonym Coverage now lives inside each Profile detail.</summary>
+    /// <summary>Legacy URL — Synonym Coverage now lives inside each Channel detail.</summary>
     [HttpGet]
-    public IActionResult SynonymCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
+    public IActionResult SynonymCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/channels");
 
-    /// <summary>Legacy URL — Pinned Coverage now lives inside each Profile detail.</summary>
+    /// <summary>Legacy URL — Pinned Coverage now lives inside each Channel detail.</summary>
     [HttpGet]
-    public IActionResult PinnedCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/profiles");
+    public IActionResult PinnedCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/channels");
 
     /// <summary>
     /// Returns all UI strings as JSON for CMS shell widgets that cannot access window.GST_STRINGS.

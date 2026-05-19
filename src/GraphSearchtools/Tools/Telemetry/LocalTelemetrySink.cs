@@ -42,7 +42,7 @@ internal sealed class LocalTelemetrySink : ITelemetrySink, ITelemetryMetrics
         var phrase = TruncatePhrase(searchEvent.Phrase);
         var item = TelemetryQueueItem.ForSearch(
             phrase,
-            searchEvent.ProfileKey ?? string.Empty,
+            searchEvent.ChannelKey ?? string.Empty,
             searchEvent.Locale ?? string.Empty,
             searchEvent.ResultCount,
             searchEvent.TimestampUtc);
@@ -55,7 +55,7 @@ internal sealed class LocalTelemetrySink : ITelemetrySink, ITelemetryMetrics
         var phrase = TruncatePhrase(clickEvent.Phrase);
         var item = TelemetryQueueItem.ForClick(
             phrase,
-            clickEvent.ProfileKey ?? string.Empty,
+            clickEvent.ChannelKey ?? string.Empty,
             clickEvent.Locale ?? string.Empty,
             clickEvent.Rank,
             clickEvent.TimestampUtc,

@@ -1,7 +1,7 @@
 # Aurora UI Refactor — Implementation Plan
 
 A phased plan to replace the inline-editable Pinned and Synonyms grids (and the
-Profile detail surface that hosts them) with the Optimizely-Aurora-style pattern:
+Channel detail surface that hosts them) with the Optimizely-Aurora-style pattern:
 summary rows + flyout editing + sticky live preview. Existing C# APIs stay; the
 change is mostly Razor views, JS, CSS, plus one upstream pagination fix.
 
@@ -24,15 +24,15 @@ phased work below:
   brand blue `#0042FF`, lighter neutrals, larger light-weight page titles,
   flat surfaces.
 - **`?` help icon** at the top-right of every main page header (8 views).
-- **`.gst-filter` label-above-value dropdown wrapper**, adopted by Profiles toolbar.
+- **`.gst-filter` label-above-value dropdown wrapper**, adopted by Channels toolbar.
 - **Foundation CSS** for `.gst-flyout`, `.gst-field`, `.gst-target-list`,
   `.gst-rowmenu` — not yet referenced outside the prototype branch.
 
 A working prototype lives at `/EPiServer/GraphSearchtools/GraphSearchtools/Prototype`
 (uncommitted on this branch — `Views/Prototype/Aurora.cshtml` + a `Prototype()`
 controller action). It demonstrates all four target surfaces (Pins, Synonyms,
-Profile › Pinned, Profile › Synonyms) with mock data, the flyout (single- and
-multi-target pin variants), drag-reorder, cross-profile conflict warning, and
+Channel › Pinned, Channel › Synonyms) with mock data, the flyout (single- and
+multi-target pin variants), drag-reorder, cross-channel conflict warning, and
 the 50/50 workspace with row-driven preview updates.
 
 ---
@@ -44,7 +44,7 @@ the 50/50 workspace with row-driven preview updates.
    into a single client-side dataset, so filter / sort / search / paging are
    all client-side with real totals.
 3. **Insights first**, with the **live-preview pane defaulting to the most-
-   searched phrase from the last 7 days** for the active profile.
+   searched phrase from the last 7 days** for the active channel.
 4. **Inline editing is removed.** Flyouts are the only edit path. The old
    editor JS and CSS get deleted, not coexisted.
 
@@ -62,7 +62,7 @@ the 50/50 workspace with row-driven preview updates.
   `open(key, opts)` / `close(key)`, backdrop-click + `Esc` dismiss,
   focus trap, `lastFocus` restore on close.
 - Build `Views/Shared/_PinFlyout.cshtml` and `_SynonymFlyout.cshtml` as
-  Razor partials so the global and profile-detail pages share the same
+  Razor partials so the global and channel-detail pages share the same
   markup.
 
 **Touched:** `components.js`, `graphsearchtools.css`, two new partials.
@@ -90,7 +90,7 @@ new unit tests for the offset boundary.
 
 ---
 
-### Phase 3 — Insights tool & Profile › Insights (3–4 days)
+### Phase 3 — Insights tool & Channel › Insights (3–4 days)
 
 The biggest single phase, because Insights doesn't exist today as a discrete
 surface.
@@ -99,22 +99,22 @@ surface.
 
 - Add a `Tools/Insights/` folder with `InsightsController`, `InsightsService`,
   `InsightsApiController`, and `Views/Insights/Index.cshtml`.
-- Register a menu item in `GraphSearchtoolsMenuProvider` between Profiles
+- Register a menu item in `GraphSearchtoolsMenuProvider` between Channels
   and Pinned.
 - Surfaces:
   - **Top phrases** with a 7d / 30d toggle (count, last-seen).
   - **Top zero-result phrases** — suggested-pin candidates.
   - **Synonym coverage rollup** — % of queries that triggered at least one
     synonym rule.
-  - **Last-edited activity strip** — recent `SearchProfileEdit` entries.
-- No live-preview pane on the global view (no profile scope).
+  - **Last-edited activity strip** — recent `SearchChannelEdit` entries.
+- No live-preview pane on the global view (no channel scope).
 
-#### B. Profile › Insights sub-tab
+#### B. Channel › Insights sub-tab
 
-- Same data, scoped to one profile's locales.
+- Same data, scoped to one channel's locales.
 - **This is where the live preview lives:**
   - On tab open, the page fetches `topPhrases: [{ phrase, count, locale }]`
-    for the profile over the last 7 days.
+    for the channel over the last 7 days.
   - The preview pane auto-fills its query field with `topPhrases[0].phrase`
     and renders the SERP immediately — the marketer lands on "what people
     actually search for, and what they get back."
@@ -123,7 +123,7 @@ surface.
     sub-tabs stacks on top: selecting a row drives the preview; clearing
     selection snaps it back to the 7d-top default.
 
-#### C. Profile-detail shell refactor
+#### C. Channel-detail shell refactor
 
 - Breadcrumb header + stat row + Aurora sub-tabs:
   `Insights · Pinned · Synonyms · Activity · Settings`.
@@ -133,7 +133,7 @@ surface.
 
 #### API additions
 
-- `GET /InsightsApi/TopPhrases?profileKey=&days=7` →
+- `GET /InsightsApi/TopPhrases?channelKey=&days=7` →
   `[{ phrase, count, locale, zeroResults }]`. Backed by existing
   `SearchLogsService` aggregations; no new DB schema.
 
@@ -149,9 +149,9 @@ Replace `gst-pinedit__grid` and its inline editors with the summary grid +
 PinFlyout.
 
 - **Markup:** rewrite the "Pins" panel in `Views/Pinned/Index.cshtml` as the
-  Aurora grid (phrase, profile, locale, pinned items, state, modified, ⋯).
+  Aurora grid (phrase, channel, locale, pinned items, state, modified, ⋯).
 - **JS:** new `pinned-aurora.js` that:
-  - Aggregates ContentGraph rows by `(phrase, profile, locale)` so the grid
+  - Aggregates ContentGraph rows by `(phrase, channel, locale)` so the grid
     shows one row per phrase with an "N items" count.
   - Wires row-click → `GST.flyout.open('pin', { row })`.
   - Renders the multi-target list with HTML5 drag-reorder + add + remove
@@ -159,15 +159,15 @@ PinFlyout.
   - On save, computes the diff and emits N calls: `CreateItem` /
     `UpdateItem` / `DeleteItem` / priority renumber. Shows a single
     progress + error rollup.
-- **Conflict detection:** before save, search other profiles for the same
+- **Conflict detection:** before save, search other channels for the same
   phrase + locale; show the warning bar inside the flyout. Scope the check
-  to profiles that share at least one locale (so it scales).
+  to channels that share at least one locale (so it scales).
 - **Content picker:** wire `GST.contentPicker` so the picker button in the
   flyout opens it.
 - Keep the existing **Audit** tab as-is (it's coverage-oriented, not editing).
 - Decommission `pinned.js` (~2,000 lines of inline-editor logic).
-- **Profile › Pinned** sub-tab now renders the Aurora grid scoped to the
-  profile (filter and column for Profile hidden).
+- **Channel › Pinned** sub-tab now renders the Aurora grid scoped to the
+  channel (filter and column for Channel hidden).
 
 **Touched:** `Pinned/Index.cshtml`, new `pinned-aurora.js`, deprecate
 `pinned.js`, share helpers with `synonyms-grid.js` where reasonable.
@@ -186,8 +186,8 @@ Smaller scope than Pinned — synonyms are a simpler entity.
   and show `Equivalent: 3 terms` / `Replacement: a → b` / `Invalid: missing
   operator` below the input.
 - Keep the existing **Unused** tab as-is.
-- **Profile › Synonyms** sub-tab renders the Aurora grid scoped to the
-  profile's locales, with the existing "synonyms are global" info banner.
+- **Channel › Synonyms** sub-tab renders the Aurora grid scoped to the
+  channel's locales, with the existing "synonyms are global" info banner.
 
 **Touched:** `Synonyms/Index.cshtml`, new `synonyms-aurora.js`, deprecate
 `synonyms-grid.js`.
@@ -220,12 +220,12 @@ Worth doing in its own PR after Phases 3–5 land so the diff is clean.
 3. **Drag-to-reorder is desktop-only** — HTML5 drag doesn't fire on touch.
    Tablet/touch needs explicit ↑/↓ buttons or a pointer-events polyfill.
    Recommend: desktop drag in v1, touch fallback in a follow-up.
-4. **Cross-profile conflict scope** — global scan is O(profiles × pins).
-   Mitigation: filter to profiles sharing at least one locale, lazy-load
+4. **Cross-channel conflict scope** — global scan is O(channels × pins).
+   Mitigation: filter to channels sharing at least one locale, lazy-load
    on flyout open.
-5. **Synonyms are global** — the Profile › Synonyms info banner must make
+5. **Synonyms are global** — the Channel › Synonyms info banner must make
    clear that editing a rule there updates it everywhere, not just for
-   this profile. Already in the prototype copy.
+   this channel. Already in the prototype copy.
 
 ## Estimate
 
@@ -233,7 +233,7 @@ Worth doing in its own PR after Phases 3–5 land so the diff is clean.
 |---|---|---|
 | 1. Flyout component | 1 d | Yes (lib only) |
 | 2. Pagination + bulk loader | 1 d | Yes (backend) |
-| 3. Insights + Profile detail shell | 3–4 d | Yes |
+| 3. Insights + Channel detail shell | 3–4 d | Yes |
 | 4. Aurora Pinned | 3–4 d | Yes |
 | 5. Aurora Synonyms | 2–3 d | Yes |
 | 6. Cleanup | 0.5 d | After 3–5 |

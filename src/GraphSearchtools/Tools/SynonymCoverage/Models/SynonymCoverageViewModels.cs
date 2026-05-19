@@ -4,7 +4,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage.Models;
 /// Result envelope for the Synonym Coverage analyzer. Surfaces synonym rules
 /// that haven't fired in the recent log window (prune candidates). The
 /// former "suggested adds" pass — zero-result phrases that look like missing
-/// rules — moves to the per-profile insights pipeline.
+/// rules — moves to the per-channel insights pipeline.
 /// </summary>
 public sealed record SynonymCoverageResult
 {

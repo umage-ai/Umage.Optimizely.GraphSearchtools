@@ -16,10 +16,10 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// honour the optional per-feature permission gate.
 /// </summary>
 /// <remarks>
-/// Phase 2.5 §4.1: pinned data is scoped to <see cref="SearchProfile"/>s.
-/// Every write requires a <c>profileKey</c> query parameter; the controller
-/// resolves the Graph collection key from the profile + locale via
-/// <see cref="SearchProfile.PinnedKeyForLocale"/> so the marketer never types
+/// Phase 2.5 §4.1: pinned data is scoped to <see cref="SearchChannel"/>s.
+/// Every write requires a <c>channelKey</c> query parameter; the controller
+/// resolves the Graph collection key from the channel + locale via
+/// <see cref="SearchChannel.PinnedKeyForLocale"/> so the marketer never types
 /// the key.
 /// </remarks>
 [Authorize(Policy = "codeart:graphsearchtools")]
@@ -29,23 +29,23 @@ public class PinnedApiController : Controller
 
     private readonly PinnedService _service;
     private readonly FeatureAccessChecker _accessChecker;
-    private readonly ISearchProfileRegistry _registry;
-    private readonly SearchProfileEditService _editLog;
+    private readonly ISearchChannelRegistry _registry;
+    private readonly AuditLogService _audit;
     private readonly LocalizationService _localization;
     private readonly ILogger<PinnedApiController> _logger;
 
     public PinnedApiController(
         PinnedService service,
         FeatureAccessChecker accessChecker,
-        ISearchProfileRegistry registry,
-        SearchProfileEditService editLog,
+        ISearchChannelRegistry registry,
+        AuditLogService audit,
         LocalizationService localization,
         ILogger<PinnedApiController> logger)
     {
         _service = service;
         _accessChecker = accessChecker;
         _registry = registry;
-        _editLog = editLog;
+        _audit = audit;
         _localization = localization;
         _logger = logger;
     }
@@ -65,84 +65,84 @@ public class PinnedApiController : Controller
     }
 
     /// <summary>
-    /// Returns the <c>{ collectionKey: profileKey }</c> lookup the top-level
+    /// Returns the <c>{ collectionKey: channelKey }</c> lookup the top-level
     /// Pinned grid uses for row deep-links. First-write-wins on overlap; for
-    /// the richer "all matching profiles + their locales" payload that the
-    /// Collections tab uses, see <see cref="CollectionProfiles"/>.
+    /// the richer "all matching channels + their locales" payload that the
+    /// Collections tab uses, see <see cref="CollectionChannels"/>.
     /// </summary>
     [HttpGet]
-    public IActionResult ProfileMap()
+    public IActionResult ChannelMap()
     {
         if (!HasAccess()) return Forbid();
 
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var match in EnumerateProfileMatches())
+        foreach (var match in EnumerateChannelMatches())
         {
-            map.TryAdd(match.CollectionKey, match.ProfileKey);
+            map.TryAdd(match.CollectionKey, match.ChannelKey);
         }
         return Ok(map);
     }
 
     /// <summary>
-    /// Returns the inverse of <see cref="ProfileMap"/>: every registered
-    /// profile × declared locale tuple grouped by the collection key its
-    /// <see cref="SearchProfile.PinnedKeyForLocale"/> resolves to. Used by the
-    /// Collections-tab flyout to show "which profiles point at this
+    /// Returns the inverse of <see cref="ChannelMap"/>: every registered
+    /// channel × declared locale tuple grouped by the collection key its
+    /// <see cref="SearchChannel.PinnedKeyForLocale"/> resolves to. Used by the
+    /// Collections-tab flyout to show "which channels point at this
     /// collection and through which locales."
     /// </summary>
     [HttpGet]
-    public IActionResult CollectionProfiles()
+    public IActionResult CollectionChannels()
     {
         if (!HasAccess()) return Forbid();
 
         var map = new Dictionary<string, List<object>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var match in EnumerateProfileMatches())
+        foreach (var match in EnumerateChannelMatches())
         {
             if (!map.TryGetValue(match.CollectionKey, out var list))
             {
                 list = new List<object>();
                 map[match.CollectionKey] = list;
             }
-            list.Add(new { profileKey = match.ProfileKey, locale = match.Locale });
+            list.Add(new { channelKey = match.ChannelKey, locale = match.Locale });
         }
         return Ok(map);
     }
 
     /// <summary>
-    /// Resolves the (profile, locale) tuple to its Graph collection, creating
+    /// Resolves the (channel, locale) tuple to its Graph collection, creating
     /// the collection if it doesn't exist yet. Returns the resolved key and
-    /// the collection id (existing or newly created). Used by the Profile
+    /// the collection id (existing or newly created). Used by the Channel
     /// detail Pinned tab so editors can add a pin under a declared locale
     /// without manually pre-creating the backing collection.
     /// </summary>
     [HttpPost]
     [RequireAjax]
     public async Task<IActionResult> EnsureCollection(
-        [FromQuery] string profileKey,
+        [FromQuery] string channelKey,
         [FromQuery] string locale,
         CancellationToken cancellationToken)
     {
         if (!HasAccess()) return Forbid();
-        if (string.IsNullOrWhiteSpace(profileKey)) return BadRequest(new { message = "profileKey is required." });
+        if (string.IsNullOrWhiteSpace(channelKey)) return BadRequest(new { message = "channelKey is required." });
         if (string.IsNullOrWhiteSpace(locale)) return BadRequest(new { message = "locale is required." });
 
-        var profile = _registry.Get(profileKey);
-        if (profile == null) return NotFound(new { message = "Profile not found." });
-        if (profile.PinnedKeyForLocale == null)
+        var channel = _registry.Get(channelKey);
+        if (channel == null) return NotFound(new { message = "Channel not found." });
+        if (channel.PinnedKeyForLocale == null)
         {
-            return BadRequest(new { message = $"Profile '{profile.Key}' has no PinnedKey formula." });
+            return BadRequest(new { message = $"Channel '{channel.Key}' has no PinnedKey formula." });
         }
 
         string? resolvedKey;
-        try { resolvedKey = profile.PinnedKeyForLocale(locale); }
+        try { resolvedKey = channel.PinnedKeyForLocale(locale); }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "PinnedKeyForLocale threw for profile {Profile} locale {Locale}.", profile.Key, locale);
-            return BadRequest(new { message = "Profile's PinnedKey formula failed for this locale." });
+            _logger.LogWarning(ex, "PinnedKeyForLocale threw for channel {Channel} locale {Locale}.", channel.Key, locale);
+            return BadRequest(new { message = "Channel's PinnedKey formula failed for this locale." });
         }
         if (string.IsNullOrEmpty(resolvedKey))
         {
-            return BadRequest(new { message = "Profile's PinnedKey formula returned no key for this locale." });
+            return BadRequest(new { message = "Channel's PinnedKey formula returned no key for this locale." });
         }
 
         try
@@ -163,21 +163,21 @@ public class PinnedApiController : Controller
         catch (Exception ex) { return HandleError(ex); }
     }
 
-    private IEnumerable<(string CollectionKey, string ProfileKey, string Locale)> EnumerateProfileMatches()
+    private IEnumerable<(string CollectionKey, string ChannelKey, string Locale)> EnumerateChannelMatches()
     {
-        foreach (var profile in _registry.All)
+        foreach (var channel in _registry.All)
         {
-            if (profile.PinnedKeyForLocale == null) continue;
-            var locales = profile.Locales != null && profile.Locales.Count > 0
-                ? profile.Locales
+            if (channel.PinnedKeyForLocale == null) continue;
+            var locales = channel.Locales != null && channel.Locales.Count > 0
+                ? channel.Locales
                 : new[] { "en" };
             foreach (var locale in locales)
             {
                 string? key;
-                try { key = profile.PinnedKeyForLocale(locale); }
+                try { key = channel.PinnedKeyForLocale(locale); }
                 catch { key = null; }
                 if (string.IsNullOrEmpty(key)) continue;
-                yield return (key!, profile.Key, locale);
+                yield return (key!, channel.Key, locale);
             }
         }
     }
@@ -190,7 +190,9 @@ public class PinnedApiController : Controller
         if (payload == null) return BadRequest(new { message = "Collection payload is required." });
         try
         {
-            return Ok(await _service.CreateCollectionAsync(payload, cancellationToken));
+            var result = await _service.CreateCollectionAsync(payload, cancellationToken);
+            AppendCollectionAudit(action: "Created", collectionKey: result?.Key ?? payload.Key);
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -207,7 +209,9 @@ public class PinnedApiController : Controller
         if (payload == null) return BadRequest(new { message = "Collection payload is required." });
         try
         {
-            return Ok(await _service.UpdateCollectionAsync(id, payload, cancellationToken));
+            var result = await _service.UpdateCollectionAsync(id, payload, cancellationToken);
+            AppendCollectionAudit(action: "Updated", collectionKey: result?.Key ?? payload.Key ?? id);
+            return Ok(result);
         }
         catch (Exception ex)
         {
@@ -229,7 +233,12 @@ public class PinnedApiController : Controller
         if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { message = "Collection id is required." });
         try
         {
+            // Resolve the human-readable key *before* the delete so the
+            // audit row records something useful — after the DELETE the
+            // collection is gone and the lookup would return empty.
+            var collectionKey = await ResolveCollectionKeyAsync(id, cancellationToken);
             await _service.DeleteCollectionAsync(id, cancellationToken);
+            AppendCollectionAudit(action: "Deleted", collectionKey: string.IsNullOrEmpty(collectionKey) ? id : collectionKey);
             return NoContent();
         }
         catch (Exception ex)
@@ -283,7 +292,7 @@ public class PinnedApiController : Controller
     public async Task<IActionResult> CreateItem(
         string collectionId,
         [FromBody] PinnedItemPayload payload,
-        [FromQuery] string? profileKey,
+        [FromQuery] string? channelKey,
         [FromQuery] string? site,
         [FromQuery] string? locale,
         CancellationToken cancellationToken)
@@ -292,13 +301,14 @@ public class PinnedApiController : Controller
         if (string.IsNullOrWhiteSpace(collectionId)) return BadRequest(new { message = "collectionId is required." });
         if (payload == null) return BadRequest(new { message = "Item payload is required." });
 
-        var scope = ResolveScope(profileKey, site, locale);
+        var scope = ResolveScope(channelKey, site, locale);
         if (scope.IsError) return scope.ErrorResult!;
 
         try
         {
             var result = await _service.CreateItemAsync(collectionId, payload, cancellationToken);
-            AppendAudit(scope, action: "Created", subject: payload.Phrases);
+            var collectionKey = await ResolveCollectionKeyAsync(collectionId, cancellationToken);
+            AppendAudit(scope, action: "Created", subject: payload.Phrases, collectionKey: collectionKey);
             return Ok(result);
         }
         catch (Exception ex)
@@ -317,7 +327,7 @@ public class PinnedApiController : Controller
         [FromQuery] string collectionId,
         [FromQuery] string id,
         [FromBody] PinnedItemPayload payload,
-        [FromQuery] string? profileKey,
+        [FromQuery] string? channelKey,
         [FromQuery] string? site,
         [FromQuery] string? locale,
         CancellationToken cancellationToken)
@@ -329,13 +339,14 @@ public class PinnedApiController : Controller
         }
         if (payload == null) return BadRequest(new { message = "Item payload is required." });
 
-        var scope = ResolveScope(profileKey, site, locale);
+        var scope = ResolveScope(channelKey, site, locale);
         if (scope.IsError) return scope.ErrorResult!;
 
         try
         {
             var result = await _service.UpdateItemAsync(collectionId, id, payload, cancellationToken);
-            AppendAudit(scope, action: "Updated", subject: payload.Phrases);
+            var collectionKey = await ResolveCollectionKeyAsync(collectionId, cancellationToken);
+            AppendAudit(scope, action: "Updated", subject: payload.Phrases, collectionKey: collectionKey);
             return Ok(result);
         }
         catch (Exception ex)
@@ -350,7 +361,7 @@ public class PinnedApiController : Controller
         // See UpdateItem: [FromQuery] needed to bypass the route's `{id?}` token.
         [FromQuery] string collectionId,
         [FromQuery] string id,
-        [FromQuery] string? profileKey,
+        [FromQuery] string? channelKey,
         [FromQuery] string? site,
         [FromQuery] string? locale,
         [FromQuery] string? phrases,
@@ -362,13 +373,14 @@ public class PinnedApiController : Controller
             return BadRequest(new { message = "collectionId and id are required." });
         }
 
-        var scope = ResolveScope(profileKey, site, locale);
+        var scope = ResolveScope(channelKey, site, locale);
         if (scope.IsError) return scope.ErrorResult!;
 
         try
         {
             await _service.DeleteItemAsync(collectionId, id, cancellationToken);
-            AppendAudit(scope, action: "Deleted", subject: phrases ?? id);
+            var collectionKey = await ResolveCollectionKeyAsync(collectionId, cancellationToken);
+            AppendAudit(scope, action: "Deleted", subject: phrases ?? id, collectionKey: collectionKey);
             return NoContent();
         }
         catch (Exception ex)
@@ -381,53 +393,101 @@ public class PinnedApiController : Controller
         => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Pinned);
 
     /// <summary>
-    /// Resolves the (profile, site, locale) tuple from the query string against
-    /// the registry. <c>profileKey</c> is optional — the top-level Pinned
+    /// Resolves the (channel, site, locale) tuple from the query string against
+    /// the registry. <c>channelKey</c> is optional — the top-level Pinned
     /// page's flyout writes directly against a collection and may have no
-    /// owning profile to attribute the audit row to, in which case
+    /// owning channel to attribute the audit row to, in which case
     /// <see cref="AppendAudit"/> is skipped.
     /// </summary>
-    private ScopeResolution ResolveScope(string? profileKey, string? site, string? locale)
+    private ScopeResolution ResolveScope(string? channelKey, string? site, string? locale)
     {
-        if (string.IsNullOrWhiteSpace(profileKey))
+        if (string.IsNullOrWhiteSpace(channelKey))
         {
-            return ScopeResolution.For(profile: null, site, locale);
+            return ScopeResolution.For(channel: null, site, locale);
         }
 
-        var profile = _registry.Get(profileKey!);
-        if (profile == null)
+        var channel = _registry.Get(channelKey!);
+        if (channel == null)
         {
-            return ScopeResolution.Error(NotFound(new { message = "Profile not found." }));
+            return ScopeResolution.Error(NotFound(new { message = "Channel not found." }));
         }
 
-        return ScopeResolution.For(profile, site, locale);
+        return ScopeResolution.For(channel, site, locale);
     }
 
-    private void AppendAudit(ScopeResolution scope, string action, string subject)
+    private void AppendCollectionAudit(string action, string collectionKey)
     {
-        // Direct-collection writes (no profileKey) have no profile context —
-        // skip the audit row rather than crashing on a null Profile.
-        if (scope.Profile == null) return;
+        // Collection events are not scoped to a channel — collections can
+        // serve any number of channels via PinnedKeyForLocale. ChannelKey is
+        // left empty so the global changelog shows these as standalone.
         try
         {
-            var entry = new SearchProfileEdit
+            var entry = new AuditLogEntry
             {
-                ProfileKey = scope.Profile.Key,
-                Site = scope.Site ?? string.Empty,
-                Locale = scope.Locale ?? string.Empty,
-                Kind = "Pinned",
+                Kind = "Collection",
                 Action = action,
-                Subject = subject ?? string.Empty,
+                Subject = collectionKey ?? string.Empty,
+                CollectionKey = collectionKey ?? string.Empty,
                 ActorId = HttpContext.User.Identity?.Name ?? string.Empty,
                 ActorName = HttpContext.User.Identity?.Name ?? string.Empty,
                 At = DateTime.UtcNow
             };
-            _editLog.Append(entry);
+            _audit.Append(entry);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to append audit row for Collection action {Action}.", action);
+        }
+    }
+
+    /// <summary>
+    /// Best-effort lookup of a collection's human-readable key for the audit
+    /// row. The pinned item write path only carries the collection id; the
+    /// changelog UI wants the key. Returns an empty string on lookup failure
+    /// — never blocks the user's edit.
+    /// </summary>
+    private async Task<string> ResolveCollectionKeyAsync(string collectionId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(collectionId)) return string.Empty;
+        try
+        {
+            var collections = await _service.GetCollectionsAsync(cancellationToken);
+            return collections.FirstOrDefault(c => string.Equals(c.Id, collectionId, StringComparison.OrdinalIgnoreCase))?.Key
+                ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private void AppendAudit(ScopeResolution scope, string action, string subject, string? collectionKey = null)
+    {
+        // Pin events are always recorded — even direct-collection writes
+        // (no channelKey) need to show up in the global changelog. When the
+        // edit comes through a channel-scoped flyout we record the channel
+        // key too so the Channels index's "last edited" hint still works.
+        try
+        {
+            var entry = new AuditLogEntry
+            {
+                Kind = "PinnedItem",
+                Action = action,
+                Subject = subject ?? string.Empty,
+                ChannelKey = scope.Channel?.Key ?? string.Empty,
+                Site = scope.Site ?? string.Empty,
+                Locale = scope.Locale ?? string.Empty,
+                CollectionKey = collectionKey ?? string.Empty,
+                ActorId = HttpContext.User.Identity?.Name ?? string.Empty,
+                ActorName = HttpContext.User.Identity?.Name ?? string.Empty,
+                At = DateTime.UtcNow
+            };
+            _audit.Append(entry);
         }
         catch (Exception ex)
         {
             // Audit failure must not break the user's edit. Log and move on.
-            _logger.LogWarning(ex, "Failed to append SearchProfileEdit row for Pinned action {Action}.", action);
+            _logger.LogWarning(ex, "Failed to append audit row for Pinned action {Action}.", action);
         }
     }
 
@@ -459,20 +519,20 @@ public class PinnedApiController : Controller
     }
 
     /// <summary>
-    /// Internal carrier for the resolved scope. Holds either the (profile, site,
+    /// Internal carrier for the resolved scope. Holds either the (channel, site,
     /// locale) tuple — used to write the audit-log entry — or an <see cref="IActionResult"/>
     /// the caller should return immediately (400 / 404).
     /// </summary>
     private sealed class ScopeResolution
     {
-        public SearchProfile? Profile { get; private init; }
+        public SearchChannel? Channel { get; private init; }
         public string? Site { get; private init; }
         public string? Locale { get; private init; }
         public IActionResult? ErrorResult { get; private init; }
         public bool IsError => ErrorResult != null;
 
-        public static ScopeResolution For(SearchProfile? profile, string? site, string? locale)
-            => new() { Profile = profile, Site = site, Locale = locale };
+        public static ScopeResolution For(SearchChannel? channel, string? site, string? locale)
+            => new() { Channel = channel, Site = site, Locale = locale };
 
         public static ScopeResolution Error(IActionResult error)
             => new() { ErrorResult = error };

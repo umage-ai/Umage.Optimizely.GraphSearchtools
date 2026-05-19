@@ -1,6 +1,6 @@
 @using EPiServer.Shell
-@using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models
-@model UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models.ProfileDetailViewModel
+@using UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models
+@model UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models.ChannelDetailViewModel
 @inject LocalizationService Loc
 @{
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
@@ -8,28 +8,28 @@
     var docExistsClass = Model.GraphQLDocExists ? "gst-mono" : "gst-mono gst-prof-meta__missing";
 
     // Selector visibility — hide controls that wouldn't actually change the
-    // resolved scope. Site is hidden when the profile is site-shared (formula
+    // resolved scope. Site is hidden when the channel is site-shared (formula
     // ignores site) or there's at most one site to pick. Locale is hidden when
-    // the profile declares no locales or only one locale.
+    // the channel declares no locales or only one locale.
     var siteSelectable = Model.Sites.Count > 1 && !Model.IsSiteShared;
     var localeSelectable = Model.Locales.Count > 1;
     var siteLabel = Model.IsSiteShared
-        ? Loc.GetString("/graphsearchtools/profiles/detail/pinned/sharedSite")
+        ? Loc.GetString("/graphsearchtools/channels/detail/pinned/sharedSite")
         : (Model.Sites.Count == 1 ? Model.Sites[0]
-            : Loc.GetString("/graphsearchtools/profiles/detail/meta/allSites"));
+            : Loc.GetString("/graphsearchtools/channels/detail/meta/allSites"));
     var localeLabel = Model.Locales.Count == 1
         ? Model.Locales[0]
-        : Loc.GetString("/graphsearchtools/profiles/detail/meta/allLocales");
+        : Loc.GetString("/graphsearchtools/channels/detail/meta/allLocales");
 }
 
 <div class="gst-page-header gst-prof-detail-header">
     <div class="gst-page-header__title">
         <div class="gst-prof-detail-header__crumb">
-            <a href="/EPiServer/cms/graphsearchtools/profiles" class="gst-prof-detail-header__back">
+            <a href="/EPiServer/cms/graphsearchtools/channels" class="gst-prof-detail-header__back">
                 <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
                     <path d="M9 11L4.5 7 9 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                @Loc.GetString("/graphsearchtools/profiles/detail/backToList")
+                @Loc.GetString("/graphsearchtools/channels/detail/backToList")
             </a>
             <span class="gst-prof-detail-header__sep" aria-hidden="true">·</span>
             <code class="gst-prof-detail-header__key">@Model.Key</code>
@@ -44,31 +44,31 @@
 
 <div id="gst-prof-detail-alert" class="gst-alert" hidden></div>
 
-@* Search-activity KPIs for this profile — replaces the pinned/synonyms/
+@* Search-activity KPIs for this channel — replaces the pinned/synonyms/
    recent-edits counts that used to live here. Three tiles with 30-day
    sparklines (total searches, daily CTR, total zero-result searches);
-   profiles.js loads from /InsightsApi/SearchKpis?profileKey=… on mount.
+   channels.js loads from /InsightsApi/SearchKpis?channelKey=… on mount.
    See docs/design-system.md "KPI tile with sparkline". *@
 <div id="gst-prof-kpis" class="gst-kpis"
-     aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/kpis/sectionLabel")"
+     aria-label="@Loc.GetString("/graphsearchtools/channels/detail/kpis/sectionLabel")"
      aria-live="polite"></div>
 
-<div class="gst-prof-workspace" data-profile-key="@Model.Key">
+<div class="gst-prof-workspace" data-channel-key="@Model.Key">
 
     @* ───────── LEFT: live preview workshop ───────── *@
-    <section class="gst-prof-preview" aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/previewLabel")">
+    <section class="gst-prof-preview" aria-label="@Loc.GetString("/graphsearchtools/channels/detail/workspace/previewLabel")">
         <div class="gst-prof-preview__inner">
             <header class="gst-prof-preview__head">
                 <div class="gst-prof-preview__heading">
                     <span class="gst-prof-preview__eyebrow">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/workspace/livePreviewEyebrow")
+                        @Loc.GetString("/graphsearchtools/channels/detail/workspace/livePreviewEyebrow")
                     </span>
                     <h2 class="gst-prof-preview__title">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/workspace/livePreviewTitle")
+                        @Loc.GetString("/graphsearchtools/channels/detail/workspace/livePreviewTitle")
                     </h2>
                 </div>
                 <div class="gst-prof-preview__pickers" role="group"
-                     aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/scopeLabel")">
+                     aria-label="@Loc.GetString("/graphsearchtools/channels/detail/workspace/scopeLabel")">
 
                     @* Aurora-style filters: label-above-value with caret on
                        the right, matching the toolbar dropdowns inside the
@@ -76,11 +76,11 @@
                        chip is the single source of truth — pinned-aurora.js
                        and synonyms-aurora.js mirror its value into their grid
                        state, so we don't surface a per-tab locale filter
-                       inside the profile-scoped tabs. *@
+                       inside the channel-scoped tabs. *@
                     @if (siteSelectable)
                     {
                         <label class="gst-filter gst-prof-preview__filter">
-                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/channels/detail/meta/sites")</span>
                             <select id="gst-pin-site" class="gst-filter__select">
                                 @foreach (var site in Model.Sites)
                                 {
@@ -92,7 +92,7 @@
                     else
                     {
                         <div class="gst-filter gst-prof-preview__filter gst-filter--static">
-                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</span>
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/channels/detail/meta/sites")</span>
                             <span class="gst-filter__static-value">@siteLabel</span>
                         </div>
                         @* Hidden form holder — JS reads .value via getElementById
@@ -106,7 +106,7 @@
                     @if (localeSelectable)
                     {
                         <label class="gst-filter gst-prof-preview__filter">
-                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/channels/detail/meta/locales")</span>
                             <select id="gst-pin-locale" class="gst-filter__select">
                                 @foreach (var loc in Model.Locales)
                                 {
@@ -118,7 +118,7 @@
                     else
                     {
                         <div class="gst-filter gst-prof-preview__filter gst-filter--static">
-                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</span>
+                            <span class="gst-filter__label">@Loc.GetString("/graphsearchtools/channels/detail/meta/locales")</span>
                             <span class="gst-filter__static-value">@localeLabel</span>
                         </div>
                         <select id="gst-pin-locale" class="gst-prof-chip__hidden" aria-hidden="true" tabindex="-1">
@@ -142,10 +142,10 @@
                             </svg>
                         </div>
                         <p class="gst-prof-preview__empty-title">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/workspace/previewDisabledTitle")
+                            @Loc.GetString("/graphsearchtools/channels/detail/workspace/previewDisabledTitle")
                         </p>
                         <p class="gst-prof-preview__empty-body">
-                            @Loc.GetString("/graphsearchtools/profiles/detail/pinned/tryDisabled")
+                            @Loc.GetString("/graphsearchtools/channels/detail/pinned/tryDisabled")
                         </p>
                     </div>
                 }
@@ -158,7 +158,7 @@
                                 <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
                             </svg>
                             <input id="gst-pin-tryit-q" type="text"
-                                   placeholder="@Loc.GetString("/graphsearchtools/profiles/detail/pinned/serpPlaceholder")"
+                                   placeholder="@Loc.GetString("/graphsearchtools/channels/detail/pinned/serpPlaceholder")"
                                    autocomplete="off" />
                             <span class="gst-serp__spinner" aria-hidden="true"></span>
                         </label>
@@ -171,9 +171,9 @@
     </section>
 
     @* ───────── RIGHT: tools console ───────── *@
-    <section class="gst-prof-console" aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/consoleLabel")">
+    <section class="gst-prof-console" aria-label="@Loc.GetString("/graphsearchtools/channels/detail/workspace/consoleLabel")">
         <nav class="gst-prof-switcher" role="tablist"
-             aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/workspace/switcherLabel")">
+             aria-label="@Loc.GetString("/graphsearchtools/channels/detail/workspace/switcherLabel")">
             <button type="button" class="gst-prof-switcher__btn is-active"
                     role="tab" aria-selected="true" data-panel="insights" id="gst-prof-tab-insights">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
@@ -186,22 +186,22 @@
                         <rect x="11" y="3" width="2" height="9.4" rx="0.4" fill="currentColor" stroke="none"/>
                     </svg>
                 </span>
-                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/insights")</span>
+                <span>@Loc.GetString("/graphsearchtools/channels/detail/tabs/insights")</span>
             </button>
             <button type="button" class="gst-prof-switcher__btn@(Model.QueryAppliesPinned ? "" : " is-unwired")"
                     role="tab" aria-selected="false" data-panel="pinned" id="gst-prof-tab-pinned"
-                    title="@(Model.QueryAppliesPinned ? "" : Loc.GetString("/graphsearchtools/profiles/detail/unwiredPinned/tabTitle"))">
+                    title="@(Model.QueryAppliesPinned ? "" : Loc.GetString("/graphsearchtools/channels/detail/unwiredPinned/tabTitle"))">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14">
                         <path d="M8 1.5 L9.6 5.3 L13.7 5.7 L10.6 8.4 L11.5 12.4 L8 10.4 L4.5 12.4 L5.4 8.4 L2.3 5.7 L6.4 5.3 Z"
                               fill="currentColor"/>
                     </svg>
                 </span>
-                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/pinned")</span>
+                <span>@Loc.GetString("/graphsearchtools/channels/detail/tabs/pinned")</span>
             </button>
             <button type="button" class="gst-prof-switcher__btn@(Model.QueryAppliesSynonyms ? "" : " is-unwired")"
                     role="tab" aria-selected="false" data-panel="synonyms" id="gst-prof-tab-synonyms"
-                    title="@(Model.QueryAppliesSynonyms ? "" : Loc.GetString("/graphsearchtools/profiles/detail/unwiredSynonyms/tabTitle"))">
+                    title="@(Model.QueryAppliesSynonyms ? "" : Loc.GetString("/graphsearchtools/channels/detail/unwiredSynonyms/tabTitle"))">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
                         <path d="M2.5 5.5 H8 L10.5 3 M2.5 10.5 H8 L10.5 13"/>
@@ -210,22 +210,11 @@
                         <circle cx="2" cy="8" r="1.4" fill="currentColor" stroke="none"/>
                     </svg>
                 </span>
-                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/synonyms")</span>
+                <span>@Loc.GetString("/graphsearchtools/channels/detail/tabs/synonyms")</span>
             </button>
-            @* Aurora Phase 3C — split former "Details" tab into Activity
-               (audit log) + Settings (metadata + GraphQL doc). Keeps
-               `details` as the legacy data-panel value used by Settings so
-               existing profiles.js wiring keeps working. *@
-            <button type="button" class="gst-prof-switcher__btn"
-                    role="tab" aria-selected="false" data-panel="activity" id="gst-prof-tab-activity">
-                <span class="gst-prof-switcher__icon" aria-hidden="true">
-                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-                        <circle cx="8" cy="8" r="6"/>
-                        <path d="M8 5 L8 8 L10.5 9.5"/>
-                    </svg>
-                </span>
-                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/activity")</span>
-            </button>
+            @* Aurora Phase 3C left Activity + Settings as two tabs; the
+               Activity tab was retired when audit moved to the global
+               Changelog under Pinned + Synonyms. Settings remains. *@
             <button type="button" class="gst-prof-switcher__btn"
                     role="tab" aria-selected="false" data-panel="details" id="gst-prof-tab-details">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
@@ -234,13 +223,13 @@
                         <path d="M5 6 H11 M5 8.5 H11 M5 11 H8.5"/>
                     </svg>
                 </span>
-                <span>@Loc.GetString("/graphsearchtools/profiles/detail/tabs/settings")</span>
+                <span>@Loc.GetString("/graphsearchtools/channels/detail/tabs/settings")</span>
             </button>
         </nav>
 
         @* Aurora summary grid + right-edge flyout — same surface as the
-           top-level Pinned page. The Profile-scoped instance is mounted by
-           profiles.js → GST.pinned.aurora.init({ scope }) when the user
+           top-level Pinned page. The Channel-scoped instance is mounted by
+           channels.js → GST.pinned.aurora.init({ scope }) when the user
            activates this tab. *@
         <article class="gst-prof-panel" data-panel="pinned" hidden
                  role="tabpanel" aria-labelledby="gst-prof-tab-pinned">
@@ -255,13 +244,13 @@
                         </svg>
                     </div>
                     <h3 class="gst-prof-unwired__title">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/unwiredPinned/title")
+                        @Loc.GetString("/graphsearchtools/channels/detail/unwiredPinned/title")
                     </h3>
                     <p class="gst-prof-unwired__body">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/unwiredPinned/body")
+                        @Loc.GetString("/graphsearchtools/channels/detail/unwiredPinned/body")
                     </p>
                     <p class="gst-prof-unwired__howto">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/unwiredPinned/howto")
+                        @Loc.GetString("/graphsearchtools/channels/detail/unwiredPinned/howto")
                     </p>
                     <div class="gst-codeblock gst-prof-unwired__code" data-gst-copy>
                         <pre class="gst-mono"><code data-lang="graphql">Content(
@@ -274,11 +263,11 @@
             else
             {
                 @* Aurora summary grid — same shape as the top-level Pinned
-                   page. Profile-scoped via `GST.pinned.aurora.init({ scope })`
-                   in profiles.js: the JS narrows `Collections` to the
-                   profile's pinned collection and the locale filter to the
-                   profile's declared languages. The site filter is hidden
-                   because the active profile already pins us to one site
+                   page. Channel-scoped via `GST.pinned.aurora.init({ scope })`
+                   in channels.js: the JS narrows `Collections` to the
+                   channel's pinned collection and the locale filter to the
+                   channel's declared languages. The site filter is hidden
+                   because the active channel already pins us to one site
                    group. *@
                 @* Locale filter intentionally omitted — the page-level
                    locale picker above the live preview is the single
@@ -305,7 +294,7 @@
                     <thead>
                         <tr>
                             <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
-                            <th data-sort="collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
+                            <th data-sort="collection" class="col-collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
                             <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
                             <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
                             <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
@@ -318,10 +307,10 @@
         </article>
 
         @* Aurora synonyms summary grid + right-edge flyout — same surface as
-           the top-level Synonyms page. Mounted by profiles.js →
+           the top-level Synonyms page. Mounted by channels.js →
            GST.synonyms.aurora.init({ scope }) when the user activates this
            tab. Synonyms in Optimizely Graph are tenant-global; scoping only
-           narrows the Scope-filter dropdown to the profile's locales. *@
+           narrows the Scope-filter dropdown to the channel's locales. *@
         <article class="gst-prof-panel" data-panel="synonyms" hidden
                  role="tabpanel" aria-labelledby="gst-prof-tab-synonyms">
             @if (!Model.QueryAppliesSynonyms)
@@ -337,13 +326,13 @@
                         </svg>
                     </div>
                     <h3 class="gst-prof-unwired__title">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/unwiredSynonyms/title")
+                        @Loc.GetString("/graphsearchtools/channels/detail/unwiredSynonyms/title")
                     </h3>
                     <p class="gst-prof-unwired__body">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/unwiredSynonyms/body")
+                        @Loc.GetString("/graphsearchtools/channels/detail/unwiredSynonyms/body")
                     </p>
                     <p class="gst-prof-unwired__howto">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/unwiredSynonyms/howto")
+                        @Loc.GetString("/graphsearchtools/channels/detail/unwiredSynonyms/howto")
                     </p>
                     <div class="gst-codeblock gst-prof-unwired__code" data-gst-copy>
                         <pre class="gst-mono"><code data-lang="graphql">where: { _fulltext: { match: $phrase, synonyms: ONE } }</code></pre>
@@ -353,8 +342,8 @@
             else
             {
                 @* Aurora summary grid — same shape as the top-level Synonyms
-                   page. The Profile detail page passes `scope.locales` so
-                   the grid filter is narrowed to the profile's declared
+                   page. The Channel detail page passes `scope.locales` so
+                   the grid filter is narrowed to the channel's declared
                    languages (plus the tenant-global pool, which always
                    applies). The "synonyms are global" note follows the grid
                    as a footnote — it's a clarification readers reach for
@@ -377,7 +366,7 @@
                     </div>
                     <div class="gst-toolbar__spacer"></div>
                     <button type="button" id="gst-syn-create" class="gst-btn gst-btn--primary">
-                        + @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/addRow")
+                        + @Loc.GetString("/graphsearchtools/channels/detail/synonyms/addRow")
                     </button>
                 </div>
 
@@ -385,7 +374,7 @@
                     <thead>
                         <tr>
                             <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
-                            <th data-sort="locale">@Loc.GetString("/graphsearchtools/profiles/detail/synonyms/colScope")</th>
+                            <th data-sort="locale">@Loc.GetString("/graphsearchtools/channels/detail/synonyms/colScope")</th>
                             <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
                             <th aria-label="Actions"></th>
                         </tr>
@@ -394,13 +383,13 @@
                 </table>
 
                 <p class="gst-prof-syn__note">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/synonyms/globalNote")
+                    @Loc.GetString("/graphsearchtools/channels/detail/synonyms/globalNote")
                 </p>
             }
         </article>
 
         @* Insights panel — three lanes of phrase-level signal scoped to this
-           profile (top / zero-result / low-CTR). Each row is a click target
+           channel (top / zero-result / low-CTR). Each row is a click target
            that drops the phrase into the live preview on the left; the
            hover-revealed CTAs seed a draft pin or synonym row in the matching
            tab. The window pill is the single source of truth — switching it
@@ -411,7 +400,7 @@
 
                 <header class="gst-prof-ins__bar">
                     <div class="gst-prof-ins__windows" role="group"
-                         aria-label="@Loc.GetString("/graphsearchtools/profiles/detail/insights/windowLabel")">
+                         aria-label="@Loc.GetString("/graphsearchtools/channels/detail/insights/windowLabel")">
                         <button type="button" class="gst-prof-ins__pill" data-window="1h">1h</button>
                         <button type="button" class="gst-prof-ins__pill is-active" data-window="24h">24h</button>
                         <button type="button" class="gst-prof-ins__pill" data-window="7d">7d</button>
@@ -436,7 +425,7 @@
                     @{
                         string MoreLink(string lane) =>
                             Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "Insights/Index")
-                                + "#tab=" + lane + "&profile=" + Uri.EscapeDataString(Model.Key);
+                                + "#tab=" + lane + "&channel=" + Uri.EscapeDataString(Model.Key);
                         var moreLabel = Loc.GetString("/graphsearchtools/tools/insights/more");
                     }
 
@@ -445,10 +434,10 @@
                         <header class="gst-prof-ins-lane__head">
                             <span class="gst-prof-ins-lane__rule" aria-hidden="true"></span>
                             <h3 class="gst-prof-ins-lane__title">
-                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/topTitle")
+                                @Loc.GetString("/graphsearchtools/channels/detail/insights/topTitle")
                             </h3>
                             <span class="gst-prof-ins-lane__hint">
-                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/topHint")
+                                @Loc.GetString("/graphsearchtools/channels/detail/insights/topHint")
                             </span>
                             <span class="gst-prof-ins-lane__count" id="gst-prof-ins-top-count">—</span>
                             <a class="gst-prof-ins-lane__deeplink" href="@MoreLink("top")">@moreLabel →</a>
@@ -461,10 +450,10 @@
                         <header class="gst-prof-ins-lane__head">
                             <span class="gst-prof-ins-lane__rule" aria-hidden="true"></span>
                             <h3 class="gst-prof-ins-lane__title">
-                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/zeroTitle")
+                                @Loc.GetString("/graphsearchtools/channels/detail/insights/zeroTitle")
                             </h3>
                             <span class="gst-prof-ins-lane__hint">
-                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/zeroHint")
+                                @Loc.GetString("/graphsearchtools/channels/detail/insights/zeroHint")
                             </span>
                             <span class="gst-prof-ins-lane__count" id="gst-prof-ins-zero-count">—</span>
                             <a class="gst-prof-ins-lane__deeplink" href="@MoreLink("zero")">@moreLabel →</a>
@@ -477,10 +466,10 @@
                         <header class="gst-prof-ins-lane__head">
                             <span class="gst-prof-ins-lane__rule" aria-hidden="true"></span>
                             <h3 class="gst-prof-ins-lane__title">
-                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/lowCtrTitle")
+                                @Loc.GetString("/graphsearchtools/channels/detail/insights/lowCtrTitle")
                             </h3>
                             <span class="gst-prof-ins-lane__hint">
-                                @Loc.GetString("/graphsearchtools/profiles/detail/insights/lowCtrHint")
+                                @Loc.GetString("/graphsearchtools/channels/detail/insights/lowCtrHint")
                             </span>
                             <span class="gst-prof-ins-lane__count" id="gst-prof-ins-lowctr-count">—</span>
                             <a class="gst-prof-ins-lane__deeplink" href="@MoreLink("lowctr")">@moreLabel →</a>
@@ -491,27 +480,27 @@
                 </div>
 
                 <p class="gst-prof-ins__footnote">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/insights/footnote")
+                    @Loc.GetString("/graphsearchtools/channels/detail/insights/footnote")
                 </p>
             </div>
         </article>
 
-        @* Details panel — profile metadata + GraphQL doc + audit log *@
+        @* Details panel — channel metadata + GraphQL doc + audit log *@
         <article class="gst-prof-panel" data-panel="details" hidden
                  role="tabpanel" aria-labelledby="gst-prof-tab-details">
 
             <section class="gst-prof-details__section">
                 <h3 class="gst-prof-details__title">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/details/metaTitle")
+                    @Loc.GetString("/graphsearchtools/channels/detail/details/metaTitle")
                 </h3>
                 <dl class="gst-prof-meta gst-prof-details__meta">
                     <div>
-                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/sites")</dt>
+                        <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/sites")</dt>
                         <dd>
                             @if (Model.Sites.Count == 0)
                             {
                                 <span class="gst-badge gst-badge--default">
-                                    @Loc.GetString("/graphsearchtools/profiles/detail/meta/allSites")
+                                    @Loc.GetString("/graphsearchtools/channels/detail/meta/allSites")
                                 </span>
                             }
                             else
@@ -526,12 +515,12 @@
                         </dd>
                     </div>
                     <div>
-                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/locales")</dt>
+                        <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/locales")</dt>
                         <dd>
                             @if (Model.Locales.Count == 0)
                             {
                                 <span class="gst-badge gst-badge--default">
-                                    @Loc.GetString("/graphsearchtools/profiles/detail/meta/allLocales")
+                                    @Loc.GetString("/graphsearchtools/channels/detail/meta/allLocales")
                                 </span>
                             }
                             else
@@ -548,7 +537,7 @@
                     @if (Model.SearchedFields.Count > 0)
                     {
                         <div>
-                            <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/searchedFields")</dt>
+                            <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/searchedFields")</dt>
                             <dd>
                                 <div class="gst-flex" style="gap: 4px; flex-wrap: wrap">
                                     @foreach (var field in Model.SearchedFields)
@@ -560,7 +549,7 @@
                         </div>
                     }
                     <div>
-                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/pinnedKey")</dt>
+                        <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/pinnedKey")</dt>
                         <dd>
                             @if (string.IsNullOrEmpty(Model.PinnedKeyFormula))
                             {
@@ -573,17 +562,17 @@
                         </dd>
                     </div>
                     <div>
-                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/ranking")</dt>
+                        <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/ranking")</dt>
                         <dd>
                             @Model.RankingName.ToUpperInvariant() · @Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
                         </dd>
                     </div>
                     <div>
-                        <dt>@Loc.GetString("/graphsearchtools/profiles/detail/meta/graphqlDoc")</dt>
+                        <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/graphqlDoc")</dt>
                         <dd>
                             @if (Model.GraphQLDocIsInline)
                             {
-                                <span class="gst-mono">@Loc.GetString("/graphsearchtools/profiles/detail/meta/docInline")</span>
+                                <span class="gst-mono">@Loc.GetString("/graphsearchtools/channels/detail/meta/docInline")</span>
                             }
                             else if (string.IsNullOrEmpty(Model.GraphQLDocPath))
                             {
@@ -594,7 +583,7 @@
                                 <span class="@docExistsClass">@Model.GraphQLDocPath</span>
                                 @if (!Model.GraphQLDocExists)
                                 {
-                                    <span class="em">@Loc.GetString("/graphsearchtools/profiles/detail/meta/docNotFound")</span>
+                                    <span class="em">@Loc.GetString("/graphsearchtools/channels/detail/meta/docNotFound")</span>
                                 }
                             }
                         </dd>
@@ -604,29 +593,29 @@
                 @if (Model.IsSiteShared)
                 {
                     <div class="gst-alert gst-alert--warning gst-prof-details__shared">
-                        @Loc.GetString("/graphsearchtools/profiles/detail/sharedWarning")
+                        @Loc.GetString("/graphsearchtools/channels/detail/sharedWarning")
                     </div>
                 }
             </section>
 
             <section class="gst-prof-details__section">
                 <h3 class="gst-prof-details__title">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlTitle")
+                    @Loc.GetString("/graphsearchtools/channels/detail/overview/graphqlTitle")
                 </h3>
                 @if (string.IsNullOrEmpty(Model.GraphQLDocContent))
                 {
-                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlEmpty")</p>
+                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/channels/detail/overview/graphqlEmpty")</p>
                 }
                 else
                 {
                     <p class="gst-prof-details__sublabel">
                         @if (Model.GraphQLDocIsInline)
                         {
-                            @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlInlineNote")
+                            @Loc.GetString("/graphsearchtools/channels/detail/overview/graphqlInlineNote")
                         }
                         else
                         {
-                            @Loc.GetString("/graphsearchtools/profiles/detail/overview/graphqlPathNote")
+                            @Loc.GetString("/graphsearchtools/channels/detail/overview/graphqlPathNote")
                         }
                     </p>
                     <div class="gst-codeblock" data-gst-copy>
@@ -637,25 +626,10 @@
 
         </article>
 
-        @* Activity panel — Aurora Phase 3C: audit log lives in its own tab
-           rather than buried at the bottom of Settings. Same host element
-           (#gst-prof-audit-host) so profiles.js keeps populating it. *@
-        <article class="gst-prof-panel" data-panel="activity" hidden
-                 role="tabpanel" aria-labelledby="gst-prof-tab-activity">
-            <section class="gst-prof-details__section">
-                <h3 class="gst-prof-details__title">
-                    @Loc.GetString("/graphsearchtools/profiles/detail/details/auditTitle")
-                    <span id="gst-prof-audit-badge" class="gst-badge gst-badge--default" hidden>0</span>
-                </h3>
-                <div id="gst-prof-audit-host" class="gst-prof-details__audit">
-                    <p class="gst-muted">@Loc.GetString("/graphsearchtools/ui/shared/loading")</p>
-                </div>
-            </section>
-        </article>
     </section>
 </div>
 
-@* Aurora flyouts — shared markup; the profile-scoped Aurora JS opens/closes
+@* Aurora flyouts — shared markup; the channel-scoped Aurora JS opens/closes
    them via GST.flyout. Same partial as the top-level Pinned/Synonyms pages,
    so the editor experience is identical regardless of entry point. *@
 @if (Model.QueryAppliesPinned)
@@ -670,12 +644,12 @@
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-aurora.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/synonyms-aurora.js")"></script>
-    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/profiles.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/channels.js")"></script>
     <script>
         (function() {
-            if (window.GST && window.GST.profiles && typeof window.GST.profiles.detail === 'function') {
-                window.GST.profiles.detail({
-                    profileKey: '@Html.Raw(Model.Key)',
+            if (window.GST && window.GST.channels && typeof window.GST.channels.detail === 'function') {
+                window.GST.channels.detail({
+                    channelKey: '@Html.Raw(Model.Key)',
                     sites: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Sites)),
                     locales: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Locales)),
                     isSiteShared: @(Model.IsSiteShared ? "true" : "false"),

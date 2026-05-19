@@ -4,7 +4,7 @@ using EPiServer.Data.Dynamic;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 
 /// <summary>
-/// One row per (minute, phrase, profile, locale, node). The flusher upserts
+/// One row per (minute, phrase, channel, locale, node). The flusher upserts
 /// closed-minute buckets in batches; the local reader sums across nodes at
 /// query time. Cardinality budget per design §4: ~150K rows/day per node,
 /// well within DDS comfort.
@@ -26,10 +26,10 @@ public class SearchLogBucket : IDynamicData
     public string PhraseNorm { get; set; } = string.Empty;
 
     /// <summary>
-    /// Profile key. Indexed because Profile Insights filters by it on every
-    /// read, and a per-profile dashboard is the most common drill-down.
+    /// Channel key. Indexed because Channel Insights filters by it on every
+    /// read, and a per-channel dashboard is the most common drill-down.
     /// </summary>
-    [EPiServerDataIndex] public string ProfileKey { get; set; } = string.Empty;
+    [EPiServerDataIndex] public string ChannelKey { get; set; } = string.Empty;
 
     /// <summary>
     /// Locale. Indexed because the per-locale view of the Search Logs UI
@@ -82,7 +82,7 @@ public class SearchLogRing : IDynamicData
     public string Kind { get; set; } = "search";
 
     public string Phrase { get; set; } = string.Empty;
-    public string ProfileKey { get; set; } = string.Empty;
+    public string ChannelKey { get; set; } = string.Empty;
     public string Locale { get; set; } = string.Empty;
 
     /// <summary>Set on search events. Null on click events.</summary>

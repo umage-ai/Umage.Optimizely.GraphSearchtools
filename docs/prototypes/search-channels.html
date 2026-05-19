@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Search Profiles - Graph Search Tools</title>
+  <title>Search Channels - Graph Search Tools</title>
   <style>
     /* ========================================================================
        Adopts the addon's design system 1:1 — same CSS variables, same component
        conventions (gst-shell, gst-header, gst-card, gst-table, gst-badge, …).
-       New profile-specific styles live under gst-prof- / gst-pin- prefixes so
+       New channel-specific styles live under gst-prof- / gst-pin- prefixes so
        they slot cleanly into modules/_protected/GraphSearchtools/ClientResources/css/
        graphsearchtools.css when this design ships.
        ======================================================================== */
@@ -318,11 +318,11 @@
     .gst-watermark:hover { opacity: 1; color: var(--gst-text-secondary); }
 
     /* ════════════════════════════════════════════════════════════
-       Profile-specific (new) — all under gst-prof- / gst-pin- so
+       Channel-specific (new) — all under gst-prof- / gst-pin- so
        they slot cleanly into the existing CSS file.
        ════════════════════════════════════════════════════════════ */
 
-    /* ── Profile index table (specialised .gst-table) ──────────── */
+    /* ── Channel index table (specialised .gst-table) ──────────── */
     .gst-prof-table td { padding: var(--gst-space-md); }
     .gst-prof-table tr { cursor: pointer; }
     .gst-prof-table tr.is-active td {
@@ -379,7 +379,7 @@
     }
     .gst-prof-table tr:hover .gst-prof-arrow { color: var(--gst-primary); transform: translateX(2px); }
 
-    /* ── Profile detail layout ──────────────────────────────────── */
+    /* ── Channel detail layout ──────────────────────────────────── */
     .gst-prof-layout {
       display: grid;
       grid-template-columns: 280px 1fr;
@@ -713,7 +713,7 @@
       </a>
       <nav class="gst-header__nav">
         <a href="#">Overview</a>
-        <a href="#" class="active">Profiles</a>
+        <a href="#" class="active">Channels</a>
         <a href="#">Synonyms</a>
         <a href="#">Diagnostics</a>
         <a href="#">Health</a>
@@ -731,12 +731,12 @@
       <!-- ───────── Page header ───────── -->
       <div class="gst-page-header">
         <div class="gst-page-header__title">
-          <h1>Search Profiles</h1>
-          <p>Each profile is a search query your developers wrote. Tune pinned results, synonyms, and ranking per profile, per site, per locale — without touching the GraphQL document.</p>
+          <h1>Search Channels</h1>
+          <p>Each channel is a search query your developers wrote. Tune pinned results, synonyms, and ranking per channel, per site, per locale — without touching the GraphQL document.</p>
         </div>
         <div class="gst-flex">
           <button class="gst-btn">Documentation</button>
-          <button class="gst-btn gst-btn--primary">+ Register profile</button>
+          <button class="gst-btn gst-btn--primary">+ Register channel</button>
         </div>
       </div>
 
@@ -744,7 +744,7 @@
       <div class="gst-stats">
         <div class="gst-stat">
           <div class="gst-stat__value">6</div>
-          <div class="gst-stat__label">Profiles registered</div>
+          <div class="gst-stat__label">Channels registered</div>
           <div class="gst-stat__sub">Across 2 sites · 4 locales</div>
         </div>
         <div class="gst-stat">
@@ -760,18 +760,18 @@
         <div class="gst-stat">
           <div class="gst-stat__value">98%</div>
           <div class="gst-stat__label">Production traffic</div>
-          <div class="gst-stat__sub">Routed through a registered profile</div>
+          <div class="gst-stat__sub">Routed through a registered channel</div>
         </div>
       </div>
 
-      <!-- ───────── Profile index ───────── -->
+      <!-- ───────── Channel index ───────── -->
       <div class="gst-card">
         <div class="gst-toolbar">
           <div class="gst-search">
             <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" placeholder="Filter profiles…" />
+            <input type="text" placeholder="Filter channels…" />
           </div>
           <select class="gst-select">
             <option>All sites</option>
@@ -784,13 +784,13 @@
             <option>en</option><option>da</option><option>sv</option><option>de</option>
           </select>
           <div class="gst-toolbar__spacer"></div>
-          <span class="gst-muted">6 profiles</span>
+          <span class="gst-muted">6 channels</span>
         </div>
 
         <table class="gst-table gst-prof-table">
           <thead>
             <tr>
-              <th style="width: 28%">Profile</th>
+              <th style="width: 28%">Channel</th>
               <th style="width: 18%" class="col-scope">Sites &amp; locales</th>
               <th style="width: 22%" class="col-tuning">Tuning</th>
               <th style="width: 18%">Status</th>
@@ -969,13 +969,13 @@
         </table>
       </div>
 
-      <!-- ───────── Profile detail ───────── -->
+      <!-- ───────── Channel detail ───────── -->
       <div class="gst-section-anchor"></div>
 
       <div class="gst-page-header" style="margin-top: var(--gst-space-xl)">
         <div class="gst-page-header__title">
           <h1>Site search</h1>
-          <p>The search query behind the global header. Pinned results and synonyms below apply wherever this profile's GraphQL document runs.</p>
+          <p>The search query behind the global header. Pinned results and synonyms below apply wherever this channel's GraphQL document runs.</p>
         </div>
         <div class="gst-flex">
           <button class="gst-btn">View GraphQL document</button>
@@ -984,7 +984,7 @@
       </div>
 
       <div class="gst-prof-layout">
-        <!-- Left rail: profile metadata -->
+        <!-- Left rail: channel metadata -->
         <aside class="gst-prof-rail">
           <div class="gst-card">
             <div class="gst-card__body">
@@ -1233,7 +1233,7 @@
                   </div>
                   <div class="gst-card__body">
                     <p class="gst-muted" style="font-size: var(--gst-text-sm); margin-bottom: var(--gst-space-md)">
-                      Run the registered query for this profile. Side B applies the pins above.
+                      Run the registered query for this channel. Side B applies the pins above.
                     </p>
                     <div class="gst-tryit__input">
                       <span>Q</span>
@@ -1275,7 +1275,7 @@
             <!-- Other tab stubs -->
             <div class="gst-tab-pane" data-pane="overview" hidden>
               <div class="gst-card__body">
-                <p class="gst-muted">Snapshot of the wire-up between this profile and its production query — the fields it searches, the editorial controls it consumes, and the last time anyone touched it. (Stub view.)</p>
+                <p class="gst-muted">Snapshot of the wire-up between this channel and its production query — the fields it searches, the editorial controls it consumes, and the last time anyone touched it. (Stub view.)</p>
               </div>
             </div>
             <div class="gst-tab-pane" data-pane="synonyms" hidden>

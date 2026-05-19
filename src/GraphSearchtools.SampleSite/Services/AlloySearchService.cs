@@ -82,14 +82,14 @@ public sealed class AlloySearchService
         var phrase = string.IsNullOrWhiteSpace(request.Query) ? null : request.Query.Trim();
         var limit = Math.Clamp(request.Limit, 1, 50);
         // Active language branch served by the SearchPage route. Lower-cased
-        // because the alloy-search profile registers locales as "en"/"sv" and
+        // because the alloy-search channel registers locales as "en"/"sv" and
         // the pinned-collection key formula ("alloy-{locale}") is built around
         // that casing. Empty when the controller couldn't resolve a culture —
         // we then skip the language clause and let Graph return everything.
         var locale = string.IsNullOrWhiteSpace(request.Locale) ? null : request.Locale.Trim().ToLowerInvariant();
 
         // Resolve the pinned-results collection id for the active locale. The
-        // alloy-search profile's pinned-key formula is "alloy-{locale}", so we
+        // alloy-search channel's pinned-key formula is "alloy-{locale}", so we
         // can derive the lookup key directly from the request culture and
         // marketers' edits land on the matching branch automatically. No
         // active locale (e.g. an unrouted call) → no pinning.
@@ -200,7 +200,7 @@ public sealed class AlloySearchService
     /// <summary>
     /// Representative form of the hits query — uses placeholder substitutions
     /// for the dynamic parts (<c>$phrase</c>, <c>$locale</c>,
-    /// <c>$pinnedCollectionId</c>) so the registered profile's admin view
+    /// <c>$pinnedCollectionId</c>) so the registered channel's admin view
     /// reflects every code path the storefront actually runs, including the
     /// <c>usePinned</c> directive that applies pinned-results edits to the
     /// SERP and the per-locale language filter that scopes the SERP to the

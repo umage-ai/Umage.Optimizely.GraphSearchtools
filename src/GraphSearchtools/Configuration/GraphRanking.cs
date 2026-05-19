@@ -10,7 +10,7 @@ public enum GraphRanking
     /// <summary>Default lexical ranking — BM25 over searched fields.</summary>
     Relevance,
 
-    /// <summary>Blended lexical + semantic; pair with <see cref="SearchProfile.SemanticWeight"/>.</summary>
+    /// <summary>Blended lexical + semantic; pair with <see cref="SearchChannel.SemanticWeight"/>.</summary>
     Semantic,
 
     /// <summary>Score determined entirely by <c>boost</c>/<c>factor</c> modifiers — no relevance term.</summary>

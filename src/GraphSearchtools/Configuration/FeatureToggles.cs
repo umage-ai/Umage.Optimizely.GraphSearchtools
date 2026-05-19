@@ -10,13 +10,13 @@ public class FeatureToggles
     public bool Overview { get; set; } = true;
     public bool Pinned { get; set; } = true;
     public bool Synonyms { get; set; } = true;
-    public bool Profiles { get; set; } = true;
+    public bool Channels { get; set; } = true;
 
     /// <summary>
     /// Aurora refactor — curated marketer-facing dashboard surfacing top
     /// phrases, zero-result candidates, synonym coverage signals, and a
     /// recent-activity strip. Read-only; reuses SearchLogsService +
-    /// SynonymCoverageService + SearchProfileEditService data.
+    /// SynonymCoverageService + AuditLogService data.
     /// </summary>
     public bool Insights { get; set; } = true;
 
@@ -29,7 +29,7 @@ public class FeatureToggles
 
     /// <summary>
     /// Internal /SearchLogsApi read endpoints (top / zero-result / low-CTR /
-    /// raw). No standalone UI — the per-profile Insights tab on Profile Detail
+    /// raw). No standalone UI — the per-channel Insights tab on Channel Detail
     /// is the only consumer. Disable to short-circuit those lanes to their
     /// empty state without breaking the rest of the package.
     /// </summary>

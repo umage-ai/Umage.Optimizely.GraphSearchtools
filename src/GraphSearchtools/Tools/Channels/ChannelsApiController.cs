@@ -5,33 +5,33 @@ using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
-using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models;
 
-namespace UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
+namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 
 /// <summary>
-/// JSON API for the Profiles surface. Read-only in v1: writes for pinned /
+/// JSON API for the Channels surface. Read-only in v1: writes for pinned /
 /// synonym / saved-query data go through their existing controllers — see
-/// docs/search-profiles-design.md §4.1–§4.3.
+/// docs/search-channels-design.md §4.1–§4.3.
 /// </summary>
 [Authorize(Policy = "codeart:graphsearchtools")]
-[Route("EPiServer/cms/graphsearchtools/api/profiles")]
-public class ProfilesApiController : Controller
+[Route("EPiServer/cms/graphsearchtools/api/channels")]
+public class ChannelsApiController : Controller
 {
-    private const string FeatureName = nameof(FeatureToggles.Profiles);
+    private const string FeatureName = nameof(FeatureToggles.Channels);
 
-    private readonly ProfilesService _service;
-    private readonly ISearchProfileRegistry _registry;
+    private readonly ChannelsService _service;
+    private readonly ISearchChannelRegistry _registry;
     private readonly FeatureAccessChecker _accessChecker;
     private readonly PinnedService _pinnedService;
-    private readonly ILogger<ProfilesApiController> _logger;
+    private readonly ILogger<ChannelsApiController> _logger;
 
-    public ProfilesApiController(
-        ProfilesService service,
-        ISearchProfileRegistry registry,
+    public ChannelsApiController(
+        ChannelsService service,
+        ISearchChannelRegistry registry,
         FeatureAccessChecker accessChecker,
         PinnedService pinnedService,
-        ILogger<ProfilesApiController> logger)
+        ILogger<ChannelsApiController> logger)
     {
         _service = service;
         _registry = registry;
@@ -52,7 +52,7 @@ public class ProfilesApiController : Controller
     public IActionResult Get(string key)
     {
         if (!HasAccess()) return Forbid();
-        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Profile key is required." });
+        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Channel key is required." });
         try
         {
             var detail = _service.BuildDetail(key);
@@ -61,61 +61,51 @@ public class ProfilesApiController : Controller
         catch (Exception ex) { return Handle(ex); }
     }
 
-    [HttpGet("{key}/audit")]
-    public IActionResult Audit(string key, [FromQuery] int take = 100)
-    {
-        if (!HasAccess()) return Forbid();
-        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Profile key is required." });
-        var clamped = Math.Clamp(take, 1, 500);
-        try { return Ok(_service.ListAudit(key, clamped)); }
-        catch (Exception ex) { return Handle(ex); }
-    }
-
     /// <summary>
-    /// Pinned items for a profile + (site, locale) combination. The collection
-    /// key is resolved via <see cref="SearchProfile.PinnedKeyForLocale"/>;
-    /// profiles without a formula return 400 since they cannot scope writes.
+    /// Pinned items for a channel + (site, locale) combination. The collection
+    /// key is resolved via <see cref="SearchChannel.PinnedKeyForLocale"/>;
+    /// channels without a formula return 400 since they cannot scope writes.
     /// </summary>
     [HttpGet("{key}/pinned")]
     public async Task<IActionResult> Pinned(string key, [FromQuery] string? site, [FromQuery] string? locale, CancellationToken cancellationToken)
     {
         if (!HasAccess()) return Forbid();
-        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Profile key is required." });
+        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Channel key is required." });
 
-        var profile = _registry.Get(key);
-        if (profile == null) return NotFound();
-        if (profile.PinnedKeyForLocale == null)
+        var channel = _registry.Get(key);
+        if (channel == null) return NotFound();
+        if (channel.PinnedKeyForLocale == null)
         {
-            return BadRequest(new { message = $"Profile '{profile.Key}' has no PinnedKey formula." });
+            return BadRequest(new { message = $"Channel '{channel.Key}' has no PinnedKey formula." });
         }
 
         try
         {
             var collections = await _pinnedService.GetCollectionsAsync(cancellationToken);
-            var resolvedKey = profile.PinnedKeyForLocale(locale ?? string.Empty);
+            var resolvedKey = channel.PinnedKeyForLocale(locale ?? string.Empty);
             var matching = collections.FirstOrDefault(c =>
                 string.Equals(c.Key, resolvedKey, StringComparison.OrdinalIgnoreCase));
 
             if (matching == null)
             {
-                return Ok(new ProfilePinnedResponse
+                return Ok(new ChannelPinnedResponse
                 {
-                    ProfileKey = profile.Key,
+                    ChannelKey = channel.Key,
                     Site = site,
                     Locale = locale,
                     PinnedKey = resolvedKey,
                     CollectionId = null,
-                    Rows = Array.Empty<ProfilePinnedRow>()
+                    Rows = Array.Empty<ChannelPinnedRow>()
                 });
             }
 
             var rows = (await _pinnedService.GetItemsAsync(matching.Id, cancellationToken))
-                .Select(it => ProfilePinnedRow.From(matching, it))
+                .Select(it => ChannelPinnedRow.From(matching, it))
                 .ToList();
 
-            return Ok(new ProfilePinnedResponse
+            return Ok(new ChannelPinnedResponse
             {
-                ProfileKey = profile.Key,
+                ChannelKey = channel.Key,
                 Site = site,
                 Locale = locale,
                 PinnedKey = resolvedKey,
@@ -127,17 +117,17 @@ public class ProfilesApiController : Controller
     }
 
     /// <summary>
-    /// Pinned-tab Try-it preview. Runs the profile's registered GraphQL
+    /// Pinned-tab Try-it preview. Runs the channel's registered GraphQL
     /// document (with <c>$phrase</c> / <c>$pinnedCollectionId</c> substitutions)
     /// against Graph and returns the hits. Independent of the
     /// <c>SavedQueries.DefaultQuery</c> runner so a tenant-specific config
-    /// can't break previews on other profiles.
+    /// can't break previews on other channels.
     /// </summary>
     [HttpGet("{key}/preview")]
     public async Task<IActionResult> Preview(string key, [FromQuery] string? phrase, [FromQuery] string? locale, CancellationToken cancellationToken)
     {
         if (!HasAccess()) return Forbid();
-        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Profile key is required." });
+        if (string.IsNullOrWhiteSpace(key)) return BadRequest(new { message = "Channel key is required." });
         if (string.IsNullOrWhiteSpace(phrase) || phrase.Trim().Length < 2)
         {
             // Surface a uniform empty payload for short-or-blank phrases so
@@ -154,11 +144,11 @@ public class ProfilesApiController : Controller
     }
 
     private bool HasAccess()
-        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Profiles);
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Channels);
 
     private IActionResult Handle(Exception ex)
     {
-        _logger.LogError(ex, "Profiles API error.");
-        return Problem(title: "Profiles request failed.");
+        _logger.LogError(ex, "Channels API error.");
+        return Problem(title: "Channels request failed.");
     }
 }

@@ -403,40 +403,40 @@ content. This is the editorial workflow the seed addon doesn't have today.
 
 ---
 
-## 4a. Phase 2.5 — Search Profiles
+## 4a. Phase 2.5 — Search Channels
 
 A re-architecting of how Pinned scopes its configuration. Instead of marketers
 tuning tenant-global pinned collections that may or may not be wired into the
-production query, developers register **Search Profiles** describing each
+production query, developers register **Search Channels** describing each
 search surface (header search, knowledge base, …) and the Pinned editor
-becomes profile-scoped.
+becomes channel-scoped.
 
-Shipped: 2026-05-05 on `redesign/search-profiles` — see commits
+Shipped: 2026-05-05 on `redesign/search-channels` — see commits
 e3b3f7f..8140b86.
 
 Headline UX changes:
 
-- New **Profiles** top-level menu entry between Overview and Synonyms, with
-  an index page (table) and a profile detail page (3 tabs: Overview, Pinned,
+- New **Channels** top-level menu entry between Overview and Synonyms, with
+  an index page (table) and a channel detail page (3 tabs: Overview, Pinned,
   Audit log).
-- **Pinned** removed from the top-level menu — accessed via Profiles →
+- **Pinned** removed from the top-level menu — accessed via Channels →
   detail → Pinned tab. Includes a Try-it side panel for live A/B preview
   (in-context editor preview, not a separate diagnostic surface).
-- ~~**Synonyms** keeps its top-level entry, with a new Global vs. per-profile
+- ~~**Synonyms** keeps its top-level entry, with a new Global vs. per-channel
   scope switcher.~~ **Reverted:** Graph admin synonyms are tenant-global and
   language-keyed only; Synonyms remains the unchanged Phase 1 per-language
-  editor with no profile scope.
+  editor with no channel scope.
 - ~~**Saved Queries → Diagnostics** rename + menu demotion.~~ **Reverted:**
   Health is sufficient as the diagnostic surface; Saved Queries keeps its
   name and place.
-- Always-present **Generic** profile as the catchment for legacy / orphan
+- Always-present **Generic** channel as the catchment for legacy / orphan
   pinned collections; ensures zero-config installs don't regress.
 
 Full design — registration API, data model, tool integration, migration
-path — in [`docs/search-profiles-design.md`](search-profiles-design.md), which
+path — in [`docs/search-channels-design.md`](search-channels-design.md), which
 carries a top-of-doc supersede note for the two reverted items above.
 Reference markup for the new pages in
-[`docs/prototypes/search-profiles.html`](prototypes/search-profiles.html);
+[`docs/prototypes/search-channels.html`](prototypes/search-channels.html);
 all new CSS lives under `gst-prof-*` / `gst-pin-*` prefixes folded into
 `graphsearchtools.css`.
 
@@ -468,11 +468,11 @@ Shipped 2026-05-05.
 
 | Tool | Status |
 |---|---|
-| **SearchLog foundation** | ✅ Shipped (commit `4edfb3c`). DDS-backed `SearchLogService` with `Append`/`AppendBatch` + the aggregations the analytics tools consume (`TopPhrases`, `ZeroResultPhrases`, `LowCtrPhrases`, `ListSince`, `ListForProfile`). Telemetry ingest at `POST /api/telemetry/searchlog` (single + batch); both `[Authorize]` + `[RequireAjax]`. Stale-window 24h past / 5min future, quietly drops with 202. Host SDK posts per public-search hit. |
-| **Search Logs UI** | ✅ Shipped (commit `b486eb6`). 4-card layout (Top phrases / Zero-result / Low-CTR / Raw events). Time-window pill (1h/24h/7d/30d). Empty state guides editors to wire host telemetry. Zero-result rows deep-link to Synonyms; low-CTR rows deep-link to Profiles. |
+| **SearchLog foundation** | ✅ Shipped (commit `4edfb3c`). DDS-backed `SearchLogService` with `Append`/`AppendBatch` + the aggregations the analytics tools consume (`TopPhrases`, `ZeroResultPhrases`, `LowCtrPhrases`, `ListSince`, `ListForChannel`). Telemetry ingest at `POST /api/telemetry/searchlog` (single + batch); both `[Authorize]` + `[RequireAjax]`. Stale-window 24h past / 5min future, quietly drops with 202. Host SDK posts per public-search hit. |
+| **Search Logs UI** | ✅ Shipped (commit `b486eb6`). 4-card layout (Top phrases / Zero-result / Low-CTR / Raw events). Time-window pill (1h/24h/7d/30d). Empty state guides editors to wire host telemetry. Zero-result rows deep-link to Synonyms; low-CTR rows deep-link to Channels. |
 | **Index Inspector** | ✅ Shipped (commit `f8e7b19`). Per-content-type index population + `MissingNameCount` / `MissingTitleCount` surface. Calls `Content { total(all: true) types { name count } }` first, falls back to per-content-type `total` queries when the schema doesn't expose `types`. |
 | **Content Searchability Audit** | ✅ Shipped (commit `cfab70a`). Local CMS scan via `IContentLoader` + `IContentTypeRepository`. Detects MissingName, MissingMainBody, NoTags, OversizeSortField (string properties marked Searchable with content > 1024 chars). Per-kind output capped at 200 with `Truncated` flag. Deep-link to CMS edit-mode per row. |
-| **Pinned Result Coverage** | ✅ Shipped (commit `bc0f525`). Joins live Graph collections + `IContentLoader` + `SearchLogService` (7-day window). Surfaces unpublished / deleted targets, expired pins (via new `PinnedItemResult.EffectiveTo`), low-CTR pins (CTR < 0.05 with min 5 sessions), and overlap (same phrase pinned in multiple collections). Per-issue deep-link into the owning Profile's Pinned tab. |
+| **Pinned Result Coverage** | ✅ Shipped (commit `bc0f525`). Joins live Graph collections + `IContentLoader` + `SearchLogService` (7-day window). Surfaces unpublished / deleted targets, expired pins (via new `PinnedItemResult.EffectiveTo`), low-CTR pins (CTR < 0.05 with min 5 sessions), and overlap (same phrase pinned in multiple collections). Per-issue deep-link into the owning Channel's Pinned tab. |
 | **Synonym Coverage** | ✅ Shipped (commit `46b48b2`). Joins synonyms (via `SynonymsService`, parses both equivalent `a, b, c` and replacement `a => b, c` rules — only LHS triggers count) with 30-day log window. Two surfaces: unused entries (prune-link) + suggested adds (zero-result phrases not already covered, optionally annotated with closest indexed term via Levenshtein ≤ 2). |
 
 Tagged `v0.4.0`.

@@ -4,11 +4,11 @@ using System.Text.RegularExpressions;
 namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 
 /// <summary>
-/// Fluent builder for <see cref="SearchProfile"/>. Used inside the
-/// <c>AddSearchProfile(key, configure)</c> registration extension. Validation
+/// Fluent builder for <see cref="SearchChannel"/>. Used inside the
+/// <c>AddSearchChannel(key, configure)</c> registration extension. Validation
 /// (key format) runs in <see cref="Build"/>.
 /// </summary>
-public sealed class SearchProfileBuilder
+public sealed class SearchChannelBuilder
 {
     private static readonly Regex KeyPattern = new("^[a-z0-9-]+$", RegexOptions.Compiled);
 
@@ -25,7 +25,7 @@ public sealed class SearchProfileBuilder
     private string? _graphQLDocumentContent;
     private Dictionary<string, object?> _defaultVariables = new(StringComparer.Ordinal);
 
-    public SearchProfileBuilder(string key)
+    public SearchChannelBuilder(string key)
     {
         _key = key ?? throw new ArgumentNullException(nameof(key));
     }
@@ -33,31 +33,31 @@ public sealed class SearchProfileBuilder
     /// <summary>The key the builder was constructed with — exposed for diagnostics.</summary>
     public string Key => _key;
 
-    public SearchProfileBuilder DisplayName(string displayName)
+    public SearchChannelBuilder DisplayName(string displayName)
     {
         _displayName = displayName;
         return this;
     }
 
-    public SearchProfileBuilder DisplayName(LocalizedString displayName)
+    public SearchChannelBuilder DisplayName(LocalizedString displayName)
     {
         _displayName = displayName;
         return this;
     }
 
-    public SearchProfileBuilder Description(string description)
+    public SearchChannelBuilder Description(string description)
     {
         _description = description;
         return this;
     }
 
-    public SearchProfileBuilder Description(LocalizedString description)
+    public SearchChannelBuilder Description(LocalizedString description)
     {
         _description = description;
         return this;
     }
 
-    public SearchProfileBuilder Sites(params string[] sites)
+    public SearchChannelBuilder Sites(params string[] sites)
     {
         _sites = (sites ?? Array.Empty<string>())
             .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -66,7 +66,7 @@ public sealed class SearchProfileBuilder
         return this;
     }
 
-    public SearchProfileBuilder Locales(params string[] locales)
+    public SearchChannelBuilder Locales(params string[] locales)
     {
         _locales = (locales ?? Array.Empty<string>())
             .Where(l => !string.IsNullOrWhiteSpace(l))
@@ -75,7 +75,7 @@ public sealed class SearchProfileBuilder
         return this;
     }
 
-    public SearchProfileBuilder SearchedFields(params string[] fields)
+    public SearchChannelBuilder SearchedFields(params string[] fields)
     {
         _searchedFields = (fields ?? Array.Empty<string>())
             .Where(f => !string.IsNullOrWhiteSpace(f))
@@ -89,7 +89,7 @@ public sealed class SearchProfileBuilder
     /// <c>{locale}</c> the placeholder is substituted at call time; otherwise the
     /// same key is returned for every locale.
     /// </summary>
-    public SearchProfileBuilder UsesPinnedKey(string keyOrTemplate)
+    public SearchChannelBuilder UsesPinnedKey(string keyOrTemplate)
     {
         if (string.IsNullOrWhiteSpace(keyOrTemplate))
         {
@@ -109,20 +109,20 @@ public sealed class SearchProfileBuilder
         return this;
     }
 
-    public SearchProfileBuilder UsesPinnedKey(Func<string, string> formula)
+    public SearchChannelBuilder UsesPinnedKey(Func<string, string> formula)
     {
         _pinnedKeyForLocale = formula ?? throw new ArgumentNullException(nameof(formula));
         return this;
     }
 
-    public SearchProfileBuilder SemanticBlend(double weight, GraphRanking ranking)
+    public SearchChannelBuilder SemanticBlend(double weight, GraphRanking ranking)
     {
         _semanticWeight = Math.Clamp(weight, -1.0, 1.0);
         _ranking = ranking;
         return this;
     }
 
-    public SearchProfileBuilder GraphQLDocument(string path)
+    public SearchChannelBuilder GraphQLDocument(string path)
     {
         _graphQLDocumentPath = string.IsNullOrWhiteSpace(path) ? null : path.Trim();
         return this;
@@ -134,7 +134,7 @@ public sealed class SearchProfileBuilder
     /// the admin sees the exact query the runtime executes — no static
     /// <c>.graphql</c> file to drift from the live code.
     /// </summary>
-    public SearchProfileBuilder GraphQLDocumentInline(string content)
+    public SearchChannelBuilder GraphQLDocumentInline(string content)
     {
         _graphQLDocumentContent = string.IsNullOrWhiteSpace(content) ? null : content;
         return this;
@@ -145,7 +145,7 @@ public sealed class SearchProfileBuilder
     /// add each as a default variable. Lets callers write
     /// <c>.Variables(new { limit = 20, contentType = "Article" })</c>.
     /// </summary>
-    public SearchProfileBuilder Variables(object anonymous)
+    public SearchChannelBuilder Variables(object anonymous)
     {
         if (anonymous == null) return this;
         foreach (var prop in anonymous.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -155,7 +155,7 @@ public sealed class SearchProfileBuilder
         return this;
     }
 
-    public SearchProfileBuilder Variables(IDictionary<string, object?> variables)
+    public SearchChannelBuilder Variables(IDictionary<string, object?> variables)
     {
         if (variables == null) return this;
         foreach (var kv in variables)
@@ -166,19 +166,19 @@ public sealed class SearchProfileBuilder
     }
 
     /// <summary>
-    /// Materializes the configured profile. Throws <see cref="InvalidOperationException"/>
+    /// Materializes the configured channel. Throws <see cref="InvalidOperationException"/>
     /// when the key fails the <c>[a-z0-9-]+</c> validation, matching the design
     /// doc's startup-time guarantee.
     /// </summary>
-    public SearchProfile Build()
+    public SearchChannel Build()
     {
         if (string.IsNullOrEmpty(_key) || !KeyPattern.IsMatch(_key))
         {
             throw new InvalidOperationException(
-                $"Search profile key '{_key}' is invalid. Profile key must match [a-z0-9-]+.");
+                $"Search channel key '{_key}' is invalid. Channel key must match [a-z0-9-]+.");
         }
 
-        return new SearchProfile
+        return new SearchChannel
         {
             Key = _key,
             DisplayName = _displayName ?? LocalizedString.Literal(_key),

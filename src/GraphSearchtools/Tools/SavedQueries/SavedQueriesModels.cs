@@ -34,20 +34,20 @@ public sealed record RunnerHit(
     /// Heuristic-resolved URL/path used by the SERP-style preview to render
     /// a Google-ish "result row". Tries common field names (<c>Url</c>,
     /// <c>RelativePath</c>, <c>Path</c>, <c>Slug</c>) and falls back to null
-    /// when none are projected by the registered profile's GraphQL document.
+    /// when none are projected by the registered channel's GraphQL document.
     /// </summary>
     string? Url,
     /// <summary>
     /// Raw GraphQL item payload as returned by Graph, JSON-pretty-printed.
     /// Surfaced in the "show JSON" detail toggle so editors can inspect any
-    /// field the registered profile projects, even ones the SERP card
+    /// field the registered channel projects, even ones the SERP card
     /// doesn't render.
     /// </summary>
     string? Raw,
     /// <summary>
-    /// True when this hit is pinned in the active profile's collection AND
+    /// True when this hit is pinned in the active channel's collection AND
     /// the pin's phrase matches the preview phrase that produced this hit.
-    /// Stamped server-side by <c>ProfilesService.RunPreviewAsync</c> after
+    /// Stamped server-side by <c>ChannelsService.RunPreviewAsync</c> after
     /// running the query — the renderer doesn't need to reverse-engineer the
     /// pin/organic relationship from the editor's local state.
     /// </summary>

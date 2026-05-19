@@ -26,7 +26,7 @@
 
 @* Tab strip — one tab per lane (Top / Zero-result / Low-CTR). The toolbar
    below scopes whichever tab is visible; filter state carries across tabs
-   so switching doesn't reset what the user picked. Profile is the one
+   so switching doesn't reset what the user picked. Channel is the one
    filter that also bleeds upward to re-scope the KPI card. *@
 <div class="gst-card">
     <div class="gst-tabs" role="tablist" aria-label="@T("title")">
@@ -53,9 +53,9 @@
                    placeholder="@T("phrase_filter_placeholder")" />
         </div>
         <label class="gst-filter">
-            <span class="gst-filter__label">@T("col_profile")</span>
-            <select class="gst-filter__select" id="gst-insights-profile-filter">
-                <option value="">@T("profile_filter_all")</option>
+            <span class="gst-filter__label">@T("col_channel")</span>
+            <select class="gst-filter__select" id="gst-insights-channel-filter">
+                <option value="">@T("channel_filter_all")</option>
             </select>
         </label>
         <label class="gst-filter">
@@ -83,7 +83,7 @@
                 <thead>
                     <tr>
                         <th data-sort="phrase">@T("col_phrase")</th>
-                        <th data-sort="profile">@T("col_profile")</th>
+                        <th data-sort="channel">@T("col_channel")</th>
                         <th data-sort="locale">@T("col_locale")</th>
                         <th data-sort="hits" class="num">@T("col_hits")</th>
                         <th data-sort="zero" class="num">@T("col_zero_count")</th>
@@ -100,7 +100,7 @@
                 <thead>
                     <tr>
                         <th data-sort="phrase">@T("col_phrase")</th>
-                        <th data-sort="profile">@T("col_profile")</th>
+                        <th data-sort="channel">@T("col_channel")</th>
                         <th data-sort="locale">@T("col_locale")</th>
                         <th data-sort="hits" class="num">@T("col_hits")</th>
                     </tr>
@@ -116,7 +116,7 @@
                 <thead>
                     <tr>
                         <th data-sort="phrase">@T("col_phrase")</th>
-                        <th data-sort="profile">@T("col_profile")</th>
+                        <th data-sort="channel">@T("col_channel")</th>
                         <th data-sort="locale">@T("col_locale")</th>
                         <th data-sort="hits" class="num">@T("col_hits")</th>
                         <th data-sort="ctr" class="num">@T("col_ctr")</th>
