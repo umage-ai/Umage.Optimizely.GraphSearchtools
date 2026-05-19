@@ -476,15 +476,10 @@
         const itemsTmpl = GST.s('pinned.items_count', '%1 items');
         const deleteLabel = GST.s('shared.delete', 'Delete');
         const previewLabel = GST.s('channels.detail.insights.actionPreview', 'Preview this phrase');
-        const trash = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
-            '<path d="M3 4 H13 M5 4 V13 a1 1 0 0 0 1 1 H10 a1 1 0 0 0 1 -1 V4 M6 4 V2 a1 1 0 0 1 1 -1 H9 a1 1 0 0 1 1 1 V4 M6.5 7 V11 M9.5 7 V11"/>' +
-            '</svg>';
+        const trash = GST.icons.trash;
         // Magnifier glyph — matches the SERP input's own icon so the
         // affordance reads as "send this phrase to the preview".
-        const eye = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' +
-            '<circle cx="7" cy="7" r="4.5"/>' +
-            '<line x1="10.5" y1="10.5" x2="14" y2="14"/>' +
-            '</svg>';
+        const eye = GST.icons.search;
         // Preview button only renders inside a channel-scoped grid — that's
         // the only context where #gst-pin-tryit-q (the SERP input) exists.
         // Skipping it on the top-level Pinned page keeps the actions cell

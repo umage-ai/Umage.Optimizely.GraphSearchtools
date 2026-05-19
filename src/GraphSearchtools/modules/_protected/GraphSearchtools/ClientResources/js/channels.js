@@ -76,8 +76,9 @@
     }
 
     function chevronCell() {
-        return '<svg class="gst-prof-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-            + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+        // The .gst-prof-arrow class drives the row-hover transform
+        // (translateX 2px) plus the muted-to-primary color shift.
+        return GST.icon('chevronRight', { class: 'gst-prof-arrow' });
     }
 
     /** ---------------- INDEX ---------------- */
@@ -617,9 +618,7 @@
                     var ribbon = document.createElement('span');
                     ribbon.className = 'gst-serp__pin-ribbon';
                     ribbon.setAttribute('aria-hidden', 'true');
-                    ribbon.innerHTML = '<svg viewBox="0 0 12 12" width="11" height="11">'
-                        + '<path d="M6 1.5 L7.4 4.4 L10.5 4.7 L8.2 6.8 L8.9 9.9 L6 8.4 L3.1 9.9 L3.8 6.8 L1.5 4.7 L4.6 4.4 Z" fill="currentColor"/>'
-                        + '</svg>';
+                    ribbon.innerHTML = GST.icons.pin;
                     li.appendChild(ribbon);
                 }
 

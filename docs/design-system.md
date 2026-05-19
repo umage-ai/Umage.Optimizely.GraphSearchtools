@@ -124,6 +124,61 @@ because they're already semantic-by-scale.
 
 ---
 
+## Iconography
+
+The addon uses **Lucide line icons at stroke 1.5, 24×24 viewBox** as its
+single visual language. Consumers scale by setting `width`/`height` on
+the rendered `<svg>`; the stroke scales with it, matching Lucide's
+convention.
+
+The registry is mirrored in two places — keep them in sync when adding
+or removing entries:
+
+- **JS**: `GST.icons` in `graphsearchtools.js`. Each entry is the full
+  `<svg>` string. Use `GST.icon(name, { size, class })` if you need to
+  inject `width`/`height` or a class attribute at the call site.
+- **Razor**: `Views/Shared/_Icon.cshtml`. Same names, same path data.
+  Usage: `@await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "pin", Size = 14 })`.
+  Optional `Class` parameter for extra CSS hooks.
+
+### Available icons
+
+| Name | Used for |
+|------|----------|
+| `search`        | Toolbar search input, page-header logo, row-preview affordance |
+| `pin`, `pinOff` | Pinned tool + "channel doesn't pin" empty state |
+| `synonym`, `synonymOff` | Synonyms tool + "channel doesn't synonymise" empty state |
+| `channels`      | Channels tile + menu |
+| `insights`      | Insights tile + channel-detail Insights tab |
+| `details`       | Channel-detail Settings tab |
+| `chevronRight`, `chevronDown`, `chevronLeft` | Navigator-grid row, expand/collapse, back-link |
+| `trash`         | Row delete (destructive action) |
+| `plus`          | Add-new toolbar primary |
+| `x`             | Dialog/flyout/drawer close |
+| `refresh`       | Manual reload affordance (Insights bar) |
+| `info`          | Generic info / empty-state glyph |
+| `copy`          | Copy-to-clipboard affordance on code blocks |
+
+### Rules
+
+- **Never inline a fresh `<svg>` for a concept that's in the registry.**
+  Reach for `_Icon.cshtml` (Razor) or `GST.icons.<name>` (JS) first.
+- **One icon per concept.** Don't ship a "filled" and "outline" variant
+  of the same idea, or a 16×16 alternate path with the same name —
+  scale via `width`/`height` instead. Off-state variants (`pinOff`,
+  `synonymOff`) are the exception: same shape with a diagonal slash.
+- **Decorative icons get `aria-hidden="true"`** (the helper adds it
+  automatically). Icon-only buttons need `aria-label` on the button.
+- **Stroke colour** is `currentColor` everywhere — the icon inherits
+  the surrounding text colour, which the active/hover/disabled states
+  drive through the parent's `color` property.
+- **Adding a new icon**: copy the Lucide path data (or compose from
+  same-weight primitives), add to both `GST.icons` and `_Icon.cshtml`,
+  add a row to the table above with the concept it represents. Don't
+  add speculative icons "in case we need them" — register on demand.
+
+---
+
 ## The tool page
 
 A tool page has three regions, in order, inside `_SearchtoolsLayout.cshtml`:

@@ -4092,7 +4092,7 @@ td.bpe-editing select {
     line-height: 0;
     opacity: 0.85;
 }
-.gst-serp__pin-ribbon svg { display: block; }
+.gst-serp__pin-ribbon svg { display: block; width: 14px; height: 14px; }
 .gst-serp__hit:last-child { border-bottom: none; }
 @keyframes gst-serp-rise {
     from { opacity: 0; transform: translateY(4px); }
@@ -4327,7 +4327,7 @@ td.bpe-editing select {
     border-color: var(--gst-color-success);
     background: var(--gst-color-success-light);
 }
-.gst-copybtn__icon { flex-shrink: 0; }
+.gst-copybtn svg { flex-shrink: 0; width: 12px; height: 12px; }
 .gst-copybtn__label { line-height: 1; }
 
 /* Overlay variant — pinned to the top-right of a `.gst-codeblock`. Works
