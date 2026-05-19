@@ -76,6 +76,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Synonyms))
         };
 
+        // About sits at the bottom of the section so the colophon stays
+        // accessible without crowding the marketer's primary tool list.
+        // SortIndex 900 leaves room for future tools to slot in between.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
+            GetResourcePath("GraphSearchtools/About"))
+        {
+            SortIndex = 900,
+            IsAvailable = _ => true
+        };
+
         // Legacy /pinnedcoverage and /synonymcoverage URLs still 301 to
         // /channels via GraphSearchtoolsController.
     }

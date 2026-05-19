@@ -178,6 +178,29 @@
 .gst-header__nav a:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-text); }
 .gst-header__nav a.active { background: var(--gst-color-primary-light); color: var(--gst-color-primary); }
 
+/* Header About link — sits on the right edge of the header, opposite the
+   logo. Mirrors the layout from EditorPowertools so the two addons feel
+   like siblings. Outlined button rather than a nav-item so the action
+   reads as "meta" (settings / colophon) rather than navigation. */
+.gst-header__about {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    color: var(--gst-color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--gst-radius-sm);
+    border: 1px solid var(--gst-color-border);
+    transition: background .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+}
+.gst-header__about:hover { background: var(--gst-color-surface-hover); color: var(--gst-color-text); border-color: var(--gst-color-text-muted); }
+.gst-header__about svg { width: 13px; height: 13px; }
+
 .gst-main {
     flex: 1;
     padding: var(--gst-space-xl) var(--gst-space-2xl);
@@ -5844,4 +5867,27 @@ td.bpe-editing select {
     font-size: 11px;
     line-height: 1.5;
     vertical-align: baseline;
+}
+
+/* ===== Watermark ─────────────────────────────────────────────────────────
+   umage.ai mark anchored to the upper-right of every tool's main viewport.
+   Sits at low opacity so it never competes with content; bumps on hover so
+   the link affordance reads. Owner partial: Views/Shared/_UmageWatermark.cshtml. */
+.gst-watermark {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    z-index: 5;
+    opacity: 0.25;
+    transition: opacity 0.2s;
+    text-decoration: none;
+    display: block;
+    line-height: 0;
+    color: var(--gst-color-text);
+}
+.gst-watermark:hover { opacity: 0.55; }
+.gst-watermark svg {
+    width: 100px;
+    height: auto;
+    display: block;
 }

@@ -39,6 +39,7 @@
         <synonyms>Synonyms</synonyms>
         <synonymCoverage>Synonym Coverage</synonymCoverage>
         <pinnedCoverage>Pinned Coverage</pinnedCoverage>
+        <about>About</about>
       </menu>
 
       <tools>
@@ -46,6 +47,17 @@
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
         </overview>
+        <about>
+          <title>About Graph Search Tools</title>
+          <whatis_title>What is Graph Search Tools?</whatis_title>
+          <whatis_body>Graph Search Tools is a free, open-source admin extension for Optimizely Graph. It pairs the editorial surfaces marketers need — pinned results, synonyms, search insights, channel tuning — with the diagnostics engineers need to keep relevance honest, all served from inside the Optimizely CMS shell.</whatis_body>
+          <whatis_install>Install via NuGet:</whatis_install>
+          <tools_title>Included Tools</tools_title>
+          <github_label>GitHub Repository</github_label>
+          <madeby_title>Built by umage.ai</madeby_title>
+          <madeby_body>umage.ai is an agentic development company that connects people and software with AI. We help organizations modernize, build, and scale software that creates real business value — combining decades of consulting experience with the conviction that AI fundamentally transforms how software is built.</madeby_body>
+          <madeby_cta>Visit umage.ai</madeby_cta>
+        </about>
         <changelog>
           <title>Changelog</title>
           <pinned_intro>Every create / update / delete sent to Graph for pinned items and collections.</pinned_intro>
