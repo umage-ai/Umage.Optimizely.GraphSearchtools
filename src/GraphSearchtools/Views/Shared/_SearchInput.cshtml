@@ -1,0 +1,23 @@
+@*
+    Aurora search input — magnifying-glass SVG + text input wrapped in
+    .gst-search. See design-system.md → Component: Toolbar. Seven copies
+    of this markup existed before P2.1; this is the single source.
+
+    Usage:
+        @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+            new { Id = "gst-pin-search", Placeholder = Loc.GetString("…") })
+*@
+@model dynamic
+@{
+    string id = (string)(Model?.Id ?? "");
+    string placeholder = (string)(Model?.Placeholder ?? "");
+}
+<div class="gst-search">
+    <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+         stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="text" id="@id" placeholder="@placeholder" />
+</div>
