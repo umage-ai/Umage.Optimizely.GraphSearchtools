@@ -29,7 +29,7 @@
         <overview>Overview</overview>
         <channels>Search channels</channels>
         <insights>Insights</insights>
-        <pinned>Pinned</pinned>
+        <pinned>Pinned results</pinned>
         <synonyms>Synonyms</synonyms>
         <savedqueries>Saved Queries</savedqueries>
       </menu>
@@ -44,7 +44,7 @@
           <description>Tune each registered search surface — pins, synonyms, and insights scoped to one channel.</description>
         </channels>
         <pinned>
-          <title>Pinned</title>
+          <title>Pinned results</title>
           <description>Pin specific content to the top of the results for chosen phrases, per collection and locale.</description>
           <filter_placeholder>Filter by phrase or content...</filter_placeholder>
           <all_sites>All collections</all_sites>
