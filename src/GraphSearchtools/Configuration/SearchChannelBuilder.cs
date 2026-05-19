@@ -17,6 +17,7 @@ public sealed class SearchChannelBuilder
     private LocalizedString? _description;
     private List<string> _sites = new();
     private List<string> _locales = new();
+    private bool _localesFromCms;
     private List<string> _searchedFields = new();
     private Func<string, string>? _pinnedKeyForLocale;
     private double _semanticWeight = 0.2;
@@ -72,6 +73,26 @@ public sealed class SearchChannelBuilder
             .Where(l => !string.IsNullOrWhiteSpace(l))
             .Select(l => l.Trim().ToLowerInvariant())
             .ToList();
+        // Explicit list wins over CMS-derived; clearing the flag here keeps
+        // "last call wins" intuitive when a registration mixes both methods.
+        _localesFromCms = false;
+        return this;
+    }
+
+    /// <summary>
+    /// Resolve locales from the CMS's enabled language branches at request
+    /// time instead of from a static list. When the channel also declares
+    /// <see cref="Sites(string[])"/>, the resolver narrows to languages
+    /// served by those sites (via the sites' host-language declarations).
+    /// Use this when content editors enable languages through CMS Admin
+    /// without a developer redeploy — the new language surfaces here
+    /// automatically. Mutually exclusive with explicit <see cref="Locales(string[])"/>;
+    /// last call wins.
+    /// </summary>
+    public SearchChannelBuilder LocalesFromCmsLanguages()
+    {
+        _locales.Clear();
+        _localesFromCms = true;
         return this;
     }
 
@@ -185,6 +206,7 @@ public sealed class SearchChannelBuilder
             Description = _description,
             Sites = _sites.AsReadOnly(),
             Locales = _locales.AsReadOnly(),
+            LocalesFromCmsLanguages = _localesFromCms,
             SearchedFields = _searchedFields.AsReadOnly(),
             PinnedKeyForLocale = _pinnedKeyForLocale,
             SemanticWeight = _semanticWeight,

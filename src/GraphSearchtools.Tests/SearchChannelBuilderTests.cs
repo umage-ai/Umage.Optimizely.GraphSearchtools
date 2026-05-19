@@ -112,4 +112,33 @@ public class SearchChannelBuilderTests
 
         channel.SemanticWeight.Should().Be(1.0);
     }
+
+    [Fact]
+    public void LocalesFromCmsLanguages_SetsFlag_AndClearsStaticList()
+    {
+        var channel = new SearchChannelBuilder("p")
+            .DisplayName("X")
+            .Locales("en", "sv")          // explicit first…
+            .LocalesFromCmsLanguages()    // …then opt into CMS derivation
+            .Build();
+
+        channel.LocalesFromCmsLanguages.Should().BeTrue();
+        channel.Locales.Should().BeEmpty(
+            "the CMS-derivation flag wins — keeping the static list would mask which mode is active");
+    }
+
+    [Fact]
+    public void Locales_AfterLocalesFromCmsLanguages_RevertsToExplicit()
+    {
+        // Last call wins: a developer flips to CMS, then changes their mind
+        // and pins back to an explicit list.
+        var channel = new SearchChannelBuilder("p")
+            .DisplayName("X")
+            .LocalesFromCmsLanguages()
+            .Locales("en", "sv")
+            .Build();
+
+        channel.LocalesFromCmsLanguages.Should().BeFalse();
+        channel.Locales.Should().Equal("en", "sv");
+    }
 }

@@ -1,0 +1,21 @@
+@inject LocalizationService Loc
+@*
+    Aurora summary-grid header for the Pinned tool. Single source for both
+    the top-level Pinned page and the Channel-detail Pinned console tab —
+    keeps the column schema and sort keys in sync between the two surfaces.
+
+    The .col-collection marker on the collection <th> is a no-op on the
+    top-level page but is the hide-hook for the Channel-detail layout (see
+    .gst-prof-panel[data-panel="pinned"] .col-collection in CSS), where the
+    collection cell duplicates the channel's known collection key.
+*@
+<thead>
+    <tr>
+        <th data-sort="phrase">@Loc.GetString("/graphsearchtools/tools/pinned/col_phrase")</th>
+        <th data-sort="collection" class="col-collection">@Loc.GetString("/graphsearchtools/tools/pinned/col_site")</th>
+        <th data-sort="locale">@Loc.GetString("/graphsearchtools/ui/pinFlyout/localeLabel")</th>
+        <th data-sort="items">@Loc.GetString("/graphsearchtools/tools/pinned/col_items")</th>
+        <th data-sort="activity">@Loc.GetString("/graphsearchtools/tools/pinned/col_activity")</th>
+        <th aria-label="Actions"></th>
+    </tr>
+</thead>

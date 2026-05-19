@@ -1,0 +1,17 @@
+@*
+    Aurora filter-as-you-type input wrapped in .gst-search. The placeholder
+    text is the input's label — no separate label or icon. See
+    design-system.md → Component: Toolbar.
+
+    Usage:
+        @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+            new { Id = "gst-pin-search", Placeholder = Loc.GetString("…") })
+*@
+@model dynamic
+@{
+    string id = (string)(Model?.Id ?? "");
+    string placeholder = (string)(Model?.Placeholder ?? "");
+}
+<div class="gst-search">
+    <input type="text" id="@id" placeholder="@placeholder" />
+</div>

@@ -35,24 +35,147 @@ yes, add it here. If you're not sure, ask.
 
 ## Design tokens
 
-All shared visual values are CSS custom properties defined in
-`modules/_protected/GraphSearchtools/ClientResources/css/graphsearchtools.css`
-at the top of the file. **Always reference the token, never the literal.**
+Tokens are organized in **three tiers** following the
+[W3C Design Tokens](https://www.designtokens.org/) aliasing model: each
+tier references the one below, component CSS reads from the highest
+applicable tier, and themes swap by re-pointing aliases — not by
+touching component code.
 
-| Token group   | Examples |
-|---------------|----------|
-| Surfaces      | `--gst-bg`, `--gst-surface`, `--gst-surface-hover`, `--gst-surface-active` |
-| Borders       | `--gst-border`, `--gst-border-light` |
-| Text          | `--gst-text`, `--gst-text-secondary`, `--gst-text-muted` |
-| Brand         | `--gst-primary`, `--gst-primary-hover`, `--gst-primary-light`, `--gst-link` |
-| Semantic      | `--gst-success(-light)`, `--gst-warning(-light)`, `--gst-danger(-light)`, `--gst-info(-light)` |
-| Spacing       | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) |
-| Type          | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-xl` |
-| Radii         | `--gst-radius-sm` (3), `--gst-radius` (4), `--gst-radius-lg` (6) |
-| Shadows       | `--gst-shadow-sm` … `--gst-shadow-xl` |
+See [`design-system-methodologies.md`](./design-system-methodologies.md)
+for the broader rationale and how this model compares to alternatives.
 
-CSS prefix is `gst-`; JS namespace is `GST.*`; localized strings are
+> **Current state.** The three-tier model is live in
+> `graphsearchtools.css`: primitives sit at the top of `:root`,
+> semantic tokens use the `--gst-color-*` prefix and alias primitives,
+> and component CSS reads from the semantic tier. Use `--gst-color-*`
+> for any new colour reference; never reach into the primitive layer
+> from component CSS.
+
+### Tier 1 — primitive
+
+Raw palette values. Brand-agnostic, intent-free. Named by colour family
++ shade or by scale step.
+
+**Never reference a primitive from component CSS.** Primitives exist to
+be aliased by semantic tokens; reading them directly bypasses the
+abstraction that lets themes swap.
+
+```css
+--gst-blue-50:   #e6ecff;
+--gst-blue-600:  #0042ff;
+--gst-blue-700:  #0032c4;
+--gst-gray-0:    #ffffff;
+--gst-gray-900:  #1d1f24;
+--gst-green-600: #1b873f;
+```
+
+### Tier 2 — semantic
+
+Role / intent. This is the layer most code and conversation should
+operate at. Named by purpose, not appearance.
+
+Changing a brand colour means re-pointing one alias here — no component
+touched, no grep for hex codes.
+
+```css
+--gst-color-primary:        var(--gst-blue-600);
+--gst-color-primary-hover:  var(--gst-blue-700);
+--gst-color-text:           var(--gst-gray-900);
+--gst-color-success:        var(--gst-green-600);
+```
+
+### Tier 3 — component
+
+Per-component overrides. Only introduce one when a component needs to
+drift from the semantic default, or when "the button's background"
+deserves a stable name independent of "the primary brand colour."
+
+Most components can read semantic tokens directly and skip this tier.
+When in doubt, don't add a component token — promote later if a real
+divergence appears.
+
+```css
+--gst-button-bg:        var(--gst-color-primary);
+--gst-button-bg-hover:  var(--gst-color-primary-hover);
+--gst-input-border:     var(--gst-color-border);
+```
+
+### Token groups (today)
+
+Semantic tokens live at the `--gst-color-*` tier and alias the primitives
+above them. Non-colour tokens (spacing / type / radii / shadows) stay flat
+because they're already semantic-by-scale.
+
+| Group        | Examples |
+|--------------|----------|
+| Surfaces     | `--gst-color-bg`, `--gst-color-surface`, `--gst-color-surface-hover`, `--gst-color-surface-active` |
+| Borders      | `--gst-color-border`, `--gst-color-border-light` |
+| Text         | `--gst-color-text`, `--gst-color-text-secondary`, `--gst-color-text-muted` |
+| Brand        | `--gst-color-primary`, `--gst-color-primary-hover`, `--gst-color-primary-light`, `--gst-color-link`, `--gst-color-link-hover` |
+| Status       | `--gst-color-success(-light)`, `--gst-color-warning(-light)`, `--gst-color-danger(-light)`, `--gst-color-info(-light)` |
+| Spacing      | `--gst-space-xs` (4) / `-sm` (8) / `-md` (16) / `-lg` (24) / `-xl` (32) / `-2xl` (48). Row density: `--gst-row-padding-compact` / `-comfortable`. |
+| Type         | `--gst-font` (Inter), `--gst-text-xs` … `--gst-text-4xl` |
+| Radii        | `--gst-radius-sm` (3), `--gst-radius` (4), `--gst-radius-lg` (6) |
+| Shadows      | `--gst-shadow-sm` … `--gst-shadow-xl` |
+
+**Always reference the token, never the literal.** CSS prefix is
+`gst-`; JS namespace is `GST.*`; localized strings are
 `window.GST_STRINGS.{section}.{key}` (see `CLAUDE.md → Localization`).
+
+---
+
+## Iconography
+
+The addon uses **Lucide line icons at stroke 1.5, 24×24 viewBox** as its
+single visual language. Consumers scale by setting `width`/`height` on
+the rendered `<svg>`; the stroke scales with it, matching Lucide's
+convention.
+
+The registry is mirrored in two places — keep them in sync when adding
+or removing entries:
+
+- **JS**: `GST.icons` in `graphsearchtools.js`. Each entry is the full
+  `<svg>` string. Use `GST.icon(name, { size, class })` if you need to
+  inject `width`/`height` or a class attribute at the call site.
+- **Razor**: `Views/Shared/_Icon.cshtml`. Same names, same path data.
+  Usage: `@await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "pin", Size = 14 })`.
+  Optional `Class` parameter for extra CSS hooks.
+
+### Available icons
+
+| Name | Used for |
+|------|----------|
+| `search`        | Page-header logo, row-preview affordance, SERP magnifier. **Not** the filter-as-you-type inputs — those use only the placeholder text as their label. |
+| `pin`, `pinOff` | Pinned tool + "channel doesn't pin" empty state |
+| `synonym`, `synonymOff` | Synonyms tool + "channel doesn't synonymise" empty state |
+| `channels`      | Channels tile + menu |
+| `insights`      | Insights tile + channel-detail Insights tab |
+| `details`       | Channel-detail Settings tab |
+| `chevronRight`, `chevronDown`, `chevronLeft` | Navigator-grid row, expand/collapse, back-link |
+| `trash`         | Row delete (destructive action) |
+| `plus`          | Add-new toolbar primary |
+| `x`             | Dialog/flyout/drawer close |
+| `refresh`       | Manual reload affordance (Insights bar) |
+| `info`          | Generic info / empty-state glyph |
+| `copy`          | Copy-to-clipboard affordance on code blocks |
+
+### Rules
+
+- **Never inline a fresh `<svg>` for a concept that's in the registry.**
+  Reach for `_Icon.cshtml` (Razor) or `GST.icons.<name>` (JS) first.
+- **One icon per concept.** Don't ship a "filled" and "outline" variant
+  of the same idea, or a 16×16 alternate path with the same name —
+  scale via `width`/`height` instead. Off-state variants (`pinOff`,
+  `synonymOff`) are the exception: same shape with a diagonal slash.
+- **Decorative icons get `aria-hidden="true"`** (the helper adds it
+  automatically). Icon-only buttons need `aria-label` on the button.
+- **Stroke colour** is `currentColor` everywhere — the icon inherits
+  the surrounding text colour, which the active/hover/disabled states
+  drive through the parent's `color` property.
+- **Adding a new icon**: copy the Lucide path data (or compose from
+  same-weight primitives), add to both `GST.icons` and `_Icon.cshtml`,
+  add a row to the table above with the concept it represents. Don't
+  add speculative icons "in case we need them" — register on demand.
 
 ---
 
@@ -93,12 +216,10 @@ primary CTA. **Don't use** for a single button — just place it.
 
 ### Skeleton
 
-```html
+```cshtml
 <div class="gst-toolbar">
-    <div class="gst-search">
-        <svg class="gst-search__icon">…</svg>
-        <input type="text" id="gst-{tool}-search" placeholder="@Loc.GetString(...)" />
-    </div>
+    @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+        new { Id = "gst-{tool}-search", Placeholder = Loc.GetString(".../filterPlaceholder") })
 
     <label class="gst-filter">
         <span class="gst-filter__label">@Loc.GetString(...)</span>
@@ -115,6 +236,10 @@ primary CTA. **Don't use** for a single button — just place it.
 
 ### Rules
 
+- **`.gst-search` is filter-as-you-type and has no icon or external
+  label.** The placeholder text *is* the label ("Filter channels…",
+  "Filter rules…"). Don't add a magnifier glyph or a `<span>` label
+  next to it.
 - `.gst-filter` is label-above-value (Aurora style), not a bare `<select>`.
   The label is the column name, singularized: "Site", "Locale", "Status".
 - The default `<option>` reads "All <plural>" — e.g. "All sites".
@@ -129,6 +254,29 @@ Reference: `Views/Pinned/Index.cshtml` lines 17–45.
 
 ---
 
+## Two grid blueprints
+
+The addon has two list-of-things patterns that share a common substrate
+(`.gst-table`, the Toolbar, alert region, loading and empty states) and
+diverge only on the row's task:
+
+|                          | **Aurora summary grid**                | **Navigator grid**                |
+|--------------------------|----------------------------------------|-----------------------------------|
+| Row task                 | edit *in place* via flyout             | navigate to a detail surface       |
+| Row click                | `GST.flyout.open(key, …)`              | `window.location.href = …`         |
+| Last column              | `⋯` row menu                           | chevron `›`                        |
+| Row state class          | `.is-selectable`                       | `.is-selectable` + `.is-active`    |
+| Density token            | `--gst-row-padding-compact` (14×16)    | `--gst-row-padding-comfortable` (16) |
+| Per-row content          | tabular only                           | tabular + optional sparkline / status |
+| CSS class                | `.gst-table` + `.gst-{tool}-aurora-table` | `.gst-table.gst-nav-table`      |
+| Reference impl           | Pinned, Synonyms                       | Channels index                    |
+
+**Rule for new lists:** ask *do users edit these inline, or drill into them?*
+Pick the matching blueprint. If both — that's the trigger to discuss the
+shape before building. No third blueprint without an explicit proposal.
+
+---
+
 ## Component: Aurora summary grid
 
 A flat table where each row is a summary of an entity, the row is clickable
@@ -137,7 +285,8 @@ This is the canonical list-of-things surface across the addon.
 
 **Use when** showing 5+ editable entities of one kind. **Don't use** for
 read-only telemetry rows or activity logs — those use the same `.gst-table`
-class but no row-click / `⋯`.
+class but no row-click / `⋯`. For lists where the row navigates to a detail
+page instead of an inline edit, use **Navigator grid** below.
 
 ### Skeleton
 
@@ -172,6 +321,141 @@ class but no row-click / `⋯`.
   with a single CTA. Never a blank `<tbody>`.
 
 Reference: `Views/Pinned/Index.cshtml` lines 48–60 + `pinned-aurora.js`.
+
+---
+
+## Component: Navigator grid
+
+A flat table where each row is a *destination*, not an editor. Clicking a
+row navigates to a detail surface (`window.location.href`), the last column
+is a chevron rather than `⋯`, and rows are slightly taller than Aurora so
+the comfortable density reads as "browse-and-pick" rather than
+"summary-scan."
+
+**Use when** showing 5+ entities that have their own detail page. **Don't
+use** for short read-only lists, or for surfaces where the row should open
+a flyout (use **Aurora summary grid**). Currently the only consumer is the
+Channel index.
+
+### Skeleton
+
+```html
+<table class="gst-table gst-nav-table">
+    <colgroup>
+        <col style="width: 26%"/>
+        <col style="width: 22%"/>
+        <col style="width: 32%"/>
+        <col/>
+        <col style="width: 32px"/>
+    </colgroup>
+    <thead>
+        <tr>
+            <th>@Loc.GetString(".../col_name")</th>
+            <th>@Loc.GetString(".../col_scope")</th>
+            <th>@Loc.GetString(".../col_activity")</th>
+            <th>@Loc.GetString(".../col_last")</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="is-selectable">
+            <td>…</td><td>…</td><td>…</td><td>…</td>
+            <td><svg class="gst-prof-arrow">›</svg></td>
+        </tr>
+    </tbody>
+</table>
+```
+
+### Rules
+
+- Rows that navigate must add `class="is-selectable"` and a `click`
+  handler that calls `window.location.href = …`. The current item, when
+  rendered on a detail surface's "siblings" list, gets `.is-active` —
+  comfortable density + left border in `--gst-primary`.
+- Column widths belong in `<colgroup>`, not per-`<th>` inline styles. The
+  schema stays declarative even when the `<thead>` is server-rendered and
+  the `<tbody>` is JS-populated.
+- Last column is the chevron (32 px wide). Use `.gst-prof-arrow` so the
+  row-hover transition (`translateX(2px)`) animates correctly.
+- Toolbar / search / filter / loading / empty conventions: identical to
+  Aurora. The shared substrate is the point.
+
+Reference: `Views/Channels/Index.cshtml` + `channels.js` `renderTable()`.
+
+---
+
+## Component: Tabs
+
+A horizontal strip of buttons under a panel — clicking a button hides the
+current panel and reveals another. Single hair-rule baseline, brand-blue
+indicator on the active tab. The one tab affordance across the addon.
+
+**Use when** a surface has 2–4 sibling panels of the same kind (Pinned →
+Pins/Audit/Changelog, Synonyms → Rules/Unused, Insights → Top/Zero/LowCtr,
+Channel detail → Insights/Pinned/Synonyms/Settings). **Don't use** for
+in-place state toggles (window pickers, sort modes) — use **Segmented**
+below.
+
+### Skeleton
+
+```html
+<nav class="gst-tabs" role="tablist" aria-label="...">
+    <button type="button" class="gst-tabs__btn is-active"
+            role="tab" aria-selected="true" data-tab="pins"
+            aria-controls="gst-pinned-panel-pins">Pins</button>
+    <button type="button" class="gst-tabs__btn"
+            role="tab" aria-selected="false" data-tab="audit"
+            aria-controls="gst-pinned-panel-audit">Audit</button>
+</nav>
+```
+
+### Rules
+
+- The active tab carries `.is-active` and `aria-selected="true"`. Inactive
+  tabs lose the class and the attribute. No third state.
+- Tabs reveal a `<section class="gst-tabpanel" data-tab="...">` further
+  down. The panel-switching JS uses `data-tab` to pair button → panel.
+- Optional count chip rides inside the label: `<span class="gst-tab__count">23</span>`.
+  The chip recolours from neutral to primary when its tab is active.
+- The Channel-detail tools console uses the same `.gst-tabs__btn` button
+  with an extra container class (`.gst-prof-switcher`) for the gradient
+  backdrop, icon slot, and `.is-unwired` state. Don't replicate the
+  console pattern elsewhere — it's a one-off specialisation.
+
+Reference: `Views/Pinned/Index.cshtml` (page-level), `Views/Channels/Detail.cshtml`
+(tools console).
+
+---
+
+## Component: Segmented
+
+A connected row of buttons that swaps state on the surface without
+revealing a different panel. Visually a single rounded pill split into
+segments — the active segment fills with primary blue.
+
+**Use when** a single surface needs a small set of mutually-exclusive
+states (window pickers `[1h | 24h | 7d | 30d]`, sort modes, view density).
+**Don't use** to swap panels — use **Tabs** above.
+
+### Skeleton
+
+```html
+<div class="gst-segmented" role="group" aria-label="Time window">
+    <button type="button" class="gst-segmented__btn" data-window="1h">1h</button>
+    <button type="button" class="gst-segmented__btn is-active" data-window="24h">24h</button>
+    <button type="button" class="gst-segmented__btn" data-window="7d">7d</button>
+    <button type="button" class="gst-segmented__btn" data-window="30d">30d</button>
+</div>
+```
+
+### Rules
+
+- Exactly one segment carries `.is-active`. The active segment is
+  `cursor: default` and doesn't hover — re-clicking it is a no-op.
+- Don't mix segmented with tabs in the same toolbar; the redundant
+  visual language confuses the "what does this do" question.
+
+Reference: `Views/Channels/Detail.cshtml` Insights bar (window picker).
 
 ---
 

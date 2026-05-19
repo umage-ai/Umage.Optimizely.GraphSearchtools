@@ -30,9 +30,22 @@ public sealed class SearchChannel
 
     /// <summary>
     /// BCP-47 lower-case locale codes this channel applies to. Empty list
-    /// means "all locales".
+    /// means "all locales". When <see cref="LocalesFromCmsLanguages"/> is
+    /// <c>true</c> this list is ignored — locales are resolved per-request
+    /// from <c>ILanguageBranchRepository.ListEnabled()</c>, optionally
+    /// narrowed by <see cref="Sites"/>.
     /// </summary>
     public IReadOnlyList<string> Locales { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// When <c>true</c>, locales are resolved per-request from the CMS's
+    /// enabled language branches rather than the static <see cref="Locales"/>
+    /// list. Set via <c>SearchChannelBuilder.LocalesFromCmsLanguages()</c>.
+    /// Use this when content editors can enable new languages without a
+    /// developer redeploy — turning on a new language branch in CMS Admin
+    /// surfaces it in the channel without touching the registration.
+    /// </summary>
+    public bool LocalesFromCmsLanguages { get; init; }
 
     /// <summary>
     /// Field names searched by the production query. Used by the diagnostic
