@@ -625,7 +625,7 @@
             // Build UI
             body.innerHTML = `
                 <div class="gst-search gst-mb-md">
-                    <span class="gst-search__icon">${GST.icons.search}</span>
+                    ${GST.icon('search', { size: 16, class: 'gst-search__icon' })}
                     <input type="text" class="gst-picker-search" placeholder="${GST.s('components.picker_search', 'Search content by name...')}" style="width:100%" />
                 </div>
                 <div class="gst-picker-tree" style="max-height:400px;overflow-y:auto"></div>
@@ -790,7 +790,7 @@
 
             body.innerHTML = `
                 <div class="gst-search gst-mb-md">
-                    <span class="gst-search__icon">${GST.icons.search}</span>
+                    ${GST.icon('search', { size: 16, class: 'gst-search__icon' })}
                     <input type="text" class="gst-picker-search" placeholder="${GST.s('components.typepicker_search', 'Search content types...')}" style="width:100%" />
                 </div>
                 <div class="gst-picker-list" style="max-height:400px;overflow-y:auto"></div>

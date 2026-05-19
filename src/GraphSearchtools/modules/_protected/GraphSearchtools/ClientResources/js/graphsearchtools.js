@@ -45,7 +45,7 @@ const GST = {
      */
     showEmpty(el, message) {
         el.innerHTML = `<div class="gst-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            ${GST.icons.info}
             <p>${message}</p>
         </div>`;
     },
@@ -67,7 +67,7 @@ const GST = {
                 <div class="gst-dialog__header">
                     <span class="gst-dialog__title">${title}</span>
                     <button class="gst-dialog__close" title="Close">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        ${GST.icons.x}
                     </button>
                 </div>
                 <div class="gst-dialog__body${flush}"></div>
@@ -244,20 +244,63 @@ const GST = {
         }, 1000);
     },
 
-    /** SVG icon helpers */
-    icons: {
-        search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
-        edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-        link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
-        list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
-        download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-        tree: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3z"/><path d="M14 17.5h7M14 14v7"/></svg>',
-        props: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/></svg>',
-        chevronRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
-        chevronDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>',
-        pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.5-2.5V8.5h.5a2 2 0 0 0 0-4h-13a2 2 0 0 0 0 4h.5V14.5L5 17z"/></svg>',
-        synonym: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+    /**
+     * SVG icon registry — Lucide line icons at stroke 1.5, 24×24 viewBox.
+     * This is the single source for JS-rendered icons; the matching
+     * Razor partial lives at Views/Shared/_Icon.cshtml. If you add an
+     * entry here, add the same name + path data there too. See
+     * design-system.md → Iconography for the visual rules.
+     *
+     * Consumers scale by setting width/height on the rendered <svg>
+     * (the stroke scales with it, which is the Lucide convention).
+     */
+    /**
+     * Convenience: fetch a registry icon with width/height + optional class
+     * injected into the <svg>. Equivalent to the Razor `_Icon.cshtml`
+     * partial — use this when the registry icon needs a size attribute
+     * (e.g. inside an inline-flex span where the parent doesn't size it
+     * via CSS).
+     *
+     *   GST.icon('search', { size: 16 })
+     *   GST.icon('pin', { size: 14, class: 'gst-foo-icon' })
+     */
+    icon: function (name, opts) {
+        opts = opts || {};
+        var svg = (window.GST && GST.icons) ? GST.icons[name] : null;
+        if (!svg) return '';
+        var attrs = '';
+        if (typeof opts.size === 'number') attrs += 'width="' + opts.size + '" height="' + opts.size + '" ';
+        if (opts.class) attrs += 'class="' + opts.class + '" ';
+        if (attrs) svg = svg.replace('<svg ', '<svg ' + attrs);
+        return svg;
     },
+
+    icons: (function () {
+        function svg(body) {
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+                + 'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" '
+                + 'aria-hidden="true">' + body + '</svg>';
+        }
+        return {
+            search:       svg('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
+            chevronRight: svg('<polyline points="9 18 15 12 9 6"/>'),
+            chevronDown:  svg('<polyline points="6 9 12 15 18 9"/>'),
+            chevronLeft:  svg('<polyline points="15 18 9 12 15 6"/>'),
+            pin:          svg('<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.5-2.5V8.5h.5a2 2 0 0 0 0-4h-13a2 2 0 0 0 0 4h.5V14.5L5 17z"/>'),
+            pinOff:       svg('<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.5-2.5V8.5h.5a2 2 0 0 0 0-4h-13a2 2 0 0 0 0 4h.5V14.5L5 17z"/><line x1="4" y1="4" x2="20" y2="20"/>'),
+            synonym:      svg('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>'),
+            synonymOff:   svg('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/><line x1="2" y1="2" x2="22" y2="22"/>'),
+            channels:     svg('<rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="11" height="6" rx="1"/><path d="M17 17h4"/>'),
+            insights:     svg('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'),
+            details:      svg('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/>'),
+            trash:        svg('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
+            plus:         svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'),
+            x:            svg('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
+            refresh:      svg('<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>'),
+            info:         svg('<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'),
+            copy:         svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')
+        };
+    })(),
 
     /**
      * Safe accessor for window.GST_STRINGS.
@@ -333,12 +376,7 @@ const GST = {
         btn.className = 'gst-copybtn' + (opts.className ? ' ' + opts.className : '');
         btn.title = label;
         btn.setAttribute('aria-label', label);
-        btn.innerHTML =
-            '<svg class="gst-copybtn__icon" viewBox="0 0 14 14" width="12" height="12" aria-hidden="true">'
-              + '<rect x="3.5" y="3.5" width="7" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/>'
-              + '<path d="M5.5 1.5h5a1 1 0 0 1 1 1v6" fill="none" stroke="currentColor" stroke-width="1.2"/>'
-            + '</svg>'
-            + '<span class="gst-copybtn__label">' + GST.escHtml(label) + '</span>';
+        btn.innerHTML = GST.icons.copy + '<span class="gst-copybtn__label">' + GST.escHtml(label) + '</span>';
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             var text = typeof opts.getValue === 'function'
@@ -376,7 +414,7 @@ const GST = {
                 '<div class="gst-help-drawer__header">' +
                     '<span class="gst-help-drawer__title">' + GST.escHtml(title) + '</span>' +
                     '<button class="gst-help-drawer__close" aria-label="Close">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+                        GST.icons.x +
                     '</button>' +
                 '</div>' +
                 '<div class="gst-help-drawer__body">' + GST.escHtml(body) + '</div>' +
