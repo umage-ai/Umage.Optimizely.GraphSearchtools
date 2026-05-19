@@ -274,16 +274,8 @@
                    source of truth and pinned-aurora.js mirrors it into
                    the grid's filter state. *@
                 <div class="gst-toolbar">
-                    <div class="gst-search">
-                        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                             stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                        <input type="text" id="gst-pin-search"
-                               placeholder="@Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder")" />
-                    </div>
+                    @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+                        new { Id = "gst-pin-search", Placeholder = Loc.GetString("/graphsearchtools/tools/pinned/filter_placeholder") })
                     <div class="gst-toolbar__spacer"></div>
                     <button type="button" id="gst-pin-create" class="gst-btn gst-btn--primary">
                         + @Loc.GetString("/graphsearchtools/tools/pinned/add")
@@ -354,16 +346,8 @@
                    "Global" pool, since both apply when previewing that
                    locale. *@
                 <div class="gst-toolbar">
-                    <div class="gst-search">
-                        <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                             stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                        <input type="text" id="gst-syn-search"
-                               placeholder="@Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder")" />
-                    </div>
+                    @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+                        new { Id = "gst-syn-search", Placeholder = Loc.GetString("/graphsearchtools/ui/synonyms/filter_placeholder") })
                     <div class="gst-toolbar__spacer"></div>
                     <button type="button" id="gst-syn-create" class="gst-btn gst-btn--primary">
                         + @Loc.GetString("/graphsearchtools/channels/detail/synonyms/addRow")

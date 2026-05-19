@@ -42,16 +42,8 @@
     </div>
 
     <div class="gst-toolbar gst-sl-toolbar">
-        <div class="gst-search">
-            <svg class="gst-search__icon" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                 stroke-linejoin="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input type="text" id="gst-insights-phrase-filter"
-                   placeholder="@T("phrase_filter_placeholder")" />
-        </div>
+        @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+            new { Id = "gst-insights-phrase-filter", Placeholder = T("phrase_filter_placeholder") })
         <label class="gst-filter">
             <span class="gst-filter__label">@T("col_channel")</span>
             <select class="gst-filter__select" id="gst-insights-channel-filter">
