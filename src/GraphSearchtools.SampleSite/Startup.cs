@@ -53,13 +53,13 @@ public class Startup
             })
             // Single source of truth: AlloySearchService.SampleHitsQueryDocument
             // is the same string the runtime executes (modulo dynamic facet
-            // / phrase substitution), so the admin Profile detail view always
+            // / phrase substitution), so the admin Channel detail view always
             // reflects what the storefront actually sends to Optimizely Graph.
-            .AddSearchProfile("alloy-search", p => p
+            .AddSearchChannel("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
                 // Stock Alloy ships with English + Swedish content branches; the
-                // preview picker on the Profile detail surfaces both so admins
+                // preview picker on the Channel detail surfaces both so admins
                 // can verify pinned/synonym wiring per locale.
                 .Locales("en", "sv")
                 .SearchedFields("Name", "MetaDescription", "MainBody")

@@ -2,8 +2,8 @@
  * Pinned → Collections tab.
  *
  * Read-only browser over every Graph pinned collection, decorated with
- * which registered profile (× locale) resolves to each collection via
- * SearchProfile.PinnedKeyForLocale.
+ * which registered channel (× locale) resolves to each collection via
+ * SearchChannel.PinnedKeyForLocale.
  *
  * Tab switcher is page-level and mounts both panels' state lazily:
  * pinned-aurora.js owns the Pins panel; this module owns Collections.
@@ -14,7 +14,7 @@
     const state = {
         initialized: false,
         collections: [],          // raw PinnedCollectionResult rows
-        profileMatches: {},       // { collectionKey: [{profileKey, locale}, ...] }
+        channelMatches: {},       // { collectionKey: [{channelKey, locale}, ...] }
         sort: { key: 'key', dir: 'asc' },
         filters: { q: '' },
         // Collection currently rendered in the detail flyout — the delete
@@ -59,7 +59,7 @@
         if (hash === 'collections') activate('collections');
     }
 
-    // ── Init: load collections + profile matches in parallel ──────────
+    // ── Init: load collections + channel matches in parallel ──────────
     function init() {
         if (state.initialized) return;
         state.initialized = true;
@@ -95,10 +95,10 @@
 
         Promise.all([
             GST.fetchJson(API + '/Collections').catch(function () { return []; }),
-            GST.fetchJson(API + '/CollectionProfiles').catch(function () { return {}; })
+            GST.fetchJson(API + '/CollectionChannels').catch(function () { return {}; })
         ]).then(function (results) {
             state.collections = results[0] || [];
-            state.profileMatches = results[1] || {};
+            state.channelMatches = results[1] || {};
             // For each collection, fetch a cheap item-count probe. Pinned API
             // doesn't expose count directly, so we walk AllItems — ok for now,
             // the prototype dataset is small.
@@ -147,7 +147,7 @@
             const k = state.sort.key, dir = state.sort.dir === 'asc' ? 1 : -1;
             switch (k) {
                 case 'items':   return (a.__itemCount - b.__itemCount) * dir;
-                case 'profiles':
+                case 'channels':
                     return (matchCount(a.key) - matchCount(b.key)) * dir;
                 case 'updated':
                     return ((a.updatedAt || '') > (b.updatedAt || '') ? 1 : -1) * dir;
@@ -162,16 +162,16 @@
         }
 
         tbody.innerHTML = rows.map(function (c) {
-            const matches = state.profileMatches[c.key] || [];
-            const profileCell = matches.length === 0
+            const matches = state.channelMatches[c.key] || [];
+            const channelCell = matches.length === 0
                 ? '<span class="gst-muted">—</span>'
                 : matches
-                    .map(function (m) { return GST.escHtml(m.profileKey); })
+                    .map(function (m) { return GST.escHtml(m.channelKey); })
                     .filter(uniq).join(', ');
             return '<tr class="is-selectable" data-col-id="' + GST.escHtml(c.id) + '">' +
                 '<td><a href="#" class="gst-table__link" data-row-link>' + GST.escHtml(c.key || c.id) + '</a></td>' +
                 '<td>' + c.__itemCount + '</td>' +
-                '<td>' + profileCell + '</td>' +
+                '<td>' + channelCell + '</td>' +
                 '<td>' + GST.escHtml(fmtDate(c.updatedAt)) + '</td>' +
                 '<td class="gst-table__actions"></td>' +
                 '</tr>';
@@ -185,12 +185,12 @@
     function uniq(value, idx, arr) { return arr.indexOf(value) === idx; }
 
     function matchCount(collectionKey) {
-        const list = state.profileMatches[collectionKey] || [];
-        // Distinct profiles, not (profile,locale) pairs — sort by "how many
-        // profiles are competing for this collection," which is the question
+        const list = state.channelMatches[collectionKey] || [];
+        // Distinct channels, not (channel,locale) pairs — sort by "how many
+        // channels are competing for this collection," which is the question
         // an editor scanning the grid actually has.
         return list.filter(function (m, i, all) {
-            return all.findIndex(function (x) { return x.profileKey === m.profileKey; }) === i;
+            return all.findIndex(function (x) { return x.channelKey === m.channelKey; }) === i;
         }).length;
     }
 
@@ -214,23 +214,23 @@
         document.getElementById('gst-colfly-id').textContent = col.id || '—';
         document.getElementById('gst-colfly-items').textContent = String(col.__itemCount || 0);
 
-        const matchesEl = document.getElementById('gst-colfly-profiles');
-        const matches = state.profileMatches[col.key] || [];
+        const matchesEl = document.getElementById('gst-colfly-channels');
+        const matches = state.channelMatches[col.key] || [];
         if (matches.length === 0) {
-            matchesEl.innerHTML = '<p class="gst-muted">No registered profile resolves to this collection.</p>';
+            matchesEl.innerHTML = '<p class="gst-muted">No registered channel resolves to this collection.</p>';
         } else {
-            // Group by profileKey → sorted locales.
-            const byProfile = {};
+            // Group by channelKey → sorted locales.
+            const byChannel = {};
             matches.forEach(function (m) {
-                (byProfile[m.profileKey] = byProfile[m.profileKey] || []).push(m.locale);
+                (byChannel[m.channelKey] = byChannel[m.channelKey] || []).push(m.locale);
             });
-            const items = Object.keys(byProfile).sort().map(function (pk) {
-                const locales = byProfile[pk].slice().sort();
+            const items = Object.keys(byChannel).sort().map(function (pk) {
+                const locales = byChannel[pk].slice().sort();
                 const localesHtml = locales.map(function (l) {
                     return '<code class="gst-locale-chip">' + GST.escHtml(l) + '</code>';
                 }).join(' ');
                 return '<li class="gst-colfly-profrow">' +
-                    '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/profiles?key=' + encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
+                    '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/channels?key=' + encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
                     ' <span class="gst-muted">via</span> ' + localesHtml +
                 '</li>';
             }).join('');
@@ -294,16 +294,16 @@
     // Delete the collection currently shown in the detail flyout. Destroys
     // both the collection and every pin inside it on the Graph side, so we
     // confirm with the live item count and a stronger warning when any
-    // registered profile still resolves here — those profiles would lose
+    // registered channel still resolves here — those channels would lose
     // their pinned slot until a replacement collection is created with the
     // same key.
     function onDeleteCollection() {
         var col = state.flyoutCollection;
         if (!col || !col.id) return;
         var itemCount = col.__itemCount || 0;
-        var matches = state.profileMatches[col.key] || [];
-        var profileCount = matches
-            .map(function (m) { return m.profileKey; })
+        var matches = state.channelMatches[col.key] || [];
+        var channelCount = matches
+            .map(function (m) { return m.channelKey; })
             .filter(function (v, i, all) { return all.indexOf(v) === i; })
             .length;
 
@@ -311,8 +311,8 @@
         if (itemCount > 0) {
             msg += '\n\nThis will also delete ' + itemCount + ' pin' + (itemCount === 1 ? '' : 's') + ' inside it.';
         }
-        if (profileCount > 0) {
-            msg += '\n\n' + profileCount + ' profile' + (profileCount === 1 ? '' : 's')
+        if (channelCount > 0) {
+            msg += '\n\n' + channelCount + ' channel' + (channelCount === 1 ? '' : 's')
                 + ' resolve to this collection and will lose their pinned slot.';
         }
         msg += '\n\nThis cannot be undone.';

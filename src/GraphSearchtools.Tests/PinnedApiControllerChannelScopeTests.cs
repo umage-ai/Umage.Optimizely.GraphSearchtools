@@ -18,24 +18,24 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 
 /// <summary>
-/// Phase 2.5 §4.1 — guards the profile-scoping behaviour on
-/// <see cref="PinnedApiController"/>: writes require a <c>profileKey</c>;
+/// Phase 2.5 §4.1 — guards the channel-scoping behaviour on
+/// <see cref="PinnedApiController"/>: writes require a <c>channelKey</c>;
 /// the audit log is appended on every successful write; and the legacy
-/// <c>/pinned</c> route 301-redirects to the Profiles index.
+/// <c>/pinned</c> route 301-redirects to the Channels index.
 /// </summary>
-public class PinnedApiControllerProfileScopeTests
+public class PinnedApiControllerChannelScopeTests
 {
     [Fact]
-    public async Task Write_WithoutProfileKey_Returns400()
+    public async Task Write_WithoutChannelKey_Returns400()
     {
-        var registry = new StaticRegistry(BuildProfile("site-search"));
+        var registry = new StaticRegistry(BuildChannel("site-search"));
 
         var (controller, _, _) = NewController(registry);
 
         var result = await controller.CreateItem(
             collectionId: "col-1",
             payload: new PinnedItemPayload { Phrases = "warranty", TargetKey = Guid.NewGuid().ToString() },
-            profileKey: null,
+            channelKey: null,
             site: null,
             locale: "en",
             cancellationToken: CancellationToken.None);
@@ -49,7 +49,7 @@ public class PinnedApiControllerProfileScopeTests
     [Fact]
     public async Task Write_AppendsAuditEntry()
     {
-        var registry = new StaticRegistry(BuildProfile("site-search"));
+        var registry = new StaticRegistry(BuildChannel("site-search"));
         var (controller, graphClient, editLog) = NewController(registry);
 
         var created = new PinnedItemResult { Id = "item-1", Phrases = "warranty", TargetKey = "guid-1" };
@@ -60,7 +60,7 @@ public class PinnedApiControllerProfileScopeTests
         await controller.CreateItem(
             collectionId: "col-1",
             payload: new PinnedItemPayload { Phrases = "warranty", TargetKey = "guid-1" },
-            profileKey: "site-search",
+            channelKey: "site-search",
             site: "corporate",
             locale: "en",
             cancellationToken: CancellationToken.None);
@@ -68,17 +68,17 @@ public class PinnedApiControllerProfileScopeTests
         // The audit fake captures every Append call so we can assert on shape.
         editLog.AppendedEntries.Should().ContainSingle();
         var entry = editLog.AppendedEntries[0];
-        entry.ProfileKey.Should().Be("site-search");
+        entry.ChannelKey.Should().Be("site-search");
         entry.Site.Should().Be("corporate");
         entry.Locale.Should().Be("en");
-        entry.Kind.Should().Be("Pinned");
+        entry.Kind.Should().Be("PinnedItem");
         entry.Action.Should().Be("Created");
         entry.Subject.Should().Be("warranty");
         entry.At.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
-    public void LegacyPinnedRoute_Returns301_To_ProfilesIndex()
+    public void LegacyPinnedRoute_Returns301_To_ChannelsIndex()
     {
         var options = Options.Create(new GraphSearchtoolsOptions
         {
@@ -104,15 +104,15 @@ public class PinnedApiControllerProfileScopeTests
         // RedirectPermanent → IActionResult of type RedirectResult with Permanent = true.
         var redirect = result.Should().BeOfType<RedirectResult>().Subject;
         redirect.Permanent.Should().BeTrue();
-        redirect.Url.Should().Be("/EPiServer/cms/graphsearchtools/profiles");
+        redirect.Url.Should().Be("/EPiServer/cms/graphsearchtools/channels");
     }
 
     // ──────────────────────────────────────────────────────────────────
     //   Helpers
     // ──────────────────────────────────────────────────────────────────
 
-    private static (PinnedApiController controller, Mock<IGraphAdminClient> graphClient, FakeEditService editLog)
-        NewController(ISearchProfileRegistry registry)
+    private static (PinnedApiController controller, Mock<IGraphAdminClient> graphClient, FakeAuditService editLog)
+        NewController(ISearchChannelRegistry registry)
     {
         var options = Options.Create(new GraphSearchtoolsOptions
         {
@@ -130,7 +130,7 @@ public class PinnedApiControllerProfileScopeTests
         // itself isn't asserted on, only the BadRequest result type.
         var loc = new Mock<LocalizationService>(MockBehavior.Loose, new object[0]).Object;
 
-        var editLog = new FakeEditService();
+        var editLog = new FakeAuditService();
 
         var controller = new PinnedApiController(
             pinnedService,
@@ -152,7 +152,7 @@ public class PinnedApiControllerProfileScopeTests
         return (controller, graphClient, editLog);
     }
 
-    private static SearchProfile BuildProfile(string key) => new()
+    private static SearchChannel BuildChannel(string key) => new()
     {
         Key = key,
         DisplayName = LocalizedString.Literal(key),
@@ -161,24 +161,24 @@ public class PinnedApiControllerProfileScopeTests
         PinnedKeyForLocale = locale => $"{key}-{locale}"
     };
 
-    private sealed class StaticRegistry : ISearchProfileRegistry
+    private sealed class StaticRegistry : ISearchChannelRegistry
     {
-        public StaticRegistry(params SearchProfile[] profiles) { All = profiles; }
-        public IReadOnlyList<SearchProfile> All { get; }
-        public SearchProfile? Get(string key) => All.FirstOrDefault(p => p.Key == key);
-        public IEnumerable<SearchProfile> ForSite(string siteName) => All;
+        public StaticRegistry(params SearchChannel[] channels) { All = channels; }
+        public IReadOnlyList<SearchChannel> All { get; }
+        public SearchChannel? Get(string key) => All.FirstOrDefault(p => p.Key == key);
+        public IEnumerable<SearchChannel> ForSite(string siteName) => All;
     }
 
     /// <summary>
     /// Captures Append calls so tests can assert on the audit row written by the
     /// controller. Inherits from the real service so production code (which
-    /// types it as <see cref="SearchProfileEditService"/>) accepts it.
+    /// types it as <see cref="AuditLogService"/>) accepts it.
     /// </summary>
-    private sealed class FakeEditService : SearchProfileEditService
+    private sealed class FakeAuditService : AuditLogService
     {
-        public List<SearchProfileEdit> AppendedEntries { get; } = new();
+        public List<AuditLogEntry> AppendedEntries { get; } = new();
 
-        public override void Append(SearchProfileEdit entry)
+        public override void Append(AuditLogEntry entry)
         {
             AppendedEntries.Add(entry);
             // Don't call base — the real DDS path requires an Optimizely

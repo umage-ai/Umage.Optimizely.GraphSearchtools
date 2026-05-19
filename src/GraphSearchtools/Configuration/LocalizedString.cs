@@ -4,9 +4,9 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 
 /// <summary>
 /// A display string that can be either a literal piece of text or a key into
-/// the Optimizely localization system. Profiles use this for
-/// <see cref="SearchProfile.DisplayName"/> and <see cref="SearchProfile.Description"/>
-/// so developers can register profiles with hard-coded labels in small solutions
+/// the Optimizely localization system. Channels use this for
+/// <see cref="SearchChannel.DisplayName"/> and <see cref="SearchChannel.Description"/>
+/// so developers can register channels with hard-coded labels in small solutions
 /// or with localized labels in multi-language ones — without having to choose at
 /// type-definition time.
 /// </summary>
@@ -36,7 +36,7 @@ public sealed class LocalizedString
     /// <summary>Constructs a literal string that will not be looked up.</summary>
     public static LocalizedString Literal(string value) => new(value ?? string.Empty, isKey: false);
 
-    /// <summary>Constructs a localization-key reference, e.g. <c>/graphsearchtools/profiles/site/name</c>.</summary>
+    /// <summary>Constructs a localization-key reference, e.g. <c>/graphsearchtools/channels/site/name</c>.</summary>
     public static LocalizedString Key(string key) => new(key ?? string.Empty, isKey: true);
 
     /// <summary>
@@ -66,7 +66,7 @@ public sealed class LocalizedString
     /// Implicit conversion from <see cref="string"/>. Strings that look like
     /// localization paths (start with <c>/</c>) are treated as keys; all others
     /// are treated as literals. This keeps the fluent builder concise:
-    /// <c>.DisplayName("/graphsearchtools/profiles/site/name")</c> Just Works.
+    /// <c>.DisplayName("/graphsearchtools/channels/site/name")</c> Just Works.
     /// </summary>
     public static implicit operator LocalizedString(string value)
     {

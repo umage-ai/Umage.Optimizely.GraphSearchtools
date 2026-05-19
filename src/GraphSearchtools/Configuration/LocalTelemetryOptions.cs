@@ -75,7 +75,7 @@ public class LocalTelemetryOptions
     public int GlobalEventsPerSecond { get; set; } = 2_000;
 
     /// <summary>
-    /// Maximum number of distinct (phrase, profile, locale) keys held in the
+    /// Maximum number of distinct (phrase, channel, locale) keys held in the
     /// bucket flusher's open-minute dictionary. Above this, new keys evict
     /// the smallest existing entry to keep memory bounded under adversarial
     /// cardinality. Per design §6.2 the zero-result sub-dictionary is exempt.

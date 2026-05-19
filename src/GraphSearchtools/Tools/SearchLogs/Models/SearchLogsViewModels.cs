@@ -26,8 +26,8 @@ public sealed record SearchLogPhraseRow
     [JsonPropertyName("locale")]
     public string Locale { get; init; } = string.Empty;
 
-    [JsonPropertyName("profileKey")]
-    public string ProfileKey { get; init; } = string.Empty;
+    [JsonPropertyName("channelKey")]
+    public string ChannelKey { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -56,8 +56,8 @@ public sealed record SearchLogRawRow
     [JsonPropertyName("locale")]
     public string Locale { get; init; } = string.Empty;
 
-    [JsonPropertyName("profileKey")]
-    public string ProfileKey { get; init; } = string.Empty;
+    [JsonPropertyName("channelKey")]
+    public string ChannelKey { get; init; } = string.Empty;
 
     /// <summary>Set on search events; null on click events.</summary>
     [JsonPropertyName("resultCount")]

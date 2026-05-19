@@ -22,6 +22,10 @@
             role="tab" aria-selected="false" data-tab="collections" id="gst-pin-tab-collections">
         Collections
     </button>
+    <button type="button" class="gst-tabs__btn"
+            role="tab" aria-selected="false" data-tab="changelog" id="gst-pin-tab-changelog">
+        @Loc.GetString("/graphsearchtools/tools/changelog/title")
+    </button>
 </nav>
 
 @* ─────────────── Pins tab (existing Aurora grid) ─────────────── *@
@@ -96,7 +100,7 @@
             <tr>
                 <th data-sort="key">Key</th>
                 <th data-sort="items">Items</th>
-                <th data-sort="profiles">Matching profiles</th>
+                <th data-sort="channels">Matching channels</th>
                 <th data-sort="updated">Last updated</th>
                 <th aria-label="Actions"></th>
             </tr>
@@ -119,7 +123,7 @@
                 <input id="gst-colcreate-key" name="key" type="text" autocomplete="off" />
                 <span class="gst-field__hint">
                     The Graph collection key (e.g. <code>alloy-en</code>). Typically matches a
-                    profile's <code>UsesPinnedKey</code> formula output.
+                    channel's <code>UsesPinnedKey</code> formula output.
                 </span>
             </div>
             <div class="gst-field">
@@ -160,12 +164,12 @@
                 <div id="gst-colfly-items" class="gst-field__readonly"></div>
             </div>
             <div class="gst-field">
-                <label class="gst-field__label">Matching profiles</label>
-                <div id="gst-colfly-profiles" class="gst-colfly-profiles">
-                    <p class="gst-muted" data-empty>No registered profile resolves to this collection.</p>
+                <label class="gst-field__label">Matching channels</label>
+                <div id="gst-colfly-channels" class="gst-colfly-channels">
+                    <p class="gst-muted" data-empty>No registered channel resolves to this collection.</p>
                 </div>
                 <span class="gst-field__hint">
-                    Profiles whose <code>UsesPinnedKey</code> formula resolves to this collection key
+                    Channels whose <code>UsesPinnedKey</code> formula resolves to this collection key
                     for one of their declared locales.
                 </span>
             </div>
@@ -173,7 +177,7 @@
         <footer class="gst-flyout__footer">
             @* Delete is destructive — left-aligned in danger styling. Drops
                the collection AND every pin inside it; the JS confirms with
-               the live item count + a warning when any profile still
+               the live item count + a warning when any channel still
                resolves here. *@
             <button type="button" class="gst-btn gst-btn--danger" id="gst-colfly-delete">Delete collection</button>
             <div class="gst-flyout__footer__spacer"></div>
@@ -182,7 +186,45 @@
     </aside>
 </section>
 
+@* ─────────────── Changelog tab ─────────────── *@
+<section class="gst-tabpanel" data-tab="changelog" role="tabpanel"
+         aria-labelledby="gst-pin-tab-changelog" hidden>
+    <div class="gst-toolbar">
+        <span class="gst-muted">@Loc.GetString("/graphsearchtools/tools/changelog/pinned_intro")</span>
+        <div class="gst-toolbar__spacer"></div>
+        <button type="button" id="gst-changelog-pin-refresh" class="gst-btn">@Loc.GetString("/graphsearchtools/ui/shared/refresh")</button>
+    </div>
+
+    <table class="gst-table gst-changelog-table">
+        <thead>
+            <tr>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_when")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_who")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_kind")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_action")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_subject")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_channel")</th>
+                <th>@Loc.GetString("/graphsearchtools/tools/changelog/col_locale")</th>
+            </tr>
+        </thead>
+        <tbody id="gst-changelog-pin-rows"></tbody>
+    </table>
+</section>
+
 @section Scripts {
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-aurora.js")"></script>
     <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/pinned-collections.js")"></script>
+    <script src="@Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "ClientResources/js/changelog.js")"></script>
+    <script>
+        (function () {
+            if (!window.GST || !window.GST.changelog || typeof window.GST.changelog.mount !== 'function') return;
+            window.GST.changelog.mount({
+                rowsHost: '#gst-changelog-pin-rows',
+                refreshBtn: '#gst-changelog-pin-refresh',
+                tabBtn: '#gst-pin-tab-changelog',
+                kinds: 'PinnedItem,Collection',
+                columns: ['when', 'who', 'kind', 'action', 'subject', 'channel', 'locale']
+            });
+        })();
+    </script>
 }

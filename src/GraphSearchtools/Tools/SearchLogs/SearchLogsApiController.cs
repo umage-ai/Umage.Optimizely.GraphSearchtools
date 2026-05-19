@@ -9,7 +9,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 /// <summary>
 /// Internal read API over the search-log telemetry. Mounted under
 /// <c>{basePath}/SearchLogsApi/{action}</c> by the convention route. Drives
-/// the per-profile Insights tab on Profile Detail; the standalone Search Logs
+/// the per-channel Insights tab on Channel Detail; the standalone Search Logs
 /// page that previously consumed every endpoint here has been retired.
 /// All four endpoints are read-only and idempotent; writes go through the
 /// public telemetry beacon (<c>POST /api/telemetry/searchlog</c>), which this
@@ -45,12 +45,12 @@ public class SearchLogsApiController : Controller
     /// by hit count, most-frequent first.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Top([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Top([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? channelKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.TopPhrasesAsync(since, take, profileKey, locale, until, cancellationToken));
+            return Ok(await _service.TopPhrasesAsync(since, take, channelKey, locale, until, cancellationToken));
         }
         catch (Exception ex)
         {
@@ -63,12 +63,12 @@ public class SearchLogsApiController : Controller
     /// whose sessions returned zero hits. The synonym-mining list.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> ZeroResults([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ZeroResults([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? channelKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.ZeroResultPhrasesAsync(since, take, profileKey, locale, until, cancellationToken));
+            return Ok(await _service.ZeroResultPhrasesAsync(since, take, channelKey, locale, until, cancellationToken));
         }
         catch (Exception ex)
         {
@@ -82,12 +82,12 @@ public class SearchLogsApiController : Controller
     /// keeps the surface actionable.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> LowCtr([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? profileKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> LowCtr([FromQuery] DateTime? since, [FromQuery] int? take, [FromQuery] string? channelKey = null, [FromQuery] string? locale = null, [FromQuery] DateTime? until = null, CancellationToken cancellationToken = default)
     {
         if (!HasAccess()) return Forbid();
         try
         {
-            return Ok(await _service.LowCtrPhrasesAsync(since, take, profileKey, locale, until, cancellationToken));
+            return Ok(await _service.LowCtrPhrasesAsync(since, take, channelKey, locale, until, cancellationToken));
         }
         catch (Exception ex)
         {

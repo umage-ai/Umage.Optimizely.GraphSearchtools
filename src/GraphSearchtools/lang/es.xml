@@ -16,7 +16,7 @@
               <Overview>Access the Graph Search Tools overview dashboard.</Overview>
               <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
               <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
-              <Profiles>Manage Search Profiles — pinned results, synonyms, ranking per registered search surface.</Profiles>
+              <Channels>Manage Search Channels — pinned results, synonyms, ranking per registered search surface.</Channels>
               <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
             </permissions>
           </GraphSearchtools>
@@ -27,7 +27,7 @@
       <menu>
         <title>Graph Search Tools</title>
         <overview>Overview</overview>
-        <profiles>Search profiles</profiles>
+        <channels>Search channels</channels>
         <insights>Insights</insights>
         <pinned>Pinned</pinned>
         <synonyms>Synonyms</synonyms>
@@ -39,10 +39,10 @@
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
         </overview>
-        <profiles>
-          <title>Search profiles</title>
-          <description>Tune each registered search surface — pins, synonyms, and insights scoped to one profile.</description>
-        </profiles>
+        <channels>
+          <title>Search channels</title>
+          <description>Tune each registered search surface — pins, synonyms, and insights scoped to one channel.</description>
+        </channels>
         <pinned>
           <title>Pinned</title>
           <description>Pin specific content to the top of the results for chosen phrases, per collection and locale.</description>
@@ -98,7 +98,7 @@
         </savedqueries>
         <insights>
           <title>Insights</title>
-          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every profile.</description>
+          <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every channel.</description>
           <window_7d>Last 7d</window_7d>
           <window_30d>Last 30d</window_30d>
           <top_title>Top phrases</top_title>
@@ -114,12 +114,12 @@
           <kpi_days_ago>%1d ago</kpi_days_ago>
           <kpi_tooltip>%1: %2</kpi_tooltip>
           <activity_title>Recent activity</activity_title>
-          <activity_subtitle>Latest edits across every profile.</activity_subtitle>
+          <activity_subtitle>Latest edits across every channel.</activity_subtitle>
           <col_phrase>Phrase</col_phrase>
           <col_count>Count</col_count>
           <col_zero>Zero results</col_zero>
           <col_locale>Locale</col_locale>
-          <col_profile>Profile</col_profile>
+          <col_channel>Channel</col_channel>
           <col_when>When</col_when>
           <col_kind>Kind</col_kind>
           <col_action>Action</col_action>
@@ -133,16 +133,16 @@
       </tools>
 
       <!--
-        Phase 2.5 — Search Profiles. Keys are alphabetised by element path
-        inside <profiles> so additions stay mechanical to merge.
+        Phase 2.5 — Search Channels. Keys are alphabetised by element path
+        inside <channels> so additions stay mechanical to merge.
       -->
-      <profiles>
+      <channels>
         <api>
-          <profileKeyRequired>profileKey is required when search profiles are registered.</profileKeyRequired>
+          <channelKeyRequired>channelKey is required when search channels are registered.</channelKeyRequired>
         </api>
         <registration>
-          <invalidKey>Profile key must match [a-z0-9-]+.</invalidKey>
-          <unknownSite>Site '{0}' is not registered with the CMS — profile will still load.</unknownSite>
+          <invalidKey>Channel key must match [a-z0-9-]+.</invalidKey>
+          <unknownSite>Site '{0}' is not registered with the CMS — channel will still load.</unknownSite>
         </registration>
         <detail>
           <audit>
@@ -156,7 +156,7 @@
             </col>
             <empty>No edits recorded yet.</empty>
           </audit>
-          <backToList>Back to all profiles</backToList>
+          <backToList>Back to all channels</backToList>
           <comingSoon>Editor lands in a follow-up PR.</comingSoon>
           <meta>
             <allLocales>Global</allLocales>
@@ -171,7 +171,7 @@
             <sites>Site</sites>
           </meta>
           <overview>
-            <graphqlEmpty>No GraphQL document registered for this profile.</graphqlEmpty>
+            <graphqlEmpty>No GraphQL document registered for this channel.</graphqlEmpty>
             <graphqlInlineNote>Registered inline — admin reflects the same query string the runtime executes.</graphqlInlineNote>
             <graphqlPathNote>Loaded from the host project.</graphqlPathNote>
             <graphqlTitle>GraphQL query</graphqlTitle>
@@ -179,7 +179,7 @@
           <pinned>
             <serpPlaceholder>Search the live index…</serpPlaceholder>
             <sharedSite>Shared across sites</sharedSite>
-            <tryDisabled>Try-it disabled — no GraphQL document declared for this profile.</tryDisabled>
+            <tryDisabled>Try-it disabled — no GraphQL document declared for this channel.</tryDisabled>
           </pinned>
           <sharedWarning>Pinned key is shared across sites — edits affect every site that consumes it.</sharedWarning>
           <tabs>
@@ -193,7 +193,7 @@
             <synonyms>Synonyms</synonyms>
           </tabs>
           <kpis>
-            <sectionLabel>Profile at a glance</sectionLabel>
+            <sectionLabel>Channel at a glance</sectionLabel>
           </kpis>
           <insights>
             <windowLabel>Time window</windowLabel>
@@ -211,21 +211,21 @@
             <showMore>Show more</showMore>
             <actionPreview>Preview this phrase</actionPreview>
             <actionPin>Pin a result for this phrase</actionPin>
-            <actionPinDisabled>This profile doesn't apply pinned results.</actionPinDisabled>
+            <actionPinDisabled>This channel doesn't apply pinned results.</actionPinDisabled>
             <actionSynonym>Add a synonym for this phrase</actionSynonym>
-            <actionSynonymDisabled>This profile doesn't apply synonyms.</actionSynonymDisabled>
+            <actionSynonymDisabled>This channel doesn't apply synonyms.</actionSynonymDisabled>
             <ctrLabel>CTR</ctrLabel>
             <hitsLabel>hits</hitsLabel>
-            <footnote>Telemetry comes from the storefront. Phrases are scoped to this profile and grouped case-insensitively.</footnote>
+            <footnote>Telemetry comes from the storefront. Phrases are scoped to this channel and grouped case-insensitively.</footnote>
           </insights>
           <workspace>
-            <consoleLabel>Profile tools</consoleLabel>
+            <consoleLabel>Channel tools</consoleLabel>
             <livePreviewEyebrow>Try-it</livePreviewEyebrow>
             <livePreviewTitle>Live preview</livePreviewTitle>
             <previewDisabledTitle>Preview unavailable</previewDisabledTitle>
             <previewLabel>Live preview</previewLabel>
             <scopeLabel>Scope</scopeLabel>
-            <switcherLabel>Profile tools</switcherLabel>
+            <switcherLabel>Channel tools</switcherLabel>
           </workspace>
           <synonyms>
             <addRow>Add rule</addRow>
@@ -234,50 +234,50 @@
           </synonyms>
           <details>
             <auditTitle>Audit log</auditTitle>
-            <metaTitle>Profile metadata</metaTitle>
+            <metaTitle>Channel metadata</metaTitle>
           </details>
           <unwiredPinned>
             <tabTitle>Pinned results not wired into this query</tabTitle>
             <title>Pinned results not wired into this query</title>
-            <body>This profile&apos;s registered GraphQL query doesn&apos;t include the usePinned directive, so any pins saved here won&apos;t reach the storefront SERP.</body>
+            <body>This channel&apos;s registered GraphQL query doesn&apos;t include the usePinned directive, so any pins saved here won&apos;t reach the storefront SERP.</body>
             <howto>To enable, add the directive to your storefront query:</howto>
           </unwiredPinned>
           <unwiredSynonyms>
             <tabTitle>Synonyms not wired into this query</tabTitle>
             <title>Synonyms not wired into this query</title>
-            <body>This profile&apos;s registered GraphQL query doesn&apos;t opt in to Graph&apos;s synonym pool, so synonym rules won&apos;t be applied at storefront query time.</body>
+            <body>This channel&apos;s registered GraphQL query doesn&apos;t opt in to Graph&apos;s synonym pool, so synonym rules won&apos;t be applied at storefront query time.</body>
             <howto>To enable, pass synonyms: ONE inside _fulltext (use TWO if you maintain a staging slot):</howto>
           </unwiredSynonyms>
         </detail>
         <index>
           <cols>
             <lastEdited>Last edited</lastEdited>
-            <profile>Profile</profile>
+            <channel>Channel</channel>
             <scope>Sites &amp; locales</scope>
             <status>Status</status>
             <tuning>Tuning</tuning>
           </cols>
           <empty>
-            <body>Register profiles in code via AddSearchProfile(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
-            <title>No profiles registered yet</title>
+            <body>Register channels in code via AddSearchChannel(...) to scope pinned results and synonyms to specific search surfaces. See the documentation for examples.</body>
+            <title>No channels registered yet</title>
           </empty>
           <filter>
             <allLocales>Global</allLocales>
             <allSites>All sites</allSites>
           </filter>
-          <filterPlaceholder>Filter profiles…</filterPlaceholder>
+          <filterPlaceholder>Filter channels…</filterPlaceholder>
           <stats>
-            <coverage>Production traffic via profiles</coverage>
+            <coverage>Production traffic via channels</coverage>
             <locales>locales</locales>
             <pinned>Pinned phrases</pinned>
-            <profiles>Profiles registered</profiles>
+            <channels>Channels registered</channels>
             <sites>sites</sites>
             <synonyms>Synonym entries</synonyms>
           </stats>
           <subtitle>Marketer-facing tuning for each search surface.</subtitle>
-          <title>Search Profiles</title>
+          <title>Search Channels</title>
         </index>
-        <requestFailed>Failed to load profiles.</requestFailed>
+        <requestFailed>Failed to load channels.</requestFailed>
         <status>
           <cold>Cold</cold>
           <docMissing>GraphQL doc missing</docMissing>
@@ -291,7 +291,7 @@
           <justNow>just now</justNow>
           <minutesAgo>min ago</minutesAgo>
         </time>
-      </profiles>
+      </channels>
 
       <ui>
         <shared>

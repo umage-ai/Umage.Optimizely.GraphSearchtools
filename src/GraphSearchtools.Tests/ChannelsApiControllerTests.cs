@@ -14,18 +14,18 @@ using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
-using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 using UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
-using UmageAI.Optimizely.GraphSearchTools.Tools.Profiles.Models;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 
-public class ProfilesApiControllerTests
+public class ChannelsApiControllerTests
 {
     [Fact]
-    public void Index_ReturnsRegisteredProfiles()
+    public void Index_ReturnsRegisteredChannels()
     {
-        var alloy = new SearchProfile
+        var alloy = new SearchChannel
         {
             Key = "alloy-search",
             DisplayName = LocalizedString.Literal("Alloy site search"),
@@ -37,20 +37,20 @@ public class ProfilesApiControllerTests
         var result = controller.List();
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
-        var rows = ok.Value.Should().BeAssignableTo<IEnumerable<ProfileSummary>>().Subject;
+        var rows = ok.Value.Should().BeAssignableTo<IEnumerable<ChannelSummary>>().Subject;
         rows.Should().ContainSingle()
             .Which.Key.Should().Be("alloy-search");
     }
 
     [Fact]
-    public void Index_ReturnsEmptyWhenNoProfilesRegistered()
+    public void Index_ReturnsEmptyWhenNoChannelsRegistered()
     {
         var controller = NewController(new StaticRegistry(/* empty */));
 
         var result = controller.List();
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
-        var rows = ok.Value.Should().BeAssignableTo<IEnumerable<ProfileSummary>>().Subject;
+        var rows = ok.Value.Should().BeAssignableTo<IEnumerable<ChannelSummary>>().Subject;
         rows.Should().BeEmpty();
     }
 
@@ -64,11 +64,11 @@ public class ProfilesApiControllerTests
         result.Should().BeOfType<NotFoundResult>();
     }
 
-    private static ProfilesApiController NewController(ISearchProfileRegistry registry)
+    private static ChannelsApiController NewController(ISearchChannelRegistry registry)
     {
         var options = Options.Create(new GraphSearchtoolsOptions
         {
-            Features = new FeatureToggles { Profiles = true },
+            Features = new FeatureToggles { Channels = true },
             CheckPermissionForEachFeature = false  // skips the PermissionService.IsPermitted path
         });
 
@@ -83,16 +83,16 @@ public class ProfilesApiControllerTests
         var hostEnv = new StubHostEnvironment();
 
         // The Index/Detail tests don't exercise endpoints that hit Graph, but
-        // ProfilesService and PinnedService both demand graph-client deps now —
+        // ChannelsService and PinnedService both demand graph-client deps now —
         // a loose mock satisfies the constructor without making any calls.
         var graphClient = new Mock<IGraphAdminClient>(MockBehavior.Loose).Object;
         var credentialsResolver = new Mock<IGraphCredentialsResolver>(MockBehavior.Loose).Object;
         var queryRunner = new QueryRunnerService(new HttpClient(), credentialsResolver, options);
-        var service = new ProfilesService(registry, new SearchProfileEditService(), localization, hostEnv, graphClient, queryRunner);
+        var service = new ChannelsService(registry, new AuditLogService(), localization, hostEnv, graphClient, queryRunner);
 
         var pinnedService = new PinnedService(graphClient);
 
-        var controller = new ProfilesApiController(service, registry, accessChecker, pinnedService, NullLogger<ProfilesApiController>.Instance);
+        var controller = new ChannelsApiController(service, registry, accessChecker, pinnedService, NullLogger<ChannelsApiController>.Instance);
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity("test")) }
@@ -100,12 +100,12 @@ public class ProfilesApiControllerTests
         return controller;
     }
 
-    private sealed class StaticRegistry : ISearchProfileRegistry
+    private sealed class StaticRegistry : ISearchChannelRegistry
     {
-        public StaticRegistry(params SearchProfile[] profiles) { All = profiles; }
-        public IReadOnlyList<SearchProfile> All { get; }
-        public SearchProfile? Get(string key) => All.FirstOrDefault(p => p.Key == key);
-        public IEnumerable<SearchProfile> ForSite(string siteName) => All;
+        public StaticRegistry(params SearchChannel[] channels) { All = channels; }
+        public IReadOnlyList<SearchChannel> All { get; }
+        public SearchChannel? Get(string key) => All.FirstOrDefault(p => p.Key == key);
+        public IEnumerable<SearchChannel> ForSite(string siteName) => All;
     }
 
     private sealed class StubHostEnvironment : IWebHostEnvironment

@@ -23,31 +23,31 @@
     </header>
     <div class="gst-flyout__body">
         @* Collection picker — shown only when the flyout is opened from the
-           top-level (cross-profile) Pinned page in CREATE mode. Pinned-aurora.js
-           un-hides this row when state.scope has no profileKey and the
+           top-level (cross-channel) Pinned page in CREATE mode. Pinned-aurora.js
+           un-hides this row when state.scope has no channelKey and the
            editing mode is "create". The picker writes the pin straight to
            the chosen Graph collection; audit attribution is best-effort,
-           inferred from which registered profile (if any) resolves to the
+           inferred from which registered channel (if any) resolves to the
            selected collection. *@
         <div class="gst-field" id="gst-pinfly-collection-row" hidden>
             <label class="gst-field__label" for="gst-pinfly-collection">Collection</label>
             <select id="gst-pinfly-collection" name="collection"></select>
             <span class="gst-field__hint">
-                The Graph collection this pin lives in. Profiles whose
+                The Graph collection this pin lives in. Channels whose
                 <code>UsesPinnedKey</code> formula resolves here will surface the pin.
             </span>
         </div>
 
-        @* Matching profiles — populated in edit mode on the top-level
-           Pinned page so the marketer can see which registered profile(s)
-           expose this pin and jump straight into the owning Profile detail.
+        @* Matching channels — populated in edit mode on the top-level
+           Pinned page so the marketer can see which registered channel(s)
+           expose this pin and jump straight into the owning Channel detail.
            Mirrors the same panel on the Collection flyout (Pinned →
-           Collections tab). Hidden in create mode and inside Profile detail. *@
-        <div class="gst-field" id="gst-pinfly-profiles-row" hidden>
-            <label class="gst-field__label">Matching profiles</label>
-            <div id="gst-pinfly-profiles" class="gst-colfly-profiles"></div>
+           Collections tab). Hidden in create mode and inside Channel detail. *@
+        <div class="gst-field" id="gst-pinfly-channels-row" hidden>
+            <label class="gst-field__label">Matching channels</label>
+            <div id="gst-pinfly-channels" class="gst-colfly-channels"></div>
             <span class="gst-field__hint">
-                Profiles whose <code>UsesPinnedKey</code> formula resolves to this pin's collection key
+                Channels whose <code>UsesPinnedKey</code> formula resolves to this pin's collection key
                 for one of their declared locales.
             </span>
         </div>

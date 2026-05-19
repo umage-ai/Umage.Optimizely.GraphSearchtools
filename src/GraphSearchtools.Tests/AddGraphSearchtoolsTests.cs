@@ -52,9 +52,9 @@ public class AddGraphSearchtoolsTests
         // because the Pinned tab's A/B preview hits it).
         services.Should().Contain(d => d.ServiceType == typeof(QueryRunnerService));
 
-        // Phase 2.5: Search Profiles registry + audit-log service.
-        services.Should().Contain(d => d.ServiceType == typeof(ISearchProfileRegistry));
-        services.Should().Contain(d => d.ServiceType == typeof(SearchProfileEditService));
+        // Phase 2.5: Search Channels registry + audit-log service.
+        services.Should().Contain(d => d.ServiceType == typeof(ISearchChannelRegistry));
+        services.Should().Contain(d => d.ServiceType == typeof(AuditLogService));
 
         var provider = services.BuildServiceProvider();
 
@@ -136,7 +136,7 @@ public class AddGraphSearchtoolsTests
     }
 
     [Fact]
-    public void AddSearchProfile_RegistersProfileWithBuilderAndServiceCollection()
+    public void AddSearchChannel_RegistersChannelWithBuilderAndServiceCollection()
     {
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
@@ -145,28 +145,28 @@ public class AddGraphSearchtoolsTests
         services.AddAuthorizationCore();
 
         var builder = services.AddGraphSearchtools()
-            .AddSearchProfile("site-search", p => p
+            .AddSearchChannel("site-search", p => p
                 .DisplayName("Site search")
                 .Sites("corporate")
                 .Locales("en")
                 .UsesPinnedKey("site-{locale}"));
 
-        builder.Profiles.Should().ContainSingle().Which.Key.Should().Be("site-search");
+        builder.Channels.Should().ContainSingle().Which.Key.Should().Be("site-search");
 
-        // The profile is also a DI singleton so the registry can find it via IEnumerable<SearchProfile>.
+        // The channel is also a DI singleton so the registry can find it via IEnumerable<SearchChannel>.
         var registered = services
-            .Where(d => d.ServiceType == typeof(SearchProfile))
+            .Where(d => d.ServiceType == typeof(SearchChannel))
             .Select(d => d.ImplementationInstance)
-            .OfType<SearchProfile>()
+            .OfType<SearchChannel>()
             .ToList();
         registered.Should().ContainSingle().Which.Key.Should().Be("site-search");
     }
 
     [Fact]
-    public void AddSearchProfile_GraphQLDocumentInline_RoundtripsContent()
+    public void AddSearchChannel_GraphQLDocumentInline_RoundtripsContent()
     {
         // The "single source of truth" wiring: hosts pass the same query string
-        // their runtime executes via GraphQLDocumentInline so the admin Profile
+        // their runtime executes via GraphQLDocumentInline so the admin Channel
         // detail view renders what production sends to Graph — no static .graphql
         // stub to drift from the live code.
         const string queryDoc = "{ Content(where: { _and: [{ ContentType: { eq: \"Page\" } }] } limit: 20) { items { Name } } }";
@@ -178,22 +178,22 @@ public class AddGraphSearchtoolsTests
         services.AddAuthorizationCore();
 
         services.AddGraphSearchtools()
-            .AddSearchProfile("site-search", p => p
+            .AddSearchChannel("site-search", p => p
                 .DisplayName("Site search")
                 .GraphQLDocumentInline(queryDoc));
 
-        var profile = services
-            .Where(d => d.ServiceType == typeof(SearchProfile))
+        var channel = services
+            .Where(d => d.ServiceType == typeof(SearchChannel))
             .Select(d => d.ImplementationInstance)
-            .OfType<SearchProfile>()
+            .OfType<SearchChannel>()
             .Single();
 
-        profile.GraphQLDocumentContent.Should().Be(queryDoc);
-        profile.GraphQLDocumentPath.Should().BeNull();
+        channel.GraphQLDocumentContent.Should().Be(queryDoc);
+        channel.GraphQLDocumentPath.Should().BeNull();
     }
 
     [Fact]
-    public void AddSearchProfile_ThrowsOnDuplicateKey()
+    public void AddSearchChannel_ThrowsOnDuplicateKey()
     {
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
@@ -202,8 +202,8 @@ public class AddGraphSearchtoolsTests
         services.AddAuthorizationCore();
 
         var act = () => services.AddGraphSearchtools()
-            .AddSearchProfile("dup", p => p.DisplayName("first"))
-            .AddSearchProfile("dup", p => p.DisplayName("second"));
+            .AddSearchChannel("dup", p => p.DisplayName("first"))
+            .AddSearchChannel("dup", p => p.DisplayName("second"));
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*dup*");
     }

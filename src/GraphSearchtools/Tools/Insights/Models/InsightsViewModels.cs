@@ -12,7 +12,7 @@ public sealed class InsightsPhraseRow
     public long Count { get; init; }
     public long ZeroResults { get; init; }
     public string? Locale { get; init; }
-    public string? ProfileKey { get; init; }
+    public string? ChannelKey { get; init; }
 
     /// <summary>
     /// Click-through rate as a fraction in <c>[0, 1]</c> — only populated by
@@ -32,7 +32,7 @@ public sealed class InsightsZeroResultRow
     public string Phrase { get; init; } = string.Empty;
     public long Count { get; init; }
     public string? Locale { get; init; }
-    public string? ProfileKey { get; init; }
+    public string? ChannelKey { get; init; }
 }
 
 /// <summary>

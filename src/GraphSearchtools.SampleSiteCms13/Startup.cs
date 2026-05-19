@@ -30,7 +30,7 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
             .AddEmbeddedLocalization<Startup>();
 
         services.AddGraphSearchtools()
-            .AddSearchProfile("alloy-search", p => p
+            .AddSearchChannel("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
                 .Locales("en")

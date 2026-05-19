@@ -7,7 +7,7 @@ using UmageAI.Optimizely.GraphSearchTools.Configuration;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 
 /// <summary>
-/// Drains the sink's channel into per-(minute, phrase, profile, locale)
+/// Drains the sink's channel into per-(minute, phrase, channel, locale)
 /// buckets, then upserts closed buckets to DDS on
 /// <see cref="LocalTelemetryOptions.FlushInterval"/>. Read and flush run on
 /// separate tasks; a single lock guards the in-memory state because the only
@@ -82,7 +82,7 @@ internal sealed class BucketFlusher : BackgroundService
     internal void Apply(in TelemetryQueueItem item)
     {
         var bucketUtc = TruncateToMinute(item.TimestampUtc);
-        var key = new BucketKey(bucketUtc, NormalizePhrase(item.Phrase), item.ProfileKey, item.Locale);
+        var key = new BucketKey(bucketUtc, NormalizePhrase(item.Phrase), item.ChannelKey, item.Locale);
 
         lock (_lock)
         {
@@ -315,7 +315,7 @@ internal sealed class BucketFlusher : BackgroundService
                     {
                         BucketUtc = key.BucketUtc,
                         PhraseNorm = key.PhraseNorm,
-                        ProfileKey = key.ProfileKey,
+                        ChannelKey = key.ChannelKey,
                         Locale = key.Locale,
                         NodeId = _options.NodeId,
                         DisplayPhrase = counters.DisplayPhrase,
@@ -358,7 +358,7 @@ internal sealed class BucketFlusher : BackgroundService
                     {
                         BucketUtc = key.BucketUtc,
                         PhraseNorm = key.PhraseNorm,
-                        ProfileKey = key.ProfileKey,
+                        ChannelKey = key.ChannelKey,
                         Locale = key.Locale,
                         NodeId = _options.NodeId,
                         DisplayPhrase = counters.DisplayPhrase,
@@ -415,7 +415,7 @@ internal sealed class BucketFlusher : BackgroundService
             .ToList()
             .FirstOrDefault(b =>
                 b.PhraseNorm == key.PhraseNorm &&
-                b.ProfileKey == key.ProfileKey &&
+                b.ChannelKey == key.ChannelKey &&
                 b.Locale == key.Locale);
     }
 
@@ -430,7 +430,7 @@ internal sealed class BucketFlusher : BackgroundService
                     TimestampUtc = item.TimestampUtc,
                     Kind = item.Kind == TelemetryQueueItemKind.Search ? "search" : "click",
                     Phrase = item.Phrase,
-                    ProfileKey = item.ProfileKey,
+                    ChannelKey = item.ChannelKey,
                     Locale = item.Locale,
                     ResultCount = item.Kind == TelemetryQueueItemKind.Search ? item.ResultCount : null,
                     ClickRank = item.Kind == TelemetryQueueItemKind.Click ? item.ClickRank : null,
@@ -481,14 +481,14 @@ internal sealed class BucketFlusher : BackgroundService
         lock (_lock)
         {
             var open = _open.Select(kvp => new TestBucketRow(
-                kvp.Key.BucketUtc, kvp.Key.PhraseNorm, kvp.Key.ProfileKey, kvp.Key.Locale,
+                kvp.Key.BucketUtc, kvp.Key.PhraseNorm, kvp.Key.ChannelKey, kvp.Key.Locale,
                 kvp.Value.DisplayPhrase, kvp.Value.Hits, kvp.Value.Zeroes,
                 kvp.Value.Clicks1, kvp.Value.Clicks2, kvp.Value.Clicks3)).ToList();
             var zero = _zeroOnly.Select(kvp => new TestZeroRow(
-                kvp.Key.BucketUtc, kvp.Key.PhraseNorm, kvp.Key.ProfileKey, kvp.Key.Locale,
+                kvp.Key.BucketUtc, kvp.Key.PhraseNorm, kvp.Key.ChannelKey, kvp.Key.Locale,
                 kvp.Value.DisplayPhrase, kvp.Value.Zeroes)).ToList();
             var delayed = _delayed.Select(kvp => new TestClickRow(
-                kvp.Key.BucketUtc, kvp.Key.PhraseNorm, kvp.Key.ProfileKey, kvp.Key.Locale,
+                kvp.Key.BucketUtc, kvp.Key.PhraseNorm, kvp.Key.ChannelKey, kvp.Key.Locale,
                 kvp.Value.Clicks1, kvp.Value.Clicks2, kvp.Value.Clicks3)).ToList();
             return new TestStateSnapshot(open, zero, delayed);
         }
@@ -500,15 +500,15 @@ internal sealed class BucketFlusher : BackgroundService
         IReadOnlyList<TestClickRow> Delayed);
 
     internal sealed record TestBucketRow(
-        DateTime BucketUtc, string PhraseNorm, string ProfileKey, string Locale,
+        DateTime BucketUtc, string PhraseNorm, string ChannelKey, string Locale,
         string DisplayPhrase, int Hits, int Zeroes, int Clicks1, int Clicks2, int Clicks3);
 
     internal sealed record TestZeroRow(
-        DateTime BucketUtc, string PhraseNorm, string ProfileKey, string Locale,
+        DateTime BucketUtc, string PhraseNorm, string ChannelKey, string Locale,
         string DisplayPhrase, int Zeroes);
 
     internal sealed record TestClickRow(
-        DateTime BucketUtc, string PhraseNorm, string ProfileKey, string Locale,
+        DateTime BucketUtc, string PhraseNorm, string ChannelKey, string Locale,
         int Clicks1, int Clicks2, int Clicks3);
 
     // ── Helpers ──────────────────────────────────────────────────────────
@@ -521,7 +521,7 @@ internal sealed class BucketFlusher : BackgroundService
             ? string.Empty
             : phrase.Trim().ToLowerInvariant();
 
-    private readonly record struct BucketKey(DateTime BucketUtc, string PhraseNorm, string ProfileKey, string Locale);
+    private readonly record struct BucketKey(DateTime BucketUtc, string PhraseNorm, string ChannelKey, string Locale);
 
     private sealed class BucketCounters
     {

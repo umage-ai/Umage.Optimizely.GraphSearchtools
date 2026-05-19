@@ -10,7 +10,7 @@ internal readonly struct TelemetryQueueItem
     public readonly TelemetryQueueItemKind Kind;
     public readonly DateTime TimestampUtc;
     public readonly string Phrase;
-    public readonly string ProfileKey;
+    public readonly string ChannelKey;
     public readonly string Locale;
 
     /// <summary>Set on search events; <c>0</c> on click events.</summary>
@@ -26,7 +26,7 @@ internal readonly struct TelemetryQueueItem
         TelemetryQueueItemKind kind,
         DateTime timestampUtc,
         string phrase,
-        string profileKey,
+        string channelKey,
         string locale,
         int resultCount,
         int clickRank,
@@ -35,18 +35,18 @@ internal readonly struct TelemetryQueueItem
         Kind = kind;
         TimestampUtc = timestampUtc;
         Phrase = phrase;
-        ProfileKey = profileKey;
+        ChannelKey = channelKey;
         Locale = locale;
         ResultCount = resultCount;
         ClickRank = clickRank;
         OriginalBucketUtc = originalBucketUtc;
     }
 
-    public static TelemetryQueueItem ForSearch(string phrase, string profileKey, string locale, int resultCount, DateTime timestampUtc)
-        => new(TelemetryQueueItemKind.Search, timestampUtc, phrase, profileKey, locale, resultCount, 0, null);
+    public static TelemetryQueueItem ForSearch(string phrase, string channelKey, string locale, int resultCount, DateTime timestampUtc)
+        => new(TelemetryQueueItemKind.Search, timestampUtc, phrase, channelKey, locale, resultCount, 0, null);
 
-    public static TelemetryQueueItem ForClick(string phrase, string profileKey, string locale, int rank, DateTime timestampUtc, DateTime? originalBucketUtc)
-        => new(TelemetryQueueItemKind.Click, timestampUtc, phrase, profileKey, locale, 0, rank, originalBucketUtc);
+    public static TelemetryQueueItem ForClick(string phrase, string channelKey, string locale, int rank, DateTime timestampUtc, DateTime? originalBucketUtc)
+        => new(TelemetryQueueItemKind.Click, timestampUtc, phrase, channelKey, locale, 0, rank, originalBucketUtc);
 }
 
 internal enum TelemetryQueueItemKind : byte

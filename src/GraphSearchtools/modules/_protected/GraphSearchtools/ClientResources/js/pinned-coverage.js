@@ -4,7 +4,7 @@
  * Read-only audit view. The page issues a single GET to
  * /PinnedCoverageApi/Audit, then renders three surfaces from one payload:
  *   - Stats row (issues by kind).
- *   - Issues table with a kind-coloured badge + "Fix in profile" deep link.
+ *   - Issues table with a kind-coloured badge + "Fix in channel" deep link.
  *   - Overlaps card with the duplicate-phrase rows.
  *
  * Re-running the audit is the only mutation; everything else is presentational.
@@ -16,13 +16,13 @@
     var STRINGS = (window.GST_STRINGS && window.GST_STRINGS.pinnedCoverage) || {};
     var SHARED = (window.GST_STRINGS && window.GST_STRINGS.shared) || {};
     /**
-     * Profile detail URL — anchored on `#pinned` so we land directly on the
-     * Pinned tab. Hosts that bookmark `/pinned` are 301'd to /profiles, so
+     * Channel detail URL — anchored on `#pinned` so we land directly on the
+     * Pinned tab. Hosts that bookmark `/pinned` are 301'd to /channels, so
      * this is the canonical fix-up location post-Phase-2.5. The detail
      * surface is served as `?key=...` on the index URL so the CMS shell can
      * resolve the section's product-id from the registered menu URL.
      */
-    var PROFILE_URL_BASE = '/EPiServer/cms/graphsearchtools/profiles?key=';
+    var CHANNEL_URL_BASE = '/EPiServer/cms/graphsearchtools/channels?key=';
 
     var GST = window.GST = window.GST || {};
     GST.pinnedCoverage = GST.pinnedCoverage || {};
@@ -128,13 +128,13 @@
     }
 
     function fixCell(issue) {
-        // ProfileKey is null when the collection key doesn't match any
-        // registered profile's PinnedKey formula — those rows are read-only.
-        if (!issue.profileKey) {
-            return '<span class="gst-muted">' + escHtml(STRINGS.no_profile || 'No profile') + '</span>';
+        // ChannelKey is null when the collection key doesn't match any
+        // registered channel's PinnedKey formula — those rows are read-only.
+        if (!issue.channelKey) {
+            return '<span class="gst-muted">' + escHtml(STRINGS.no_channel || 'No channel') + '</span>';
         }
-        var href = PROFILE_URL_BASE + encodeURIComponent(issue.profileKey) + '#pinned';
-        return '<a class="gst-btn gst-btn--sm" href="' + href + '">' + escHtml(STRINGS.fix_in_profile || 'Fix') + '</a>';
+        var href = CHANNEL_URL_BASE + encodeURIComponent(issue.channelKey) + '#pinned';
+        return '<a class="gst-btn gst-btn--sm" href="' + href + '">' + escHtml(STRINGS.fix_in_channel || 'Fix') + '</a>';
     }
 
     function renderGrid(issues) {

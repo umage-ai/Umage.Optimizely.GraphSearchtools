@@ -20,9 +20,9 @@ public static class GraphSearchtoolsPermissions
     public static PermissionType Synonyms { get; } =
         new("GraphSearchtools", "Synonyms");
 
-    // Phase 2.5 — Search Profiles top-level surface.
-    public static PermissionType Profiles { get; } =
-        new("GraphSearchtools", "Profiles");
+    // Phase 2.5 — Search Channels top-level surface.
+    public static PermissionType Channels { get; } =
+        new("GraphSearchtools", "Channels");
 
     // Aurora refactor — Insights dashboard. Read-only over the same telemetry
     // / synonym / audit data the other tools already touch.
@@ -35,7 +35,7 @@ public static class GraphSearchtoolsPermissions
         new("GraphSearchtools", "Telemetry");
 
     // Gates the internal /SearchLogsApi read endpoints — now consumed only by
-    // the Profile Detail Insights tab. No standalone Search Logs UI ships any
+    // the Channel Detail Insights tab. No standalone Search Logs UI ships any
     // more.
     public static PermissionType SearchLogs { get; } =
         new("GraphSearchtools", "SearchLogs");
