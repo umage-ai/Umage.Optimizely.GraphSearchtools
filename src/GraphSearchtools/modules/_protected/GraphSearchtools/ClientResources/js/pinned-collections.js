@@ -113,7 +113,7 @@
             });
             renderGrid();
         }).catch(function (err) {
-            setAlert('Could not load collections. ' + (err && err.message || ''), true);
+            GST.alert('Could not load collections. ' + (err && err.message || ''), 'danger');
         });
     }
 
@@ -121,15 +121,6 @@
     function renderLoading(tbody) {
         if (!tbody) return;
         tbody.innerHTML = '<tr><td colspan="5" class="gst-empty"><p>Loading…</p></td></tr>';
-    }
-
-    function setAlert(msg, isError) {
-        const el = document.getElementById('gst-alert');
-        if (!el) return;
-        if (!msg) { el.hidden = true; el.textContent = ''; return; }
-        el.hidden = false;
-        el.textContent = msg;
-        el.classList.toggle('gst-alert--error', !!isError);
     }
 
     function renderGrid() {

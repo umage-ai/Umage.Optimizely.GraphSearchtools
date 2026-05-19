@@ -27,7 +27,6 @@
     var GST = window.GST = window.GST || {};
     GST.pinnedCoverage = GST.pinnedCoverage || {};
 
-    var alertBox = document.getElementById('gst-alert');
     var runBtn = document.getElementById('pc-run');
     var statsRow = document.getElementById('pc-stats');
     var grid = document.getElementById('pc-grid');
@@ -72,19 +71,6 @@
             }
             return resp.status === 204 ? null : resp.json();
         });
-    }
-
-    function setAlert(message, isError) {
-        if (!alertBox) return;
-        if (!message) {
-            alertBox.hidden = true;
-            alertBox.textContent = '';
-            alertBox.classList.remove('gst-alert--danger');
-            return;
-        }
-        alertBox.hidden = false;
-        alertBox.textContent = message;
-        alertBox.classList.toggle('gst-alert--danger', !!isError);
     }
 
     function escHtml(s) {
@@ -197,7 +183,7 @@
     }
 
     function load() {
-        setAlert('');
+        GST.alert(null);
         setLoading(true);
         ajax(BASE + '/PinnedCoverageApi/Audit')
             .then(function (data) {
@@ -208,7 +194,7 @@
                 setGenerated(data.generatedAt);
             })
             .catch(function (err) {
-                setAlert((STRINGS.load_failed || 'Could not load coverage audit.') + ' ' + err.message, true);
+                GST.alert((STRINGS.load_failed || 'Could not load coverage audit.') + ' ' + err.message, 'danger');
             })
             .then(function () { setLoading(false); });
     }

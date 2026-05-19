@@ -89,7 +89,6 @@
 
         var tableHost  = document.getElementById('gst-prof-table-host');
         var emptyEl    = document.getElementById('gst-prof-empty');
-        var alertEl    = document.getElementById('gst-alert');
         var searchEl   = document.getElementById('gst-prof-search');
         var siteEl     = document.getElementById('gst-prof-site-filter');
         var localeEl   = document.getElementById('gst-prof-locale-filter');
@@ -111,16 +110,9 @@
             loadActivitySparklines(channels);
         }).catch(function(err) {
             tableHost.innerHTML = '';
-            showAlert(s('channels.requestFailed', 'Failed to load channels.'), 'danger');
+            GST.alert(s('channels.requestFailed', 'Failed to load channels.'), 'danger');
             console.error('Channels list failed', err);
         });
-
-        function showAlert(msg, kind) {
-            if (!alertEl) return;
-            alertEl.className = 'gst-alert gst-alert--' + (kind || 'warning');
-            alertEl.textContent = msg;
-            alertEl.hidden = false;
-        }
 
         function populateFilters(channels) {
             var sites = new Set();
@@ -783,7 +775,6 @@
         if (!channelKey) return;
 
         var root = document.getElementById('gst-prof-ins');
-        var alertEl = document.getElementById('gst-prof-ins-alert');
         var refreshBtn = document.getElementById('gst-prof-ins-refresh');
         var pillEls = root ? root.querySelectorAll('.gst-prof-ins__pill') : [];
         if (!root) return;
@@ -844,11 +835,7 @@
         }
 
         function setAlert(msg) {
-            if (!alertEl) return;
-            if (!msg) { alertEl.hidden = true; alertEl.textContent = ''; alertEl.classList.remove('gst-alert--danger'); return; }
-            alertEl.hidden = false;
-            alertEl.textContent = msg;
-            alertEl.classList.add('gst-alert--danger');
+            GST.alert(msg || null, msg ? 'danger' : null, { host: '#gst-prof-ins-alert' });
         }
 
         // Window pill click → state change → refetch. Reset per-lane takes

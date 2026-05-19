@@ -12,25 +12,11 @@
     var BASE = window.GST_BASE_URL || '';
     var STRINGS = (window.GST_STRINGS && window.GST_STRINGS.synonyms) || {};
 
-    var alertBox = document.getElementById('gst-alert');
     var langSelect = document.getElementById('syn-language-filter');
 
     function s(path, fallback) {
         if (window.GST && typeof window.GST.s === 'function') return window.GST.s(path, fallback);
         return fallback;
-    }
-
-    function setAlert(message, isError) {
-        if (!alertBox) return;
-        if (!message) {
-            alertBox.hidden = true;
-            alertBox.textContent = '';
-            alertBox.classList.remove('gst-alert--danger');
-            return;
-        }
-        alertBox.hidden = false;
-        alertBox.textContent = message;
-        alertBox.classList.toggle('gst-alert--danger', !!isError);
     }
 
     function renderLanguageOptions(locales) {
@@ -94,5 +80,5 @@
             renderLanguageOptions(locales);
             mountGrid();
         })
-        .catch(function (err) { setAlert((err && err.message) || s('synonyms.request_failed', 'Failed to load locales.'), true); });
+        .catch(function (err) { GST.alert((err && err.message) || s('synonyms.request_failed', 'Failed to load locales.'), 'danger'); });
 })();
