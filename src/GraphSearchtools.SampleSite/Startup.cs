@@ -58,10 +58,13 @@ public class Startup
             .AddSearchChannel("alloy-search", p => p
                 .DisplayName("Alloy site search")
                 .Description("Header search across the Alloy demo content.")
-                // Stock Alloy ships with English + Swedish content branches; the
-                // preview picker on the Channel detail surfaces both so admins
-                // can verify pinned/synonym wiring per locale.
-                .Locales("en", "sv")
+                // Derive locales from the CMS's enabled language branches so
+                // editors enabling a new language in Admin → Manage Website
+                // Languages surface it here without a redeploy. Stock Alloy
+                // ships English + Swedish enabled; turning on another branch
+                // (e.g. Finnish) appears in the Channel detail's locale
+                // picker on next page load.
+                .LocalesFromCmsLanguages()
                 .SearchedFields("Name", "MetaDescription", "MainBody")
                 .UsesPinnedKey("alloy-{locale}")
                 .SemanticBlend(0.3, GraphRanking.Semantic)

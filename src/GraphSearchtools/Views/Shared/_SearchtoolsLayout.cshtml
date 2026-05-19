@@ -35,10 +35,7 @@
         <div class="gst-shell">
             <header class="gst-header">
                 <a href="@ActionPath("GraphSearchtools/Overview")" class="gst-header__logo">
-                    <svg class="gst-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
+                    @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "search", Size = 20, Class = "gst-header__icon" })
                     Graph Search Tools
                 </a>
                 <nav class="gst-header__nav">

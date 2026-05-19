@@ -1,0 +1,14 @@
+@inject LocalizationService Loc
+@*
+    Aurora summary-grid header for the Synonyms tool. Single source for
+    both the top-level Synonyms page and the Channel-detail Synonyms
+    console tab — keeps the column schema and sort keys in sync.
+*@
+<thead>
+    <tr>
+        <th data-sort="rule">@Loc.GetString("/graphsearchtools/ui/synonyms/col_rule")</th>
+        <th data-sort="locale">@Loc.GetString("/graphsearchtools/channels/detail/synonyms/colScope")</th>
+        <th data-sort="activity">@Loc.GetString("/graphsearchtools/ui/synonyms/col_activity")</th>
+        <th aria-label="Actions"></th>
+    </tr>
+</thead>

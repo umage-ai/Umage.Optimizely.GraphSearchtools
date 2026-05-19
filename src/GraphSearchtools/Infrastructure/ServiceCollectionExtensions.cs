@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGraphCredentialsResolver, GraphCredentialsResolver>();
         services.AddHttpClient<IGraphAdminClient, GraphAdminClient>();
         services.AddScoped<LanguageSiteEnumerator>();
+        services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Configuration.CmsLocaleResolver>();
         services.AddScoped<PinnedService>();
         services.AddScoped<SynonymsService>();
         services.AddHttpClient<QueryRunnerService>();

@@ -5,6 +5,18 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 public record PinnedCollectionPayload
 {
     public string Key { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Human-readable label shown in the Graph admin UI. The Optimizely
+    /// Graph API requires this on create (status 400 with
+    /// <c>'title' is required</c> otherwise). We default to <see cref="Key"/>
+    /// in <c>PinnedService.CreateCollectionAsync</c> so neither the
+    /// top-level "Add Collection" flyout nor <c>EnsureCollection</c> need
+    /// to compose one — but the payload exposes it so a future flyout
+    /// surface can override.
+    /// </summary>
+    public string? Title { get; init; }
+
     public bool IsActive { get; init; }
 }
 

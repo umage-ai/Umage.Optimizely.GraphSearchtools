@@ -17,37 +17,25 @@
 
 <div class="gst-tool-grid">
     <a class="gst-tool-card" href="/EPiServer/cms/graphsearchtools/channels">
-        <svg class="gst-tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="6" rx="1"/>
-            <rect x="3" y="14" width="11" height="6" rx="1"/>
-            <path d="M17 17h4"/>
-        </svg>
+        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "channels", Size = 28, Class = "gst-tool-card__icon" })
         <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/menu/channels")</div>
         <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/channels/description")</div>
     </a>
 
     <a class="gst-tool-card" href="@Tile("Insights/Index")">
-        <svg class="gst-tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3v18h18"/>
-            <path d="M7 15l4-5 4 3 5-7"/>
-        </svg>
+        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "insights", Size = 28, Class = "gst-tool-card__icon" })
         <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/menu/insights")</div>
         <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/insights/description")</div>
     </a>
 
     <a class="gst-tool-card" href="@Tile("GraphSearchtools/Pinned")">
-        <svg class="gst-tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v6m0 0l3.5 8.5L19 20l-7-2-7 2 3.5-3.5L12 8z"/>
-        </svg>
+        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "pin", Size = 28, Class = "gst-tool-card__icon" })
         <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/tools/pinned/title")</div>
         <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/pinned/description")</div>
     </a>
 
     <a class="gst-tool-card" href="@Tile("GraphSearchtools/Synonyms")">
-        <svg class="gst-tool-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7h7M3 12h7M3 17h7"/>
-            <path d="M14 7l7 5-7 5"/>
-        </svg>
+        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "synonym", Size = 28, Class = "gst-tool-card__icon" })
         <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/tools/synonyms/title")</div>
         <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/synonyms/description")</div>
     </a>

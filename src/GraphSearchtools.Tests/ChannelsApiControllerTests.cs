@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using EPiServer.DataAbstraction;
 using EPiServer.Framework.Localization;
 using EPiServer.Security;
+using EPiServer.Web;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -88,7 +90,16 @@ public class ChannelsApiControllerTests
         var graphClient = new Mock<IGraphAdminClient>(MockBehavior.Loose).Object;
         var credentialsResolver = new Mock<IGraphCredentialsResolver>(MockBehavior.Loose).Object;
         var queryRunner = new QueryRunnerService(new HttpClient(), credentialsResolver, options);
-        var service = new ChannelsService(registry, new AuditLogService(), localization, hostEnv, graphClient, queryRunner);
+
+        // CmsLocaleResolver is consulted on every BuildSummary / BuildDetail call.
+        // None of these tests register a channel with LocalesFromCmsLanguages = true,
+        // so the resolver short-circuits to channel.Locales and never reaches the
+        // mocked EPiServer repos — but the constructor still needs them.
+        var sites = new Mock<ISiteDefinitionRepository>(MockBehavior.Loose).Object;
+        var langs = new Mock<ILanguageBranchRepository>(MockBehavior.Loose).Object;
+        var localeResolver = new CmsLocaleResolver(sites, langs);
+
+        var service = new ChannelsService(registry, new AuditLogService(), localization, hostEnv, graphClient, queryRunner, localeResolver);
 
         var pinnedService = new PinnedService(graphClient);
 

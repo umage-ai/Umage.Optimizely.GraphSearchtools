@@ -1,0 +1,39 @@
+@*
+    Aurora right-edge edit panel for creating a Graph pinned-result
+    collection. Markup-only — the JS that opens the panel, validates the
+    key, and POSTs the new collection lives in pinned-collections.js.
+    Conventions: id="gst-flyout-colcreate", id="gst-flyout-colcreate-backdrop",
+    closing buttons carry data-flyout-close="colcreate", inputs use
+    gst-colcreate-* IDs.
+*@
+<div id="gst-flyout-colcreate-backdrop" class="gst-flyout-backdrop" hidden></div>
+<aside id="gst-flyout-colcreate" class="gst-flyout" hidden role="dialog"
+       aria-modal="true" aria-labelledby="gst-flyout-colcreate-title">
+    <header class="gst-flyout__header">
+        <h2 id="gst-flyout-colcreate-title" class="gst-flyout__title">New collection</h2>
+        <button type="button" class="gst-flyout__close"
+                data-flyout-close="colcreate" aria-label="Close">×</button>
+    </header>
+    <div class="gst-flyout__body">
+        <div class="gst-field">
+            <label class="gst-field__label" for="gst-colcreate-key">Key</label>
+            <input id="gst-colcreate-key" name="key" type="text" autocomplete="off" />
+            <span class="gst-field__hint">
+                The Graph collection key (e.g. <code>alloy-en</code>). Typically matches a
+                channel's <code>UsesPinnedKey</code> formula output.
+            </span>
+        </div>
+        <div class="gst-field">
+            <label class="gst-field__check">
+                <input id="gst-colcreate-active" name="isActive" type="checkbox" checked />
+                <span>Active</span>
+            </label>
+            <span class="gst-field__hint">Inactive collections are kept by Graph but not served.</span>
+        </div>
+    </div>
+    <footer class="gst-flyout__footer">
+        <div class="gst-flyout__footer__spacer"></div>
+        <button type="button" class="gst-btn" data-flyout-close="colcreate">Cancel</button>
+        <button type="button" class="gst-btn gst-btn--primary" id="gst-colcreate-save">Create</button>
+    </footer>
+</aside>

@@ -76,8 +76,9 @@
     }
 
     function chevronCell() {
-        return '<svg class="gst-prof-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-            + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+        // The .gst-prof-arrow class drives the row-hover transform
+        // (translateX 2px) plus the muted-to-primary color shift.
+        return GST.icon('chevronRight', { class: 'gst-prof-arrow' });
     }
 
     /** ---------------- INDEX ---------------- */
@@ -89,7 +90,6 @@
 
         var tableHost  = document.getElementById('gst-prof-table-host');
         var emptyEl    = document.getElementById('gst-prof-empty');
-        var alertEl    = document.getElementById('gst-alert');
         var searchEl   = document.getElementById('gst-prof-search');
         var siteEl     = document.getElementById('gst-prof-site-filter');
         var localeEl   = document.getElementById('gst-prof-locale-filter');
@@ -111,16 +111,9 @@
             loadActivitySparklines(channels);
         }).catch(function(err) {
             tableHost.innerHTML = '';
-            showAlert(s('channels.requestFailed', 'Failed to load channels.'), 'danger');
+            GST.alert(s('channels.requestFailed', 'Failed to load channels.'), 'danger');
             console.error('Channels list failed', err);
         });
-
-        function showAlert(msg, kind) {
-            if (!alertEl) return;
-            alertEl.className = 'gst-alert gst-alert--' + (kind || 'warning');
-            alertEl.textContent = msg;
-            alertEl.hidden = false;
-        }
 
         function populateFilters(channels) {
             var sites = new Set();
@@ -149,14 +142,25 @@
 
         function renderTable(channels) {
             var table = document.createElement('table');
-            table.className = 'gst-table gst-prof-table';
+            table.className = 'gst-table gst-nav-table';
+            // Column widths live in <colgroup> rather than per-th inline
+            // styles so the schema is declarative and Razor consumers
+            // could later swap to a server-rendered <thead> without
+            // chasing widths through the JS render path.
             table.innerHTML =
-                '<thead><tr>'
-                + '<th style="width: 26%">' + escHtml(s('channels.cols.channel', 'Channel')) + '</th>'
-                + '<th style="width: 22%" class="col-scope">' + escHtml(s('channels.cols.scope', 'Sites & locales')) + '</th>'
-                + '<th style="width: 32%" class="col-activity">' + escHtml(s('channels.cols.activity', 'Activity (30d)')) + '</th>'
+                '<colgroup>'
+                + '<col style="width: 26%"/>'
+                + '<col style="width: 22%"/>'
+                + '<col style="width: 32%"/>'
+                + '<col/>'
+                + '<col style="width: 32px"/>'
+                + '</colgroup>'
+                + '<thead><tr>'
+                + '<th>' + escHtml(s('channels.cols.channel', 'Channel')) + '</th>'
+                + '<th class="col-scope">' + escHtml(s('channels.cols.scope', 'Sites & locales')) + '</th>'
+                + '<th class="col-activity">' + escHtml(s('channels.cols.activity', 'Activity (30d)')) + '</th>'
                 + '<th>' + escHtml(s('channels.cols.lastEdited', 'Last edited')) + '</th>'
-                + '<th style="width: 32px"></th>'
+                + '<th></th>'
                 + '</tr></thead><tbody></tbody>';
             tableHost.innerHTML = '';
             tableHost.appendChild(table);
@@ -164,6 +168,7 @@
             var tbody = table.querySelector('tbody');
             channels.forEach(function(p) {
                 var tr = document.createElement('tr');
+                tr.className = 'is-selectable';
                 tr.dataset.key = p.key || '';
                 tr.dataset.search = ((p.displayName || '') + ' ' + (p.key || '') + ' ' + (p.descriptionResolved || '')).toLowerCase();
                 tr.dataset.sites = (p.sites || []).join('|');
@@ -341,8 +346,12 @@
             }));
         });
 
-        // Panel switching.
-        var switcherBtns = document.querySelectorAll('.gst-prof-switcher__btn');
+        // Panel switching. The buttons use the shared .gst-tabs__btn class
+        // (see design-system.md → Component: Tabs); we scope the lookup to
+        // the surrounding .gst-prof-switcher so we don't pick up unrelated
+        // tab strips elsewhere on the page (e.g. a Pinned/Synonyms tab
+        // bar inside a tools-console panel).
+        var switcherBtns = document.querySelectorAll('.gst-prof-switcher .gst-tabs__btn');
         switcherBtns.forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var target = btn.dataset.panel;
@@ -609,9 +618,7 @@
                     var ribbon = document.createElement('span');
                     ribbon.className = 'gst-serp__pin-ribbon';
                     ribbon.setAttribute('aria-hidden', 'true');
-                    ribbon.innerHTML = '<svg viewBox="0 0 12 12" width="11" height="11">'
-                        + '<path d="M6 1.5 L7.4 4.4 L10.5 4.7 L8.2 6.8 L8.9 9.9 L6 8.4 L3.1 9.9 L3.8 6.8 L1.5 4.7 L4.6 4.4 Z" fill="currentColor"/>'
-                        + '</svg>';
+                    ribbon.innerHTML = GST.icons.pin;
                     li.appendChild(ribbon);
                 }
 
@@ -783,9 +790,8 @@
         if (!channelKey) return;
 
         var root = document.getElementById('gst-prof-ins');
-        var alertEl = document.getElementById('gst-prof-ins-alert');
         var refreshBtn = document.getElementById('gst-prof-ins-refresh');
-        var pillEls = root ? root.querySelectorAll('.gst-prof-ins__pill') : [];
+        var pillEls = root ? root.querySelectorAll('.gst-segmented__btn') : [];
         if (!root) return;
 
         // Time-window pills map to a since-millis offset. The ISO string is
@@ -844,11 +850,7 @@
         }
 
         function setAlert(msg) {
-            if (!alertEl) return;
-            if (!msg) { alertEl.hidden = true; alertEl.textContent = ''; alertEl.classList.remove('gst-alert--danger'); return; }
-            alertEl.hidden = false;
-            alertEl.textContent = msg;
-            alertEl.classList.add('gst-alert--danger');
+            GST.alert(msg || null, msg ? 'danger' : null, { host: '#gst-prof-ins-alert' });
         }
 
         // Window pill click → state change → refetch. Reset per-lane takes
