@@ -34,7 +34,17 @@ public sealed class PinnedService
         => _client.GetCollectionsAsync(ct);
 
     public Task<PinnedCollectionResult> CreateCollectionAsync(PinnedCollectionPayload payload, CancellationToken ct)
-        => _client.CreateCollectionAsync(payload, ct);
+    {
+        // The Graph API requires a `title` on create (400 with "'title' is
+        // required" otherwise). Default to the key so neither the top-level
+        // "Add Collection" flyout nor the channel-detail EnsureCollection
+        // flow needs to compose one — both surface the key already.
+        if (string.IsNullOrWhiteSpace(payload.Title))
+        {
+            payload = payload with { Title = payload.Key };
+        }
+        return _client.CreateCollectionAsync(payload, ct);
+    }
 
     public Task<PinnedCollectionResult> UpdateCollectionAsync(string collectionId, PinnedCollectionUpdatePayload payload, CancellationToken ct)
         => _client.UpdateCollectionAsync(collectionId, payload, ct);
