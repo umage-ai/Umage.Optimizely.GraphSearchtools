@@ -345,8 +345,12 @@
             }));
         });
 
-        // Panel switching.
-        var switcherBtns = document.querySelectorAll('.gst-prof-switcher__btn');
+        // Panel switching. The buttons use the shared .gst-tabs__btn class
+        // (see design-system.md → Component: Tabs); we scope the lookup to
+        // the surrounding .gst-prof-switcher so we don't pick up unrelated
+        // tab strips elsewhere on the page (e.g. a Pinned/Synonyms tab
+        // bar inside a tools-console panel).
+        var switcherBtns = document.querySelectorAll('.gst-prof-switcher .gst-tabs__btn');
         switcherBtns.forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var target = btn.dataset.panel;
@@ -788,7 +792,7 @@
 
         var root = document.getElementById('gst-prof-ins');
         var refreshBtn = document.getElementById('gst-prof-ins-refresh');
-        var pillEls = root ? root.querySelectorAll('.gst-prof-ins__pill') : [];
+        var pillEls = root ? root.querySelectorAll('.gst-segmented__btn') : [];
         if (!root) return;
 
         // Time-window pills map to a since-millis offset. The ISO string is

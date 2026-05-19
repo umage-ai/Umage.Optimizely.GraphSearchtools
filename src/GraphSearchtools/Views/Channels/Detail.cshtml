@@ -174,7 +174,7 @@
     <section class="gst-prof-console" aria-label="@Loc.GetString("/graphsearchtools/channels/detail/workspace/consoleLabel")">
         <nav class="gst-prof-switcher" role="tablist"
              aria-label="@Loc.GetString("/graphsearchtools/channels/detail/workspace/switcherLabel")">
-            <button type="button" class="gst-prof-switcher__btn is-active"
+            <button type="button" class="gst-tabs__btn is-active"
                     role="tab" aria-selected="true" data-panel="insights" id="gst-prof-tab-insights">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
                     @* Spark / signal glyph — 3 ascending bars with a hairline
@@ -188,7 +188,7 @@
                 </span>
                 <span>@Loc.GetString("/graphsearchtools/channels/detail/tabs/insights")</span>
             </button>
-            <button type="button" class="gst-prof-switcher__btn@(Model.QueryAppliesPinned ? "" : " is-unwired")"
+            <button type="button" class="gst-tabs__btn@(Model.QueryAppliesPinned ? "" : " is-unwired")"
                     role="tab" aria-selected="false" data-panel="pinned" id="gst-prof-tab-pinned"
                     title="@(Model.QueryAppliesPinned ? "" : Loc.GetString("/graphsearchtools/channels/detail/unwiredPinned/tabTitle"))">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
@@ -199,7 +199,7 @@
                 </span>
                 <span>@Loc.GetString("/graphsearchtools/channels/detail/tabs/pinned")</span>
             </button>
-            <button type="button" class="gst-prof-switcher__btn@(Model.QueryAppliesSynonyms ? "" : " is-unwired")"
+            <button type="button" class="gst-tabs__btn@(Model.QueryAppliesSynonyms ? "" : " is-unwired")"
                     role="tab" aria-selected="false" data-panel="synonyms" id="gst-prof-tab-synonyms"
                     title="@(Model.QueryAppliesSynonyms ? "" : Loc.GetString("/graphsearchtools/channels/detail/unwiredSynonyms/tabTitle"))">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
@@ -215,7 +215,7 @@
             @* Aurora Phase 3C left Activity + Settings as two tabs; the
                Activity tab was retired when audit moved to the global
                Changelog under Pinned + Synonyms. Settings remains. *@
-            <button type="button" class="gst-prof-switcher__btn"
+            <button type="button" class="gst-tabs__btn"
                     role="tab" aria-selected="false" data-panel="details" id="gst-prof-tab-details">
                 <span class="gst-prof-switcher__icon" aria-hidden="true">
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
@@ -399,12 +399,12 @@
             <div id="gst-prof-ins" class="gst-prof-ins">
 
                 <header class="gst-prof-ins__bar">
-                    <div class="gst-prof-ins__windows" role="group"
+                    <div class="gst-segmented" role="group"
                          aria-label="@Loc.GetString("/graphsearchtools/channels/detail/insights/windowLabel")">
-                        <button type="button" class="gst-prof-ins__pill" data-window="1h">1h</button>
-                        <button type="button" class="gst-prof-ins__pill is-active" data-window="24h">24h</button>
-                        <button type="button" class="gst-prof-ins__pill" data-window="7d">7d</button>
-                        <button type="button" class="gst-prof-ins__pill" data-window="30d">30d</button>
+                        <button type="button" class="gst-segmented__btn" data-window="1h">1h</button>
+                        <button type="button" class="gst-segmented__btn is-active" data-window="24h">24h</button>
+                        <button type="button" class="gst-segmented__btn" data-window="7d">7d</button>
+                        <button type="button" class="gst-segmented__btn" data-window="30d">30d</button>
                     </div>
                     <span class="gst-prof-ins__bar-spacer"></span>
                     <button type="button" id="gst-prof-ins-refresh" class="gst-prof-ins__refresh"

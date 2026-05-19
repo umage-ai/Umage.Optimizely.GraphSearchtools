@@ -119,7 +119,7 @@
     // ── Toolbar wiring ────────────────────────────────────────────────
 
     function wireTabs() {
-        document.querySelectorAll('.gst-tab[data-tab]').forEach(function (btn) {
+        document.querySelectorAll('.gst-tabs__btn[data-tab]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var lane = btn.dataset.tab;
                 if (!lane || lane === state.tab) return;
@@ -394,9 +394,9 @@
         if (profSel) profSel.value = state.channel || '';
         var locSel = document.getElementById('gst-insights-locale-filter');
         if (locSel) locSel.value = state.locale || '';
-        document.querySelectorAll('.gst-tab[data-tab]').forEach(function (b) {
+        document.querySelectorAll('.gst-tabs__btn[data-tab]').forEach(function (b) {
             var on = b.dataset.tab === state.tab;
-            b.classList.toggle('active', on);
+            b.classList.toggle('is-active', on);
             b.setAttribute('aria-selected', on ? 'true' : 'false');
         });
     }
@@ -490,9 +490,9 @@
             var panel = document.getElementById('gst-ins-panel-' + l);
             if (panel) panel.classList.toggle('is-active', l === lane);
         });
-        document.querySelectorAll('.gst-tab[data-tab]').forEach(function (b) {
+        document.querySelectorAll('.gst-tabs__btn[data-tab]').forEach(function (b) {
             var on = b.dataset.tab === lane;
-            b.classList.toggle('active', on);
+            b.classList.toggle('is-active', on);
             b.setAttribute('aria-selected', on ? 'true' : 'false');
         });
         applySortIndicatorToActiveTab();

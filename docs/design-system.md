@@ -330,6 +330,81 @@ Reference: `Views/Channels/Index.cshtml` + `channels.js` `renderTable()`.
 
 ---
 
+## Component: Tabs
+
+A horizontal strip of buttons under a panel — clicking a button hides the
+current panel and reveals another. Single hair-rule baseline, brand-blue
+indicator on the active tab. The one tab affordance across the addon.
+
+**Use when** a surface has 2–4 sibling panels of the same kind (Pinned →
+Pins/Audit/Changelog, Synonyms → Rules/Unused, Insights → Top/Zero/LowCtr,
+Channel detail → Insights/Pinned/Synonyms/Settings). **Don't use** for
+in-place state toggles (window pickers, sort modes) — use **Segmented**
+below.
+
+### Skeleton
+
+```html
+<nav class="gst-tabs" role="tablist" aria-label="...">
+    <button type="button" class="gst-tabs__btn is-active"
+            role="tab" aria-selected="true" data-tab="pins"
+            aria-controls="gst-pinned-panel-pins">Pins</button>
+    <button type="button" class="gst-tabs__btn"
+            role="tab" aria-selected="false" data-tab="audit"
+            aria-controls="gst-pinned-panel-audit">Audit</button>
+</nav>
+```
+
+### Rules
+
+- The active tab carries `.is-active` and `aria-selected="true"`. Inactive
+  tabs lose the class and the attribute. No third state.
+- Tabs reveal a `<section class="gst-tabpanel" data-tab="...">` further
+  down. The panel-switching JS uses `data-tab` to pair button → panel.
+- Optional count chip rides inside the label: `<span class="gst-tab__count">23</span>`.
+  The chip recolours from neutral to primary when its tab is active.
+- The Channel-detail tools console uses the same `.gst-tabs__btn` button
+  with an extra container class (`.gst-prof-switcher`) for the gradient
+  backdrop, icon slot, and `.is-unwired` state. Don't replicate the
+  console pattern elsewhere — it's a one-off specialisation.
+
+Reference: `Views/Pinned/Index.cshtml` (page-level), `Views/Channels/Detail.cshtml`
+(tools console).
+
+---
+
+## Component: Segmented
+
+A connected row of buttons that swaps state on the surface without
+revealing a different panel. Visually a single rounded pill split into
+segments — the active segment fills with primary blue.
+
+**Use when** a single surface needs a small set of mutually-exclusive
+states (window pickers `[1h | 24h | 7d | 30d]`, sort modes, view density).
+**Don't use** to swap panels — use **Tabs** above.
+
+### Skeleton
+
+```html
+<div class="gst-segmented" role="group" aria-label="Time window">
+    <button type="button" class="gst-segmented__btn" data-window="1h">1h</button>
+    <button type="button" class="gst-segmented__btn is-active" data-window="24h">24h</button>
+    <button type="button" class="gst-segmented__btn" data-window="7d">7d</button>
+    <button type="button" class="gst-segmented__btn" data-window="30d">30d</button>
+</div>
+```
+
+### Rules
+
+- Exactly one segment carries `.is-active`. The active segment is
+  `cursor: default` and doesn't hover — re-clicking it is a no-op.
+- Don't mix segmented with tabs in the same toolbar; the redundant
+  visual language confuses the "what does this do" question.
+
+Reference: `Views/Channels/Detail.cshtml` Insights bar (window picker).
+
+---
+
 ## Component: Row menu (`GST.rowMenu`)
 
 The popover anchored to a row's `⋯` button. Single open at a time; closes on

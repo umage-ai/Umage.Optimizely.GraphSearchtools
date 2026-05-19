@@ -1479,31 +1479,7 @@
     margin-left: 4px;
 }
 
-/* ── Tabs ───────────────────────────────────────────────────────────────
-   Aurora tab strip — single hair-rule baseline, brand-blue indicator on
-   the active tab. */
-.gst-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--gst-border);
-    margin-bottom: var(--gst-space-xl);
-    gap: var(--gst-space-xs);
-}
-
-.gst-tab {
-    padding: 10px 18px;
-    font-size: var(--gst-text-base);
-    font-weight: 500;
-    color: var(--gst-text-secondary);
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition: color .15s, border-color .15s;
-    font-family: var(--gst-font);
-}
-.gst-tab:hover { color: var(--gst-text); }
-.gst-tab.active { color: var(--gst-primary); border-bottom-color: var(--gst-primary); }
+/* Tabs live further down with the survivor block. */
 
 /* ── Animations ─────────────────────────────────────────────────── */
 @keyframes gst-spin { to { transform: rotate(360deg); } }
@@ -4718,7 +4694,13 @@ td.bpe-editing select {
     align-self: stretch;
 }
 
-/* ── Segmented switcher ──────────────────────────────────────── */
+/* ── Channels-detail tools-console tab strip ─────────────────────
+   A specialisation of .gst-tabs / .gst-tabs__btn — same active-border
+   treatment as page-level tabs, but sits inside the right-hand console
+   with its own padding, gradient backdrop, icon slot, and `is-unwired`
+   state for tabs whose underlying GraphQL query doesn't opt in. The
+   shared base styles live with .gst-tabs__btn; only these extras live
+   here. */
 .gst-prof-switcher {
     display: flex;
     gap: 0;
@@ -4727,29 +4709,13 @@ td.bpe-editing select {
     align-items: stretch;
     border-bottom: 1px solid var(--gst-border-light);
     background: linear-gradient(180deg, var(--gst-surface) 0%, var(--gst-bg) 100%);
+    margin-bottom: 0;
 }
-.gst-prof-switcher__btn {
-    appearance: none;
-    background: transparent;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    color: var(--gst-text-secondary);
-    font: inherit;
-    font-size: var(--gst-text-sm);
-    font-weight: 500;
+.gst-prof-switcher .gst-tabs__btn {
     padding: 0 14px;
-    margin-bottom: -1px;
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    letter-spacing: 0.01em;
-    transition: color 140ms ease, border-color 140ms ease;
-}
-.gst-prof-switcher__btn:hover { color: var(--gst-text); }
-.gst-prof-switcher__btn.is-active {
-    color: var(--gst-primary);
-    border-bottom-color: var(--gst-primary);
 }
 .gst-prof-switcher__icon {
     display: inline-flex;
@@ -4757,17 +4723,17 @@ td.bpe-editing select {
     color: currentColor;
     opacity: 0.8;
 }
-.gst-prof-switcher__btn.is-active .gst-prof-switcher__icon { opacity: 1; }
+.gst-prof-switcher .gst-tabs__btn.is-active .gst-prof-switcher__icon { opacity: 1; }
 
 /* Unwired tab — the registered GraphQL query doesn't opt in to this
    feature (no usePinned / no `synonyms: ONE`). The tab still works as
    navigation so the user can see the explanation, but the icon and
    label are dimmed and a small "muted" dot trails the label. */
-.gst-prof-switcher__btn.is-unwired {
+.gst-prof-switcher .gst-tabs__btn.is-unwired {
     color: var(--gst-text-muted);
 }
-.gst-prof-switcher__btn.is-unwired .gst-prof-switcher__icon { opacity: 0.4; }
-.gst-prof-switcher__btn.is-unwired::after {
+.gst-prof-switcher .gst-tabs__btn.is-unwired .gst-prof-switcher__icon { opacity: 0.4; }
+.gst-prof-switcher .gst-tabs__btn.is-unwired::after {
     content: '';
     width: 5px;
     height: 5px;
@@ -4776,10 +4742,10 @@ td.bpe-editing select {
     background: var(--gst-warning, #c97a2a);
     flex-shrink: 0;
 }
-.gst-prof-switcher__btn.is-unwired.is-active {
+.gst-prof-switcher .gst-tabs__btn.is-unwired.is-active {
     color: var(--gst-text-secondary);
 }
-.gst-prof-switcher__btn.is-unwired.is-active .gst-prof-switcher__icon { opacity: 0.7; }
+.gst-prof-switcher .gst-tabs__btn.is-unwired.is-active .gst-prof-switcher__icon { opacity: 0.7; }
 
 /* ── Unwired callout ─────────────────────────────────────────── */
 /* Shown inside a panel when the registered query doesn't support
@@ -5019,34 +4985,6 @@ td.bpe-editing select {
     border-radius: var(--gst-radius);
 }
 .gst-prof-ins__bar-spacer { flex: 1; }
-.gst-prof-ins__windows {
-    display: inline-flex;
-    border: 1px solid var(--gst-border);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.gst-prof-ins__pill {
-    appearance: none;
-    background: var(--gst-surface);
-    border: 0;
-    border-right: 1px solid var(--gst-border);
-    color: var(--gst-text-secondary);
-    font: inherit;
-    font-size: var(--gst-text-sm);
-    font-weight: 500;
-    padding: 4px 12px;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    transition: background 120ms ease, color 120ms ease;
-}
-.gst-prof-ins__pill:last-child { border-right: 0; }
-.gst-prof-ins__pill:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
-.gst-prof-ins__pill.is-active {
-    background: var(--gst-primary);
-    color: #fff;
-    cursor: default;
-}
-.gst-prof-ins__pill.is-active:hover { background: var(--gst-primary); }
 .gst-prof-ins__refresh {
     appearance: none;
     background: transparent;
@@ -5677,18 +5615,21 @@ td.bpe-editing select {
 }
 @media (max-width: 720px) {
     .gst-prof-preview__pickers { width: 100%; }
-    .gst-prof-switcher__btn { padding: 12px 10px; }
-    .gst-prof-switcher__btn span:not(.gst-prof-switcher__icon) {
+    .gst-prof-switcher .gst-tabs__btn { padding: 12px 10px; }
+    .gst-prof-switcher .gst-tabs__btn span:not(.gst-prof-switcher__icon) {
         /* Drop the labels on narrow screens — the icons carry the meaning. */
         display: none;
     }
 }
 
-/* ── Page tabs ──────────────────────────────────────────────────── */
-/* A lighter sibling of gst-prof-switcher meant for page-level tab bars
-   that sit directly under the page header (e.g. Synonyms → Rules/Unused,
-   Pinned → Pins/Audit). Same visual language as the channel switcher so
-   the marketer doesn't have to learn two affordances. */
+/* ── Tabs ───────────────────────────────────────────────────────────
+   Aurora tab strip — single hair-rule baseline, brand-blue indicator on
+   the active tab. Used for page-level tab bars (Pinned → Pins/Audit,
+   Synonyms → Rules/Unused, Insights → Top/Zero/LowCtr) and for the
+   Channel-detail tools console (which adds its own .gst-prof-switcher
+   container + icon + .is-unwired state). See design-system.md →
+   Component: Tabs. Tabs reveal a panel below; use .gst-segmented for
+   in-place state toggles (e.g. window pickers). */
 .gst-tabs {
     display: flex;
     gap: 0;
@@ -5717,6 +5658,41 @@ td.bpe-editing select {
     border-bottom-color: var(--gst-primary);
 }
 .gst-tabpanel[hidden] { display: none; }
+
+/* ── Segmented ──────────────────────────────────────────────────────
+   In-place state toggle — a connected row of buttons that updates the
+   surface below without revealing a different panel. Compare with tabs:
+   tabs swap panels, segmented swaps state. Current consumer is the
+   Channel-detail Insights window picker [1h | 24h | 7d | 30d]. See
+   design-system.md → Component: Segmented. */
+.gst-segmented {
+    display: inline-flex;
+    border: 1px solid var(--gst-border);
+    border-radius: var(--gst-radius);
+    overflow: hidden;
+}
+.gst-segmented__btn {
+    appearance: none;
+    background: var(--gst-surface);
+    border: 0;
+    border-right: 1px solid var(--gst-border);
+    color: var(--gst-text-secondary);
+    font: inherit;
+    font-size: var(--gst-text-sm);
+    font-weight: 500;
+    padding: 4px 12px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 120ms ease, color 120ms ease;
+}
+.gst-segmented__btn:last-child { border-right: 0; }
+.gst-segmented__btn:hover { background: var(--gst-surface-hover); color: var(--gst-text); }
+.gst-segmented__btn.is-active {
+    background: var(--gst-primary);
+    color: #fff;
+    cursor: default;
+}
+.gst-segmented__btn.is-active:hover { background: var(--gst-primary); }
 
 /* ── Synonym Coverage inline editor ─────────────────────────────── */
 /* Mirrors the Channel Insights inline editor (gst-prof-ins-edit*) but
@@ -5784,7 +5760,7 @@ td.bpe-editing select {
 }
 .gst-ins-row__channel:hover { text-decoration: underline; }
 
-/* Small count chip riding inside a .gst-tab label — "Top phrases · 23".
+/* Small count chip riding inside a .gst-tabs__btn label — "Top phrases · 23".
    Stays muted so it reads as metadata, not part of the tab name. */
 .gst-tab__count {
     display: inline-block;
@@ -5799,7 +5775,7 @@ td.bpe-editing select {
     line-height: 1.4;
     vertical-align: 1px;
 }
-.gst-tab.active .gst-tab__count {
+.gst-tabs__btn.is-active .gst-tab__count {
     background: color-mix(in srgb, var(--gst-primary) 12%, transparent);
     color: var(--gst-primary);
 }
