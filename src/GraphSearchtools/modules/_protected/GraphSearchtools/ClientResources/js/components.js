@@ -1,6 +1,7 @@
 /**
  * Graph Search Tools - Reusable UI Components
  *
+ * Alert:           GST.alert(msg, level, opts)
  * Content Picker:  GST.contentPicker(opts)  → Promise<{id, name}>
  * Content Type Picker: GST.contentTypePicker(opts) → Promise<{id, name, displayName}>
  * Flyout:          GST.flyout.open(key, opts) / GST.flyout.close(key)
@@ -8,6 +9,53 @@
  */
 (function () {
     const API = window.GST_BASE_URL + '/ComponentsApi';
+
+    // ── Alert ──────────────────────────────────────────────────────────
+    // Single page-level alert region. Callers don't manage the host's
+    // hidden/textContent/class state themselves — they just call
+    // GST.alert('msg', 'danger') to show and GST.alert(null) to clear.
+    //
+    // The default host is `#gst-alert`, rendered once per tool page by the
+    // layout (design-system.md → "The tool page"). Surfaces that need a
+    // scoped alert region (e.g. an Insights window inside Channel detail)
+    // pass `opts.host` to override.
+    //
+    // Levels map to the four `.gst-alert--{level}` modifiers defined in
+    // graphsearchtools.css.
+    const ALERT_LEVELS = { info: 1, success: 1, warning: 1, danger: 1 };
+    const _alertTimers = new WeakMap();
+
+    GST.alert = function (msg, level, opts) {
+        opts = opts || {};
+        const host = typeof opts.host === 'string'
+            ? document.querySelector(opts.host)
+            : (opts.host || document.getElementById('gst-alert'));
+        if (!host) return null;
+
+        const prev = _alertTimers.get(host);
+        if (prev) { clearTimeout(prev); _alertTimers.delete(host); }
+
+        if (!msg) {
+            host.hidden = true;
+            host.textContent = '';
+            host.className = 'gst-alert';
+            return host;
+        }
+
+        const lvl = ALERT_LEVELS[level] ? level : 'info';
+        host.className = 'gst-alert gst-alert--' + lvl;
+        host.textContent = msg;
+        host.hidden = false;
+
+        if (typeof opts.autoDismiss === 'number' && opts.autoDismiss > 0) {
+            const t = setTimeout(function () {
+                _alertTimers.delete(host);
+                GST.alert(null, null, { host: host });
+            }, opts.autoDismiss);
+            _alertTimers.set(host, t);
+        }
+        return host;
+    };
 
     // ── Row menu (Aurora ⋯ popover) ────────────────────────────────────
     // Anchors a small popover beneath the ⋯ button and renders a list of
