@@ -62,7 +62,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // Top-level cross-channel surfaces. Pinned is a collection-axis
         // browser (prototype, read-only for now); Synonyms is channel-agnostic
         // because Graph synonyms live in a tenant-global pool.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned"), BaseMenuPath + "/pinned",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned results"), BaseMenuPath + "/pinned",
             GetResourcePath("GraphSearchtools/Pinned"))
         {
             SortIndex = 200,
