@@ -145,7 +145,7 @@ or removing entries:
 
 | Name | Used for |
 |------|----------|
-| `search`        | Toolbar search input, page-header logo, row-preview affordance |
+| `search`        | Page-header logo, row-preview affordance, SERP magnifier. **Not** the filter-as-you-type inputs — those use only the placeholder text as their label. |
 | `pin`, `pinOff` | Pinned tool + "channel doesn't pin" empty state |
 | `synonym`, `synonymOff` | Synonyms tool + "channel doesn't synonymise" empty state |
 | `channels`      | Channels tile + menu |
@@ -216,12 +216,10 @@ primary CTA. **Don't use** for a single button — just place it.
 
 ### Skeleton
 
-```html
+```cshtml
 <div class="gst-toolbar">
-    <div class="gst-search">
-        <svg class="gst-search__icon">…</svg>
-        <input type="text" id="gst-{tool}-search" placeholder="@Loc.GetString(...)" />
-    </div>
+    @await Html.PartialAsync("/Views/Shared/_SearchInput.cshtml",
+        new { Id = "gst-{tool}-search", Placeholder = Loc.GetString(".../filterPlaceholder") })
 
     <label class="gst-filter">
         <span class="gst-filter__label">@Loc.GetString(...)</span>
@@ -238,6 +236,10 @@ primary CTA. **Don't use** for a single button — just place it.
 
 ### Rules
 
+- **`.gst-search` is filter-as-you-type and has no icon or external
+  label.** The placeholder text *is* the label ("Filter channels…",
+  "Filter rules…"). Don't add a magnifier glyph or a `<span>` label
+  next to it.
 - `.gst-filter` is label-above-value (Aurora style), not a bare `<select>`.
   The label is the column name, singularized: "Site", "Locale", "Status".
 - The default `<option>` reads "All <plural>" — e.g. "All sites".

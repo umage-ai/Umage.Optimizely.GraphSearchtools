@@ -625,8 +625,7 @@
             // Build UI
             body.innerHTML = `
                 <div class="gst-search gst-mb-md">
-                    ${GST.icon('search', { size: 16, class: 'gst-search__icon' })}
-                    <input type="text" class="gst-picker-search" placeholder="${GST.s('components.picker_search', 'Search content by name...')}" style="width:100%" />
+                    <input type="text" class="gst-picker-search" placeholder="${GST.s('components.picker_search', 'Search content by name...')}" />
                 </div>
                 <div class="gst-picker-tree" style="max-height:400px;overflow-y:auto"></div>
                 <div class="gst-picker-results gst-hidden" style="max-height:400px;overflow-y:auto"></div>
@@ -790,8 +789,7 @@
 
             body.innerHTML = `
                 <div class="gst-search gst-mb-md">
-                    ${GST.icon('search', { size: 16, class: 'gst-search__icon' })}
-                    <input type="text" class="gst-picker-search" placeholder="${GST.s('components.typepicker_search', 'Search content types...')}" style="width:100%" />
+                    <input type="text" class="gst-picker-search" placeholder="${GST.s('components.typepicker_search', 'Search content types...')}" />
                 </div>
                 <div class="gst-picker-list" style="max-height:400px;overflow-y:auto"></div>
                 <div class="gst-flex gst-mt-md" style="justify-content:flex-end;gap:8px">

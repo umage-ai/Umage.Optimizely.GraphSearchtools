@@ -337,29 +337,17 @@
 }
 
 /* ── Search ─────────────────────────────────────────────────────────────
-   Aurora's search input is taller (40px) with an inset magnifier glyph
-   and a soft 1px border that brightens to brand blue on focus. */
+   Aurora's filter-as-you-type input is taller (40px) with a soft 1px
+   border that brightens to brand blue on focus. The placeholder text
+   names the filter — no separate label or magnifier glyph. */
 .gst-search {
-    position: relative;
     width: 280px;
-}
-
-.gst-search__icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    color: var(--gst-color-text-muted);
-    pointer-events: none;
-    transition: color .15s;
 }
 
 .gst-search input {
     width: 100%;
     height: 40px;
-    padding: 0 14px 0 38px;
+    padding: 0 14px;
     border: 1px solid var(--gst-color-border);
     border-radius: var(--gst-radius);
     font-size: var(--gst-text-base);
@@ -375,7 +363,6 @@
     border-color: var(--gst-color-primary);
     box-shadow: 0 0 0 3px var(--gst-color-primary-light);
 }
-.gst-search:focus-within .gst-search__icon { color: var(--gst-color-primary); }
 
 /* ── Filter dropdown (label-above-value, Aurora style) ──────────────────
    The Aurora Content Types page renders filters as a small uppercase-ish
