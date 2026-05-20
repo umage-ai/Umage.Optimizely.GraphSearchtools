@@ -101,7 +101,10 @@ public class UiStringsProvider(LocalizationService loc)
             save_progress = S("pinned/save_progress"),
             conflict = S("pinned/conflict"),
             target_pick = S("pinned/target_pick"),
-            activity_unknown = S("pinned/activity_unknown")
+            activity_unknown = S("pinned/activity_unknown"),
+            readonly_banner = S("pinned/readonly_banner"),
+            readonly_tooltip = S("pinned/readonly_tooltip"),
+            readonly_collection_tooltip = S("pinned/readonly_collection_tooltip")
         },
         synonyms = new
         {
@@ -121,7 +124,9 @@ public class UiStringsProvider(LocalizationService loc)
             help_equivalent_label = S("synonyms/help_equivalent_label"),
             help_equivalent_text = S("synonyms/help_equivalent_text"),
             col_activity = S("synonyms/col_activity"),
-            activity_unknown = S("synonyms/activity_unknown")
+            activity_unknown = S("synonyms/activity_unknown"),
+            readonly_banner = S("synonyms/readonly_banner"),
+            readonly_tooltip = S("synonyms/readonly_tooltip")
         },
         // Global changelog feed surfaced under Pinned + Synonyms. Empty / load-
         // failed strings are looked up via GST.s('changelog.empty', ...) etc.

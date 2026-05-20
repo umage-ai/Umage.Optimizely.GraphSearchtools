@@ -1,0 +1,25 @@
+@{
+    var allowed = (bool)(ViewData["Allowed"] ?? true);
+    var href = ViewData["Href"]?.ToString() ?? "#";
+    var icon = ViewData["Icon"]?.ToString() ?? "search";
+    var title = ViewData["Title"]?.ToString() ?? string.Empty;
+    var desc = ViewData["Desc"]?.ToString() ?? string.Empty;
+    var noAccessTooltip = ViewData["NoAccessTooltip"]?.ToString() ?? "No access";
+}
+@if (allowed)
+{
+    <a class="gst-tool-card" href="@href">
+        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = icon, Size = 28, Class = "gst-tool-card__icon" })
+        <div class="gst-tool-card__title">@title</div>
+        <div class="gst-tool-card__desc">@desc</div>
+    </a>
+}
+else
+{
+    <div class="gst-tool-card disabled" title="@noAccessTooltip" aria-disabled="true">
+        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = icon, Size = 28, Class = "gst-tool-card__icon" })
+        <div class="gst-tool-card__title">@title</div>
+        <div class="gst-tool-card__desc">@desc</div>
+        <div class="gst-tool-card__noaccess">@noAccessTooltip</div>
+    </div>
+}

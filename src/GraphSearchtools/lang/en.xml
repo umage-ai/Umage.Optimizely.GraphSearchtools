@@ -42,6 +42,7 @@
         <overview>
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
+          <noAccess>You do not have access to this tool.</noAccess>
         </overview>
         <about>
           <title>About Graph Search Tools</title>
@@ -421,6 +422,9 @@
           <save_failed>%1 of %2 changes failed. See console for details.</save_failed>
           <save_progress>Saving %1 of %2…</save_progress>
           <conflict>This phrase is also pinned in: %1</conflict>
+          <readonly_banner>Read-only access — your role does not include edit permission for pinned results.</readonly_banner>
+          <readonly_tooltip>You do not have edit permission for pinned items.</readonly_tooltip>
+          <readonly_collection_tooltip>You do not have permission to manage pinned collections.</readonly_collection_tooltip>
         </pinned>
         <synonyms>
           <request_failed>Request failed</request_failed>
@@ -437,6 +441,8 @@
           <col_activity>Activity (30d)</col_activity>
           <activity_unknown>—</activity_unknown>
           <activity_load_failed>Activity unavailable</activity_load_failed>
+          <readonly_banner>Read-only access — your role does not include edit permission for synonyms.</readonly_banner>
+          <readonly_tooltip>You do not have edit permission for synonyms.</readonly_tooltip>
         </synonyms>
         <pinFlyout>
           <createTitle>Create pin</createTitle>

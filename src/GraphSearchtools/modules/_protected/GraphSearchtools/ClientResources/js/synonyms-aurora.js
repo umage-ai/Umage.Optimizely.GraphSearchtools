@@ -115,7 +115,28 @@
         const deleteBtn = document.getElementById('gst-synfly-delete');
         if (deleteBtn) deleteBtn.addEventListener('click', onDeleteFromFlyout);
 
+        applyReadOnlyGate();
+
         loadAll();
+    }
+
+    // Mirror pinned-aurora.js: if the user lacks SynonymsEdit, show a
+    // banner inside whichever container hosts the rules table — the
+    // standalone Synonyms page wraps it in section.gst-tabpanel[data-tab],
+    // Channel Detail wraps it in article.gst-prof-panel[data-panel] — and
+    // disable every mutating control.
+    function applyReadOnlyGate() {
+        if (!window.GST || GST.can('synonymsEdit')) return;
+        var tip = GST.s('synonyms.readonly_tooltip', 'You do not have edit permission for synonyms.');
+        var table = document.querySelector('.gst-syn-aurora-table');
+        var host = (table && table.closest('[data-tab],[data-panel]'))
+            || document.querySelector('.gst-page-header')
+            || document.querySelector('main')
+            || document.body;
+        GST.renderReadOnlyBanner(host,
+            GST.s('synonyms.readonly_banner', 'Read-only access — your role does not include edit permission for synonyms.'));
+        GST.disableAll(document, '#gst-syn-create, [data-flyout-save="syn"], #gst-synfly-delete', tip);
+        GST.disableAll(document, '[data-action="delete-synonym"]', tip);
     }
 
     function onDeleteFromFlyout(e) {

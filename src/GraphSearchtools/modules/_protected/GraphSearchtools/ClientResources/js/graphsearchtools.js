@@ -534,6 +534,57 @@ const GST = {
 };
 
 /**
+ * Permission helpers. window.GST_PERMS is seeded by the layout from the
+ * server-side PermissionMap; if it's absent (e.g. an isolated test page),
+ * default to "everything allowed" so the UI doesn't silently gate itself.
+ */
+GST.perms = window.GST_PERMS || {
+    channels: true, insights: true,
+    pinned: true, pinnedEdit: true, collections: true,
+    synonyms: true, synonymsEdit: true
+};
+GST.can = function(scope) { return GST.perms[scope] !== false; };
+
+/**
+ * Renders a "read-only" amber banner above the host element. Idempotent:
+ * if a banner with the same key already exists in the host, it's reused.
+ */
+GST.renderReadOnlyBanner = function(host, text) {
+    if (!host || !text) return null;
+    var existing = host.querySelector(':scope > .gst-readonly-banner[data-gst-readonly]');
+    if (existing) return existing;
+    var div = document.createElement('div');
+    div.className = 'gst-readonly-banner';
+    div.setAttribute('data-gst-readonly', '1');
+    div.setAttribute('role', 'status');
+    div.innerHTML =
+        '<svg class="gst-readonly-banner__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+        '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+        '<span class="gst-readonly-banner__text">' + text + '</span>';
+    host.insertBefore(div, host.firstChild);
+    return div;
+};
+
+/**
+ * Disable every element matching `selector` inside `root`. Sets the
+ * disabled attribute (works on <button>) and a data-gst-disabled marker so
+ * subsequent re-renders can skip elements we already touched.
+ */
+GST.disableAll = function(root, selector, tooltip) {
+    if (!root) return;
+    var nodes = root.querySelectorAll(selector);
+    for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        if (n.dataset && n.dataset.gstDisabled === '1') continue;
+        try { n.disabled = true; } catch (e) {}
+        n.setAttribute('aria-disabled', 'true');
+        n.classList.add('gst-disabled');
+        if (tooltip) n.setAttribute('title', tooltip);
+        if (n.dataset) n.dataset.gstDisabled = '1';
+    }
+};
+
+/**
  * Shared editor-grid helpers. The Pinned editor and the channel-detail
  * Synonyms panel both render the same `gst-pinedit__*` table-grid shape
  * (filter + count chip + sortable headers + paged body + dirty drawer),

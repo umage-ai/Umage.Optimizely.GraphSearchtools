@@ -1,10 +1,14 @@
 @using EPiServer.Shell
 @inject LocalizationService Loc
+@inject UmageAI.Optimizely.GraphSearchTools.Permissions.PermissionMap PermissionMap
 @{
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
     ViewData["Title"] = Loc.GetString("/graphsearchtools/tools/overview/title");
 
     string Tile(string actionPath) => Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), actionPath);
+
+    var perms = PermissionMap.ForCurrentUser();
+    var noAccessTooltip = Loc.GetString("/graphsearchtools/tools/overview/noAccess");
 }
 
 @section NavItems {
@@ -16,29 +20,43 @@
 </div>
 
 <div class="gst-tool-grid">
-    <a class="gst-tool-card" href="/EPiServer/cms/graphsearchtools/channels">
-        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "channels", Size = 28, Class = "gst-tool-card__icon" })
-        <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/menu/channels")</div>
-        <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/channels/description")</div>
-    </a>
+    @await Html.PartialAsync("/Views/Overview/_ToolCard.cshtml", new ViewDataDictionary(ViewData)
+    {
+        ["Allowed"] = perms.channels,
+        ["Href"] = "/EPiServer/cms/graphsearchtools/channels",
+        ["Icon"] = "channels",
+        ["Title"] = Loc.GetString("/graphsearchtools/menu/channels"),
+        ["Desc"] = Loc.GetString("/graphsearchtools/tools/channels/description"),
+        ["NoAccessTooltip"] = noAccessTooltip
+    })
 
-    <a class="gst-tool-card" href="@Tile("Insights/Index")">
-        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "insights", Size = 28, Class = "gst-tool-card__icon" })
-        <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/menu/insights")</div>
-        <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/insights/description")</div>
-    </a>
+    @await Html.PartialAsync("/Views/Overview/_ToolCard.cshtml", new ViewDataDictionary(ViewData)
+    {
+        ["Allowed"] = perms.insights,
+        ["Href"] = Tile("Insights/Index"),
+        ["Icon"] = "insights",
+        ["Title"] = Loc.GetString("/graphsearchtools/menu/insights"),
+        ["Desc"] = Loc.GetString("/graphsearchtools/tools/insights/description"),
+        ["NoAccessTooltip"] = noAccessTooltip
+    })
 
-    <a class="gst-tool-card" href="@Tile("GraphSearchtools/Pinned")">
-        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "pin", Size = 28, Class = "gst-tool-card__icon" })
-        <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/tools/pinned/title")</div>
-        <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/pinned/description")</div>
-    </a>
+    @await Html.PartialAsync("/Views/Overview/_ToolCard.cshtml", new ViewDataDictionary(ViewData)
+    {
+        ["Allowed"] = perms.pinned,
+        ["Href"] = Tile("GraphSearchtools/Pinned"),
+        ["Icon"] = "pin",
+        ["Title"] = Loc.GetString("/graphsearchtools/tools/pinned/title"),
+        ["Desc"] = Loc.GetString("/graphsearchtools/tools/pinned/description"),
+        ["NoAccessTooltip"] = noAccessTooltip
+    })
 
-    <a class="gst-tool-card" href="@Tile("GraphSearchtools/Synonyms")">
-        @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "synonym", Size = 28, Class = "gst-tool-card__icon" })
-        <div class="gst-tool-card__title">@Loc.GetString("/graphsearchtools/tools/synonyms/title")</div>
-        <div class="gst-tool-card__desc">@Loc.GetString("/graphsearchtools/tools/synonyms/description")</div>
-    </a>
-
-
+    @await Html.PartialAsync("/Views/Overview/_ToolCard.cshtml", new ViewDataDictionary(ViewData)
+    {
+        ["Allowed"] = perms.synonyms,
+        ["Href"] = Tile("GraphSearchtools/Synonyms"),
+        ["Icon"] = "synonym",
+        ["Title"] = Loc.GetString("/graphsearchtools/tools/synonyms/title"),
+        ["Desc"] = Loc.GetString("/graphsearchtools/tools/synonyms/description"),
+        ["NoAccessTooltip"] = noAccessTooltip
+    })
 </div>
