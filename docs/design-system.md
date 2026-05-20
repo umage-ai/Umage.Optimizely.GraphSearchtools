@@ -41,9 +41,6 @@ tier references the one below, component CSS reads from the highest
 applicable tier, and themes swap by re-pointing aliases — not by
 touching component code.
 
-See [`design-system-methodologies.md`](./design-system-methodologies.md)
-for the broader rationale and how this model compares to alternatives.
-
 > **Current state.** The three-tier model is live in
 > `graphsearchtools.css`: primitives sit at the top of `:root`,
 > semantic tokens use the `--gst-color-*` prefix and alias primitives,
