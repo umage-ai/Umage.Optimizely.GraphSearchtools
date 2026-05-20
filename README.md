@@ -112,6 +112,21 @@ synonyms are tenant-global and aren't scoped to channels.
 For the design rationale, data model, and migration path, see
 [`docs/search-channels-design.md`](docs/search-channels-design.md).
 
+## For integrators
+
+End-to-end install and integration patterns live under
+[`docs/integrator/`](docs/integrator):
+
+- [Quickstart](docs/integrator/quickstart.md) — install, register a search
+  channel, and see a telemetry event in **Insights**.
+- [Server-rendered ASP.NET](docs/integrator/pattern-server-rendered.md) —
+  inject `ITelemetrySink` and emit events from your search controller.
+- [Headless deployment](docs/integrator/pattern-headless.md) — beacon
+  events from a SPA/SSR frontend to the public ingest endpoint.
+- [3rd-party telemetry](docs/integrator/pattern-third-party-telemetry.md)
+  — decorate `ITelemetrySink` to fan out, or replace `ITelemetryReader`
+  to source aggregates from your own warehouse.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
