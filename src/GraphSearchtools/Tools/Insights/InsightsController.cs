@@ -9,7 +9,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 /// Serves the Razor view for the Insights dashboard. Read APIs live in
 /// <see cref="InsightsApiController"/>.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class InsightsController : Controller
 {
     private readonly FeatureAccessChecker _accessChecker;

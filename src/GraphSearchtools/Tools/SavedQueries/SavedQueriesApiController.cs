@@ -15,7 +15,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 /// <c>/SavedQueriesApi</c> route are preserved so the Pinned JS keeps hitting
 /// <c>/SavedQueriesApi/Run</c> unmodified.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class SavedQueriesApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Pinned);

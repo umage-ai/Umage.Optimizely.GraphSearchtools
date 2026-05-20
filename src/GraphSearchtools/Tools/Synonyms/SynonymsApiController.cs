@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 /// passing no language. The wire format with Optimizely Graph is plain text —
 /// the line-per-rule structure is enforced client-side and joined here.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class SynonymsApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Synonyms);

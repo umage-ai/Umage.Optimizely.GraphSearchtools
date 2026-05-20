@@ -12,7 +12,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.AuditLog;
 /// surface a "Changelog" tab backed by <see cref="Recent"/>; both pass the
 /// kinds they care about via the <c>kind</c> CSV query param.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class AuditLogApiController : Controller
 {
     private readonly AuditLogService _audit;

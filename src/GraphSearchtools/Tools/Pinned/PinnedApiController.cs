@@ -22,7 +22,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// <see cref="SearchChannel.PinnedKeyForLocale"/> so the marketer never types
 /// the key.
 /// </remarks>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class PinnedApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Pinned);

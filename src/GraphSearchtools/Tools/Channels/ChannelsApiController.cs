@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 /// synonym / saved-query data go through their existing controllers — see
 /// docs/search-channels-design.md §4.1–§4.3.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 [Route("EPiServer/cms/graphsearchtools/api/channels")]
 public class ChannelsApiController : Controller
 {

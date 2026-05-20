@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Sites;
 /// Autocomplete). Both endpoints are gated only by the addon's base policy —
 /// the data is metadata, not content.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class SitesApiController : Controller
 {
     private readonly LanguageSiteEnumerator _enumerator;

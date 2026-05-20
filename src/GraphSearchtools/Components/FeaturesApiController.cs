@@ -9,7 +9,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Components;
 /// Returns which Graph Search Tools features are enabled for the current user.
 /// Used by the client-side module initializer to conditionally register commands.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class FeaturesApiController : Controller
 {
     private readonly FeatureAccessChecker _accessChecker;

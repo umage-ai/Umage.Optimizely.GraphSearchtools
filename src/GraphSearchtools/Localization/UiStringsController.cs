@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Localization;
 
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class UiStringsController : Controller
 {
     private readonly UiStringsProvider _provider;

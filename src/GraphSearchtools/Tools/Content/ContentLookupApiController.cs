@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Content;
 /// Free-text content search and GUID resolution used by the Pinned tool's
 /// inline content picker. Backed by the Optimizely Graph GraphQL endpoint.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class ContentLookupApiController : Controller
 {
     private readonly IContentLoader _contentLoader;
