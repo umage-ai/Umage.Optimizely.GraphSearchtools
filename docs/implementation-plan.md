@@ -11,7 +11,6 @@ stripped — the goal is a vendor-neutral `UmageAI.Optimizely.GraphSearchTools` 
 
 > Source repos referenced in this plan
 > - **Framework source:** `../Umage.Optimizely.EditorPowertools/`
-> - **Functional seed (private codebase, copy with rename only):** `../nti-website/src/NTI.WebExtensions/GraphSearch/` and `NTI.WebExtensions.Views/Views/GraphSearch/`. After porting, no reference to that namespace, repo name, or domain types remains.
 
 ---
 
@@ -288,8 +287,8 @@ class names, paths, and comments):
 
 ### 3.2 Generalisations required during the port
 
-These are the **must-fix** items flagged in `docs/research/nti-graphsearch-source.md` §6.
-None can be deferred:
+These are the **must-fix** generalisations flagged during the initial source
+survey. None can be deferred:
 
 1. **Sites enumeration** — replace any `StartPage.LanguageSitesOrDefault()` style
    call with a generic helper that uses `ISiteDefinitionRepository` /

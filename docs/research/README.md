@@ -6,7 +6,6 @@ Research conducted 2026-04-30 against `docs.developers.optimizely.com` and adjac
 ## Documents
 
 - [addon-design.md](./addon-design.md) — How to build `Umage.Optimizely.GraphSearchtools` by forking the EditorPowertools framework 1:1: tool set, namespace map, framework reuse, phased delivery.
-- [nti-graphsearch-source.md](./nti-graphsearch-source.md) — Survey of the existing Graph Search admin tool inside `nti-website/src` that will seed this addon: file map, API surface, upstream contracts, what's reusable vs. NTI-specific.
 - [optimizely-graph-site-search.md](./optimizely-graph-site-search.md) — Capabilities reference: search types, GraphQL surface, faceting, autocomplete, semantic search.
 - [relevancy-optimization.md](./relevancy-optimization.md) — Playbook for tuning result quality: boosting, decay, synonyms, pinned results, semantic weight, score thresholds.
 - [sources.md](./sources.md) — Annotated source list.
