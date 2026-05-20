@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 /// per-channel detail page). API calls go through
 /// <see cref="ChannelsApiController"/>.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 [Route("EPiServer/cms/graphsearchtools/channels")]
 public class ChannelsController : Controller
 {

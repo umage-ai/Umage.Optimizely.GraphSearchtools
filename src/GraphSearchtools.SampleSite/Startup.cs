@@ -49,7 +49,7 @@ public class Startup
         // Graph Search Tools
         services.AddGraphSearchtools(options =>
             {
-                // Configure options here or in appsettings.json under "CodeArt:GraphSearchtools"
+                // Configure options here or in appsettings.json under "UmageAI:GraphSearchTools"
             })
             // Single source of truth: AlloySearchService.SampleHitsQueryDocument
             // is the same string the runtime executes (modulo dynamic facet

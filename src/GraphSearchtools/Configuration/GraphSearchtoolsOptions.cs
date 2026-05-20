@@ -2,7 +2,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 
 /// <summary>
 /// Configuration options for Graph Search Tools.
-/// Bound from appsettings section "CodeArt:GraphSearchtools" by AddGraphSearchtools().
+/// Bound from appsettings section "UmageAI:GraphSearchTools" by AddGraphSearchtools().
 /// </summary>
 public class GraphSearchtoolsOptions
 {

@@ -9,7 +9,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Components;
 /// <summary>
 /// API endpoints for per-user tool preferences. Shared across all tools.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 [RequireAjax]
 public class PreferencesApiController : Controller
 {

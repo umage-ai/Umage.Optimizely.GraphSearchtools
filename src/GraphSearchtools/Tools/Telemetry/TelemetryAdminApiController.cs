@@ -12,7 +12,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 /// Coverage, Synonym Coverage). All three queries hang off a single window;
 /// the UI picks the call based on which card it's rendering.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public sealed class TelemetryAdminApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Telemetry);

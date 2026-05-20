@@ -13,7 +13,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage;
 /// surface is read-only — clicks back to the Synonyms editor produce links
 /// in the UI rather than POSTs.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class SynonymCoverageApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.SynonymCoverage);

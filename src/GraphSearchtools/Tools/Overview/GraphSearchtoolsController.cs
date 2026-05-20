@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Overview;
 /// Main controller for Graph Search Tools pages.
 /// Actions map to menu items via Paths.ToResource("GraphSearchtools/{ActionName}").
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class GraphSearchtoolsController : Controller
 {
     private readonly FeatureAccessChecker _accessChecker;

@@ -7,7 +7,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 
 /// <summary>
 /// Default <see cref="IGraphCredentialsResolver"/>: prefers values explicitly
-/// set on <c>CodeArt:GraphSearchtools:Graph</c> and falls back per-field to the
+/// set on <c>UmageAI:GraphSearchTools:Graph</c> and falls back per-field to the
 /// host's <c>Optimizely:ContentGraph</c> section.
 /// </summary>
 public sealed class GraphCredentialsResolver : IGraphCredentialsResolver

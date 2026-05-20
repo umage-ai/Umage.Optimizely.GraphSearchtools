@@ -12,7 +12,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 /// global Insights view and the per-channel Insights sub-tab —
 /// <c>channelKey</c> / <c>locale</c> are optional filters.
 /// </summary>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class InsightsApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Insights);

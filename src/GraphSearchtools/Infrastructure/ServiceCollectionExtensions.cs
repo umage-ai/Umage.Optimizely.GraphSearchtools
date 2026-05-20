@@ -50,7 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddOptions<GraphSearchtoolsOptions>()
             .Configure<IConfiguration>((options, configuration) =>
             {
-                configuration.GetSection("CodeArt:GraphSearchtools").Bind(options);
+                configuration.GetSection("UmageAI:GraphSearchTools").Bind(options);
             })
             .Configure(configureOptions);
 
@@ -173,6 +173,6 @@ internal class ConfigureGraphSearchtoolsPolicy : IPostConfigureOptions<Authoriza
         if (roles == null || roles.Length == 0)
             roles = ["WebAdmins", "Administrators"];
 
-        options.AddPolicy("codeart:graphsearchtools", policy => policy.RequireRole(roles));
+        options.AddPolicy("umageai:graphsearchtools", policy => policy.RequireRole(roles));
     }
 }

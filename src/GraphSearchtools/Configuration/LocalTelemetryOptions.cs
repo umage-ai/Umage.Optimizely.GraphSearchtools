@@ -2,7 +2,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 
 /// <summary>
 /// Tunables for the local telemetry sink (channel + bucket flusher + raw ring +
-/// retention + abuse caps). Bound from <c>CodeArt:GraphSearchtools:Telemetry</c>.
+/// retention + abuse caps). Bound from <c>UmageAI:GraphSearchTools:Telemetry</c>.
 /// </summary>
 /// <remarks>
 /// Defaults are sized for the design's ~1000 RPS target with headroom: 64K queue

@@ -68,7 +68,7 @@ public class AddGraphSearchtoolsTests
 
         // Auth policy is configured under the canonical name.
         var authOptions = provider.GetRequiredService<IOptions<AuthorizationOptions>>();
-        var policy = authOptions.Value.GetPolicy("codeart:graphsearchtools");
+        var policy = authOptions.Value.GetPolicy("umageai:graphsearchtools");
         policy.Should().NotBeNull();
 
         // Module is registered with the correct name (drives the layout virtual-path remap).
@@ -77,17 +77,17 @@ public class AddGraphSearchtoolsTests
     }
 
     [Fact]
-    public void AddGraphSearchtools_BindsConfigurationFromCodeArtSection()
+    public void AddGraphSearchtools_BindsConfigurationFromUmageAISection()
     {
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["CodeArt:GraphSearchtools:CheckPermissionForEachFeature"] = "true",
-                ["CodeArt:GraphSearchtools:SearchableContentTypes:0"] = "_Content",
-                ["CodeArt:GraphSearchtools:SearchableContentTypes:1"] = "ArticlePage",
-                ["CodeArt:GraphSearchtools:Graph:GatewayAddress"] = "https://example.com/graph",
-                ["CodeArt:GraphSearchtools:Graph:AppKey"] = "key1",
+                ["UmageAI:GraphSearchTools:CheckPermissionForEachFeature"] = "true",
+                ["UmageAI:GraphSearchTools:SearchableContentTypes:0"] = "_Content",
+                ["UmageAI:GraphSearchTools:SearchableContentTypes:1"] = "ArticlePage",
+                ["UmageAI:GraphSearchTools:Graph:GatewayAddress"] = "https://example.com/graph",
+                ["UmageAI:GraphSearchTools:Graph:AppKey"] = "key1",
             })
             .Build();
         services.AddSingleton<IConfiguration>(configuration);
@@ -107,15 +107,42 @@ public class AddGraphSearchtoolsTests
     }
 
     [Fact]
+    public void AddGraphSearchtools_IgnoresLegacyCodeArtSection()
+    {
+        // Hard cut: the pre-1.0 rename from CodeArt:GraphSearchtools to
+        // UmageAI:GraphSearchTools does not retain a fallback. Hosts that
+        // upgrade without renaming their config section get defaults.
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["CodeArt:GraphSearchtools:CheckPermissionForEachFeature"] = "true",
+                ["CodeArt:GraphSearchtools:Graph:GatewayAddress"] = "https://example.com/graph",
+            })
+            .Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions();
+        services.AddAuthorizationCore();
+
+        services.AddGraphSearchtools();
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<GraphSearchtoolsOptions>>();
+
+        options.Value.CheckPermissionForEachFeature.Should().BeFalse();
+        options.Value.Graph.Should().BeNull();
+    }
+
+    [Fact]
     public void AddGraphSearchtools_BindsSavedQueriesDefaultQueryAndVariables()
     {
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["CodeArt:GraphSearchtools:SavedQueries:DefaultQuery"] = "query Q($q:String){ Content(where:{_fulltext:{match:$q}}){ items { Name } total } }",
-                ["CodeArt:GraphSearchtools:SavedQueries:DefaultQueryVariables:productNodeType"] = "ProductNode",
-                ["CodeArt:GraphSearchtools:SavedQueries:DefaultQueryVariables:contentType"] = "Content"
+                ["UmageAI:GraphSearchTools:SavedQueries:DefaultQuery"] = "query Q($q:String){ Content(where:{_fulltext:{match:$q}}){ items { Name } total } }",
+                ["UmageAI:GraphSearchTools:SavedQueries:DefaultQueryVariables:productNodeType"] = "ProductNode",
+                ["UmageAI:GraphSearchTools:SavedQueries:DefaultQueryVariables:contentType"] = "Content"
             })
             .Build();
         services.AddSingleton<IConfiguration>(configuration);

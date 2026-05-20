@@ -21,7 +21,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 /// <c>since</c> is wire-formatted as a UTC ISO-8601 string; <c>take</c> is a
 /// plain integer. Both are normalised by <see cref="SearchLogsService"/>.
 /// </remarks>
-[Authorize(Policy = "codeart:graphsearchtools")]
+[Authorize(Policy = "umageai:graphsearchtools")]
 public class SearchLogsApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.SearchLogs);
