@@ -10,10 +10,9 @@ relevancy tuning). Distributed as NuGet package `UmageAI.Optimizely.GraphSearchT
 - `src/GraphSearchtools.SampleSite/` - Alloy CMS 12 demo site
 - `src/GraphSearchtools.SampleSiteCms13/` - Alloy CMS 13 demo site
 - `src/GraphSearchtools.Tests/` - xUnit tests, multi-target
-- `docs/implementation-plan.md` - phased plan, source-of-truth for what to build next
 - `docs/personas.md` - who we're designing for; read before UI/UX work
 - `docs/design-system.md` - shared UI patterns + components; read before UI work
-- `docs/research/` - Optimizely Graph research that motivated each tool
+- `docs/research/` - Optimizely Graph reference docs (capabilities, relevancy, auth)
 
 ## Tech Stack
 

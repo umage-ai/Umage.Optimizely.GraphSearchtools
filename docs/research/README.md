@@ -5,10 +5,9 @@ Research conducted 2026-04-30 against `docs.developers.optimizely.com` and adjac
 
 ## Documents
 
-- [addon-design.md](./addon-design.md) — How to build `Umage.Optimizely.GraphSearchtools` by forking the EditorPowertools framework 1:1: tool set, namespace map, framework reuse, phased delivery.
 - [optimizely-graph-site-search.md](./optimizely-graph-site-search.md) — Capabilities reference: search types, GraphQL surface, faceting, autocomplete, semantic search.
 - [relevancy-optimization.md](./relevancy-optimization.md) — Playbook for tuning result quality: boosting, decay, synonyms, pinned results, semantic weight, score thresholds.
-- [sources.md](./sources.md) — Annotated source list.
+- [graph-authentication.md](./graph-authentication.md) — How AppKey/Secret + SingleKey work together against the CMS.
 
 ## TL;DR
 
