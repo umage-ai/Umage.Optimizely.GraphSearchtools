@@ -59,6 +59,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<FeatureAccessChecker>();
         services.AddHttpContextAccessor();
         services.AddScoped<PermissionMap>();
+        services.AddHostedService<PermissionSeeder>();
         services.AddSingleton<UserPreferencesService>();
 
         services.AddScoped<UiStringsProvider>();

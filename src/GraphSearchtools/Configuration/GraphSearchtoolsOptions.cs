@@ -12,16 +12,25 @@ public class GraphSearchtoolsOptions
     public FeatureToggles Features { get; set; } = new();
 
     /// <summary>
-    /// When true, each feature checks the user's EPiServer permissions (Permissions For Functions)
-    /// in addition to the authorization policy.
+    /// When true, each feature checks the user's EPiServer permissions
+    /// (Permissions For Functions) in addition to the authorization policy.
+    /// Defaults to <c>true</c> so the seven function permissions actively
+    /// gate the UI out of the box; <see cref="PermissionSeeder"/> grants
+    /// every PermissionType to <see cref="AuthorizedRoles"/> on first run
+    /// so flipping this on doesn't lock anyone out of a fresh install.
     /// </summary>
-    public bool CheckPermissionForEachFeature { get; set; }
+    public bool CheckPermissionForEachFeature { get; set; } = true;
 
     /// <summary>
-    /// Roles that have full access to all Graph Search Tools features.
-    /// Default: WebAdmins, Administrators.
+    /// Roles that clear the <c>umageai:graphsearchtools</c> policy gate.
+    /// Default covers the standard CMS-administrator and CMS-edit-mode
+    /// groups so any user who can edit content in the CMS shell can also
+    /// reach the Graph Search Tools surfaces. Tighten in appsettings by
+    /// overriding this list when the host wants the addon limited to a
+    /// dedicated group.
     /// </summary>
-    public string[] AuthorizedRoles { get; set; } = ["WebAdmins", "Administrators"];
+    public string[] AuthorizedRoles { get; set; } =
+        ["WebAdmins", "Administrators", "CmsAdmins", "WebEditors", "CmsEditors"];
 
     /// <summary>
     /// Optional override for Optimizely Graph credentials. When unset, the addon reads

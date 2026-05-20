@@ -112,11 +112,13 @@ public class AddGraphSearchtoolsTests
         // Hard cut: the pre-1.0 rename from CodeArt:GraphSearchtools to
         // UmageAI:GraphSearchTools does not retain a fallback. Hosts that
         // upgrade without renaming their config section get defaults.
+        // Pick a value the legacy section *opposes* the default for, so
+        // the test proves "ignored" instead of an incidental match.
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["CodeArt:GraphSearchtools:CheckPermissionForEachFeature"] = "true",
+                ["CodeArt:GraphSearchtools:CheckPermissionForEachFeature"] = "false",
                 ["CodeArt:GraphSearchtools:Graph:GatewayAddress"] = "https://example.com/graph",
             })
             .Build();
@@ -129,7 +131,8 @@ public class AddGraphSearchtoolsTests
         var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<GraphSearchtoolsOptions>>();
 
-        options.Value.CheckPermissionForEachFeature.Should().BeFalse();
+        // Default is true; legacy "false" should not override it.
+        options.Value.CheckPermissionForEachFeature.Should().BeTrue();
         options.Value.Graph.Should().BeNull();
     }
 
