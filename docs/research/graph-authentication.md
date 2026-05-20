@@ -205,7 +205,7 @@ The current implementation maps onto the credential model as follows.
 | Saved Queries | DDS-local, no Graph traffic | n/a |
 
 Credentials flow through `IGraphCredentialsResolver` (default
-`GraphCredentialsResolver`), which prefers `CodeArt:GraphSearchtools:Graph`
+`GraphCredentialsResolver`), which prefers `UmageAI:GraphSearchTools:Graph`
 when populated and falls back per-field to the host's
 `Optimizely:ContentGraph` section. Two consequences:
 

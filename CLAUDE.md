@@ -56,8 +56,8 @@ is unused for static file serving.
 
 - **Registration**: `services.AddGraphSearchtools(...)` + `app.UseGraphSearchtools()` +
   `endpoints.MapGraphSearchtools()`.
-- **Options**: `GraphSearchtoolsOptions` bound from `CodeArt:GraphSearchtools` config section.
-- **Permissions**: Three-layer (feature toggles + auth policy `codeart:graphsearchtools` +
+- **Options**: `GraphSearchtoolsOptions` bound from `UmageAI:GraphSearchTools` config section.
+- **Permissions**: Three-layer (feature toggles + auth policy `umageai:graphsearchtools` +
   optional EPiServer `PermissionType` per tool).
 - **Tool structure**: Each tool in `Tools/{ToolName}/` with Service + ApiController + view.
 - **Menu**: `GraphSearchtoolsMenuProvider` uses `Paths.ToResource()` for controller routes.
@@ -76,7 +76,7 @@ is unused for static file serving.
 - Controllers return JSON APIs; UI is vanilla JS, not server-rendered.
 - Each tool has a corresponding PermissionType and FeatureToggle.
 - **JS paths**: Never hardcode API paths. Use `window.GST_BASE_URL + '/endpoint'`.
-- **Security**: All controllers must have `[Authorize(Policy = "codeart:graphsearchtools")]`,
+- **Security**: All controllers must have `[Authorize(Policy = "umageai:graphsearchtools")]`,
   all actions must call `_accessChecker.HasAccess()`, POST/PUT/DELETE endpoints must have
   `[RequireAjax]`, error responses must not expose `ex.Message`.
 - **Design system**: Shared visual patterns live in `docs/design-system.md`. Before adding a

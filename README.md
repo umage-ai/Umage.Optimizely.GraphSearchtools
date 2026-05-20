@@ -21,7 +21,7 @@ dotnet add package UmageAI.Optimizely.GraphSearchTools
 
 ```csharp
 // Startup.cs
-services.AddGraphSearchtools(o => Configuration.GetSection("CodeArt:GraphSearchtools").Bind(o));
+services.AddGraphSearchtools(o => Configuration.GetSection("UmageAI:GraphSearchTools").Bind(o));
 app.UseGraphSearchtools();
 ```
 
@@ -37,8 +37,8 @@ app.UseGraphSearchtools();
       "SingleKey": "..."
     }
   },
-  "CodeArt": {
-    "GraphSearchtools": {
+  "UmageAI": {
+    "GraphSearchTools": {
       "AuthorizedRoles": ["WebAdmins", "Administrators"],
       "Features": { "Overview": true }
     }
@@ -47,7 +47,7 @@ app.UseGraphSearchtools();
 ```
 
 The add-on reuses the host's `Optimizely:ContentGraph` credentials by default; the
-`CodeArt:GraphSearchtools:Graph` block can override them per-environment.
+`UmageAI:GraphSearchTools:Graph` block can override them per-environment.
 
 ## Search Channels (v0.2.5)
 
@@ -66,7 +66,7 @@ two channels:
 // src/GraphSearchtools.SampleSite/Startup.cs
 services.AddGraphSearchtools(options =>
     {
-        // Configure options here or in appsettings.json under "CodeArt:GraphSearchtools"
+        // Configure options here or in appsettings.json under "UmageAI:GraphSearchTools"
     })
     .AddSearchChannel("alloy-search", p => p
         .DisplayName("Alloy site search")
