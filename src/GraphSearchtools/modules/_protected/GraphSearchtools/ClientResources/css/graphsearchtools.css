@@ -1480,6 +1480,19 @@
     border-radius: 999px;
 }
 
+/* No-access KPI placeholder — distinguished from the generic error card by a
+   muted background + lock-icon styling, so a user without Insights perm
+   sees an informational state rather than a scary failure. */
+.gst-kpi--noaccess {
+    background: var(--gst-gray-100);
+    border: 1px dashed var(--gst-gray-300);
+    color: var(--gst-color-text-secondary);
+    text-align: center;
+    padding: var(--gst-space-md);
+    grid-column: 1 / -1;
+}
+.gst-kpi--noaccess .gst-kpi__label { font-weight: 500; }
+
 /* Marker class set by GST.disableAll on programmatically gated buttons. */
 .gst-disabled, button.gst-disabled, [aria-disabled="true"].gst-disabled {
     opacity: .5;

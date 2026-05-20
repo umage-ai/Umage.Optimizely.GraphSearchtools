@@ -408,10 +408,17 @@
     // ── KPI strip ─────────────────────────────────────────────────────
 
     function reloadKpis() {
+        if (window.GST && !GST.can('insights')) {
+            GST.renderKpiCardNoAccess('#gst-insights-kpis');
+            return;
+        }
         renderKpisLoading();
         var url = API + '/SearchKpis';
         if (state.channel) url += '?channelKey=' + encodeURIComponent(state.channel);
-        GST.fetchJson(url).then(renderKpis).catch(renderKpisError);
+        GST.fetchJson(url).then(renderKpis).catch(function (err) {
+            if (err && err.status === 403) GST.renderKpiCardNoAccess('#gst-insights-kpis');
+            else renderKpisError();
+        });
     }
 
     function renderKpis(k) {
@@ -527,15 +534,31 @@
         if (state.dateFilter) url += '&date=' + isoDayString(state.dateFilter);
 
         var stamp = state.inflight[lane] = {};
+        // Pre-flight: skip the request and paint the friendly "no access"
+        // state when GST_PERMS already says the user can't read Insights.
+        if (window.GST && !GST.can('insights')) {
+            state.inflight[lane] = null;
+            paintLaneNoAccess(lane, tbody);
+            return;
+        }
         GST.fetchJson(url).then(function (rows) {
             if (state.inflight[lane] !== stamp) return;
             state.loaded[lane] = true;
             state.rows[lane] = Array.isArray(rows) ? rows : [];
             paintLane(lane, tbody, countEl, state.rows[lane]);
-        }).catch(function () {
+        }).catch(function (err) {
             if (state.inflight[lane] !== stamp) return;
-            paintLaneError(lane, tbody);
+            // 403 = permission revoked since page-load. Same placeholder so
+            // the user sees the same explanation everywhere.
+            if (err && err.status === 403) paintLaneNoAccess(lane, tbody);
+            else paintLaneError(lane, tbody);
         });
+    }
+
+    function paintLaneNoAccess(lane, tbody) {
+        tbody.innerHTML = '<tr><td colspan="' + LANE_COLS[lane] + '" class="gst-empty"><p>'
+            + escHtml(STRINGS.no_access || 'You do not have access to Insights — ask an administrator to grant the Insights permission.')
+            + '</p></td></tr>';
     }
 
     function paintLoading(lane, tbody) {

@@ -2,6 +2,7 @@
 @using UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models
 @model UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models.ChannelDetailViewModel
 @inject LocalizationService Loc
+@inject UmageAI.Optimizely.GraphSearchTools.Permissions.PermissionMap PermissionMap
 @{
     Layout = "/Views/Shared/_SearchtoolsLayout.cshtml";
     ViewData["Title"] = Model.DisplayName;
@@ -20,6 +21,7 @@
     var localeLabel = Model.Locales.Count == 1
         ? Model.Locales[0]
         : Loc.GetString("/graphsearchtools/channels/detail/meta/allLocales");
+    var canSeeInsights = PermissionMap.ForCurrentUser().insights;
 }
 
 <div class="gst-page-header gst-prof-detail-header">
@@ -46,10 +48,16 @@
    recent-edits counts that used to live here. Three tiles with 30-day
    sparklines (total searches, daily CTR, total zero-result searches);
    channels.js loads from /InsightsApi/SearchKpis?channelKey=… on mount.
-   See docs/design-system.md "KPI tile with sparkline". *@
-<div id="gst-prof-kpis" class="gst-kpis"
-     aria-label="@Loc.GetString("/graphsearchtools/channels/detail/kpis/sectionLabel")"
-     aria-live="polite"></div>
+   See docs/design-system.md "KPI tile with sparkline".
+   Skipped entirely when the current user lacks the Insights permission —
+   loadKpis() in channels.js no-ops when the host is absent, so the rest of
+   the page is unaffected. *@
+@if (canSeeInsights)
+{
+    <div id="gst-prof-kpis" class="gst-kpis"
+         aria-label="@Loc.GetString("/graphsearchtools/channels/detail/kpis/sectionLabel")"
+         aria-live="polite"></div>
+}
 
 <div class="gst-prof-workspace" data-channel-key="@Model.Key">
 

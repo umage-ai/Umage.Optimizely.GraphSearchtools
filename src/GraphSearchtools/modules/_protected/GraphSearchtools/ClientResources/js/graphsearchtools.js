@@ -17,7 +17,11 @@ const GST = {
      */
     async fetchJson(url) {
         const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        if (!resp.ok) {
+            const err = new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+            err.status = resp.status;
+            throw err;
+        }
         return resp.json();
     },
 
@@ -27,7 +31,11 @@ const GST = {
             headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: body ? JSON.stringify(body) : undefined
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        if (!resp.ok) {
+            const err = new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+            err.status = resp.status;
+            throw err;
+        }
         return resp.json();
     },
 

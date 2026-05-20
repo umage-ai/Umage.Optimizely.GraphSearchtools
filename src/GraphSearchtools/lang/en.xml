@@ -132,6 +132,7 @@
           <empty_zero>No zero-result phrases — every search found something.</empty_zero>
           <empty_lowctr>Not enough sessions to score CTR yet.</empty_lowctr>
           <load_failed>Could not load insights.</load_failed>
+          <no_access>You do not have access to Insights — ask an administrator to grant the Insights permission.</no_access>
           <hits_label>hits</hits_label>
           <ctr_label>CTR</ctr_label>
           <show_more>Show more</show_more>
@@ -284,6 +285,7 @@
             <emptyZero>No zero-result phrases — every search found something.</emptyZero>
             <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
             <loadFailed>Failed to load insights.</loadFailed>
+            <noAccess>You do not have access to Insights — ask an administrator to grant the Insights permission.</noAccess>
             <showMore>Show more</showMore>
             <actionPreview>Preview this phrase</actionPreview>
             <actionPin>Pin a result for this phrase</actionPin>
