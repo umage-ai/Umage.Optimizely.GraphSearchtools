@@ -31,6 +31,19 @@ public class GraphSearchtoolsController : Controller
     }
 
     /// <summary>
+    /// About / colophon screen. Mirrors the EditorPowertools About surface so
+    /// both addons present a consistent identity (version, license, included
+    /// tools, "built by umage.ai" promo). Linked from every page's header
+    /// rather than the left-nav so it stays one click away without crowding
+    /// the marketer's primary tool list.
+    /// </summary>
+    [HttpGet]
+    public IActionResult About()
+    {
+        return View("/Views/About/Index.cshtml");
+    }
+
+    /// <summary>
     /// Top-level Pinned tool — collection-axis browser. Reads collections + items
     /// from Graph and joins with the channel registry so each row carries its
     /// resolved channel. Prototype is read-only; edits still happen inside

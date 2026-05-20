@@ -62,7 +62,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         // Top-level cross-channel surfaces. Pinned is a collection-axis
         // browser (prototype, read-only for now); Synonyms is channel-agnostic
         // because Graph synonyms live in a tenant-global pool.
-        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned"), BaseMenuPath + "/pinned",
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/pinned", "Pinned results"), BaseMenuPath + "/pinned",
             GetResourcePath("GraphSearchtools/Pinned"))
         {
             SortIndex = 200,
@@ -74,6 +74,16 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         {
             SortIndex = 210,
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Synonyms))
+        };
+
+        // About sits at the bottom of the section so the colophon stays
+        // accessible without crowding the marketer's primary tool list.
+        // SortIndex 900 leaves room for future tools to slot in between.
+        yield return new UrlMenuItem(L("/graphsearchtools/menu/about", "About"), BaseMenuPath + "/about",
+            GetResourcePath("GraphSearchtools/About"))
+        {
+            SortIndex = 900,
+            IsAvailable = _ => true
         };
 
         // Legacy /pinnedcoverage and /synonymcoverage URLs still 301 to
