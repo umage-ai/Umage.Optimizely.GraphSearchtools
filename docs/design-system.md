@@ -625,9 +625,15 @@ component, so the rendering is centralised:
 
 ```js
 GST.renderKpiCard(hostElementOrSelector, kpisPayload);
-GST.renderKpiCardLoading(host);   // 3 blank tiles while fetching
-GST.renderKpiCardError(host);     // single-tile error state
+GST.renderKpiCardLoading(host);    // 3 blank tiles while fetching
+GST.renderKpiCardError(host);      // single-tile error state — fetch genuinely failed
+GST.renderKpiCardNoAccess(host);   // single-tile no-access state — user lacks Insights perm
 ```
+
+`renderKpiCardNoAccess` carries a `.gst-kpi--noaccess` modifier with a muted
+background + dashed border so it reads as informational, not as a failure.
+Use it instead of `renderKpiCardError` when `GST.can('insights') === false`,
+or in the `catch` arm when `err.status === 403`. See **Permission gating**.
 
 The helper reads localized labels from `window.GST_STRINGS.insights` by
 default. If a future surface needs different labels, pass
@@ -672,6 +678,163 @@ states; the caller only deals with the result.
 
 Reference: `components.js` lines 214–477,
 `Components/ComponentsApiController.cs`.
+
+---
+
+## Component: Permission gating
+
+How the UI reflects what the current user can see and do. Three surfaces:
+the **menu / Overview cards** (visible-but-disabled, or hidden, when the
+view permission is missing), an inline **read-only banner + disabled
+mutating controls** when the user has view but not edit, and a
+distinct **no-access placeholder** for analytics surfaces (KPI cards,
+Insights lanes).
+
+The permission map is computed once on the server by `PermissionMap` and
+seeded into the layout as `window.GST_PERMS`. JS reads it via
+`GST.can(scope)`; never hand-roll a fetch to ask "does this user have X."
+
+### `window.GST_PERMS` + `GST.can(scope)`
+
+```js
+// window.GST_PERMS is seeded in _SearchtoolsLayout.cshtml from
+// PermissionMap.ForCurrentUser(). Shape:
+{
+    channels: true,
+    insights: false,
+    pinned: true, pinnedEdit: true, collections: false,
+    synonyms: true, synonymsEdit: false
+}
+
+if (!GST.can('insights')) { /* hide / placeholder */ }
+```
+
+`GST.can` defaults to `true` when `GST_PERMS` is absent (e.g. an isolated
+test page) so the UI doesn't silently gate itself.
+
+### Read-only banner
+
+An amber, lock-icon strip rendered at the top of a tool's main panel
+when the user has view access but no edit access. One per page or per
+tab.
+
+```js
+// In a tool's init(), after the table markup is in the DOM:
+if (!GST.can('synonymsEdit')) {
+    var table = document.querySelector('.gst-syn-aurora-table');
+    var host = (table && table.closest('[data-tab],[data-panel]'))
+        || document.querySelector('.gst-page-header')
+        || document.body;
+    GST.renderReadOnlyBanner(host, GST.s('synonyms.readonly_banner'));
+    GST.disableAll(document,
+        '#gst-syn-create, [data-flyout-save="syn"], #gst-synfly-delete',
+        GST.s('synonyms.readonly_tooltip'));
+}
+```
+
+`renderReadOnlyBanner(host, text)` is idempotent — calling it twice on
+the same host reuses the existing banner. It anchors via
+`host.insertBefore(div, host.firstChild)`, so always pass the container
+that *holds* the table (not the page header above a tab strip) — the
+banner needs to sit with the surface it describes.
+
+`disableAll(root, selector, tooltip)` sets `disabled`,
+`aria-disabled="true"`, the marker class `.gst-disabled`, and a tooltip.
+It skips elements it's already touched (data-`gstDisabled="1"` marker),
+so re-render passes don't re-process the same buttons.
+
+### Disabled Overview card
+
+When the view permission is missing on a top-level tool, Overview swaps
+the card's `<a>` for a `<div class="gst-tool-card disabled">` with a
+"No access" chip. Pattern lives in `Views/Overview/_ToolCard.cshtml`:
+
+```cshtml
+@if (allowed) {
+    <a class="gst-tool-card" href="@href">…</a>
+} else {
+    <div class="gst-tool-card disabled" title="@noAccessTooltip" aria-disabled="true">
+        … <div class="gst-tool-card__noaccess">@noAccessTooltip</div>
+    </div>
+}
+```
+
+`.gst-tool-card.disabled` desaturates the card and switches the cursor
+to `not-allowed`. `pointer-events: auto` is deliberate so the tooltip
+still surfaces on hover; the card has no `href` so a click does nothing.
+
+### No-access placeholder for analytics
+
+Insights surfaces (per-channel KPI strip, standalone Insights KPIs,
+Insights lanes inside Channel Detail) render a distinct empty state
+when the user lacks `Insights`, not the generic "Failed to load" error.
+Two-layer defense:
+
+```js
+// Pre-flight: skip the request entirely.
+if (!GST.can('insights')) {
+    GST.renderKpiCardNoAccess(host);
+    return;
+}
+GST.fetchJson(url)
+    .then(render)
+    .catch(function (err) {
+        // Defense-in-depth: 403 = perm revoked mid-session.
+        if (err && err.status === 403) GST.renderKpiCardNoAccess(host);
+        else GST.renderKpiCardError(host);
+    });
+```
+
+`fetchJson` and `postJson` attach `err.status` to thrown errors so this
+branch works without inspecting the message.
+
+Server-side gate alternative: when the surface is the entire reason for a
+markup block (e.g. the top KPI strip on Channel Detail), render the
+markup conditionally on the server — no host element, no JS no-op. The
+JS check below the early `if (!host) return;` becomes redundant but the
+defensive 403 catch stays.
+
+```cshtml
+@inject UmageAI.Optimizely.GraphSearchTools.Permissions.PermissionMap PermissionMap
+@{ var canSeeInsights = PermissionMap.ForCurrentUser().insights; }
+
+@if (canSeeInsights) {
+    <div id="gst-prof-kpis" class="gst-kpis" …></div>
+}
+```
+
+### Menu visibility
+
+`GraphSearchtoolsMenuProvider.IsAvailable` runs the same per-request
+`HasAccess(feature, permission)` check. A menu item with a missing
+permission doesn't render at all — there's no "disabled menu entry"
+state. The Overview card is what users with partial access see; the
+left-nav is the strict view.
+
+### Rules
+
+- Don't ask the server "can I edit this?" per click. Read `GST.can(...)`.
+- The permission map is a *snapshot* from page-load. Long-lived sessions
+  may drift; always wrap mutating fetches with the 403 fallback.
+- When you add a new shared mutating control, gate it with `disableAll`
+  inside the tool's `applyReadOnlyGate()` — don't add per-button
+  `if (perms.x)` branches scattered through the file.
+- Don't hide controls users *can* operate. Disable + tooltip + banner is
+  the standard treatment for "you could do this if you had the right
+  permission." Pure hiding is reserved for top-level surfaces where the
+  user has no view access at all (left-nav menu items).
+- Distinguish the three empty states: `renderKpiCardLoading` (in
+  flight), `renderKpiCardError` (real failure, retry-able),
+  `renderKpiCardNoAccess` (permission, not retry-able — ask an admin).
+  Same for the lane states inside `paintLane`.
+
+Reference: `Permissions/PermissionMap.cs`, `Views/Shared/_SearchtoolsLayout.cshtml`
+(GST_PERMS seeding), `Views/Overview/_ToolCard.cshtml` (disabled card),
+`graphsearchtools.js` (`GST.can` / `renderReadOnlyBanner` / `disableAll`),
+`components.js` (`renderKpiCardNoAccess`), `pinned-aurora.js` +
+`synonyms-aurora.js` (`applyReadOnlyGate`), `channels.js` (Insights tab
++ KPI strip no-access integration), `insights.js` (standalone Insights
+no-access integration).
 
 ---
 

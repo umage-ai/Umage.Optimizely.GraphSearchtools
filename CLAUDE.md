@@ -57,8 +57,14 @@ is unused for static file serving.
 - **Registration**: `services.AddGraphSearchtools(...)` + `app.UseGraphSearchtools()` +
   `endpoints.MapGraphSearchtools()`.
 - **Options**: `GraphSearchtoolsOptions` bound from `UmageAI:GraphSearchTools` config section.
-- **Permissions**: Three-layer (feature toggles + auth policy `umageai:graphsearchtools` +
-  optional EPiServer `PermissionType` per tool).
+- **Permissions**: Three-layer — feature toggle gates *whether the tool is wired*;
+  `AuthorizedRoles` policy (`umageai:graphsearchtools`) gates *who's in the door*;
+  per-function `PermissionType` refines *what they can do* (only consulted when
+  `CheckPermissionForEachFeature: true`). Some tools split view + edit
+  (`Pinned`/`PinnedEdit`/`Collections`, `Synonyms`/`SynonymsEdit`); `Insights` is the
+  umbrella permission for all read-only analytics surfaces. `PermissionMap` is the
+  single source of truth — server-side gates (menu, Overview cards, Channel Detail
+  KPI strip) and JS (`window.GST_PERMS`) both read from it.
 - **Tool structure**: Each tool in `Tools/{ToolName}/` with Service + ApiController + view.
 - **Menu**: `GraphSearchtoolsMenuProvider` uses `Paths.ToResource()` for controller routes.
 - **Static files**: Go in `modules/_protected/GraphSearchtools/ClientResources/`,
@@ -67,14 +73,23 @@ is unused for static file serving.
   `@Html.CreatePlatformNavigationMenu()`, `@Html.ApplyPlatformNavigation()` (CMS 12);
   `<platform-navigation>` / `<platform-navigation-wrapper>` on CMS 13.
 - **Data**: DynamicDataStore for persistence.
-- **JS namespace**: `GST.*` / `window.GST_STRINGS`. CSS prefix `gst-`, vars `--gst-*`.
+- **JS namespace**: `GST.*` / `window.GST_STRINGS` / `window.GST_PERMS` (the per-user
+  permission map seeded by the layout from `PermissionMap`). CSS prefix `gst-`,
+  vars `--gst-*`.
 
 ## Conventions
 
 - No static state — everything via DI.
 - Nullable reference types enabled.
 - Controllers return JSON APIs; UI is vanilla JS, not server-rendered.
-- Each tool has a corresponding PermissionType and FeatureToggle.
+- Each tool has one FeatureToggle and one-or-more PermissionTypes. View-only tools
+  have one; tools with mutating surfaces have view + edit (Pinned has three because
+  pinned items and pinned collections are separate authority scopes); multi-tool
+  aggregate read-surfaces share one umbrella permission (`Insights`).
+- `CheckPermissionForEachFeature: false` is the default. While off, the EPiServer
+  "Permissions For Functions" UI is decorative — `FeatureAccessChecker.HasPermission`
+  short-circuits to `true`. Flipping it on requires explicit grants on every
+  permission for whichever roles should keep access, or those users get locked out.
 - **JS paths**: Never hardcode API paths. Use `window.GST_BASE_URL + '/endpoint'`.
 - **Security**: All controllers must have `[Authorize(Policy = "umageai:graphsearchtools")]`,
   all actions must call `_accessChecker.HasAccess()`, POST/PUT/DELETE endpoints must have
