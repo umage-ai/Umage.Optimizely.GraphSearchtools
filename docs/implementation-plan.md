@@ -269,23 +269,7 @@ public class GraphConnectionOptions
 CMS-shell UX. This is the v0.1 release and the immediate replacement for the
 third-party Blazor add-on for these two surfaces.
 
-### 3.1 What to copy from the functional seed
-
-Source files (rename-only port — strip the originating namespace from filenames,
-class names, paths, and comments):
-
-| Source path | Target path | Rename to |
-|---|---|---|
-| `NTI.WebExtensions/GraphSearch/GraphSearchController.cs` | `src/GraphSearchtools/Tools/Pinned/PinnedController.cs` (and split out the synonym route to `Tools/Synonyms/SynonymsController.cs`) | new namespace + new policy `[Authorize(Policy = "codeart:graphsearchtools")]` |
-| `NTI.WebExtensions/GraphSearch/GraphSearchApiController.cs` | split into `Tools/Pinned/PinnedApiController.cs`, `Tools/Synonyms/SynonymsApiController.cs`, `Tools/Sites/SitesApiController.cs`, `Tools/Content/ContentLookupApiController.cs` | strip role-based `[Authorize(Roles = ...)]`, replace with policy `[Authorize(Policy = "codeart:graphsearchtools")]` + `_accessChecker.HasAccess()` per action; add `[RequireAjax]` to POST/PUT/DELETE; never expose `ex.Message` in error responses |
-| `NTI.WebExtensions/GraphSearch/GraphSearchManagementService.cs` | `src/GraphSearchtools/Services/GraphAdminClient.cs` | becomes the single Tier-3 abstraction (`IGraphAdminClient`) so CMS-13 SDK swap is contained |
-| `NTI.WebExtensions/GraphSearch/GraphSearchModels.cs` | `src/GraphSearchtools/Services/GraphModels.cs` | namespace-only rename |
-| `NTI.WebExtensions/GraphSearch/GraphSearchViewModel.cs` | absorbed into per-tool view models under `Tools/{Pinned,Synonyms}/Models/` | namespace-only rename |
-| `NTI.WebExtensions.Views/Views/GraphSearch/Index.cshtml` | split into `Views/Pinned/Index.cshtml` and `Views/Synonyms/Index.cshtml` | drop the Health tab entirely (Phase 4 if revived); split the ~1000-line vanilla JS into `pinned.js` + `synonyms.js` under the module's `ClientResources/js/`; rewrite the inline CSS to use `gst-*` classes from `graphsearchtools.css`; switch layout to `_SearchtoolsLayout.cshtml` |
-| `NTI.WebExtensions/ServiceCollectionExtensions.cs` | merge into the new `AddGraphSearchtools` extension | register `services.AddHttpClient<IGraphAdminClient, GraphAdminClient>()` |
-| `NTI.WebExtensions.Tests/GraphSearch/GraphSearchManagementServiceTests.cs` | `src/GraphSearchtools.Tests/GraphAdminClientTests.cs` | keep both pinned tests: Basic-auth header + `text/plain` synonyms PUT body. These are contracts with Optimizely Graph and must not regress. |
-
-### 3.2 Generalisations required during the port
+### 3.1 Generalisations required during the port
 
 These are the **must-fix** generalisations flagged during the initial source
 survey. None can be deferred:
@@ -317,7 +301,7 @@ survey. None can be deferred:
    `CodeArt:GraphSearchtools:Graph` as override. Encode in the
    `GraphAdminClient` constructor via a small `IGraphCredentialsResolver` shim.
 
-### 3.3 New scaffolding for these two tools
+### 3.2 New scaffolding for these two tools
 
 For each new tool (one folder under `Tools/`):
 
@@ -339,7 +323,7 @@ For each new tool (one folder under `Tools/`):
   `addon-design.md` §3.7 grouping (100 between groups, 10 between siblings).
 - `Tools/Overview/Index.cshtml` — add a tile.
 
-### 3.4 Phase 1 acceptance
+### 3.3 Phase 1 acceptance
 
 - A fresh sample-site install with valid Graph credentials shows the **Pinned Results**
   and **Synonyms** menu items.
