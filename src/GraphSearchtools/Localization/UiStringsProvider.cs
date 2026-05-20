@@ -101,7 +101,10 @@ public class UiStringsProvider(LocalizationService loc)
             save_progress = S("pinned/save_progress"),
             conflict = S("pinned/conflict"),
             target_pick = S("pinned/target_pick"),
-            activity_unknown = S("pinned/activity_unknown")
+            activity_unknown = S("pinned/activity_unknown"),
+            readonly_banner = S("pinned/readonly_banner"),
+            readonly_tooltip = S("pinned/readonly_tooltip"),
+            readonly_collection_tooltip = S("pinned/readonly_collection_tooltip")
         },
         synonyms = new
         {
@@ -121,7 +124,9 @@ public class UiStringsProvider(LocalizationService loc)
             help_equivalent_label = S("synonyms/help_equivalent_label"),
             help_equivalent_text = S("synonyms/help_equivalent_text"),
             col_activity = S("synonyms/col_activity"),
-            activity_unknown = S("synonyms/activity_unknown")
+            activity_unknown = S("synonyms/activity_unknown"),
+            readonly_banner = S("synonyms/readonly_banner"),
+            readonly_tooltip = S("synonyms/readonly_tooltip")
         },
         // Global changelog feed surfaced under Pinned + Synonyms. Empty / load-
         // failed strings are looked up via GST.s('changelog.empty', ...) etc.
@@ -209,6 +214,7 @@ public class UiStringsProvider(LocalizationService loc)
                     actionPinDisabled = P("detail/insights/actionPinDisabled"),
                     actionSynonym = P("detail/insights/actionSynonym"),
                     actionSynonymDisabled = P("detail/insights/actionSynonymDisabled"),
+                    noAccess = P("detail/insights/noAccess"),
                     pinPickerPlaceholder = P("detail/insights/pinPickerPlaceholder"),
                     pinUnavailable = P("detail/insights/pinUnavailable"),
                     pinLoading = P("detail/insights/pinLoading"),
@@ -239,6 +245,7 @@ public class UiStringsProvider(LocalizationService loc)
             empty_zero = IN("empty_zero"),
             empty_lowctr = IN("empty_lowctr"),
             load_failed = IN("load_failed"),
+            no_access = IN("no_access"),
             hits_label = IN("hits_label"),
             ctr_label = IN("ctr_label"),
             show_more = IN("show_more"),

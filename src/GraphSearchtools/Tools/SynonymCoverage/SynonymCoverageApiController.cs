@@ -48,7 +48,7 @@ public class SynonymCoverageApiController : Controller
     }
 
     private bool HasAccess()
-        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.SynonymCoverage);
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Insights);
 
     private IActionResult HandleError(Exception exception)
     {

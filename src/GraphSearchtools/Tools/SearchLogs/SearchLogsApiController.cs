@@ -116,7 +116,7 @@ public class SearchLogsApiController : Controller
     }
 
     private bool HasAccess()
-        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.SearchLogs);
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Insights);
 
     private IActionResult HandleError(Exception exception)
     {

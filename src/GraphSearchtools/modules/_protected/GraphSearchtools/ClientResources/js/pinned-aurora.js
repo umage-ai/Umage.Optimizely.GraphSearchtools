@@ -188,7 +188,47 @@
         const deleteBtn = document.getElementById('gst-pinfly-delete');
         if (deleteBtn) deleteBtn.addEventListener('click', onDelete);
 
+        applyReadOnlyGate();
+
         loadAll();
+    }
+
+    // Gate every mutating control off window.GST_PERMS. PinnedEdit covers
+    // item create/update/delete; Collections covers the collection-shell
+    // operations (add collection, ensure-on-save). If the user has neither,
+    // show a banner explaining why everything's read-only.
+    function applyReadOnlyGate() {
+        if (!window.GST) return;
+        var canEditItem = GST.can('pinnedEdit');
+        var canEditColl = GST.can('collections');
+        var tip = GST.s('pinned.readonly_tooltip', 'You do not have edit permission for pinned items.');
+        var collTip = GST.s('pinned.readonly_collection_tooltip', 'You do not have permission to manage pinned collections.');
+        // Anchor inside the tab/panel that owns the table so the banner sits
+        // with the grid, not above the Channel-detail header that spans every
+        // sibling tab. Falls back to the top-level page header on standalone
+        // pages that don't use the tabpanel wrapper.
+        var table = document.querySelector('.gst-pin-aurora-table');
+        var host = (table && table.closest('[data-tab],[data-panel]'))
+            || document.querySelector('.gst-page-header')
+            || document.querySelector('main')
+            || document.body;
+
+        if (!canEditItem && !canEditColl) {
+            GST.renderReadOnlyBanner(host,
+                GST.s('pinned.readonly_banner', 'Read-only access — your role does not include edit permission for pinned results.'));
+        }
+
+        if (!canEditItem) {
+            // Top-level Add-Pin button, the row-level delete buttons, and the
+            // flyout's save/delete + add-target controls.
+            GST.disableAll(document, '#gst-pin-create, [data-flyout-save="pin"], #gst-pinfly-delete, #gst-pinfly-add-target, #gst-pinfly-toggle-active', tip);
+            GST.disableAll(document, '.gst-pin-row-delete, [data-action="delete-pin"]', tip);
+        }
+        if (!canEditColl) {
+            // Add-Collection / EnsureCollection-driven buttons live on the
+            // Channel detail Pinned tab and the Collections-tab flyout.
+            GST.disableAll(document, '#gst-pin-add-collection, [data-action="add-collection"], [data-action="delete-collection"]', collTip);
+        }
     }
 
     // ── Data loading ───────────────────────────────────────────────────

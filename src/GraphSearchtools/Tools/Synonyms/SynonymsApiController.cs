@@ -72,7 +72,7 @@ public class SynonymsApiController : Controller
     [RequireAjax]
     public async Task<IActionResult> Update([FromBody] SynonymsRequest request, CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasEditAccess()) return Forbid();
         if (request == null) return BadRequest(new { message = "Synonyms payload is required." });
 
         // Read the previous blob *before* the PUT so we can diff it against
@@ -107,7 +107,7 @@ public class SynonymsApiController : Controller
         [FromQuery] string? slot,
         CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasEditAccess()) return Forbid();
 
         var query = new SynonymsQuery
         {
@@ -209,6 +209,9 @@ public class SynonymsApiController : Controller
 
     private bool HasAccess()
         => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Synonyms);
+
+    private bool HasEditAccess()
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.SynonymsEdit);
 
     private IActionResult HandleError(Exception exception)
     {

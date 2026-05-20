@@ -47,7 +47,7 @@ public class PinnedCoverageApiController : Controller
     }
 
     private bool HasAccess()
-        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.PinnedCoverage);
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Insights);
 
     private IActionResult HandleError(Exception exception)
     {

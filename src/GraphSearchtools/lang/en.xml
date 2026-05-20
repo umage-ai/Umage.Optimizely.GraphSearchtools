@@ -13,17 +13,13 @@
           <GraphSearchtools>
             <description>Graph Search Tools</description>
             <permissions>
-              <Overview>Access the Graph Search Tools overview dashboard.</Overview>
-              <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
-              <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
-              <Channels>Manage Search Channels — pinned results, synonyms, ranking per registered search surface.</Channels>
-              <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
-              <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
-              <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
-              <SearchLogs>Access the internal /SearchLogsApi telemetry read endpoints that power the Channel Insights tab.</SearchLogs>
-              <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
-              <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
-              <ContentSearchabilityAudit>Scan the CMS content tree for empty Name / MainBody / Tags and string fields exceeding Graph's 1024-character sortable-field limit.</ContentSearchabilityAudit>
+              <Channels>View Search Channels and their detail tabs.</Channels>
+              <Insights>View read-only analytics: the Insights dashboard, per-channel Insights tab, Pinned Coverage and Synonym Coverage audits.</Insights>
+              <Pinned>View pinned collections and their items.</Pinned>
+              <PinnedEdit>Add, modify, reorder and delete pinned items inside a collection.</PinnedEdit>
+              <Collections>Create, rename and delete pinned collections.</Collections>
+              <Synonyms>View synonym rules.</Synonyms>
+              <SynonymsEdit>Add, modify and delete synonym rules.</SynonymsEdit>
             </permissions>
           </GraphSearchtools>
         </groups>
@@ -46,6 +42,7 @@
         <overview>
           <title>Overview</title>
           <description>Dashboard of all Graph Search Tools.</description>
+          <noAccess>You do not have access to this tool.</noAccess>
         </overview>
         <about>
           <title>About Graph Search Tools</title>
@@ -135,6 +132,7 @@
           <empty_zero>No zero-result phrases — every search found something.</empty_zero>
           <empty_lowctr>Not enough sessions to score CTR yet.</empty_lowctr>
           <load_failed>Could not load insights.</load_failed>
+          <no_access>You do not have access to Insights — ask an administrator to grant the Insights permission.</no_access>
           <hits_label>hits</hits_label>
           <ctr_label>CTR</ctr_label>
           <show_more>Show more</show_more>
@@ -287,6 +285,7 @@
             <emptyZero>No zero-result phrases — every search found something.</emptyZero>
             <emptyLowCtr>Not enough sessions to score CTR yet.</emptyLowCtr>
             <loadFailed>Failed to load insights.</loadFailed>
+            <noAccess>You do not have access to Insights — ask an administrator to grant the Insights permission.</noAccess>
             <showMore>Show more</showMore>
             <actionPreview>Preview this phrase</actionPreview>
             <actionPin>Pin a result for this phrase</actionPin>
@@ -425,6 +424,9 @@
           <save_failed>%1 of %2 changes failed. See console for details.</save_failed>
           <save_progress>Saving %1 of %2…</save_progress>
           <conflict>This phrase is also pinned in: %1</conflict>
+          <readonly_banner>Read-only access — your role does not include edit permission for pinned results.</readonly_banner>
+          <readonly_tooltip>You do not have edit permission for pinned items.</readonly_tooltip>
+          <readonly_collection_tooltip>You do not have permission to manage pinned collections.</readonly_collection_tooltip>
         </pinned>
         <synonyms>
           <request_failed>Request failed</request_failed>
@@ -441,6 +443,8 @@
           <col_activity>Activity (30d)</col_activity>
           <activity_unknown>—</activity_unknown>
           <activity_load_failed>Activity unavailable</activity_load_failed>
+          <readonly_banner>Read-only access — your role does not include edit permission for synonyms.</readonly_banner>
+          <readonly_tooltip>You do not have edit permission for synonyms.</readonly_tooltip>
         </synonyms>
         <pinFlyout>
           <createTitle>Create pin</createTitle>

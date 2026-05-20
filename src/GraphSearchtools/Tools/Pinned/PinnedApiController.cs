@@ -125,7 +125,7 @@ public class PinnedApiController : Controller
         [FromQuery] string locale,
         CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasCollectionEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(channelKey)) return BadRequest(new { message = "channelKey is required." });
         if (string.IsNullOrWhiteSpace(locale)) return BadRequest(new { message = "locale is required." });
 
@@ -192,7 +192,7 @@ public class PinnedApiController : Controller
     [RequireAjax]
     public async Task<IActionResult> CreateCollection([FromBody] PinnedCollectionPayload payload, CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasCollectionEditAccess()) return Forbid();
         if (payload == null) return BadRequest(new { message = "Collection payload is required." });
         try
         {
@@ -210,7 +210,7 @@ public class PinnedApiController : Controller
     [RequireAjax]
     public async Task<IActionResult> UpdateCollection(string id, [FromBody] PinnedCollectionUpdatePayload payload, CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasCollectionEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { message = "Collection id is required." });
         if (payload == null) return BadRequest(new { message = "Collection payload is required." });
         try
@@ -235,7 +235,7 @@ public class PinnedApiController : Controller
         [FromQuery] string id,
         CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasCollectionEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { message = "Collection id is required." });
         try
         {
@@ -303,7 +303,7 @@ public class PinnedApiController : Controller
         [FromQuery] string? locale,
         CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasItemEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(collectionId)) return BadRequest(new { message = "collectionId is required." });
         if (payload == null) return BadRequest(new { message = "Item payload is required." });
 
@@ -338,7 +338,7 @@ public class PinnedApiController : Controller
         [FromQuery] string? locale,
         CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasItemEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(collectionId) || string.IsNullOrWhiteSpace(id))
         {
             return BadRequest(new { message = "collectionId and id are required." });
@@ -373,7 +373,7 @@ public class PinnedApiController : Controller
         [FromQuery] string? phrases,
         CancellationToken cancellationToken)
     {
-        if (!HasAccess()) return Forbid();
+        if (!HasItemEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(collectionId) || string.IsNullOrWhiteSpace(id))
         {
             return BadRequest(new { message = "collectionId and id are required." });
@@ -397,6 +397,12 @@ public class PinnedApiController : Controller
 
     private bool HasAccess()
         => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Pinned);
+
+    private bool HasItemEditAccess()
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.PinnedEdit);
+
+    private bool HasCollectionEditAccess()
+        => _accessChecker.HasAccess(HttpContext, FeatureName, GraphSearchtoolsPermissions.Collections);
 
     /// <summary>
     /// Resolves the (channel, site, locale) tuple from the query string against

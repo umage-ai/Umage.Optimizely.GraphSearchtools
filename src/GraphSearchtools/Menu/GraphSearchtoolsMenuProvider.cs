@@ -46,7 +46,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             "/EPiServer/cms/graphsearchtools/channels")
         {
             SortIndex = 150,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Channels))
+            IsAvailable = context => HasAccess(context, nameof(FeatureToggles.Channels), GraphSearchtoolsPermissions.Channels)
         };
 
         // Aurora refactor — Insights dashboard. Sits between Channels and the
@@ -56,7 +56,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             GetResourcePath("Insights/Index"))
         {
             SortIndex = 175,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Insights))
+            IsAvailable = context => HasAccess(context, nameof(FeatureToggles.Insights), GraphSearchtoolsPermissions.Insights)
         };
 
         // Top-level cross-channel surfaces. Pinned is a collection-axis
@@ -66,14 +66,14 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             GetResourcePath("GraphSearchtools/Pinned"))
         {
             SortIndex = 200,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Pinned))
+            IsAvailable = context => HasAccess(context, nameof(FeatureToggles.Pinned), GraphSearchtoolsPermissions.Pinned)
         };
 
         yield return new UrlMenuItem(L("/graphsearchtools/menu/synonyms", "Synonyms"), BaseMenuPath + "/synonyms",
             GetResourcePath("GraphSearchtools/Synonyms"))
         {
             SortIndex = 210,
-            IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Synonyms))
+            IsAvailable = context => HasAccess(context, nameof(FeatureToggles.Synonyms), GraphSearchtoolsPermissions.Synonyms)
         };
 
         // About sits at the bottom of the section so the colophon stays
@@ -99,5 +99,11 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
     {
         var checker = context.RequestServices.GetService<FeatureAccessChecker>();
         return checker?.IsFeatureEnabled(featureName) ?? true;
+    }
+
+    private static bool HasAccess(HttpContext context, string featureName, EPiServer.Security.PermissionType permissionType)
+    {
+        var checker = context.RequestServices.GetService<FeatureAccessChecker>();
+        return checker?.HasAccess(context, featureName, permissionType) ?? true;
     }
 }

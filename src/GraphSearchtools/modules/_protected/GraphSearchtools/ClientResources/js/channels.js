@@ -929,6 +929,16 @@
         }
 
         function fetchAll() {
+            // No insights permission → paint the friendly placeholder in every
+            // lane and skip the fetch fan-out. Saves three 403 round-trips per
+            // panel mount.
+            if (!GST.can('insights')) {
+                paintLane('top',    { _noAccess: true });
+                paintLane('zero',   { _noAccess: true });
+                paintLane('lowctr', { _noAccess: true });
+                if (refreshBtn) refreshBtn.classList.remove('is-spinning');
+                return;
+            }
             // Cancel-isolation: stamp this run so a slower in-flight request
             // can't paint over a fresher one (window pill switching is fast).
             var stamp = state.inflight = {};
@@ -992,6 +1002,22 @@
             var countEl = document.getElementById(dom.countId);
             if (!listEl) return;
             removeShowMore(lane);
+
+            // Friendly "no access" state — pre-flight (GST_PERMS) or 403 from
+            // the server. Same copy as the KPI strip so the marketer sees a
+            // consistent explanation across the page.
+            var noAccess = !!(payload && (payload._noAccess || (payload._err && payload._err.status === 403)));
+            if (noAccess) {
+                listEl.innerHTML = '<li class="gst-prof-ins-lane__empty">'
+                    + escHtml(s('channels.detail.insights.noAccess',
+                        'You do not have access to Insights — ask an administrator to grant the Insights permission.'))
+                    + '</li>';
+                if (countEl) {
+                    countEl.textContent = '—';
+                    countEl.removeAttribute('data-window');
+                }
+                return;
+            }
 
             if (payload && payload._err) {
                 listEl.innerHTML = '<li class="gst-prof-ins-lane__error">'
@@ -1308,6 +1334,9 @@
      */
     function loadKpis(channelKey, opts) {
         if (!window.GST || typeof window.GST.renderKpiCard !== 'function') return;
+        // Detail.cshtml gates #gst-prof-kpis on the Insights permission, so an
+        // unauthorized user never has the host. The early return below is what
+        // keeps this no-op for them.
         var host = document.getElementById('gst-prof-kpis');
         if (!host) return;
         opts = opts || {};
@@ -1316,7 +1345,14 @@
         GST.renderKpiCardLoading(host);
         GST.fetchJson(url)
             .then(function (k) { GST.renderKpiCard(host, k, { onDateSelect: opts.onDateSelect }); })
-            .catch(function () { GST.renderKpiCardError(host); });
+            .catch(function (err) {
+                // Defense-in-depth: a 403 here means the server says no even
+                // though GST_PERMS said yes (race after a permission change in
+                // another tab). Show the no-access placeholder rather than a
+                // scary "failed to load".
+                if (err && err.status === 403) GST.renderKpiCardNoAccess(host);
+                else GST.renderKpiCardError(host);
+            });
     }
 
     window.GST = window.GST || {};

@@ -57,6 +57,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPostConfigureOptions<AuthorizationOptions>, ConfigureGraphSearchtoolsPolicy>();
 
         services.AddSingleton<FeatureAccessChecker>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<PermissionMap>();
         services.AddSingleton<UserPreferencesService>();
 
         services.AddScoped<UiStringsProvider>();

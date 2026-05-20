@@ -1463,9 +1463,60 @@
 }
 .gst-tool-card:hover::before { opacity: 1; }
 .gst-tool-card.disabled {
-    opacity: .45;
-    pointer-events: none;
+    opacity: .55;
+    filter: grayscale(.6);
+    cursor: not-allowed;
+    pointer-events: auto;
 }
+.gst-tool-card.disabled:hover { transform: none; box-shadow: none; }
+.gst-tool-card.disabled::before { display: none; }
+.gst-tool-card__noaccess {
+    align-self: flex-start;
+    margin-top: var(--gst-space-sm);
+    padding: 2px 8px;
+    font-size: var(--gst-text-xs);
+    color: var(--gst-color-text-secondary);
+    background: var(--gst-gray-150);
+    border-radius: 999px;
+}
+
+/* No-access KPI placeholder — distinguished from the generic error card by a
+   muted background + lock-icon styling, so a user without Insights perm
+   sees an informational state rather than a scary failure. */
+.gst-kpi--noaccess {
+    background: var(--gst-gray-100);
+    border: 1px dashed var(--gst-gray-300);
+    color: var(--gst-color-text-secondary);
+    text-align: center;
+    padding: var(--gst-space-md);
+    grid-column: 1 / -1;
+}
+.gst-kpi--noaccess .gst-kpi__label { font-weight: 500; }
+
+/* Marker class set by GST.disableAll on programmatically gated buttons. */
+.gst-disabled, button.gst-disabled, [aria-disabled="true"].gst-disabled {
+    opacity: .5;
+    cursor: not-allowed !important;
+    pointer-events: auto;
+}
+.gst-disabled:hover { filter: none; box-shadow: none; }
+
+/* Read-only banner shown above tools when the user has view but not edit access. */
+.gst-readonly-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--gst-space-sm);
+    padding: var(--gst-space-sm) var(--gst-space-md);
+    margin-bottom: var(--gst-space-md);
+    background: var(--gst-amber-50);
+    border-left: 3px solid var(--gst-amber-700);
+    border-radius: var(--gst-radius-sm, 4px);
+    color: var(--gst-gray-900);
+    font-size: var(--gst-text-sm);
+    line-height: 1.4;
+}
+.gst-readonly-banner__icon { flex: 0 0 auto; color: var(--gst-amber-700); }
+.gst-readonly-banner__text strong { font-weight: 600; }
 
 .gst-tool-card__icon {
     width: 28px;

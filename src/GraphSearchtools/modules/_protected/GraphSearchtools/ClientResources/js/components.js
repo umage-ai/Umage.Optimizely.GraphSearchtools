@@ -598,6 +598,24 @@
         el.innerHTML = '<div class="gst-kpi"><div class="gst-kpi__label">' + escText(msg) + '</div></div>';
     };
 
+    /**
+     * Friendly empty state for the KPI strip when the current user lacks
+     * the Insights permission. Distinct visual + copy from the generic
+     * error so a marketer-without-access doesn't think the system is
+     * broken.
+     */
+    GST.renderKpiCardNoAccess = function (host, message) {
+        const el = typeof host === 'string' ? document.querySelector(host) : host;
+        if (!el) return;
+        const msg = message ||
+            (window.GST_STRINGS && window.GST_STRINGS.insights && window.GST_STRINGS.insights.no_access) ||
+            'You do not have access to Insights.';
+        el.innerHTML =
+            '<div class="gst-kpi gst-kpi--noaccess" role="status">' +
+            '  <div class="gst-kpi__label">' + escText(msg) + '</div>' +
+            '</div>';
+    };
+
     function escText(s) {
         if (s == null) return '';
         const d = document.createElement('div');
