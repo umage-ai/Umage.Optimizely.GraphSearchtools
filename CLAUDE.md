@@ -58,13 +58,16 @@ is unused for static file serving.
   `endpoints.MapGraphSearchtools()`.
 - **Options**: `GraphSearchtoolsOptions` bound from `UmageAI:GraphSearchTools` config section.
 - **Permissions**: Three-layer — feature toggle gates *whether the tool is wired*;
-  `AuthorizedRoles` policy (`umageai:graphsearchtools`) gates *who's in the door*;
-  per-function `PermissionType` refines *what they can do* (only consulted when
-  `CheckPermissionForEachFeature: true`). Some tools split view + edit
-  (`Pinned`/`PinnedEdit`/`Collections`, `Synonyms`/`SynonymsEdit`); `Insights` is the
-  umbrella permission for all read-only analytics surfaces. `PermissionMap` is the
-  single source of truth — server-side gates (menu, Overview cards, Channel Detail
-  KPI strip) and JS (`window.GST_PERMS`) both read from it.
+  `AuthorizedRoles` policy (`umageai:graphsearchtools`) gates *who's in the door*
+  (defaults cover the standard CMS-admin and edit-mode groups); per-function
+  `PermissionType` refines *what they can do* (active by default;
+  `CheckPermissionForEachFeature: false` disables the layer). Some tools split
+  view + edit (`Pinned`/`PinnedEdit`/`Collections`, `Synonyms`/`SynonymsEdit`);
+  `Insights` is the umbrella permission for all read-only analytics surfaces.
+  `PermissionMap` is the single source of truth — server-side gates (menu,
+  Overview cards, Channel Detail KPI strip) and JS (`window.GST_PERMS`) both
+  read from it. `PermissionSeeder` grants every PermissionType to
+  `AuthorizedRoles` on first boot so a fresh install never locks anyone out.
 - **Tool structure**: Each tool in `Tools/{ToolName}/` with Service + ApiController + view.
 - **Menu**: `GraphSearchtoolsMenuProvider` uses `Paths.ToResource()` for controller routes.
 - **Static files**: Go in `modules/_protected/GraphSearchtools/ClientResources/`,
@@ -86,10 +89,13 @@ is unused for static file serving.
   have one; tools with mutating surfaces have view + edit (Pinned has three because
   pinned items and pinned collections are separate authority scopes); multi-tool
   aggregate read-surfaces share one umbrella permission (`Insights`).
-- `CheckPermissionForEachFeature: false` is the default. While off, the EPiServer
-  "Permissions For Functions" UI is decorative — `FeatureAccessChecker.HasPermission`
-  short-circuits to `true`. Flipping it on requires explicit grants on every
-  permission for whichever roles should keep access, or those users get locked out.
+- `CheckPermissionForEachFeature: true` is the default. `PermissionSeeder`
+  (an `IHostedService`) grants every PermissionType to the configured
+  `AuthorizedRoles` on first encounter and records a per-permission
+  `PermissionSeederMarker` in DDS so subsequent boots never re-touch the
+  grants — an admin who deliberately wipes a permission's grants stays in
+  control across restarts. Hosts that don't want the per-permission layer
+  at all can opt out by setting `CheckPermissionForEachFeature: false`.
 - **JS paths**: Never hardcode API paths. Use `window.GST_BASE_URL + '/endpoint'`.
 - **Security**: All controllers must have `[Authorize(Policy = "umageai:graphsearchtools")]`,
   all actions must call `_accessChecker.HasAccess()`, POST/PUT/DELETE endpoints must have
