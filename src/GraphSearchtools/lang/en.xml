@@ -13,17 +13,13 @@
           <GraphSearchtools>
             <description>Graph Search Tools</description>
             <permissions>
-              <Overview>Access the Graph Search Tools overview dashboard.</Overview>
-              <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
-              <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
-              <Channels>Manage Search Channels — pinned results, synonyms, ranking per registered search surface.</Channels>
-              <SemanticTuner>Edit the token-count-tiered Semantic Weight policy and emit the matching appsettings.json snippet.</SemanticTuner>
-              <Webhooks>Manage Optimizely Graph webhooks — list, create, delete.</Webhooks>
-              <Telemetry>Push search-log telemetry from host search surfaces.</Telemetry>
-              <SearchLogs>Access the internal /SearchLogsApi telemetry read endpoints that power the Channel Insights tab.</SearchLogs>
-              <SynonymCoverage>Run the Synonym Coverage analyzer — surface unused synonyms and zero-result phrases that look like missing rules.</SynonymCoverage>
-              <PinnedCoverage>Run the Pinned Result Coverage audit — surface broken pin targets, expired pins, low-CTR pins, and overlap conflicts.</PinnedCoverage>
-              <ContentSearchabilityAudit>Scan the CMS content tree for empty Name / MainBody / Tags and string fields exceeding Graph's 1024-character sortable-field limit.</ContentSearchabilityAudit>
+              <Channels>View Search Channels and their detail tabs.</Channels>
+              <Insights>View read-only analytics: the Insights dashboard, per-channel Insights tab, Pinned Coverage and Synonym Coverage audits.</Insights>
+              <Pinned>View pinned collections and their items.</Pinned>
+              <PinnedEdit>Add, modify, reorder and delete pinned items inside a collection.</PinnedEdit>
+              <Collections>Create, rename and delete pinned collections.</Collections>
+              <Synonyms>View synonym rules.</Synonyms>
+              <SynonymsEdit>Add, modify and delete synonym rules.</SynonymsEdit>
             </permissions>
           </GraphSearchtools>
         </groups>

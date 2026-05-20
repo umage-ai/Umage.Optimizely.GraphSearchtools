@@ -6,8 +6,10 @@ using UmageAI.Optimizely.GraphSearchTools.Permissions;
 namespace UmageAI.Optimizely.GraphSearchTools.Components;
 
 /// <summary>
-/// Returns which Graph Search Tools features are enabled for the current user.
-/// Used by the client-side module initializer to conditionally register commands.
+/// Returns which top-level Graph Search Tools surfaces the current user can
+/// reach. Used by the client-side module initializer to conditionally register
+/// menu commands. Each entry is <c>true</c> only when both the feature toggle
+/// and the user's permission grant pass.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
 public class FeaturesApiController : Controller
@@ -24,9 +26,14 @@ public class FeaturesApiController : Controller
     {
         return Ok(new
         {
-            Overview = _accessChecker.HasAccess(HttpContext,
-                nameof(FeatureToggles.Overview),
-                GraphSearchtoolsPermissions.Overview)
+            Channels = _accessChecker.HasAccess(HttpContext,
+                nameof(FeatureToggles.Channels), GraphSearchtoolsPermissions.Channels),
+            Insights = _accessChecker.HasAccess(HttpContext,
+                nameof(FeatureToggles.Insights), GraphSearchtoolsPermissions.Insights),
+            Pinned = _accessChecker.HasAccess(HttpContext,
+                nameof(FeatureToggles.Pinned), GraphSearchtoolsPermissions.Pinned),
+            Synonyms = _accessChecker.HasAccess(HttpContext,
+                nameof(FeatureToggles.Synonyms), GraphSearchtoolsPermissions.Synonyms),
         });
     }
 }

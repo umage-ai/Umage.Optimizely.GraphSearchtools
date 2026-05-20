@@ -13,11 +13,13 @@
           <GraphSearchtools>
             <description>Graph Search Tools</description>
             <permissions>
-              <Overview>Access the Graph Search Tools overview dashboard.</Overview>
-              <Pinned>Manage pinned search results in Optimizely Graph.</Pinned>
-              <Synonyms>Manage synonym rules in Optimizely Graph.</Synonyms>
-              <Channels>Manage Search Channels — pinned results, synonyms, ranking per registered search surface.</Channels>
-              <SavedQueries>Manage saved Optimizely Graph query presets.</SavedQueries>
+              <Channels>View Search Channels and their detail tabs.</Channels>
+              <Insights>View read-only analytics: the Insights dashboard, per-channel Insights tab, Pinned Coverage and Synonym Coverage audits.</Insights>
+              <Pinned>View pinned collections and their items.</Pinned>
+              <PinnedEdit>Add, modify, reorder and delete pinned items inside a collection.</PinnedEdit>
+              <Collections>Create, rename and delete pinned collections.</Collections>
+              <Synonyms>View synonym rules.</Synonyms>
+              <SynonymsEdit>Add, modify and delete synonym rules.</SynonymsEdit>
             </permissions>
           </GraphSearchtools>
         </groups>
