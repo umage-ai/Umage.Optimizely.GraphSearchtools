@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/src/GraphSearchtools/schemas/graphsearchtools.schema.json",
+  "title": "UmageAI.Optimizely.GraphSearchTools appsettings schema",
+  "description": "Validates the UmageAI:GraphSearchTools and Optimizely:ContentGraph sections of an Optimizely host's appsettings.json. Reference from appsettings.json with a $schema property; other sections (Logging, Kestrel, etc.) are unconstrained.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "UmageAI": {
+      "type": "object",
+      "properties": {
+        "GraphSearchTools": { "$ref": "#/definitions/graphSearchToolsOptions" }
+      },
+      "additionalProperties": true
+    },
+    "Optimizely": {
+      "type": "object",
+      "properties": {
+        "ContentGraph": { "$ref": "#/definitions/graphConnectionOptions" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true,
+  "definitions": {
+    "graphSearchToolsOptions": {
+      "type": "object",
+      "description": "Top-level options bound from the UmageAI:GraphSearchTools configuration section.",
+      "properties": {
+        "AuthorizedRoles": {
+          "type": "array",
+          "description": "Role names allowed to access the addon's CMS shell tools. Default: [\"WebAdmins\", \"Administrators\"].",
+          "items": { "type": "string" },
+          "default": ["WebAdmins", "Administrators"]
+        },
+        "CheckPermissionForEachFeature": {
+          "type": "boolean",
+          "description": "When true, each tool additionally checks its corresponding EPiServer PermissionType. When false (default), only the umageai:graphsearchtools policy is enforced.",
+          "default": false
+        },
+        "SearchableContentTypes": {
+          "type": "array",
+          "description": "Content-type names the addon considers searchable when computing pinned/synonym coverage. Default: [\"_Page\"].",
+          "items": { "type": "string" },
+          "default": ["_Page"]
+        },
+        "Features": { "$ref": "#/definitions/featureToggles" },
+        "Graph": {
+          "$ref": "#/definitions/graphConnectionOptions",
+          "description": "Per-environment override of Optimizely Graph credentials. When omitted (or any property is null), the addon falls back to the host's Optimizely:ContentGraph block."
+        },
+        "SavedQueries": { "$ref": "#/definitions/savedQueriesOptions" },
+        "Telemetry": { "$ref": "#/definitions/localTelemetryOptions" }
+      },
+      "additionalProperties": false
+    },
+    "featureToggles": {
+      "type": "object",
+      "description": "Boolean toggles for each tool. Disabling a feature hides its menu entry and gates its endpoints. All default to true.",
+      "properties": {
+        "Overview":         { "type": "boolean", "default": true },
+        "Pinned":           { "type": "boolean", "default": true },
+        "Synonyms":         { "type": "boolean", "default": true },
+        "Channels":         { "type": "boolean", "default": true },
+        "Insights":         { "type": "boolean", "default": true },
+        "Telemetry":        { "type": "boolean", "default": true, "description": "When false, the ingest endpoint returns 404 and no telemetry pipeline is wired." },
+        "SearchLogs":       { "type": "boolean", "default": true },
+        "SynonymCoverage":  { "type": "boolean", "default": true },
+        "PinnedCoverage":   { "type": "boolean", "default": true }
+      },
+      "additionalProperties": false
+    },
+    "graphConnectionOptions": {
+      "type": "object",
+      "description": "Optimizely Graph connection credentials. Mirrors the host's Optimizely:ContentGraph block; partial overrides are valid — any null property falls back to the host value.",
+      "properties": {
+        "GatewayAddress": {
+          "type": "string",
+          "description": "Base URL of the Optimizely Graph gateway, e.g. https://cg.optimizely.com.",
+          "format": "uri"
+        },
+        "AppKey": {
+          "type": "string",
+          "description": "Application key for HMAC-authenticated Graph calls (admin operations)."
+        },
+        "Secret": {
+          "type": "string",
+          "description": "Application secret paired with AppKey for HMAC auth."
+        },
+        "SingleKey": {
+          "type": "string",
+          "description": "Single-key credential for read-only Graph queries (Try-it panel, search-coverage audit)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "savedQueriesOptions": {
+      "type": "object",
+      "description": "Saved-Queries tool defaults.",
+      "properties": {
+        "DefaultQuery": {
+          "type": ["string", "null"],
+          "description": "Default GraphQL document the Saved-Queries tool pre-loads."
+        },
+        "DefaultQueryVariables": {
+          "type": "object",
+          "description": "Default variables for the DefaultQuery document.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "localTelemetryOptions": {
+      "type": "object",
+      "description": "Local telemetry sink/reader tuning. See LocalTelemetryOptions.cs for full semantics.",
+      "properties": {
+        "QueueCapacity": {
+          "type": "integer",
+          "description": "Max in-memory channel depth before DropOldest engages. Default: 65536.",
+          "default": 65536,
+          "minimum": 256
+        },
+        "FlushInterval": {
+          "type": "string",
+          "description": "Flush cadence for the BucketFlusher hosted service. TimeSpan format (e.g. \"00:01:00\"). Default: 60s.",
+          "default": "00:01:00"
+        },
+        "RawRingCapacity": {
+          "type": "integer",
+          "description": "Per-instance raw-event forensic ring size. Default: 10000.",
+          "default": 10000,
+          "minimum": 0
+        },
+        "RawRingTtl": {
+          "type": "string",
+          "description": "TTL for raw-event ring entries. Default: 1 hour.",
+          "default": "01:00:00"
+        },
+        "BucketRetention": {
+          "type": "string",
+          "description": "How long aggregated minute-buckets are kept in DDS. Default: 90 days.",
+          "default": "90.00:00:00"
+        },
+        "NodeId": {
+          "type": "string",
+          "description": "Instance identifier stamped on aggregates. Default: Environment.MachineName."
+        },
+        "MaxBodyBytes": {
+          "type": "integer",
+          "description": "Max body size for ingest endpoint POST. Capped at 65536. Default: 4096.",
+          "default": 4096,
+          "minimum": 256,
+          "maximum": 65536
+        },
+        "MaxPhraseLength": {
+          "type": "integer",
+          "description": "Phrases longer than this are truncated. Default: 256.",
+          "default": 256,
+          "minimum": 16
+        },
+        "PerIpEventsPerSecond": {
+          "type": "integer",
+          "description": "Per-IP rate limit for the ingest endpoint. Default: 20.",
+          "default": 20,
+          "minimum": 1
+        },
+        "GlobalEventsPerSecond": {
+          "type": "integer",
+          "description": "Global rate limit for the ingest endpoint. Default: 2000.",
+          "default": 2000,
+          "minimum": 1
+        },
+        "MaxOpenBuckets": {
+          "type": "integer",
+          "description": "Max distinct (phrase, channel, locale) buckets the flusher tracks at once. Default: 10000.",
+          "default": 10000,
+          "minimum": 16
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
