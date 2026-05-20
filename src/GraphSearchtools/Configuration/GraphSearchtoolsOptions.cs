@@ -86,12 +86,24 @@ public class SavedQueriesOptions
 }
 
 /// <summary>
-/// Optimizely Graph connection credentials. Mirrors Optimizely:ContentGraph host config.
+/// Optimizely Graph connection credentials. Mirrors the host's
+/// <c>Optimizely:ContentGraph</c> configuration block and overrides it per
+/// environment when set under <c>UmageAI:GraphSearchTools:Graph</c>. When
+/// any property is null the resolver falls back to the corresponding host
+/// value, so partial overrides (e.g. a different <see cref="GatewayAddress"/>
+/// only) are valid.
 /// </summary>
 public class GraphConnectionOptions
 {
+    /// <summary>Base URL of the Optimizely Graph gateway, e.g. <c>https://cg.optimizely.com</c>.</summary>
     public string? GatewayAddress { get; set; }
+
+    /// <summary>Application key for HMAC-authenticated Graph calls (admin operations).</summary>
     public string? AppKey { get; set; }
+
+    /// <summary>Application secret paired with <see cref="AppKey"/> for HMAC auth.</summary>
     public string? Secret { get; set; }
+
+    /// <summary>Single-key credential used for read-only Graph queries (the Try-it panel, search-coverage audit).</summary>
     public string? SingleKey { get; set; }
 }
