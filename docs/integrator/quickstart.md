@@ -24,6 +24,7 @@ In `appsettings.json`:
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/src/GraphSearchtools/schemas/graphsearchtools.schema.json",
   "Optimizely": {
     "ContentGraph": {
       "GatewayAddress": "https://cg.optimizely.com",
@@ -39,6 +40,12 @@ In `appsettings.json`:
   }
 }
 ```
+
+The `$schema` line gives VS Code (and AI agents reading the config)
+autocomplete and validation for everything under `UmageAI:GraphSearchTools`
+and `Optimizely:ContentGraph`. It is optional — the addon does not read it.
+The same schema file is packed inside the `.nupkg` at `schemas/` for
+offline reference.
 
 The add-on reuses the host's `Optimizely:ContentGraph` block by default.
 Override it per environment under `UmageAI:GraphSearchTools:Graph` if you
@@ -120,6 +127,42 @@ curl -X POST http://localhost:5000/api/telemetry/searchlog \
 
 If you see no data after a minute, check the **Telemetry** health page —
 it surfaces queue depth, drop counts, and sink configuration.
+
+## 6. Verify the install programmatically
+
+For agents and CI smoke tests, the addon exposes a JSON health endpoint
+that returns the same diagnostics the addon logs at boot:
+
+```bash
+curl -u admin:... http://localhost:5000/EPiServer/cms/graphsearchtools/Overview/Health
+```
+
+```json
+{
+  "version": "0.2.5",
+  "status": "ok",
+  "diagnostics": [],
+  "channels": [
+    { "key": "site-search", "displayName": "Site search", "locales": ["en"], "...": "..." }
+  ],
+  "credentials": {
+    "source": "Optimizely:ContentGraph (host config)",
+    "gatewayAddress": "https://cg.optimizely.com",
+    "appKeyConfigured": true,
+    "secretConfigured": true,
+    "singleKeyConfigured": true
+  },
+  "features": { "Overview": true, "...": "..." },
+  "telemetry": { "sink": "local", "queueDepth": 0, "queueCapacity": 65536, "dropped": 0 }
+}
+```
+
+The endpoint is behind the same `umageai:graphsearchtools` policy as the
+rest of the admin tools — auth as a user in one of the `AuthorizedRoles`.
+Use `status` (`ok` / `warnings` / `misconfigured`) and `diagnostics[]` as
+the source of truth when verifying a fresh install; don't infer health
+from the absence of a 404. The addon also writes the same findings to
+`ILogger` at boot under the `GraphSearchtoolsStartupValidator` category.
 
 ## You now have
 

@@ -114,6 +114,10 @@ public static class ServiceCollectionExtensions
             });
         });
 
+        // Startup validator: runs StartupDiagnostics.Evaluate once and logs
+        // the result. Same evaluator powers the JSON health endpoint.
+        services.AddHostedService<GraphSearchtoolsStartupValidator>();
+
         return new GraphSearchtoolsBuilder(services);
     }
 

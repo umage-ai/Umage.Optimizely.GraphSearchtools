@@ -104,6 +104,17 @@
   </ItemGroup>
 
   <!--
+    Pack the integrator docs and the appsettings JSON schema inside the
+    .nupkg so AI agents reading the cached package have offline access to
+    the setup guide and the config shape.
+  -->
+  <ItemGroup>
+    <None Include="..\..\AGENTS.md" Pack="true" PackagePath="" />
+    <None Include="..\..\docs\integrator\*.md" Pack="true" PackagePath="docs\integrator\" />
+    <None Include="schemas\graphsearchtools.schema.json" Pack="true" PackagePath="schemas\" />
+  </ItemGroup>
+
+  <!--
     Module zip: created during build, packed as contentFiles with BuildAction=None.
     The .targets file copies it to the consuming project's modules/_protected/ on first build.
   -->

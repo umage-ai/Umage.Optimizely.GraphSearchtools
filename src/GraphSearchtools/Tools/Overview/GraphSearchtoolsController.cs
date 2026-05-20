@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
+using UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Overview;
 
@@ -84,5 +88,81 @@ public class GraphSearchtoolsController : Controller
     public IActionResult WidgetStrings()
     {
         return Json(_uiStrings.GetAll());
+    }
+
+    /// <summary>
+    /// Live setup sanity check. Returns the same diagnostics
+    /// <see cref="StartupDiagnostics"/> logs at boot, plus the registered
+    /// channels, credential configuration state (booleans only — no
+    /// secret values are echoed), feature toggles, and the telemetry
+    /// pipeline state. Intended for AI agents verifying a fresh install
+    /// and for human operators looking for an actionable diagnostic
+    /// string instead of inferring success from the absence of errors.
+    /// </summary>
+    [HttpGet]
+    public IActionResult Health(
+        [FromServices] IOptions<GraphSearchtoolsOptions> options,
+        [FromServices] ISearchChannelRegistry registry,
+        [FromServices] IServiceProvider services)
+    {
+        var opts = options.Value;
+        var channels = registry.All;
+        var sink = services.GetService<ITelemetrySink>();
+        var metrics = services.GetService<ITelemetryMetrics>();
+        var hasLocalSink = sink is LocalTelemetrySink;
+
+        var diagnostics = StartupDiagnostics.Evaluate(opts, channels, hasLocalSink);
+
+        var status = diagnostics.Any(d => d.Level == DiagnosticLevel.Error)
+            ? "misconfigured"
+            : diagnostics.Any(d => d.Level == DiagnosticLevel.Warning)
+                ? "warnings"
+                : "ok";
+
+        var creds = opts.Graph;
+        var assemblyVersion = typeof(GraphSearchtoolsController).Assembly
+            .GetName().Version?.ToString();
+
+        return Json(new
+        {
+            version = assemblyVersion,
+            status,
+            diagnostics = diagnostics.Select(d => new
+            {
+                level = d.Level.ToString().ToLowerInvariant(),
+                code = d.Code,
+                message = d.Message,
+            }),
+            channels = channels.Select(c => new
+            {
+                key = c.Key,
+                displayName = c.DisplayName.ToString(),
+                description = c.Description?.ToString(),
+                locales = c.Locales,
+                sites = c.Sites,
+                searchedFields = c.SearchedFields,
+                hasGraphQLDocument = !string.IsNullOrEmpty(c.GraphQLDocumentPath)
+                    || !string.IsNullOrEmpty(c.GraphQLDocumentContent),
+            }),
+            credentials = new
+            {
+                source = creds == null
+                    ? "Optimizely:ContentGraph (host config)"
+                    : "UmageAI:GraphSearchTools:Graph (override)",
+                gatewayAddress = creds?.GatewayAddress,
+                appKeyConfigured = !string.IsNullOrWhiteSpace(creds?.AppKey),
+                secretConfigured = !string.IsNullOrWhiteSpace(creds?.Secret),
+                singleKeyConfigured = !string.IsNullOrWhiteSpace(creds?.SingleKey),
+            },
+            features = opts.Features,
+            authorizedRoles = opts.AuthorizedRoles,
+            telemetry = new
+            {
+                sink = hasLocalSink ? "local" : (sink == null ? "none" : "external"),
+                queueDepth = metrics?.ApproximateQueueDepth,
+                queueCapacity = metrics?.QueueCapacity,
+                dropped = metrics?.ApproximateDroppedTotal,
+            },
+        });
     }
 }
