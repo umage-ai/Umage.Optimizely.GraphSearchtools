@@ -1,4 +1,9 @@
-query AlloySearch($q: String!, $locale: [Locales!], $limit: Int = 20) {
+query AlloySearch(
+  $q: String!
+  $locale: [Locales!]
+  $limit: Int = 20
+  $pinnedCollectionId: String
+) {
   Content(
     where: {
       _or: [
@@ -9,6 +14,7 @@ query AlloySearch($q: String!, $locale: [Locales!], $limit: Int = 20) {
     locale: $locale
     limit: $limit
     orderBy: { _ranking: SEMANTIC, _minimumScore: 2.5 }
+    usePinned: { phrase: $q, collectionId: $pinnedCollectionId }
   ) {
     items {
       Name
