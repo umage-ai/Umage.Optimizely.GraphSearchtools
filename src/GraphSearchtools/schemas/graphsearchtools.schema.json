@@ -29,14 +29,14 @@
       "properties": {
         "AuthorizedRoles": {
           "type": "array",
-          "description": "Role names allowed to access the addon's CMS shell tools. Default: [\"WebAdmins\", \"Administrators\"].",
+          "description": "Role names allowed to access the addon's CMS shell tools. Defaults to the standard CMS administrator + edit-mode groups so any CMS user can reach the tools out of the box.",
           "items": { "type": "string" },
-          "default": ["WebAdmins", "Administrators"]
+          "default": ["WebAdmins", "Administrators", "CmsAdmins", "WebEditors", "CmsEditors"]
         },
         "CheckPermissionForEachFeature": {
           "type": "boolean",
-          "description": "When true, each tool additionally checks its corresponding EPiServer PermissionType. When false (default), only the umageai:graphsearchtools policy is enforced.",
-          "default": false
+          "description": "When true (default), each tool additionally checks its corresponding EPiServer PermissionType. PermissionSeeder grants every PermissionType to AuthorizedRoles on first run, so this default does not lock anyone out. Set false to disable the per-permission layer entirely.",
+          "default": true
         },
         "SearchableContentTypes": {
           "type": "array",

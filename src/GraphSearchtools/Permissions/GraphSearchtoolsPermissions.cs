@@ -68,4 +68,15 @@ public static class GraphSearchtoolsPermissions
     /// <summary>Add, modify and delete synonym rules.</summary>
     public static PermissionType SynonymsEdit { get; } =
         new("GraphSearchtools", "SynonymsEdit");
+
+    /// <summary>
+    /// Enumerates every permission this addon exposes. Used by
+    /// <c>PermissionSeeder</c> to grant grants on first run and by tests /
+    /// integrators who want to iterate over the full surface without
+    /// reflecting on the class.
+    /// </summary>
+    public static IReadOnlyList<PermissionType> All { get; } = new[]
+    {
+        Channels, Insights, Pinned, PinnedEdit, Collections, Synonyms, SynonymsEdit
+    };
 }
