@@ -21,9 +21,8 @@ result list in Razor. Telemetry is emitted in-process — no HTTP roundtrip.
 └─────────────────────────────┘     └─────────────────────┘
         ▲
         │ CMS shell admin UI on the same host
-        │ (Channels / Pinned / Synonyms / Insights)
-        ▼
-       /EPiServer/cms/graphsearchtools
+        │ Edit → Add-ons → Graph Search Tools
+        │ (Search channels / Pinned / Synonyms / Insights)
 ```
 
 The CMS shell admin UI and the public search page share a process. Both

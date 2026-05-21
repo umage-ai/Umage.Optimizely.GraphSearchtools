@@ -113,6 +113,6 @@ public class GraphConnectionOptions
     /// <summary>Application secret paired with <see cref="AppKey"/> for HMAC auth.</summary>
     public string? Secret { get; set; }
 
-    /// <summary>Single-key credential used for read-only Graph queries (the Try-it panel, search-coverage audit).</summary>
+    /// <summary>Single-key credential used for read-only Graph queries (the Try-it panel on the Channel detail page).</summary>
     public string? SingleKey { get; set; }
 }

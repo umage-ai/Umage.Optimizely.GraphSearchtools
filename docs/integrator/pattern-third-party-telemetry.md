@@ -78,8 +78,9 @@ services.Decorate<ITelemetrySink, AppInsightsSinkDecorator>();
 //         sp.GetRequiredService<TelemetryClient>()));
 ```
 
-Events still land in DDS and the addon's Insights/SearchLogs tools
-continue to work normally; the 3rd-party platform gets a parallel copy.
+Events still land in DDS and the addon's Insights surfaces (the
+top-level dashboard and the per-channel Insights tab) continue to work
+normally; the 3rd-party platform gets a parallel copy.
 
 ### Fan-out without the local store
 
@@ -118,11 +119,13 @@ What this does:
 - The public ingest endpoint starts returning `410 Gone` so any
   browser-side beacon SDK stops calling. Your frontend must beacon to
   your analytics platform's SDK instead.
-- The **Insights** UI queries your reader; **SearchLogs → Raw** falls
-  back to whatever your reader returns from `RecentRawAsync` (return an
-  empty list if your platform doesn't expose raw events).
-- The **Telemetry** health page hides the queue/drop counters since
-  there's no local queue.
+- The **Insights** UI (top-level dashboard + per-channel Insights tab)
+  queries your reader; the internal `RecentRawAsync` endpoint falls
+  back to whatever your reader returns (return an empty list if your
+  platform doesn't expose raw events).
+- The JSON **Health** endpoint on the Overview controller reports
+  `sink: "external"` and omits the queue/drop counters since there's no
+  local queue.
 
 ## Choosing
 
