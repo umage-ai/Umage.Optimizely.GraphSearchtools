@@ -24,12 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Queries\AlloySearch.graphql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\GraphSearchtools\GraphSearchtools.csproj" />
   </ItemGroup>
 
@@ -38,6 +32,6 @@
     <ItemGroup>
       <GraphSearchtoolsModuleFiles Include="..\GraphSearchtools\modules\_protected\GraphSearchtools\**\*" />
     </ItemGroup>
-    <Copy SourceFiles="@(GraphSearchtoolsModuleFiles)" DestinationFiles="@(GraphSearchtoolsModuleFiles-&gt;'$(MSBuildProjectDirectory)\modules\_protected\GraphSearchtools\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(GraphSearchtoolsModuleFiles)" DestinationFiles="@(GraphSearchtoolsModuleFiles->'$(MSBuildProjectDirectory)\modules\_protected\GraphSearchtools\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 </Project>
