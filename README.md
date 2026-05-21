@@ -8,29 +8,18 @@ Marketer-facing admin tooling for **Optimizely Graph** site-search on Optimizely
 
 ## Tools
 
-Tools are grouped in the Graph Search Tools section of the CMS shell.
-
-### Tuning
+Six menu entries under a top-level **Graph Search Tools** section in the CMS shell:
 
 | Tool | Description |
 |------|-------------|
-| **Search channels** | Per-surface tuning index. Each registered search channel gets a detail page with KPI strip, Try-it live preview, and Pinned / Synonyms / Settings tabs scoped to that surface. |
-| **Pinned results** | Tenant-global browser for every pinned-result collection. Filter by collection or locale; jump to the owning channel with one click. |
-| **Synonyms** | Replacement and equivalent synonym rules per locale. Changes hit Optimizely Graph immediately; an activity column shows last-30-days impact. |
+| **Overview** | Landing dashboard with quick-access cards for the other tools. |
+| **Search channels** | Per-surface tuning index. Each registered search channel gets a detail page with KPI strip, Try-it live preview, and Insights / Pinned / Synonyms / Settings tabs scoped to that surface. |
+| **Insights** | Cross-channel marketer dashboard. Top phrases, zero-result candidates, low-CTR phrases, filterable by channel and locale over a 7d / 30d window. |
+| **Pinned results** | Tenant-wide pin browser with Pins / Collections / Changelog tabs. Filter pins by collection or locale; jump to the owning channel with one click. Hits / CTR / zero-result columns surface coverage signals (unpublished targets, expired pins, low-CTR pins) inline. |
+| **Synonyms** | Replacement and equivalent synonym rules with a Rules + Changelog tab strip. Filter by scope (per-locale and tenant-global pools). Activity column shows last-30-days impact, and unused / missing-synonym signals surface in the same grid. |
+| **About** | Colophon: version, license, included tools, links. |
 
-### Analytics
-
-| Tool | Description |
-|------|-------------|
-| **Insights** | Cross-channel dashboard. Top phrases, zero-result candidates, low-CTR phrases. Filter by channel and locale; switch between 1h / 24h / 7d / 30d windows. |
-| **Search-log telemetry** | Public ingest beacon (`POST /api/telemetry/searchlog`) plus a self-contained DDS sink that powers every analytics surface in the addon — no external pipeline required. |
-
-### Coverage audits (inside Channel Detail)
-
-| Audit | Description |
-|------|-------------|
-| **Pinned coverage** | Surface unpublished / deleted pin targets, expired pins, low-CTR pins, and pins with no recent search activity. |
-| **Synonym coverage** | Cross-references saved synonyms against the search-log table to surface unused entries and zero-result phrases that look like missing synonyms. |
+Behind the scenes the addon also exposes a public ingest beacon (`POST /api/telemetry/searchlog`) feeding a self-contained DDS sink — the data source for every analytics surface above. No external pipeline required.
 
 ## Screenshots
 
@@ -56,13 +45,13 @@ KPI strip (searches / CTR / zero-result) plus a Try-it live preview that runs th
 
 ![Insights](docs/screenshots/04-insights.webp)
 
-Cross-channel marketer dashboard. Switch tabs between Top phrases, Zero-result phrases, and Low-CTR phrases; filter by channel, locale, and time window. Click any phrase to jump straight to pinning or synonym creation.
+Cross-channel marketer dashboard. Switch tabs between Top phrases, Zero-result phrases, and Low-CTR phrases; filter by channel, locale, and 7d / 30d window. The shorter 1h / 24h windows live one level down on each Channel detail page, where they share state with the Try-it preview.
 
 ### Pinned results
 
 ![Pinned results](docs/screenshots/05-pinned.webp)
 
-Tenant-global pin browser. One row per `(phrase, collection, locale)` with the resolved channel link, item count, and last-30-days activity from search logs.
+Tenant-wide pin browser. The **Pins** tab lists one row per `(phrase, collection, locale)` with the resolved channel link, item count, and last-30-days activity from search logs; a sibling **Collections** tab manages the underlying pinned-result collections, and **Changelog** records every create / update / delete sent to Graph.
 
 ### Synonyms
 
@@ -86,7 +75,7 @@ services.AddGraphSearchtools()
         .SearchedFields("Name", "MetaDescription", "MainBody")
         .UsesPinnedKey("alloy-{locale}")
         .SemanticBlend(0.3, GraphRanking.Semantic)
-        .GraphQLDocument("Queries/AlloySearch.graphql"));
+        .GraphQLDocumentInline(AlloySearchService.SampleHitsQueryDocument));
 ```
 
 | Builder method | What it does |
@@ -94,15 +83,13 @@ services.AddGraphSearchtools()
 | `DisplayName(string\|LocalizedString)` | Display name shown on the Channels index and detail header. Accepts a literal string or a localization key. |
 | `Sites(params string[])` | `SiteDefinition.Name` values this channel applies to. Empty list (default) means "all sites". |
 | `Locales(params string[])` / `LocalesFromCmsLanguages()` | BCP-47 language codes that drive the locale picker. Use the CMS-derived helper to track enabled language branches automatically. |
-| `SearchedFields(params string[])` | Field names searched by the production query. Used by the Try-it side panel and the search-coverage audit. |
+| `SearchedFields(params string[])` | Field names searched by the production query. Surfaced on the Channel detail page so the admin matches what the live storefront queries. |
 | `UsesPinnedKey(string \| Func<string,string>)` | The Graph pinned-collection key formula. String templates may contain `{locale}`, e.g. `"alloy-{locale}"`; pass a `Func<string,string>` for fully dynamic per-locale keys. |
 | `SemanticBlend(double weight, GraphRanking ranking)` | Default semantic weight (clamped to -1.0…1.0) and ranking mode used by the Try-it side panel. |
 | `GraphQLDocument(string path)` / `GraphQLDocumentInline(string body)` | The GraphQL document the production code uses for this surface. Optional — when omitted the Try-it side panel is disabled but Pinned editing still works. |
 | `Variables(object \| IDictionary<string,object?>)` | Default variables passed to the GraphQL document in addition to the runner-controlled ones (`q`, `locale`, `limit`, …). |
 
 When no channels are registered the addon synthesises a single **Generic** channel so zero-config installs keep working: the Channels index shows one row, and the Pinned tab on it falls back to the legacy free-form collection-name editor.
-
-For the design rationale, data model, and migration path, see [`docs/search-channels-design.md`](docs/search-channels-design.md).
 
 ## CMS 12 and CMS 13
 
@@ -188,6 +175,7 @@ public void Configure(IApplicationBuilder app)
         "Synonyms": true,
         "PinnedCoverage": true,
         "SynonymCoverage": true,
+        "SearchLogs": true,
         "Telemetry": true
       }
     }
@@ -203,15 +191,15 @@ Three-layer permission model:
 
 1. **Feature toggles** — Enable/disable individual tools via the `Features` block in configuration. A disabled tool is hidden from the menu and its routes return 404.
 2. **Role-based access** — `AuthorizedRoles` grants full access (defaults cover the standard CMS-admin and edit-mode groups).
-3. **Permissions For Functions** — With `CheckPermissionForEachFeature = true` (default), each tool can be granted to specific users/roles in the CMS admin UI under "Permissions For Functions". `Pinned` and `Synonyms` split into view + edit; `Insights` is the umbrella permission for all read-only analytics surfaces. On first boot `PermissionSeeder` grants every permission to the configured `AuthorizedRoles` so a fresh install never locks anyone out.
+3. **Permissions For Functions** — With `CheckPermissionForEachFeature = true` (default), each tool can be granted to specific users/roles in the CMS admin UI under "Permissions For Functions". The full set is `Channels`, `Insights`, `Pinned`, `PinnedEdit`, `Collections`, `Synonyms`, `SynonymsEdit`. `Synonyms` splits view + edit; `Pinned` splits three ways (view, item-edit, and `Collections` for the collection shells themselves); `Insights` is the umbrella permission for every read-only analytics surface (Insights dashboard, per-channel Insights tab, coverage signals). On first boot `PermissionSeeder` grants every permission to the configured `AuthorizedRoles` so a fresh install never locks anyone out.
 
 ## Scheduled Jobs
 
 | Job | Purpose |
 |-----|---------|
-| **GraphSearchtools — Telemetry retention** | Trims aged buckets from the local search-log store. Runs nightly. Configure retention via `UmageAI:GraphSearchTools:Telemetry:RetentionDays` (default 90). |
+| **Graph Search Tools — Telemetry retention** | Trims aged buckets from the local search-log store and ages out the per-instance forensic raw ring. Configure retention via `UmageAI:GraphSearchTools:Telemetry:BucketRetention` (a `TimeSpan`, default 90 days). |
 
-Run from the CMS admin Scheduled Jobs page or trigger from the Telemetry settings tab.
+Run on demand from the CMS admin Scheduled Jobs page.
 
 ## Documentation
 
