@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
+using UmageAI.Optimizely.GraphSearchTools.Infrastructure;
 using UmageAI.Optimizely.GraphSearchTools.Services;
 
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Content;
@@ -63,6 +64,7 @@ public class ContentLookupApiController : Controller
     }
 
     [HttpPost]
+    [RequireAjax]
     public async Task<ActionResult<IReadOnlyList<ContentSearchHit>>> Resolve(
         [FromBody] string[] guids,
         CancellationToken cancellationToken)
