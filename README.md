@@ -4,7 +4,7 @@
 
 Marketer-facing admin tooling for **Optimizely Graph** site-search on Optimizely CMS 12 and CMS 13. Pinned-result curation, synonym management, a per-channel try-it playground, and click-through / zero-result insights — all integrated into the CMS shell. Distributed as the NuGet package `UmageAI.Optimizely.GraphSearchTools`.
 
-![Overview Dashboard](docs/screenshots/01-overview.webp)
+![Channel detail](docs/screenshots/03-channel-detail.webp)
 
 ## Tools
 
