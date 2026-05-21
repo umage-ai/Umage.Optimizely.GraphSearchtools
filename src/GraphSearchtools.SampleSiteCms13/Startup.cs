@@ -5,6 +5,8 @@ using EPiServer.Data;
 using EPiServer.DependencyInjection;
 using EPiServer.Scheduler;
 using EPiServer.Web.Routing;
+using Optimizely.Graph.Cms.ContentSources.DependencyInjection;
+using Optimizely.Graph.DependencyInjection;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Infrastructure;
 
@@ -30,14 +32,14 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
             .AddAdminUserRegistration()
             .AddEmbeddedLocalization<Startup>();
 
-        // Optimizely.ContentGraph.Cms doesn't yet ship a CMS 13–compatible
-        // build (latest is 4.4.0, which targets EPiServer.CMS 12 and fails
-        // type-scanning against CMS 13's reshaped PropertyContentArea). The
-        // CMS 12 sample wires it up via AddContentDeliveryApi() +
-        // AddContentGraph(); restore that here once a 5.x / CMS 13 build
-        // exists. Until then content indexing into Graph must be handled
-        // out-of-band (e.g. via the Graph REST API) and storefront search
-        // returns empty results against an unconfigured tenant.
+        // Optimizely Graph CMS integration (CMS 13 SDK). Reads credentials
+        // and gateway from the Optimizely:ContentGraph configuration section
+        // by default. AddGraphCore wires the gateway client + auth; the
+        // ContentSources extension registers the CMS event handlers that
+        // sync content into Graph.
+        services.AddGraphCore();
+        services.AddGraphContentSources();
+
         services.AddGraphSearchtools()
             // Single source of truth: AlloySearchService.SampleHitsQueryDocument
             // is the same string the runtime executes (modulo dynamic facet /
