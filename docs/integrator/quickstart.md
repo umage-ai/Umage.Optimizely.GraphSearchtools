@@ -80,14 +80,16 @@ binding, dynamic pinned-key formulas) is covered there.
 
 ## 4. Verify the CMS shell integration
 
-Sign in to `/EPiServer` as a user in one of the `AuthorizedRoles`. A
-**GraphSearchtools** node should appear in the platform navigation with
-**Overview**, **Channels**, **Pinned**, **Synonyms**, **Insights**, and
-**Telemetry** (health) underneath.
+Sign in to the CMS shell as a user in one of the `AuthorizedRoles`. From
+**Edit → Add-ons** you should see a **Graph Search Tools** section with
+**Overview**, **Search channels**, **Insights**, **Pinned results**,
+**Synonyms**, and **About** underneath. (The module mounts at different
+URL prefixes on CMS 12 vs. CMS 13, so navigate via the shell rather than
+guessing the path.)
 
-Open **Channels** → the channel you just registered. The detail page
-confirms the key, the locales, and the searched fields the add-on knows
-about.
+Open **Search channels** → the channel you just registered. The detail
+page confirms the key, the locales, and the searched fields the add-on
+knows about.
 
 ## 5. Send a telemetry event
 
@@ -125,15 +127,21 @@ curl -X POST http://localhost:5000/api/telemetry/searchlog \
   }'
 ```
 
-If you see no data after a minute, check the **Telemetry** health page —
-it surfaces queue depth, drop counts, and sink configuration.
+If you see no data after a minute, hit the JSON health endpoint
+described in §6 — it returns queue depth, drop counts, and sink
+configuration alongside the rest of the startup diagnostics.
 
 ## 6. Verify the install programmatically
 
-For agents and CI smoke tests, the addon exposes a JSON health endpoint
-that returns the same diagnostics the addon logs at boot:
+For agents and CI smoke tests, the addon exposes a JSON **Health**
+action on the Overview controller that returns the same diagnostics the
+addon logs at boot. The exact URL depends on the platform — find it via
+the **Overview** link in **Edit → Add-ons → Graph Search Tools**, append
+`/Health`, and call it with the same credentials a user in
+`AuthorizedRoles` would use:
 
 ```bash
+# Example shape (CMS 12); on CMS 13 the module prefix differs.
 curl -u admin:... http://localhost:5000/EPiServer/cms/graphsearchtools/Overview/Health
 ```
 
@@ -167,10 +175,14 @@ from the absence of a 404. The addon also writes the same findings to
 ## You now have
 
 - A registered search channel marketers can curate against.
-- A working telemetry pipeline with read-side aggregates (**Insights**)
-  and live forensics (**SearchLogs**).
-- Three diagnostic surfaces: **Overview** (smoke), **Telemetry** (health),
-  **Channels** (binding).
+- A working telemetry pipeline with read-side aggregates surfaced through
+  the **Insights** dashboard (cross-channel) and the **Insights** tab on
+  each **Search channels** detail page, plus a per-instance forensic raw
+  ring for live debugging.
+- Two diagnostic surfaces: **Overview** (smoke / quick-access cards) and
+  the JSON `…/Overview/Health` endpoint (machine-readable startup
+  diagnostics, channel registry, credential state, telemetry queue
+  counters).
 
 ## What's next
 

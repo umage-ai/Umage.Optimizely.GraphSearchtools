@@ -25,9 +25,9 @@ to receive telemetry beacons.
                   │  │  ingest endpoint       │  │
                   │  │  local sink → DDS      │  │
                   │  │                        │  │
-                  │  │  admin UI (Channels,   │  │
-                  │  │  Pinned, Synonyms,     │  │
-                  │  │  Insights)             │  │
+                  │  │  admin UI (Search      │  │
+                  │  │  channels, Pinned,     │  │
+                  │  │  Synonyms, Insights)   │  │
                   │  └────────────────────────┘  │
                   └──────────────────────────────┘
 ```
@@ -106,8 +106,8 @@ pinned-result query modifiers.
 A pinned result curated in the CMS shell against `site-en` will silently
 do nothing if the frontend query points to a different collection name.
 This is the single most common misconfiguration in headless setups; the
-**Channels** detail page surfaces the resolved key so marketers can see
-exactly what to put in the query.
+**Search channels** detail page surfaces the resolved key so marketers
+can see exactly what to put in the query.
 
 ## Click attribution
 
@@ -157,13 +157,14 @@ for the full tuning surface.
 
 Even in a headless deployment, the CMS shell still hosts:
 
-- **Channels** — proof that the frontend's pinned-collection name and
-  the channel's resolved key agree.
-- **Pinned** — marketer curation, scoped by channel.
+- **Search channels** — proof that the frontend's pinned-collection
+  name and the channel's resolved key agree.
+- **Pinned results** — marketer curation, scoped by channel.
 - **Synonyms** — tenant-global pools (Optimizely Graph itself does not
   support per-channel synonyms).
-- **Insights / Telemetry / SearchLogs** — read-side analytics over the
-  events your frontend beaconed in.
+- **Insights** — read-side analytics over the events your frontend
+  beaconed in, on both the cross-channel dashboard and the per-channel
+  Insights tab.
 
-Marketers reach all of these at `/EPiServer/cms/graphsearchtools` on the
-CMS host, not on the frontend origin.
+Marketers reach all of these from **Edit → Add-ons → Graph Search
+Tools** in the CMS shell, not on the frontend origin.
