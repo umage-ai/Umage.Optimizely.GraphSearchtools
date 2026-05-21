@@ -48,8 +48,9 @@ public sealed class SearchChannel
     public bool LocalesFromCmsLanguages { get; init; }
 
     /// <summary>
-    /// Field names searched by the production query. Used by the diagnostic
-    /// runner and the search-coverage audit. Order is preserved.
+    /// Field names searched by the production query. Surfaced on the
+    /// Channel detail page so the admin matches what the live storefront
+    /// queries. Order is preserved.
     /// </summary>
     public IReadOnlyList<string> SearchedFields { get; init; } = Array.Empty<string>();
 
