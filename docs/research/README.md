@@ -8,6 +8,7 @@ Research conducted 2026-04-30 against `docs.developers.optimizely.com` and adjac
 - [optimizely-graph-site-search.md](./optimizely-graph-site-search.md) — Capabilities reference: search types, GraphQL surface, faceting, autocomplete, semantic search.
 - [relevancy-optimization.md](./relevancy-optimization.md) — Playbook for tuning result quality: boosting, decay, synonyms, pinned results, semantic weight, score thresholds.
 - [graph-authentication.md](./graph-authentication.md) — How AppKey/Secret + SingleKey work together against the CMS.
+- [graph-tracking.md](./graph-tracking.md) — Click-through tracking: `.Track()`, `<graph-trackable-link>`, the `/Optimizely/Track/TrackClickThrough` beacon, and what aggregates Graph actually exposes back.
 
 ## TL;DR
 
