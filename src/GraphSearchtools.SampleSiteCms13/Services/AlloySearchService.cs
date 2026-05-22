@@ -29,12 +29,13 @@ public sealed class AlloySearchService
 {
     /// <summary>
     /// Static enumeration source for the ContentType facet (top-level type
-    /// facet). The Alloy schema indexes ContentType as the full inheritance
-    /// chain (e.g. <c>["ArticlePage", "StandardPage", "Page", "Content"]</c>);
+    /// facet). The Alloy schema indexes <c>_metadata.types</c> as the full
+    /// inheritance chain (e.g. <c>["StandardPage", "_Page", "_Content"]</c>);
     /// we list the leaf page types we care about and drop the inherited /
-    /// non-page entries (Page, Block, Media, Image, …) when reading the facet
-    /// output. LandingPage is included even though the seed catalog has zero
-    /// — that's the §4 disabled-not-hidden case worth demonstrating.
+    /// non-page entries (<c>_Page</c>, <c>_Content</c>, <c>_Item</c>, …) when
+    /// reading the facet output. LandingPage is included even though the
+    /// seed catalog has zero — that's the §4 disabled-not-hidden case worth
+    /// demonstrating.
     /// </summary>
     public static readonly IReadOnlyList<string> KnownContentTypes = new[]
     {
@@ -111,7 +112,9 @@ public sealed class AlloySearchService
         using var hitsBody = hitsTask.Result;
         using var typeCountBody = contentTypeCountTask.Result;
 
-        var typeCounts = ParseFacetCounts(typeCountBody, "ContentType");
+        // Facet name aligns with the CMS 13 schema (`_metadata.types`); the
+        // facet parser walks `facets._metadata[facetName]`.
+        var typeCounts = ParseFacetCounts(typeCountBody, "types");
 
         var hits = ParseHits(hitsBody, phrase);
         var total = ParseTotal(hitsBody);
@@ -148,36 +151,46 @@ public sealed class AlloySearchService
         var clamped = Math.Clamp(limit, 1, 25);
         var endpoint = $"{creds.GatewayAddress.TrimEnd('/')}/content/v2?auth={creds.SingleKey}";
 
-        // One round-trip across every known page type. MetaKeywords is the
-        // only autocomplete-indexed text field on Alloy's stock content types
-        // (Name isn't marked Searchable). Aliasing each branch lets us
-        // deserialize the merged response without name collisions.
-        var aliases = KnownContentTypes
-            .Select(t => $"{t.ToLowerInvariant()}: {t}(limit: 0) {{ autocomplete {{ MetaKeywords(value: {EscapeString(prefix)}, limit: {clamped}) }} }}")
-            .ToList();
-        var queryDocument = "{\n" + string.Join("\n", aliases) + "\n}";
+        // CMS 13 doesn't promote `MetaKeywords` to the per-type autocomplete
+        // index the way the CMS 12 stack did, and the new `_metadata` block
+        // exposes only identifier-ish fields (key/locale/url/...) under
+        // `autocomplete`. The pragmatic replacement is a small `_Content`
+        // query that prefix-matches `displayName` and surfaces the page
+        // titles as suggestions — same shape from the consumer's side, just
+        // backed by a real query rather than the autocomplete sidecar.
+        var queryDocument = $@"
+{{
+  _Content(
+    where: {{ _and: [
+      {{ _metadata: {{ types: {{ eq: ""_Page"" }} }} }},
+      {{ _metadata: {{ displayName: {{ startsWith: {EscapeString(prefix)} }} }} }}
+    ] }}
+    limit: {clamped}
+  ) {{
+    items {{
+      _metadata {{ displayName }}
+    }}
+  }}
+}}";
 
         try
         {
             using var doc = await ExecuteAsync(endpoint, queryDocument, cancellationToken);
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var ordered = new List<string>();
-            if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object)
+            if (TryGetContentBlock(doc, out var content)
+                && content.TryGetProperty("items", out var items)
+                && items.ValueKind == JsonValueKind.Array)
             {
-                foreach (var typeBranch in data.EnumerateObject())
+                foreach (var item in items.EnumerateArray())
                 {
-                    if (typeBranch.Value.ValueKind != JsonValueKind.Object) continue;
-                    if (!typeBranch.Value.TryGetProperty("autocomplete", out var ac) || ac.ValueKind != JsonValueKind.Object) continue;
-                    if (!ac.TryGetProperty("MetaKeywords", out var mk) || mk.ValueKind != JsonValueKind.Array) continue;
-                    foreach (var entry in mk.EnumerateArray())
-                    {
-                        var s = entry.GetString();
-                        if (string.IsNullOrWhiteSpace(s)) continue;
-                        if (seen.Add(s)) ordered.Add(s);
-                    }
+                    if (!item.TryGetProperty("_metadata", out var meta) || meta.ValueKind != JsonValueKind.Object) continue;
+                    var displayName = GetString(meta, "displayName");
+                    if (string.IsNullOrWhiteSpace(displayName)) continue;
+                    if (seen.Add(displayName!)) ordered.Add(displayName!);
                 }
             }
-            // Prefer suggestions whose first matching token is at the start —
+            // Prefer suggestions whose first token starts with the prefix —
             // gives a more "this is what I was typing" feel before falling
             // back to mid-string matches.
             ordered.Sort((a, b) =>
@@ -262,19 +275,21 @@ public sealed class AlloySearchService
 
         return $@"
 {{
-  Content(
-    where: {{ _and: [{{ ContentType: {{ eq: ""Page"" }} }}, {clauses}] }}
+  _Content(
+    where: {{ _and: [{{ _metadata: {{ types: {{ eq: ""_Page"" }} }} }}, {clauses}] }}
     limit: {limit}
     {orderBy}
     {pinned}
   ) {{
     total
     items {{
-      Name
-      ContentType
-      RelativePath
-      Language {{ Name }}
-      ContentLink {{ GuidValue }}
+      _metadata {{
+        displayName
+        types
+        locale
+        key
+        url {{ default }}
+      }}
       {fulltextField}
     }}
   }}
@@ -329,17 +344,20 @@ public sealed class AlloySearchService
             includeContentType: !omitContentType,
             includeLocale: true);
 
+        // CMS 13 nests every metadata facet under `_metadata { ... }` — the
+        // legacy CMS 12 shape `facets { ContentType { name count } }` becomes
+        // `facets { _metadata { types(...) { name count } } }`.
         var facetBlock = include switch
         {
-            FacetField.ContentType => "ContentType(limit: 100, orderType: COUNT, orderBy: DESC) { name count }",
+            FacetField.ContentType => "_metadata { types(limit: 100, orderType: COUNT, orderBy: DESC) { name count } }",
             _ => string.Empty
         };
 
         // limit: 0 — facet-only query, items not needed.
         return $@"
 {{
-  Content(
-    where: {{ _and: [{{ ContentType: {{ eq: ""Page"" }} }}, {clauses}] }}
+  _Content(
+    where: {{ _and: [{{ _metadata: {{ types: {{ eq: ""_Page"" }} }} }}, {clauses}] }}
     limit: 0
   ) {{
     facets {{
@@ -350,9 +368,16 @@ public sealed class AlloySearchService
     }
 
     // Builds the WHERE clause as a `_and: [ ... ]` body — joined by the caller
-    // with the always-applied `ContentType: { eq: "Page" }` restriction.
+    // with the always-applied `_metadata: { types: { eq: "_Page" } }` restriction.
     // Returns `{}` (empty object) when no clauses apply, which keeps the
     // composed `_and` valid GraphQL.
+    //
+    // CMS 13 schema notes (see /workspace/docs/research/ if you need the full
+    // map): the type-system fields that CMS 12's Graph exposed at the root of
+    // each content item (Name, ContentType, Language, ContentLink) now live
+    // under a unified `_metadata` block (displayName, types, locale, key).
+    // The where input mirrors that, so all metadata-driven filters route
+    // through `_metadata { ... }`.
     private static string BuildClauses(
         string? phrase,
         IReadOnlyList<string> types,
@@ -371,8 +396,8 @@ public sealed class AlloySearchService
             // addon's UI defaults to; switch to TWO if you maintain a
             // staging slot and activate it via the Graph admin API.
             //
-            // Title boost: pages whose Name (page title) matches the phrase
-            // get a 5× score contribution on top of the base _fulltext match.
+            // Title boost: pages whose displayName matches the phrase get a
+            // 5× score contribution on top of the base _fulltext match.
             // Wrapping both in _or keeps the membership rule the same — the
             // doc still has to match _fulltext somewhere — while raising
             // title hits above body-only hits in the ranking. Tune the boost
@@ -383,18 +408,20 @@ public sealed class AlloySearchService
             // fires when the user types the literal title word, so editorial
             // synonyms (`floop => alloy`) get the _fulltext synonym discount
             // but no title elevation, and synonym hits sink below direct
-            // lexical hits. Probing showed top floop hits jumping from ~8
-            // (no Name-arm synonyms) to 200+ when the Name arm also expands
-            // synonyms — same content, properly elevated.
+            // lexical hits.
             inner.Add(
                 "{ _or: ["
                 + $"{{ _fulltext: {{ match: {EscapeString(phrase)}, synonyms: ONE }} }}, "
-                + $"{{ Name: {{ match: {EscapeString(phrase)}, boost: 5, synonyms: ONE }} }}"
+                + $"{{ _metadata: {{ displayName: {{ match: {EscapeString(phrase)}, boost: 5, synonyms: ONE }} }} }}"
                 + "] }");
         }
         if (includeContentType && types.Count > 0)
         {
-            inner.Add($"{{ ContentType: {{ in: [{string.Join(", ", types.Select(EscapeString))}] }} }}");
+            // `_metadata.types` is the inheritance chain as a string list. An
+            // `eq` against the leaf type (StandardPage, ProductPage…) matches
+            // only documents of that exact type; the umbrella `_Page` is the
+            // shared ancestor that the always-on filter restricts to.
+            inner.Add($"{{ _metadata: {{ types: {{ in: [{string.Join(", ", types.Select(EscapeString))}] }} }} }}");
         }
         if (includeLocale && !string.IsNullOrEmpty(locale))
         {
@@ -402,7 +429,7 @@ public sealed class AlloySearchService
             // one branch at a time). Using eq makes the placeholder in the
             // sample query (`$locale`) substitute cleanly without dragging in
             // list syntax.
-            inner.Add($"{{ Language: {{ Name: {{ eq: {EscapeString(locale)} }} }} }}");
+            inner.Add($"{{ _metadata: {{ locale: {{ eq: {EscapeString(locale)} }} }} }}");
         }
         return inner.Count == 0 ? "{}" : $"{{ _and: [{string.Join(", ", inner)}] }}";
     }
@@ -450,14 +477,20 @@ public sealed class AlloySearchService
 
         foreach (var item in items.EnumerateArray())
         {
+            var meta = item.TryGetProperty("_metadata", out var m) && m.ValueKind == JsonValueKind.Object ? m : default;
             hits.Add(new AlloySearchHit
             {
-                Title = GetString(item, "Name") ?? string.Empty,
-                Url = GetString(item, "RelativePath") ?? "#",
+                Title = GetString(meta, "displayName") ?? string.Empty,
+                // `_metadata.url` exposes default / hierarchical / internal /
+                // graph / base variants. `default` is the routable URL the
+                // host would publish for the page.
+                Url = GetNestedString(meta, "url", "default") ?? "#",
                 Excerpt = BuildExcerpt(GetFulltextSnippet(item), phrase),
-                ContentType = GetLeafContentType(item) ?? "Content",
-                Language = GetNestedString(item, "Language", "Name") ?? string.Empty,
-                ContentLink = GetNestedString(item, "ContentLink", "GuidValue") ?? string.Empty
+                ContentType = GetLeafContentType(meta) ?? "Content",
+                Language = GetString(meta, "locale") ?? string.Empty,
+                // `key` is the GUID-ish identifier the CMS uses for the content
+                // item. Same role the CMS 12 `ContentLink.GuidValue` played.
+                ContentLink = GetString(meta, "key") ?? string.Empty
             });
         }
         return hits;
@@ -538,7 +571,11 @@ public sealed class AlloySearchService
         var result = new Dictionary<string, int>(StringComparer.Ordinal);
         if (!TryGetContentBlock(doc, out var content)) return result;
         if (!content.TryGetProperty("facets", out var facets) || facets.ValueKind != JsonValueKind.Object) return result;
-        if (!facets.TryGetProperty(facetName, out var facet) || facet.ValueKind != JsonValueKind.Array) return result;
+        // CMS 13 nests every type-system facet under `_metadata`. Walk through
+        // it so callers can still ask for the facet by its conceptual name
+        // (`types`) without spelling out the path.
+        if (!facets.TryGetProperty("_metadata", out var metaFacets) || metaFacets.ValueKind != JsonValueKind.Object) return result;
+        if (!metaFacets.TryGetProperty(facetName, out var facet) || facet.ValueKind != JsonValueKind.Array) return result;
 
         foreach (var entry in facet.EnumerateArray())
         {
@@ -595,7 +632,10 @@ public sealed class AlloySearchService
     {
         content = default;
         if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object) return false;
-        if (!data.TryGetProperty("Content", out content) || content.ValueKind != JsonValueKind.Object) return false;
+        // CMS 13's content-graph schema renamed the root collection field
+        // from `Content` to `_Content`. The CMS 12 sample still uses `Content`,
+        // but here we read the new name.
+        if (!data.TryGetProperty("_Content", out content) || content.ValueKind != JsonValueKind.Object) return false;
         return true;
     }
 
@@ -630,18 +670,21 @@ public sealed class AlloySearchService
     private static string? GetNestedString(JsonElement el, string a, string b)
         => el.TryGetProperty(a, out var inner) && inner.ValueKind == JsonValueKind.Object ? GetString(inner, b) : null;
 
+    // CMS 13's `_metadata.types` array carries the full inheritance chain.
+    // Framework-introduced base names are underscore-prefixed (_Content, _Page,
+    // _Image, _Block, _Item, _Component, _Folder, _Media). Drop those plus the
+    // host's framework-level umbrellas so we surface the concrete leaf type
+    // (StandardPage, ArticlePage, …) — the value users actually filter by.
     private static readonly HashSet<string> GenericContentTypes = new(StringComparer.Ordinal)
     {
-        "Content", "Page", "Block", "Media", "Image", "Video"
+        "_Content", "_Page", "_Block", "_Media", "_Image", "_Item",
+        "_Component", "_Folder", "_AssetItem", "_ImageItem"
     };
 
-    private static string? GetLeafContentType(JsonElement item)
+    private static string? GetLeafContentType(JsonElement meta)
     {
-        if (!item.TryGetProperty("ContentType", out var ct) || ct.ValueKind != JsonValueKind.Array) return null;
-        // Graph indexes ContentType as the full inheritance chain plus a few
-        // generic interface names (Page / Content / Block). Walk the array
-        // and return the first entry that ISN'T one of the generics — that's
-        // the concrete leaf type the user actually cares about.
+        if (meta.ValueKind != JsonValueKind.Object) return null;
+        if (!meta.TryGetProperty("types", out var ct) || ct.ValueKind != JsonValueKind.Array) return null;
         string? fallback = null;
         foreach (var t in ct.EnumerateArray())
         {

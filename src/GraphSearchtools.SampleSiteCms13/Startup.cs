@@ -5,7 +5,6 @@ using EPiServer.Data;
 using EPiServer.DependencyInjection;
 using EPiServer.Scheduler;
 using EPiServer.Web.Routing;
-using Optimizely.Graph.Cms.ContentSources.DependencyInjection;
 using Optimizely.Graph.DependencyInjection;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Infrastructure;
@@ -34,11 +33,12 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
 
         // Optimizely Graph CMS integration (CMS 13 SDK). Reads credentials
         // and gateway from the Optimizely:ContentGraph configuration section
-        // by default. AddGraphCore wires the gateway client + auth; the
-        // ContentSources extension registers the CMS event handlers that
-        // sync content into Graph.
+        // by default. AddGraphCore wires the gateway client + auth;
+        // AddContentGraph registers the CMS event handlers that sync content
+        // into Graph and is the CMS 13 equivalent of CMS 12's AddContentGraph
+        // call from Optimizely.ContentGraph.Cms.
         services.AddGraphCore();
-        services.AddGraphContentSources();
+        services.AddContentGraph();
 
         services.AddGraphSearchtools()
             // Single source of truth: AlloySearchService.SampleHitsQueryDocument
