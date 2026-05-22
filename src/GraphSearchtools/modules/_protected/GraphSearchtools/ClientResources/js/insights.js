@@ -85,7 +85,24 @@
         inflight: { top: null, zero: null, lowctr: null }
     };
 
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', autoInit);
+    // AJAX tool-switch (graphsearchtools.js → "Smooth tool-switch navigation")
+    // hands us a freshly-swapped Insights DOM. Reset the local state and
+    // re-wire from scratch — the previous run's event listeners are bound to
+    // detached nodes and are GC-eligible.
+    document.addEventListener('gst:pageswapped', function () {
+        state.initialized = false;
+        autoInit();
+    });
+
+    function autoInit() {
+        if (state.initialized) return;
+        // The Insights toolbar lives at `#gst-insights-window-filter` and
+        // friends; if those aren't present we're not on the Insights page.
+        if (!document.getElementById('gst-insights-window-filter')) return;
+        state.initialized = true;
+        init();
+    }
 
     function init() {
         readHash();
@@ -613,11 +630,10 @@
         }
         var a = document.createElement('a');
         a.className = 'gst-ins-row__channel';
-        // ChannelsController is rooted at /EPiServer/cms/graphsearchtools/channels
-        // (not under the module resource base), and the detail page reads
-        // ?key=<id> from the index action — matches how Index.cshtml and
-        // channels.js build the same link.
-        a.href = '/EPiServer/cms/graphsearchtools/channels?key=' + encodeURIComponent(channelKey);
+        // Build the channel-detail URL from the module base path that the
+        // layout exposes via window.GST_BASE_URL — same shape used by every
+        // other deep-link into Channels (Channels/Index.cshtml, pinned-*.js).
+        a.href = (window.GST_BASE_URL || '') + '/Channels/Index?key=' + encodeURIComponent(channelKey);
         a.textContent = channelKey;
         a.title = STRINGS.open_channel || 'Open this channel';
         td.appendChild(a);

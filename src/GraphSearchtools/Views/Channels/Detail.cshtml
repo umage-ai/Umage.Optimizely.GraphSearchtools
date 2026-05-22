@@ -27,7 +27,7 @@
 <div class="gst-page-header gst-prof-detail-header">
     <div class="gst-page-header__title">
         <div class="gst-prof-detail-header__crumb">
-            <a href="/EPiServer/cms/graphsearchtools/channels" class="gst-prof-detail-header__back">
+            <a href="@Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "Channels/Index")" class="gst-prof-detail-header__back">
                 @await Html.PartialAsync("/Views/Shared/_Icon.cshtml", new { Name = "chevronLeft", Size = 14 })
                 @Loc.GetString("/graphsearchtools/channels/detail/backToList")
             </a>

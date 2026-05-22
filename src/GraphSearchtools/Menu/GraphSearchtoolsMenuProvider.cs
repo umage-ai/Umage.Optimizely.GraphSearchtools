@@ -41,9 +41,12 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
 
         // Phase 2.5 — Search Channels top-level surface. Sits between Overview
         // and the editorial tools so marketers land on the per-surface tuning
-        // index before drilling into individual data shapes.
+        // index before drilling into individual data shapes. Routes through
+        // the same module base path as every other tool so on CMS 13 the
+        // platform chrome can do SPA-style transitions between them instead
+        // of falling back to a full reload.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/channels", "Search channels"), BaseMenuPath + "/channels",
-            "/EPiServer/cms/graphsearchtools/channels")
+            GetResourcePath("Channels/Index"))
         {
             SortIndex = 150,
             IsAvailable = context => HasAccess(context, nameof(FeatureToggles.Channels), GraphSearchtoolsPermissions.Channels)
@@ -87,7 +90,7 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
         };
 
         // Legacy /pinnedcoverage and /synonymcoverage URLs still 301 to
-        // /channels via GraphSearchtoolsController.
+        // the Channels surface via GraphSearchtoolsController.
     }
 
     private static string GetResourcePath(string resourcePath)

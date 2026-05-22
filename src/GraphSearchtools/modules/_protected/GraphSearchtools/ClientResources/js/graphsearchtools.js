@@ -698,11 +698,14 @@ document.addEventListener('click', function(e) {
 
 // Auto-highlight any GraphQL code panel on first paint. Tools that mount
 // code blocks dynamically can call GST.applyGqlHighlight(root) themselves.
+// Also re-run after AJAX tool switches so code blocks in the freshly-
+// swapped DOM get the same treatment.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() { GST.applyGqlHighlight(); });
 } else {
     GST.applyGqlHighlight();
 }
+document.addEventListener('gst:pageswapped', function () { GST.applyGqlHighlight(); });
 
 // Dojo's BorderContainer calculates a narrower applicationContainer on initial load
 // due to a brief layout artifact. Watch for the wrong width and correct it.
@@ -757,5 +760,296 @@ if (document.readyState === 'loading') {
         observer.disconnect();
         doFix();
     }, 2000);
+})();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Smooth tool-switch navigation
+   ─────────────────────────────────────────────────────────────────────────
+   The Graph Search Tools menu is rendered by Optimizely's platform shell as
+   part of every server-rendered page. A full page reload between tools makes
+   the host's sidenav blink (CMS 13) or layout-shift (CMS 12) for ~500ms
+   because the host re-resolves which section's sidenav to render. The host's
+   own Aurora SPA sections (e.g. /Optimizely/Settings/) avoid this by doing
+   pushState + AJAX content swap inside the same product.
+
+   This IIFE adds equivalent behaviour for GST: intercept clicks on links
+   within the GST module base, fetch the destination, swap the `<main>` body
+   in place, run any per-page scripts, and pushState the new URL. The host
+   chrome never unloads, so the sidenav doesn't flicker. Falls back to a
+   normal navigation when anything is unexpected.
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    if (!window.GST_BASE_URL) return;
+    var moduleBase = String(window.GST_BASE_URL).replace(/\/+$/, '');
+    if (!moduleBase) return;
+    // Only opt in when we're actually inside a GST shell — keeps the handler
+    // dormant on host pages where the layout doesn't apply.
+    if (!document.querySelector('main.gst-main')) return;
+
+    var navSeq = 0;
+    var inflight = null;
+
+    document.addEventListener('click', function (e) {
+        if (e.defaultPrevented) return;
+        if (e.button !== 0) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+        var a = e.target.closest ? e.target.closest('a[href]') : null;
+        if (!a) return;
+        // Skip links that explicitly open elsewhere
+        if (a.target && a.target !== '_self' && a.target !== '') return;
+        if (a.hasAttribute('download')) return;
+
+        var href = a.getAttribute('href');
+        if (!href || href.charAt(0) === '#') return;
+
+        var url;
+        try { url = new URL(a.href, document.baseURI); } catch (_) { return; }
+        if (url.origin !== location.origin) return;
+
+        // Only intercept paths under the GST module base — host links like
+        // /Optimizely/CMS/ get the normal hard navigation.
+        var p = url.pathname;
+        if (p !== moduleBase && p.indexOf(moduleBase + '/') !== 0) return;
+
+        // Same-document hash jump?
+        if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
+
+        // Stop both default + bubble + other capture-phase handlers (Aurora's
+        // React-style components attach a click handler that programmatically
+        // navigates via window.location, bypassing preventDefault on its own;
+        // stopImmediatePropagation keeps it from firing at all).
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        navigateTo(url.pathname + url.search + url.hash, true);
+    }, true);
+
+    window.addEventListener('popstate', function (ev) {
+        if (ev.state && ev.state.gst) {
+            navigateTo(location.pathname + location.search + location.hash, false);
+        }
+    });
+
+    function navigateTo(path, push) {
+        var seq = ++navSeq;
+        if (inflight && inflight.abort) {
+            try { inflight.abort(); } catch (_) {}
+        }
+        inflight = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+
+        document.body.classList.add('gst-nav-loading');
+
+        fetch(path, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'text/html', 'X-GST-Nav': '1' },
+            signal: inflight ? inflight.signal : undefined
+        }).then(function (resp) {
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            // Honour server-driven redirects (e.g. /pinnedcoverage 301 → /channels)
+            if (resp.redirected) path = resp.url.replace(location.origin, '');
+            return resp.text();
+        }).then(function (html) {
+            if (seq !== navSeq) return; // superseded
+            applyResponse(html, path, push);
+        }).catch(function (err) {
+            if (err && err.name === 'AbortError') return;
+            // Bail to a real navigation so the user still gets to the page.
+            window.location.href = path;
+        });
+    }
+
+    function applyResponse(html, path, push) {
+        var doc;
+        try { doc = new DOMParser().parseFromString(html, 'text/html'); } catch (_) {
+            window.location.href = path; return;
+        }
+        var newMain = doc.querySelector('main.gst-main');
+        var oldMain = document.querySelector('main.gst-main');
+        if (!newMain || !oldMain) { window.location.href = path; return; }
+
+        var title = doc.querySelector('title');
+        if (title) document.title = title.textContent;
+
+        // Swap per-page styles. Razor's @section Styles emits inline <style>
+        // blocks after the addon's graphsearchtools.css link in <head>. The
+        // initial server render seeded those in place, and we tag them on
+        // IIFE init (see tagInitialPageStyles below) so subsequent swaps
+        // know which inline styles to drop. Without this, a tool whose
+        // layout depends on per-page CSS (e.g. About's grid + SVG sizing)
+        // renders with the previous tool's styles, or with no styles at all.
+        swapPageStyles(doc);
+
+        // Replace the addon's main body. The platform sidenav + header chrome
+        // sit outside this element, so they stay mounted.
+        oldMain.replaceWith(newMain);
+
+        // Per-page scripts ship in @section Scripts, which Razor emits at the
+        // end of <body>. They need to fire so each tool's init code runs.
+        var existingSrcs = {};
+        Array.prototype.forEach.call(document.querySelectorAll('script[src]'), function (s) {
+            existingSrcs[normalizeSrc(s.src)] = true;
+        });
+
+        var bodyScripts = doc.body ? doc.body.querySelectorAll('script') : [];
+        var queue = Array.prototype.slice.call(bodyScripts);
+
+        // Update the URL bar BEFORE re-running scripts so any code that reads
+        // location.pathname during init sees the new path. (Also: the sidenav-
+        // active update keys off location, so it has to come after.)
+        if (push) {
+            history.pushState({ gst: true }, '', path);
+        } else {
+            history.replaceState({ gst: true }, '', path);
+        }
+
+        runNextScript(queue, existingSrcs, function () {
+            // Update sidenav active state to match the new URL. The platform
+            // shell paints this server-side; mirror its rule so the highlight
+            // tracks pushState navigation.
+            refreshSidenavActiveState();
+            document.body.classList.remove('gst-nav-loading');
+            // Scroll to top on each tool switch — same UX as a real reload.
+            window.scrollTo(0, 0);
+
+            // Tell every module that its DOM has been swapped. Modules that
+            // cache DOM refs or auto-init on DOMContentLoaded (pinned-aurora,
+            // synonyms-aurora, changelog, …) listen for this event and
+            // re-bind to the new tree. Modules that don't need teardown
+            // ignore it.
+            try {
+                document.dispatchEvent(new CustomEvent('gst:pageswapped', { detail: { path: path } }));
+            } catch (_) {
+                // Older IE / odd CSP — fall back to a plain Event.
+                var ev = document.createEvent('Event');
+                ev.initEvent('gst:pageswapped', true, true);
+                document.dispatchEvent(ev);
+            }
+        });
+    }
+
+    function runNextScript(queue, existingSrcs, done) {
+        if (queue.length === 0) { done(); return; }
+        var src = queue.shift();
+        var s = document.createElement('script');
+        Array.prototype.forEach.call(src.attributes, function (a) { s.setAttribute(a.name, a.value); });
+        if (src.src) {
+            if (existingSrcs[normalizeSrc(src.src)]) {
+                // Already in the document; skip the network hit but keep the
+                // exec order consistent.
+                runNextScript(queue, existingSrcs, done);
+                return;
+            }
+            s.onload = function () { runNextScript(queue, existingSrcs, done); };
+            s.onerror = function () { runNextScript(queue, existingSrcs, done); };
+            document.body.appendChild(s);
+        } else {
+            s.textContent = src.textContent;
+            document.body.appendChild(s);
+            runNextScript(queue, existingSrcs, done);
+        }
+    }
+
+    function normalizeSrc(src) {
+        try { return new URL(src, document.baseURI).pathname.toLowerCase(); }
+        catch (_) { return String(src).toLowerCase(); }
+    }
+
+    // ─── Per-page <style> management ────────────────────────────────────
+    // The layout puts @section Styles output AFTER the addon's main
+    // graphsearchtools.css link. So "anything <style> after that link" is
+    // a per-page style. We tag those on first paint and clone the
+    // equivalent block from each AJAX response into the live <head>.
+
+    function pageStylesAfterMarker(headNode) {
+        // headNode might be the live document.head, or DOMParser's <head>.
+        var marker = headNode.querySelector('link[href$="/graphsearchtools.css"], link[href*="/graphsearchtools.css?"]');
+        if (!marker) return [];
+        var out = [];
+        var n = marker.nextElementSibling;
+        while (n) {
+            if (n.tagName === 'STYLE') out.push(n);
+            n = n.nextElementSibling;
+        }
+        return out;
+    }
+
+    function tagInitialPageStyles() {
+        pageStylesAfterMarker(document.head).forEach(function (s) {
+            if (!s.hasAttribute('data-gst-page-style')) s.setAttribute('data-gst-page-style', '');
+        });
+    }
+
+    function swapPageStyles(responseDoc) {
+        // Tear down whatever the previous page contributed.
+        var prev = document.head.querySelectorAll('style[data-gst-page-style]');
+        Array.prototype.forEach.call(prev, function (s) { s.remove(); });
+        // Adopt the new page's contribution.
+        var responseHead = responseDoc && responseDoc.head;
+        if (!responseHead) return;
+        pageStylesAfterMarker(responseHead).forEach(function (src) {
+            var s = document.createElement('style');
+            s.textContent = src.textContent;
+            s.setAttribute('data-gst-page-style', '');
+            // Copy through `media`, `type`, etc. if the source has them.
+            Array.prototype.forEach.call(src.attributes, function (a) {
+                if (a.name !== 'data-gst-page-style') s.setAttribute(a.name, a.value);
+            });
+            document.head.appendChild(s);
+        });
+    }
+
+    function refreshSidenavActiveState() {
+        // Aurora platform sidenav: each menu item is a `<li class="nav-list__link">`
+        // whose anchor is the menu URL. Toggle the `is-active` class to match
+        // the current URL.
+        var here = location.pathname;
+        Array.prototype.forEach.call(
+            document.querySelectorAll('.nav-list__link, .axiom-side-nav__list-item, .epi-sidenav__item'),
+            function (li) {
+                var link = li.querySelector('a[href]');
+                if (!link) return;
+                var href = link.getAttribute('href') || '';
+                // Normalize: only compare pathname.
+                var p;
+                try { p = new URL(link.href, document.baseURI).pathname; } catch (_) { p = href; }
+                li.classList.toggle('is-active', p === here);
+            }
+        );
+    }
+
+    // Seed the initial history state so popstate can tell our pushed entries
+    // from arbitrary host-pushed ones.
+    if (!history.state || !history.state.gst) {
+        history.replaceState({ gst: true }, '', location.href);
+    }
+
+    // Tag any per-page <style> blocks the SSR pass left in <head> so the
+    // first AJAX nav can swap them out cleanly.
+    tagInitialPageStyles();
+
+    // Public helper for code paths that want to navigate to another GST URL
+    // without going through `window.location.href` (which would cause a
+    // hard reload and bypass this SPA-style swap). channels.js uses it for
+    // row clicks; tool code that builds programmatic links should prefer
+    // it too. Falls back to a hard nav if the path is outside the module
+    // base or anything goes wrong with the swap.
+    window.GST = window.GST || {};
+    window.GST.navigate = function (path) {
+        if (!path) return;
+        // Same-origin + under the module base? Soft-navigate.
+        var url;
+        try { url = new URL(path, document.baseURI); } catch (_) {
+            window.location.href = path; return;
+        }
+        if (url.origin !== location.origin) { window.location.href = path; return; }
+        var p = url.pathname;
+        if (p !== moduleBase && p.indexOf(moduleBase + '/') !== 0) {
+            window.location.href = path; return;
+        }
+        navigateTo(url.pathname + url.search + url.hash, true);
+    };
 })();
 
