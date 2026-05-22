@@ -29,6 +29,14 @@
     @RenderSection("Styles", required: false)
 </head>
 <body class="Sleek">
+    @* Shell bootstrap state read by <platform-navigation>'s XHR client; without
+       <episerver-common-settings> the call to /stores/notification 400s and
+       surfaces in the console as an uncaught AxiosError on every page. The
+       hidden __RequestVerificationToken input supplies the forwarded header. *@
+    <episerver-resources></episerver-resources>
+    <episerver-common-settings></episerver-common-settings>
+    @Html.AntiForgeryToken()
+
     @* CMS 13 navigation bar — TagHelper from EPiServer.Shell.UI. *@
     <platform-navigation render-navigation="true" />
 

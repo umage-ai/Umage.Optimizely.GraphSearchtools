@@ -31,6 +31,10 @@
     @RenderSection("Styles", required: false)
 </head>
 <body class="Sleek">
+    @* Shell XHRs to /stores/notification forward this token; missing it 400s
+       on every page and surfaces as an uncaught AxiosError in the console. *@
+    @Html.AntiForgeryToken()
+
     @Html.CreatePlatformNavigationMenu()
 
     <div @Html.ApplyPlatformNavigation()>
