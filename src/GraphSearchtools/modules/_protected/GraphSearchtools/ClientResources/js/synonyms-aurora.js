@@ -57,11 +57,20 @@
     // Auto-init for the top-level Synonyms page. The Channel detail page
     // calls `GST.synonyms.aurora.init({ scope })` from its own JS before
     // DOMContentLoaded fires, so this handler becomes a no-op there.
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', autoInit);
+    // AJAX tool-switch (see graphsearchtools.js → "Smooth tool-switch
+    // navigation"): the module is still in memory but the previously-cached
+    // DOM is gone, so reset state.initialized and let autoInit re-bind.
+    document.addEventListener('gst:pageswapped', function () {
+        state.initialized = false;
+        autoInit();
+    });
+
+    function autoInit() {
         if (state.initialized) return;
         if (!document.getElementById('gst-syn-aurora-rows')) return;
         init();
-    });
+    }
 
     function init(opts) {
         if (state.initialized) return;

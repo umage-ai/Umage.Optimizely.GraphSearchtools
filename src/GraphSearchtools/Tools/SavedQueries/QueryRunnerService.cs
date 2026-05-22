@@ -173,6 +173,35 @@ public sealed class QueryRunnerService
         }
         orderBy.Append(" }");
 
+#if OPTIMIZELY_CMS13
+        // CMS 13's Graph schema: root field renamed to `_Content`; per-item
+        // type-system fields (Name, ContentType, Language, ContentLink) folded
+        // into `_metadata`. The runner parser (ParseResult / GetString /
+        // GetNested*) reads both shapes, so the same code path handles
+        // user-supplied override queries that may target either schema.
+        return $@"
+query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
+    _Content(
+        limit: $limit
+        locale: $locale
+        where: {{ _fulltext: {{ match: $q }} }}
+        {orderBy}
+    ) {{
+        total
+        items {{
+            _metadata {{
+                displayName
+                types
+                locale
+                key
+                url {{ default }}
+            }}
+            _score
+            _fulltext
+        }}
+    }}
+}}";
+#else
         return $@"
 query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
     Content(
@@ -192,6 +221,7 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
         }}
     }}
 }}";
+#endif
     }
 
     private static RunnerResult ParseResult(string body, string queryDocument, long durationMs)
@@ -213,15 +243,38 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
         {
             foreach (var item in items.EnumerateArray())
             {
+                // CMS 13 schema folds the type-system fields under `_metadata`.
+                // Try that first for each candidate; fall back to the legacy
+                // flat-shape fields so the runner stays useful against either
+                // generation of user-supplied default query.
+                var meta = item.TryGetProperty("_metadata", out var m) && m.ValueKind == JsonValueKind.Object ? m : default;
+
+                var name =
+                    (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "displayName") : null)
+                    ?? GetString(item, "Name", "name", "Title", "title")
+                    ?? string.Empty;
+                var contentType = GetFirstContentType(item, meta) ?? "Content";
+                var language =
+                    (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "locale") : null)
+                    ?? GetNestedString(item, "Language", "Name")
+                    ?? string.Empty;
+                var contentGuid =
+                    (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "key") : null)
+                    ?? GetNestedString(item, "ContentLink", "GuidValue")
+                    ?? string.Empty;
+                var url =
+                    (meta.ValueKind == JsonValueKind.Object ? GetNestedString(meta, "url", "default") : null)
+                    ?? GetString(item, "Url", "url", "RelativePath", "relativePath", "Path", "path", "Slug", "slug");
+
                 hits.Add(new RunnerHit(
-                    Name: GetString(item, "Name", "name", "Title", "title") ?? string.Empty,
-                    ContentType: GetFirstContentType(item) ?? "Content",
-                    Language: GetNestedString(item, "Language", "Name") ?? string.Empty,
+                    Name: name,
+                    ContentType: contentType,
+                    Language: language,
                     ContentId: GetNestedInt(item, "ContentLink", "Id"),
-                    ContentGuid: GetNestedString(item, "ContentLink", "GuidValue") ?? string.Empty,
+                    ContentGuid: contentGuid,
                     Score: GetDouble(item, "_score", "score"),
                     FullTextSnippet: TrimSnippet(GetSnippetText(item)),
-                    Url: GetString(item, "Url", "url", "RelativePath", "relativePath", "Path", "path", "Slug", "slug"),
+                    Url: url,
                     Raw: PrettyJson(item),
                     Pinned: false));
             }
@@ -348,17 +401,26 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
         return 0d;
     }
 
-    private static string? GetFirstContentType(JsonElement item)
+    private static string? GetFirstContentType(JsonElement item, JsonElement meta)
     {
-        if (!item.TryGetProperty("ContentType", out var ct)) return null;
-        if (ct.ValueKind == JsonValueKind.String) return ct.GetString();
-        if (ct.ValueKind == JsonValueKind.Array)
+        // Prefer CMS 13's `_metadata.types[]` when present; fall back to the
+        // CMS 12 flat-shape `ContentType` array on the item.
+        JsonElement candidate = default;
+        if (meta.ValueKind == JsonValueKind.Object
+            && meta.TryGetProperty("types", out var t) && t.ValueKind == JsonValueKind.Array)
         {
-            foreach (var t in ct.EnumerateArray())
-            {
-                var s = t.GetString();
-                if (!string.IsNullOrWhiteSpace(s)) return s;
-            }
+            candidate = t;
+        }
+        else if (item.TryGetProperty("ContentType", out var ct))
+        {
+            if (ct.ValueKind == JsonValueKind.String) return ct.GetString();
+            if (ct.ValueKind == JsonValueKind.Array) candidate = ct;
+        }
+        if (candidate.ValueKind != JsonValueKind.Array) return null;
+        foreach (var entry in candidate.EnumerateArray())
+        {
+            var s = entry.GetString();
+            if (!string.IsNullOrWhiteSpace(s)) return s;
         }
         return null;
     }

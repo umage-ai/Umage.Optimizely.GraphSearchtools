@@ -1,3 +1,4 @@
+using EPiServer.Shell;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Options;
 using UmageAI.Optimizely.GraphSearchTools.Abstractions;
 using UmageAI.Optimizely.GraphSearchTools.Configuration;
 using UmageAI.Optimizely.GraphSearchTools.Localization;
+using UmageAI.Optimizely.GraphSearchTools.Menu;
 using UmageAI.Optimizely.GraphSearchTools.Permissions;
 using UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 
@@ -75,11 +77,16 @@ public class GraphSearchtoolsController : Controller
 
     /// <summary>Legacy URL — Synonym Coverage now lives inside each Channel detail.</summary>
     [HttpGet]
-    public IActionResult SynonymCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/channels");
+    public IActionResult SynonymCoverage() => RedirectPermanent(ChannelsUrl());
 
     /// <summary>Legacy URL — Pinned Coverage now lives inside each Channel detail.</summary>
     [HttpGet]
-    public IActionResult PinnedCoverage() => RedirectPermanent("/EPiServer/cms/graphsearchtools/channels");
+    public IActionResult PinnedCoverage() => RedirectPermanent(ChannelsUrl());
+
+    // Resolve the channels surface URL through Paths.ToResource so the
+    // redirect lands on the same module base path the rest of the menu uses
+    // (e.g. /Optimizely/GraphSearchtools on CMS 13).
+    private static string ChannelsUrl() => Paths.ToResource(typeof(GraphSearchtoolsMenuProvider), "Channels/Index");
 
     /// <summary>
     /// Returns all UI strings as JSON for CMS shell widgets that cannot access window.GST_STRINGS.

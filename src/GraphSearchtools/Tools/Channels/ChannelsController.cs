@@ -11,7 +11,6 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 /// <see cref="ChannelsApiController"/>.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-[Route("EPiServer/cms/graphsearchtools/channels")]
 public class ChannelsController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Channels);
@@ -30,16 +29,20 @@ public class ChannelsController : Controller
     /// otherwise renders the channel detail page for that key.
     /// </summary>
     /// <remarks>
-    /// Both surfaces are served from the same controller URL on purpose. The
-    /// CMS 12 platform shell maps URL → product-id (e.g. <c>global_cms</c>)
-    /// from the set of registered menu URLs; a deep URL like
-    /// <c>/channels/alloy-search</c> doesn't match any menu item, so the shell
-    /// falls back to <c>data-epi-product-id=""</c>, which 400s the
-    /// <c>/EPiServer/CMS/stores/notification</c> XHR and leaves the sidebar
-    /// stuck on the loading dots. Keeping the key as a query parameter
-    /// preserves the menu's <c>/channels</c> URL match.
+    /// Both surfaces are served from the same controller action on purpose.
+    /// The CMS shell maps URL → product-id (e.g. <c>global_cms</c>) from the
+    /// set of registered menu URLs; a deep URL like <c>/Channels/alloy-search</c>
+    /// would not match any menu item, leaving the sidebar stuck on loading
+    /// dots. Keeping the key as a query parameter preserves the menu's
+    /// <c>/Channels/Index</c> URL match.
+    /// Routing uses the convention route registered by
+    /// <see cref="UmageAI.Optimizely.GraphSearchTools.Infrastructure.ApplicationBuilderExtensions.MapGraphSearchtools(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder)"/>,
+    /// so the URL resolves to <c>{module-base}/Channels/Index</c> — the same
+    /// module prefix every other tool uses, which is what lets the CMS 13
+    /// platform chrome do SPA-style transitions between tools instead of
+    /// triggering a full reload.
     /// </remarks>
-    [HttpGet("")]
+    [HttpGet]
     public IActionResult Index([FromQuery] string? key = null)
     {
         if (!HasAccess()) return Forbid();

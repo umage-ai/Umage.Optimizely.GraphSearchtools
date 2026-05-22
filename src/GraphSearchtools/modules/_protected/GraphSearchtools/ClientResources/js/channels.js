@@ -86,7 +86,7 @@
         opts = opts || {};
         // Detail URL is the index URL with a `?key=...` query so the CMS
         // shell maps both surfaces to the same registered menu item.
-        var detailUrlBase = opts.detailUrlBase || '/EPiServer/cms/graphsearchtools/channels?key=';
+        var detailUrlBase = opts.detailUrlBase || ((window.GST_BASE_URL || '') + '/Channels/Index?key=');
 
         var tableHost  = document.getElementById('gst-prof-table-host');
         var emptyEl    = document.getElementById('gst-prof-empty');
@@ -183,7 +183,16 @@
 
                 tr.addEventListener('click', function() {
                     if (!p.key) return;
-                    window.location.href = detailUrlBase + encodeURIComponent(p.key);
+                    var target = detailUrlBase + encodeURIComponent(p.key);
+                    // Prefer the SPA-style AJAX nav exposed by graphsearchtools.js
+                    // so the row-click follows the same smooth transition every
+                    // sidenav link uses; fall back to a hard nav when the helper
+                    // isn't around (e.g. someone embedded this view elsewhere).
+                    if (window.GST && typeof window.GST.navigate === 'function') {
+                        window.GST.navigate(target);
+                    } else {
+                        window.location.href = target;
+                    }
                 });
                 tbody.appendChild(tr);
             });

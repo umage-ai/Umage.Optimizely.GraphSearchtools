@@ -47,7 +47,7 @@
         (function() {
             if (window.GST && window.GST.channels && typeof window.GST.channels.index === 'function') {
                 window.GST.channels.index({
-                    detailUrlBase: '/EPiServer/cms/graphsearchtools/channels?key='
+                    detailUrlBase: '@Html.Raw(Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), "Channels/Index"))?key='
                 });
             }
         })();

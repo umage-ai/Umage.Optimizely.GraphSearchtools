@@ -22,7 +22,7 @@
      * surface is served as `?key=...` on the index URL so the CMS shell can
      * resolve the section's product-id from the registered menu URL.
      */
-    var CHANNEL_URL_BASE = '/EPiServer/cms/graphsearchtools/channels?key=';
+    var CHANNEL_URL_BASE = (window.GST_BASE_URL || '') + '/Channels/Index?key=';
 
     var GST = window.GST = window.GST || {};
     GST.pinnedCoverage = GST.pinnedCoverage || {};

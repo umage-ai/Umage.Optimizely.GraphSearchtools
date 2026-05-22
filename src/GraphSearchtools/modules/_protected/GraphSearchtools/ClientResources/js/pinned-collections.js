@@ -23,11 +23,22 @@
         flyoutCollection: null
     };
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', autoInit);
+    // AJAX tool-switch (see graphsearchtools.js → "Smooth tool-switch
+    // navigation"): the Pinned page may have just been swapped in. Reset
+    // the closure state and re-wire — old listeners point at detached nodes.
+    document.addEventListener('gst:pageswapped', function () {
+        state.initialized = false;
+        autoInit();
+    });
+
+    function autoInit() {
+        // No-op on pages that don't have Pinned tabs.
+        if (!document.querySelector('.gst-tabs__btn[data-tab="collections"]')) return;
         wireTabs();
         // Defer data load until the Collections tab is first activated —
         // most editors land on Pins and never open this one.
-    });
+    }
 
     // ── Tab switcher (page-level Pinned tabs: Pins / Collections) ──────
     function wireTabs() {
@@ -221,7 +232,7 @@
                     return '<code class="gst-locale-chip">' + GST.escHtml(l) + '</code>';
                 }).join(' ');
                 return '<li class="gst-colfly-profrow">' +
-                    '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/channels?key=' + encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
+                    '<a class="gst-table__link" href="' + (window.GST_BASE_URL || '') + '/Channels/Index?key=' + encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
                     ' <span class="gst-muted">via</span> ' + localesHtml +
                 '</li>';
             }).join('');

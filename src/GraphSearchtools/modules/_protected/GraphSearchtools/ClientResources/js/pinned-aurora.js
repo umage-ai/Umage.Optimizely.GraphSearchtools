@@ -92,12 +92,23 @@
     // page has a `.gst-prof-switcher` element and mounts the Pinned tab
     // lazily on click via `GST.pinned.aurora.init({ scope })` — auto-init
     // would race ahead with no scope and the scoped call would no-op.
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', autoInit);
+    // AJAX tool-switch (see graphsearchtools.js → "Smooth tool-switch
+    // navigation"): when the addon body is swapped without a real reload the
+    // module is still in memory but the previously-cached DOM references
+    // point at detached nodes. Reset the init flag so autoInit re-binds
+    // to the freshly-rendered grid.
+    document.addEventListener('gst:pageswapped', function () {
+        state.initialized = false;
+        autoInit();
+    });
+
+    function autoInit() {
         if (state.initialized) return;
         if (!document.getElementById('gst-pin-aurora-rows')) return;
         if (document.querySelector('.gst-prof-switcher')) return;
         init();
-    });
+    }
 
     function init(opts) {
         opts = opts || {};
@@ -768,7 +779,7 @@
                 return '<code class="gst-locale-chip">' + GST.escHtml(l) + '</code>';
             }).join(' ');
             return '<li class="gst-colfly-profrow">' +
-                '<a class="gst-table__link" href="/EPiServer/cms/graphsearchtools/channels?key=' +
+                '<a class="gst-table__link" href="' + (window.GST_BASE_URL || '') + '/Channels/Index?key=' +
                 encodeURIComponent(pk) + '">' + GST.escHtml(pk) + '</a>' +
                 ' <span class="gst-muted">via</span> ' + localesHtml +
                 '</li>';

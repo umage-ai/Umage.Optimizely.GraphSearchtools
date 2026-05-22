@@ -129,6 +129,13 @@
     flex-direction: column;
 }
 
+/* Smooth tool-switch navigation (see graphsearchtools.js → "Smooth
+   tool-switch navigation"). While the AJAX swap is in flight, dim the
+   addon body slightly so the user gets a faint signal that something is
+   loading — kept subtle so a fast swap doesn't visibly stutter, but
+   detectable on a slow tenant. */
+body.gst-nav-loading .gst-main { opacity: 0.85; transition: opacity 80ms ease-out; }
+
 .gst-header {
     background: var(--gst-color-surface);
     border-bottom: 1px solid var(--gst-color-border);

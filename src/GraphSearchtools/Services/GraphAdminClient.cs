@@ -146,10 +146,54 @@ public sealed class GraphAdminClient : IGraphAdminClient
         }
 
         var allowList = NormalizeContentTypes(contentTypes);
-        var contentTypeFilter = BuildContentTypeFilter(allowList, "ContentType");
         var namePattern = $"%{query}%";
         var locales = !string.IsNullOrWhiteSpace(locale) ? new[] { locale } : Array.Empty<string>();
 
+#if OPTIMIZELY_CMS13
+        // CMS 13's Graph schema renamed the root collection to `_Content` and
+        // moved every type-system field (Name, ContentType, Language,
+        // ContentLink) into a unified `_metadata` block. The parser in
+        // ExecuteContentQueryAsync reads both shapes, so the same code path
+        // accepts items from either TFM's query.
+        var contentTypeFilter = BuildContentTypeFilter(allowList, "_metadata", "types");
+        var graphqlRequest = new
+        {
+            query = $@"
+                query ContentPickerSearch($searchPhrase: String!, $namePattern: String!, $limit: Int!, $locale: [Locales!]) {{
+                    _Content(
+                        limit: $limit
+                        locale: $locale
+                        where: {{
+                            _and: [
+                                {contentTypeFilter}
+                                {{ _or: [
+                                    {{ _fulltext: {{ contains: $searchPhrase }} }}
+                                    {{ _metadata: {{ displayName: {{ like: $namePattern }} }} }}
+                                ] }}
+                            ]
+                        }}
+                        orderBy: {{ _ranking: RELEVANCE }}
+                    ) {{
+                        items {{
+                            _metadata {{
+                                displayName
+                                types
+                                locale
+                                key
+                            }}
+                        }}
+                    }}
+                }}",
+            variables = new
+            {
+                searchPhrase = query,
+                namePattern,
+                limit = 20,
+                locale = locales.Length > 0 ? (object)locales : null
+            }
+        };
+#else
+        var contentTypeFilter = BuildContentTypeFilter(allowList, "ContentType");
         var graphqlRequest = new
         {
             query = $@"
@@ -184,6 +228,7 @@ public sealed class GraphAdminClient : IGraphAdminClient
                 locale = locales.Length > 0 ? (object)locales : null
             }
         };
+#endif
 
         return await ExecuteContentQueryAsync(creds, graphqlRequest, allowList, deduplicate: false, cancellationToken);
     }
@@ -205,6 +250,30 @@ public sealed class GraphAdminClient : IGraphAdminClient
 
         var allowList = NormalizeContentTypes(contentTypes);
 
+#if OPTIMIZELY_CMS13
+        var graphqlRequest = new
+        {
+            query = @"
+                query ResolveGuids($guids: [String!]!) {
+                    _Content(
+                        limit: 100
+                        where: {
+                            _metadata: { key: { in: $guids } }
+                        }
+                    ) {
+                        items {
+                            _metadata {
+                                displayName
+                                types
+                                locale
+                                key
+                            }
+                        }
+                    }
+                }",
+            variables = new { guids }
+        };
+#else
         var graphqlRequest = new
         {
             query = @"
@@ -225,6 +294,7 @@ public sealed class GraphAdminClient : IGraphAdminClient
                 }",
             variables = new { guids }
         };
+#endif
 
         return await ExecuteContentQueryAsync(creds, graphqlRequest, allowList, deduplicate: true, cancellationToken);
     }
@@ -316,9 +386,21 @@ public sealed class GraphAdminClient : IGraphAdminClient
 
         using var doc = JsonDocument.Parse(content);
         var root = doc.RootElement;
-        if (!root.TryGetProperty("data", out var data)
-            || !data.TryGetProperty("Content", out var contentElement)
-            || !contentElement.TryGetProperty("items", out var items))
+        if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
+        {
+            return Array.Empty<ContentSearchHit>();
+        }
+
+        // CMS 13 renamed the root collection field from `Content` to `_Content`.
+        // Try both so the parser can handle either schema regardless of which
+        // TFM produced the binary — useful if a host runs against a CMS 12-shaped
+        // tenant from a net10.0 build during a migration.
+        if (!data.TryGetProperty("Content", out var contentElement)
+            && !data.TryGetProperty("_Content", out contentElement))
+        {
+            return Array.Empty<ContentSearchHit>();
+        }
+        if (!contentElement.TryGetProperty("items", out var items))
         {
             return Array.Empty<ContentSearchHit>();
         }
@@ -327,13 +409,27 @@ public sealed class GraphAdminClient : IGraphAdminClient
         var results = new List<ContentSearchHit>();
         foreach (var item in items.EnumerateArray())
         {
-            var guidValue = item.GetProperty("ContentLink").GetProperty("GuidValue").GetString() ?? string.Empty;
+            // CMS 12 shape: ContentLink.GuidValue, Name, Language.Name, ContentType[]
+            // CMS 13 shape: _metadata.{ key, displayName, locale, types[] }
+            // Read the metadata block once and fall back to the flat fields.
+            var meta = item.TryGetProperty("_metadata", out var m) && m.ValueKind == JsonValueKind.Object ? m : default;
+
+            var guidValue =
+                (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "key") : null)
+                ?? GetNestedString(item, "ContentLink", "GuidValue")
+                ?? string.Empty;
             if (seen != null && !seen.Add(guidValue)) continue;
 
-            var name = item.GetProperty("Name").GetString() ?? string.Empty;
-            var language = item.GetProperty("Language").GetProperty("Name").GetString() ?? string.Empty;
+            var name =
+                (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "displayName") : null)
+                ?? GetString(item, "Name")
+                ?? string.Empty;
+            var language =
+                (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "locale") : null)
+                ?? GetNestedString(item, "Language", "Name")
+                ?? string.Empty;
 
-            var contentType = ResolveDisplayContentType(item, allowList);
+            var contentType = ResolveDisplayContentType(item, meta, allowList);
 
             results.Add(new ContentSearchHit
             {
@@ -346,9 +442,20 @@ public sealed class GraphAdminClient : IGraphAdminClient
         return results;
     }
 
-    private static string ResolveDisplayContentType(JsonElement item, IReadOnlyList<string> allowList)
+    private static string ResolveDisplayContentType(JsonElement item, JsonElement meta, IReadOnlyList<string> allowList)
     {
-        if (!item.TryGetProperty("ContentType", out var types) || types.ValueKind != JsonValueKind.Array)
+        // CMS 12 surfaces the inheritance chain on the item itself
+        // (`ContentType: [...]`); CMS 13 nests it under `_metadata.types`.
+        JsonElement types;
+        if (item.TryGetProperty("ContentType", out var ct) && ct.ValueKind == JsonValueKind.Array)
+        {
+            types = ct;
+        }
+        else if (meta.ValueKind == JsonValueKind.Object && meta.TryGetProperty("types", out var t) && t.ValueKind == JsonValueKind.Array)
+        {
+            types = t;
+        }
+        else
         {
             return "Content";
         }
@@ -365,6 +472,13 @@ public sealed class GraphAdminClient : IGraphAdminClient
         return "Content";
     }
 
+    private static string? GetNestedString(JsonElement el, string outer, string inner)
+        => el.ValueKind == JsonValueKind.Object
+           && el.TryGetProperty(outer, out var middle)
+           && middle.ValueKind == JsonValueKind.Object
+            ? GetString(middle, inner)
+            : null;
+
     private static IReadOnlyList<string> NormalizeContentTypes(IReadOnlyList<string>? contentTypes)
     {
         if (contentTypes == null) return Array.Empty<string>();
@@ -380,6 +494,20 @@ public sealed class GraphAdminClient : IGraphAdminClient
         if (allowList.Count == 0) return string.Empty;
         var quoted = string.Join(", ", allowList.Select(t => $"\"{t.Replace("\"", "\\\"")}\""));
         return $"{{ {fieldName}: {{ in: [{quoted}] }} }}";
+    }
+
+    /// <summary>
+    /// Two-level variant used for the CMS 13 schema where the type-system
+    /// filters live under <c>_metadata</c>: produces
+    /// <c>{ outer: { inner: { in: [...] } } }</c>. Returns empty when
+    /// <paramref name="allowList"/> is empty so the caller can drop the
+    /// clause from the composed <c>_and</c>.
+    /// </summary>
+    private static string BuildContentTypeFilter(IReadOnlyList<string> allowList, string outerField, string innerField)
+    {
+        if (allowList.Count == 0) return string.Empty;
+        var quoted = string.Join(", ", allowList.Select(t => $"\"{t.Replace("\"", "\\\"")}\""));
+        return $"{{ {outerField}: {{ {innerField}: {{ in: [{quoted}] }} }} }}";
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string path)

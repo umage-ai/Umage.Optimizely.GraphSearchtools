@@ -23,7 +23,7 @@
     @await Html.PartialAsync("/Views/Overview/_ToolCard.cshtml", new ViewDataDictionary(ViewData)
     {
         ["Allowed"] = perms.channels,
-        ["Href"] = "/EPiServer/cms/graphsearchtools/channels",
+        ["Href"] = Tile("Channels/Index"),
         ["Icon"] = "channels",
         ["Title"] = Loc.GetString("/graphsearchtools/menu/channels"),
         ["Desc"] = Loc.GetString("/graphsearchtools/tools/channels/description"),
