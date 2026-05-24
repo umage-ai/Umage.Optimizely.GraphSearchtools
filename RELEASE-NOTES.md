@@ -32,15 +32,6 @@ back from the site — all without leaving the editor.
 - **Overview** — Landing dashboard with cards gated by per-user permissions; first stop
   for anyone opening the tool.
 
-- **Health** — Diagnostic surface for integrators: configuration probes, Graph
-  connectivity, telemetry ingest status. (No separate Diagnostics tool — Health is the
-  one place.)
-
-- **Saved Queries** — Reusable query playground entries for relevancy tuning and
-  share-with-team experiments.
-
-- **Audit Log** — Append-only history of pinned/synonym edits with actor + timestamp.
-
 ### Infrastructure
 
 - Multi-target `net8.0` (CMS 12) / `net10.0` (CMS 13) packaging from a single csproj;
