@@ -48,9 +48,22 @@ is unused for static file serving.
 ## Release & distribution
 
 - Pushing a tag matching `v*` triggers `.github/workflows/publish.yml`, which builds, tests
-  (both TFMs), packs, and attaches the `.nupkg` to a GitHub release.
-- Distribution channel is the Optimizely NuGet feed, which pulls from the GitHub release.
-  Do not push to nuget.org directly.
+  (both TFMs), packs, and **attaches the `.nupkg` to a GitHub release**.
+  Example: `git tag -a v0.1.0 -m "..." && git push origin v0.1.0`.
+- **Distribution channel is the Optimizely NuGet feed**, which pulls from the GitHub release
+  — **we do not push to nuget.org directly**. Don't suggest a nuget.org push step.
+- Version numbers come from the tag name (the workflow strips the leading `v`). Stick to
+  `vMAJOR.MINOR.PATCH`. The csproj `<Version>0.0.1-local</Version>` is a dummy that gets
+  overridden by `-p:Version=…` at pack time.
+- If a tag-triggered run fails before the publish step, the tag is safe to delete + recreate
+  at a new commit — no package got out. (Tag delete is destructive on shared state, so
+  confirm first.)
+- Pre-release local verification: `dotnet test` (no `--no-build` — that flag silently uses
+  stale test DLLs and can miss compile errors introduced by signature changes).
+- `RELEASE-NOTES.md` at the repo root is a hand-curated, human-readable changelog. Update it
+  in the same PR that introduces user-visible changes. The workflow's auto-generated notes
+  (from PR titles between tags) handle the GitHub release body and `.nupkg`
+  `PackageReleaseNotes` field separately — `RELEASE-NOTES.md` itself is not read by CI.
 
 ## Key Patterns (inherited from EditorPowertools framework)
 
