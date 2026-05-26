@@ -82,6 +82,9 @@ is unused for static file serving.
   read from it. `PermissionSeeder` grants every PermissionType to
   `AuthorizedRoles` on first boot so a fresh install never locks anyone out.
 - **Tool structure**: Each tool in `Tools/{ToolName}/` with Service + ApiController + view.
+- **Controllers**: All controllers are `internal` and discovered by `InternalControllerFeatureProvider`
+  so they (and their service / DTO dependencies) stay out of the public NuGet surface. See
+  `docs/public-api.md` for the policy.
 - **Menu**: `GraphSearchtoolsMenuProvider` uses `Paths.ToResource()` for controller routes.
 - **Static files**: Go in `modules/_protected/GraphSearchtools/ClientResources/`,
   referenced via `Paths.ToClientResource()`.
