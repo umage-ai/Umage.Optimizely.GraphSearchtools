@@ -30,8 +30,6 @@ moves those numbers.
 - "Customers keep searching 'jumper' but we call them 'sweaters' — fix the zero results."
   → Synonyms.
 - "Our top search term converts terribly. Why?" → Channel Insights / telemetry.
-- "Marketing director is asking why search feels slow today." → Health (glance, then
-  forward to IT if there's a problem).
 
 **What they care about in our UI.**
 - **Speak business, not Graph.** "Pinned result for query 'sneakers'", not "boost
@@ -56,7 +54,7 @@ not on the hook to fix it. Surface it at a glance (a status pill, a "search is h
 indicator). Don't make them interpret latency histograms — that's a developer job.
 
 **Vocabulary they expect.** Search term, result, pin, synonym, campaign, category,
-product, page, conversion. Not: document, edge, hit, shard, channel, boost, weight,
+product, page, conversion. Not: document, edge, hit, shard, weight,
 semantic vector.
 
 **Implications for design.**
