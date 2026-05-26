@@ -1,6 +1,5 @@
 # GraphSearchtools
 
-[![GitHub release](https://img.shields.io/github/v/release/umage-ai/Umage.Optimizely.GraphSearchtools)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/releases)
 [![Build](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/actions/workflows/publish.yml/badge.svg)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/actions/workflows/publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
