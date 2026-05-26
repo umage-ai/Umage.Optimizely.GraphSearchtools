@@ -1190,6 +1190,14 @@
         // the existing id keeps everything pointing at the picked collection.
         if (s && s.collectionId) return Promise.resolve(s.collectionId);
         if (!s || !s.channelKey) return Promise.resolve('');
+        // Empty locale = "Global" pin (Graph's null Language). The server's
+        // EnsureCollection requires a locale to expand the channel's
+        // PinnedKey template, so an empty value would 400. When the user
+        // is editing an existing pin we already have a collectionId on
+        // the group — reuse it rather than asking the server to invent
+        // one for a key it can't formulate.
+        if (!locale) return Promise.resolve(
+            state.editing && state.editing.group ? state.editing.group.collectionId || '' : '');
         var map = s.collectionsByLocale || (s.collectionsByLocale = {});
         var existing = map[locale];
         if (existing) return Promise.resolve(existing);
