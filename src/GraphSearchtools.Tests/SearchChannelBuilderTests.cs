@@ -35,7 +35,6 @@ public class SearchChannelBuilderTests
             .Locales("EN", "da", "sv")
             .SearchedFields("Name", "TeaserText")
             .UsesPinnedKey("site-{locale}")
-            .SemanticBlend(0.4, GraphRanking.Semantic)
             .GraphQLDocument("Queries/SiteSearch.graphql")
             .Variables(new { limit = 20, contentType = "Article" })
             .Build();
@@ -49,8 +48,6 @@ public class SearchChannelBuilderTests
         channel.Locales.Should().Equal("en", "da", "sv");
         channel.SearchedFields.Should().Equal("Name", "TeaserText");
         channel.PinnedKeyForLocale.Should().NotBeNull();
-        channel.SemanticWeight.Should().BeApproximately(0.4, 1e-9);
-        channel.Ranking.Should().Be(GraphRanking.Semantic);
         channel.GraphQLDocumentPath.Should().Be("Queries/SiteSearch.graphql");
         channel.DefaultVariables.Should().ContainKey("limit").WhoseValue.Should().Be(20);
         channel.DefaultVariables.Should().ContainKey("contentType").WhoseValue.Should().Be("Article");
@@ -100,17 +97,6 @@ public class SearchChannelBuilderTests
 
         asKey.IsKey.Should().BeTrue();
         asLiteral.IsKey.Should().BeFalse();
-    }
-
-    [Fact]
-    public void SemanticBlend_ClampsWeightToValidRange()
-    {
-        var channel = new SearchChannelBuilder("p")
-            .DisplayName("X")
-            .SemanticBlend(2.5, GraphRanking.Semantic)
-            .Build();
-
-        channel.SemanticWeight.Should().Be(1.0);
     }
 
     [Fact]

@@ -20,8 +20,6 @@ public sealed class SearchChannelBuilder
     private bool _localesFromCms;
     private List<string> _searchedFields = new();
     private Func<string, string>? _pinnedKeyForLocale;
-    private double _semanticWeight = 0.2;
-    private GraphRanking _ranking = GraphRanking.Relevance;
     private string? _graphQLDocumentPath;
     private string? _graphQLDocumentContent;
     private Dictionary<string, object?> _defaultVariables = new(StringComparer.Ordinal);
@@ -136,13 +134,6 @@ public sealed class SearchChannelBuilder
         return this;
     }
 
-    public SearchChannelBuilder SemanticBlend(double weight, GraphRanking ranking)
-    {
-        _semanticWeight = Math.Clamp(weight, -1.0, 1.0);
-        _ranking = ranking;
-        return this;
-    }
-
     public SearchChannelBuilder GraphQLDocument(string path)
     {
         _graphQLDocumentPath = string.IsNullOrWhiteSpace(path) ? null : path.Trim();
@@ -209,8 +200,6 @@ public sealed class SearchChannelBuilder
             LocalesFromCmsLanguages = _localesFromCms,
             SearchedFields = _searchedFields.AsReadOnly(),
             PinnedKeyForLocale = _pinnedKeyForLocale,
-            SemanticWeight = _semanticWeight,
-            Ranking = _ranking,
             GraphQLDocumentPath = _graphQLDocumentPath,
             GraphQLDocumentContent = _graphQLDocumentContent,
             DefaultVariables = new Dictionary<string, object?>(_defaultVariables, StringComparer.Ordinal)

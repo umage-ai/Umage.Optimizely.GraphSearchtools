@@ -61,12 +61,6 @@ public sealed class SearchChannel
     /// </summary>
     public Func<string, string>? PinnedKeyForLocale { get; init; }
 
-    /// <summary>Default semantic weight used by the diagnostic runner.</summary>
-    public double SemanticWeight { get; init; } = 0.2;
-
-    /// <summary>Default ranking mode used by the diagnostic runner.</summary>
-    public GraphRanking Ranking { get; init; } = GraphRanking.Relevance;
-
     /// <summary>
     /// Path (relative to the host's content root) to the GraphQL document the
     /// production code uses for this channel. <c>null</c> disables the

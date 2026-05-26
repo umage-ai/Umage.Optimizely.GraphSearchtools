@@ -36,9 +36,6 @@ internal sealed record ChannelSummary
     public bool HasGraphQLDoc { get; init; }
     public string? GraphQLDocPath { get; init; }
 
-    public double SemanticWeight { get; init; }
-    public string RankingName { get; init; } = nameof(GraphRanking.Relevance);
-
     public ChannelStatus Status { get; init; }
 
     public DateTime? LastEditedAt { get; init; }
@@ -132,8 +129,22 @@ internal sealed class ChannelDetailViewModel
     public IReadOnlyList<string> Locales { get; set; } = Array.Empty<string>();
     public IReadOnlyList<string> SearchedFields { get; set; } = Array.Empty<string>();
     public string? PinnedKeyFormula { get; set; }
-    public string RankingName { get; set; } = nameof(GraphRanking.Relevance);
-    public double SemanticWeight { get; set; }
+
+    /// <summary>
+    /// Ranking mode parsed out of the registered GraphQL document's
+    /// <c>_ranking</c> argument (uppercase SCREAMING_CASE, e.g. <c>SEMANTIC</c>).
+    /// Null when the document is missing or declares no <c>_ranking</c> —
+    /// either means the storefront query is using Graph's default lexical
+    /// ranking.
+    /// </summary>
+    public string? RankingName { get; set; }
+
+    /// <summary>
+    /// Semantic-weight parsed out of the document's <c>_semanticWeight</c>
+    /// argument. Null when the document doesn't set one explicitly — Graph
+    /// applies its built-in default in that case.
+    /// </summary>
+    public double? SemanticWeight { get; set; }
     public string? GraphQLDocPath { get; set; }
     public bool GraphQLDocExists { get; set; }
 
