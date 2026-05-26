@@ -58,8 +58,8 @@ public record PinnedItemResult
 
     /// <summary>
     /// Optional expiry stamp — when set, Graph stops applying the pin past this
-    /// moment. Surfaced for the Phase 4 Pinned Result Coverage audit, which
-    /// flags pins whose <see cref="EffectiveTo"/> is in the past so editors
+    /// moment. Surfaced for the Pinned Result Coverage audit, which flags
+    /// pins whose <see cref="EffectiveTo"/> is in the past so editors
     /// can prune stale rows. Null when the upstream API doesn't provide one
     /// (the field is best-effort: not every Graph build returns it, in which
     /// case the audit simply won't surface "Expired" issues for that tenant).

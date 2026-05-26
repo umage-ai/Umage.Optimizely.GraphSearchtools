@@ -4,8 +4,8 @@ using UmageAI.Optimizely.GraphSearchTools.Services;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models;
 
 /// <summary>
-/// Status displayed on the index table per design §4.7. The heuristic is
-/// intentionally simple in v1; richer derivations land with Phase 4 telemetry.
+/// Status displayed on the index table. The heuristic is intentionally
+/// simple in v1.
 /// </summary>
 internal enum ChannelStatus
 {

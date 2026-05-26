@@ -9,7 +9,7 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage.Models;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 
 /// <summary>
-/// Phase 4 §6 audit composer. Pulls every pinned collection + item from Graph,
+/// Audit composer for Pinned Result Coverage. Pulls every pinned collection + item from Graph,
 /// joins each item against the CMS via <see cref="IContentLoader"/> to detect
 /// unpublished/deleted targets, joins against the 7-day search-log window for
 /// CTR, and groups phrases across collections to surface overlap conflicts.

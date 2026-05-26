@@ -4,8 +4,8 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs.Models;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 
 /// <summary>
-/// Read-side wrapper for the Phase 4 Wave 5 Search Logs UI. Owns three
-/// contracts the controller leans on:
+/// Read-side wrapper for the Search Logs UI. Owns three contracts the
+/// controller leans on:
 /// <list type="number">
 ///   <item>Default the time window to 24h when the caller omits <c>since</c>.</item>
 ///   <item>Clamp <c>take</c> to <c>[1, MaxTake]</c> so the UI can't pull more

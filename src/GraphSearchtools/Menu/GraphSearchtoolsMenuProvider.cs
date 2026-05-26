@@ -39,12 +39,12 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => IsFeatureEnabled(context, nameof(FeatureToggles.Overview))
         };
 
-        // Phase 2.5 — Search Channels top-level surface. Sits between Overview
-        // and the editorial tools so marketers land on the per-surface tuning
-        // index before drilling into individual data shapes. Routes through
-        // the same module base path as every other tool so on CMS 13 the
-        // platform chrome can do SPA-style transitions between them instead
-        // of falling back to a full reload.
+        // Search Channels top-level surface. Sits between Overview and the
+        // editorial tools so marketers land on the per-surface tuning index
+        // before drilling into individual data shapes. Routes through the
+        // same module base path as every other tool so on CMS 13 the
+        // platform chrome can do SPA-style transitions between them
+        // instead of falling back to a full reload.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/channels", "Search channels"), BaseMenuPath + "/channels",
             GetResourcePath("Channels/Index"))
         {
@@ -52,9 +52,9 @@ public class GraphSearchtoolsMenuProvider : IMenuProvider
             IsAvailable = context => HasAccess(context, nameof(FeatureToggles.Channels), GraphSearchtoolsPermissions.Channels)
         };
 
-        // Aurora refactor — Insights dashboard. Sits between Channels and the
-        // editorial Pinned/Synonyms tools: marketers can see "what's
-        // happening" before deciding what to tune.
+        // Insights dashboard. Sits between Channels and the editorial
+        // Pinned/Synonyms tools: marketers can see "what's happening"
+        // before deciding what to tune.
         yield return new UrlMenuItem(L("/graphsearchtools/menu/insights", "Insights"), BaseMenuPath + "/insights",
             GetResourcePath("Insights/Index"))
         {

@@ -13,10 +13,10 @@ public class FeatureToggles
     public bool Channels { get; set; } = true;
 
     /// <summary>
-    /// Aurora refactor — curated marketer-facing dashboard surfacing top
-    /// phrases, zero-result candidates, synonym coverage signals, and a
-    /// recent-activity strip. Read-only; reuses SearchLogsService +
-    /// SynonymCoverageService + AuditLogService data.
+    /// Curated marketer-facing dashboard surfacing top phrases, zero-result
+    /// candidates, synonym coverage signals, and a recent-activity strip.
+    /// Read-only; reuses SearchLogsService + SynonymCoverageService +
+    /// AuditLogService data.
     /// </summary>
     public bool Insights { get; set; } = true;
 
@@ -36,17 +36,17 @@ public class FeatureToggles
     public bool SearchLogs { get; set; } = true;
 
     /// <summary>
-    /// Phase 4 Wave 5 — Synonym Coverage analyzer. Joins the saved synonym
-    /// blobs against the search-log table to surface (a) unused synonym
-    /// entries that never matched a logged query and (b) zero-result phrases
-    /// that look like missing synonyms. Read-only.
+    /// Synonym Coverage analyzer. Joins the saved synonym blobs against the
+    /// search-log table to surface (a) unused synonym entries that never
+    /// matched a logged query and (b) zero-result phrases that look like
+    /// missing synonyms. Read-only.
     /// </summary>
     public bool SynonymCoverage { get; set; } = true;
 
     /// <summary>
-    /// Phase 4 Wave 5 — Pinned Result Coverage audit. Read-only audit that
-    /// surfaces unpublished/deleted pin targets, expired pins, low-CTR pins,
-    /// pins with no recent search activity, and phrase overlap across
+    /// Pinned Result Coverage audit. Read-only audit that surfaces
+    /// unpublished/deleted pin targets, expired pins, low-CTR pins, pins
+    /// with no recent search activity, and phrase overlap across
     /// collections.
     /// </summary>
     public bool PinnedCoverage { get; set; } = true;
