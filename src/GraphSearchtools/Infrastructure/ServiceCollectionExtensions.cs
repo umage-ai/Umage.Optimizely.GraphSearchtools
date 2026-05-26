@@ -117,6 +117,18 @@ public static class ServiceCollectionExtensions
             });
         });
 
+        // Let MVC discover the addon's internal controllers. The default
+        // ControllerFeatureProvider only finds public types; without this
+        // registration, internalising controllers makes every endpoint
+        // 404. See InternalControllerFeatureProvider for the contract.
+        services.AddControllers().ConfigureApplicationPartManager(apm =>
+        {
+            if (!apm.FeatureProviders.OfType<InternalControllerFeatureProvider>().Any())
+            {
+                apm.FeatureProviders.Add(new InternalControllerFeatureProvider());
+            }
+        });
+
         // Startup validator: runs StartupDiagnostics.Evaluate once and logs
         // the result. Same evaluator powers the JSON health endpoint.
         services.AddHostedService<GraphSearchtoolsStartupValidator>();
