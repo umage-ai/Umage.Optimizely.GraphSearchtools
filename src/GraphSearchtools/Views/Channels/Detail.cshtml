@@ -500,7 +500,18 @@
                     <div>
                         <dt>@Loc.GetString("/graphsearchtools/channels/detail/meta/ranking")</dt>
                         <dd>
-                            @Model.RankingName.ToUpperInvariant() · @Model.SemanticWeight.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+                            @if (string.IsNullOrEmpty(Model.RankingName))
+                            {
+                                <span class="gst-muted">—</span>
+                            }
+                            else if (Model.SemanticWeight.HasValue)
+                            {
+                                @(Model.RankingName.ToUpperInvariant() + " · " + Model.SemanticWeight.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))
+                            }
+                            else
+                            {
+                                @Model.RankingName.ToUpperInvariant()
+                            }
                         </dd>
                     </div>
                     <div>

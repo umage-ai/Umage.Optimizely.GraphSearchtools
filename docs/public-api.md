@@ -22,7 +22,6 @@ services.AddGraphSearchtools(options => { … })          // Infrastructure
     .AddSearchChannel("alloy-search", c => c             // Configuration
         .DisplayName("/graphsearchtools/channels/site/name")
         .SearchedFields("Name", "MainBody")
-        .SemanticBlend(0.3, GraphRanking.Semantic)
         .UsesPinnedKey("alloy-{locale}"));
 
 endpoints.MapGraphSearchtools();                         // Infrastructure
@@ -40,7 +39,6 @@ endpoints.MapGraphSearchtools();                         // Infrastructure
 | `SearchChannelBuilder` | `Configuration/` | Fluent builder body |
 | `SearchChannel` | `Configuration/` | Built object — exposed on `IGraphSearchtoolsBuilder.Channels` |
 | `LocalizedString` | `Configuration/` | Implicit `string` conversion drives the fluent builder |
-| `GraphRanking` (enum) | `Configuration/` | Passed as a value in `.SemanticBlend(weight, GraphRanking.Semantic)` |
 | `ITelemetrySink` + `SearchEvent`, `ClickEvent` | `Abstractions/` | The hot-path write seam; host SDKs call `Record()` per page render |
 
 ---

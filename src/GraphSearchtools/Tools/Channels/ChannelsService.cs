@@ -117,8 +117,8 @@ internal sealed class ChannelsService
             Locales = LocalesFor(channel),
             SearchedFields = channel.SearchedFields ?? Array.Empty<string>(),
             PinnedKeyFormula = ResolvePinnedKeyFormula(channel),
-            RankingName = channel.Ranking.ToString(),
-            SemanticWeight = channel.SemanticWeight,
+            RankingName = ExtractRanking(content),
+            SemanticWeight = ExtractSemanticWeight(content),
             GraphQLDocPath = channel.GraphQLDocumentPath,
             GraphQLDocExists = graphqlExists,
             GraphQLDocContent = content,
@@ -149,8 +149,6 @@ internal sealed class ChannelsService
             Locales = LocalesFor(channel),
             HasGraphQLDoc = hasDoc,
             GraphQLDocPath = channel.GraphQLDocumentPath,
-            SemanticWeight = channel.SemanticWeight,
-            RankingName = channel.Ranking.ToString(),
             Status = DeriveStatus(hasDoc, docExists, lastEdit),
             LastEditedAt = lastEdit?.At,
             LastEditedBy = lastEdit?.ActorName ?? lastEdit?.ActorId
@@ -259,6 +257,35 @@ internal sealed class ChannelsService
     // accept either slot enum so a channel that targets the staging slot still
     // reads as "applies synonyms".
     private static readonly Regex SynonymsArgRegex = new(@"\bsynonyms\s*:\s*(ONE|TWO)\b", RegexOptions.Compiled);
+
+    // Picks ranking + semantic-weight out of the registered document so the
+    // Channel detail's "Ranking" pill reflects what the storefront query
+    // actually asks Graph for. First match wins — for documents that branch
+    // (e.g. an empty-phrase `StartPublish: DESC` branch alongside a
+    // `_ranking: SEMANTIC` branch) the captured representative document
+    // already substitutes the phrase placeholder, so the regex picks the
+    // active branch.
+    private static readonly Regex RankingRegex = new(@"\b_ranking\s*:\s*([A-Z_]+)\b", RegexOptions.Compiled);
+    private static readonly Regex SemanticWeightRegex = new(@"\b_semanticWeight\s*:\s*(-?\d+(?:\.\d+)?)", RegexOptions.Compiled);
+
+    internal static string? ExtractRanking(string? document)
+    {
+        if (string.IsNullOrEmpty(document)) return null;
+        var match = RankingRegex.Match(document);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    internal static double? ExtractSemanticWeight(string? document)
+    {
+        if (string.IsNullOrEmpty(document)) return null;
+        var match = SemanticWeightRegex.Match(document);
+        if (!match.Success) return null;
+        return double.TryParse(
+            match.Groups[1].Value,
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var w) ? w : null;
+    }
 
     /// <summary>
     /// Runs the registered channel's GraphQL document against Graph after

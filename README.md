@@ -74,7 +74,6 @@ services.AddGraphSearchtools()
         .LocalesFromCmsLanguages()
         .SearchedFields("Name", "MetaDescription", "MainBody")
         .UsesPinnedKey("alloy-{locale}")
-        .SemanticBlend(0.3, GraphRanking.Semantic)
         .GraphQLDocumentInline(AlloySearchService.SampleHitsQueryDocument));
 ```
 
@@ -85,8 +84,7 @@ services.AddGraphSearchtools()
 | `Locales(params string[])` / `LocalesFromCmsLanguages()` | BCP-47 language codes that drive the locale picker. Use the CMS-derived helper to track enabled language branches automatically. |
 | `SearchedFields(params string[])` | Field names searched by the production query. Surfaced on the Channel detail page so the admin matches what the live storefront queries. |
 | `UsesPinnedKey(string \| Func<string,string>)` | The Graph pinned-collection key formula. String templates may contain `{locale}`, e.g. `"alloy-{locale}"`; pass a `Func<string,string>` for fully dynamic per-locale keys. |
-| `SemanticBlend(double weight, GraphRanking ranking)` | Default semantic weight (clamped to -1.0…1.0) and ranking mode used by the Try-it side panel. |
-| `GraphQLDocument(string path)` / `GraphQLDocumentInline(string body)` | The GraphQL document the production code uses for this surface. Optional — when omitted the Try-it side panel is disabled but Pinned editing still works. |
+| `GraphQLDocument(string path)` / `GraphQLDocumentInline(string body)` | The GraphQL document the production code uses for this surface. Optional — when omitted the Try-it side panel is disabled but Pinned editing still works. The Channel detail page reads the document's `_ranking` / `_semanticWeight` arguments to label the ranking pill, so what's shown matches what the storefront actually asks Graph for. |
 | `Variables(object \| IDictionary<string,object?>)` | Default variables passed to the GraphQL document in addition to the runner-controlled ones (`q`, `locale`, `limit`, …). |
 
 When no channels are registered the addon synthesises a single **Generic** channel so zero-config installs keep working: the Channels index shows one row, and the Pinned tab on it falls back to the legacy free-form collection-name editor.

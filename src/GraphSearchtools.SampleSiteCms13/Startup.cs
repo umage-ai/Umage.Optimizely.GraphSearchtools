@@ -54,7 +54,6 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
                 .LocalesFromCmsLanguages()
                 .SearchedFields("Name", "MetaDescription", "MainBody")
                 .UsesPinnedKey("alloy-{locale}")
-                .SemanticBlend(0.3, GraphRanking.Semantic)
                 .GraphQLDocumentInline(AlloySearchService.SampleHitsQueryDocument));
 
         // Faceted site-search service used by /search. Each request issues
