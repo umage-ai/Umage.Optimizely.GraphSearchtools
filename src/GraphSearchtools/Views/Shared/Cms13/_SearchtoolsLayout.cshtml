@@ -5,10 +5,12 @@
 @addTagHelper *, EPiServer.Shell.UI
 @inject UmageAI.Optimizely.GraphSearchTools.Localization.UiStringsProvider UiStrings
 @inject LocalizationService Loc
+@inject UmageAI.Optimizely.GraphSearchTools.Permissions.PermissionMap PermissionMap
 @{
     var title = ViewData["Title"]?.ToString() ?? "Graph Search Tools";
     string ActionPath(string path) => Paths.ToResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), path);
     string ClientResource(string path) => Paths.ToClientResource(typeof(UmageAI.Optimizely.GraphSearchTools.Menu.GraphSearchtoolsMenuProvider), path);
+    var permsJson = PermissionMap.ForCurrentUser().ToJson();
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -72,6 +74,7 @@
         window.GST_CMS_URL = '@Html.Raw(Paths.ToResource("CMS", ""))';
         window.GST_ADMIN_URL = '@Html.Raw(Paths.ToResource("EPiServer.Cms.UI.Admin", "default"))';
         window.GST_STRINGS = @Html.Raw(JsonSerializer.Serialize(UiStrings.GetAll()));
+        window.GST_PERMS = @Html.Raw(permsJson);
         window.GST_CMS13 = true;
     </script>
     <script src="@ClientResource("ClientResources/js/graphsearchtools.js")"></script>

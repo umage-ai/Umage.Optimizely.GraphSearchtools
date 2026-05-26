@@ -53,8 +53,8 @@ moves those numbers.
 not on the hook to fix it. Surface it at a glance (a status pill, a "search is healthy"
 indicator). Don't make them interpret latency histograms — that's a developer job.
 
-**Vocabulary they expect.** Search term, result, pin, synonym, campaign, category,
-product, page, conversion. Not: document, edge, hit, shard, weight,
+**Vocabulary they expect.** Search term, phrase, result, pin, synonym, campaign,
+category, product, page, conversion. Not: document, edge, hit, shard, weight,
 semantic vector.
 
 **Implications for design.**
