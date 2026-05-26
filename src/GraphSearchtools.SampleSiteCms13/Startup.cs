@@ -88,7 +88,6 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseGraphSearchtools();
 
         app.UseEndpoints(endpoints =>
         {

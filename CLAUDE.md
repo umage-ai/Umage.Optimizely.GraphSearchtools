@@ -68,8 +68,7 @@ is unused for static file serving.
 
 ## Key Patterns (inherited from EditorPowertools framework)
 
-- **Registration**: `services.AddGraphSearchtools(...)` + `app.UseGraphSearchtools()` +
-  `endpoints.MapGraphSearchtools()`.
+- **Registration**: `services.AddGraphSearchtools(...)` + `endpoints.MapGraphSearchtools()`.
 - **Options**: `GraphSearchtoolsOptions` bound from `UmageAI:GraphSearchTools` config section.
 - **Permissions**: Three-layer — feature toggle gates *whether the tool is wired*;
   `AuthorizedRoles` policy (`umageai:graphsearchtools`) gates *who's in the door*

@@ -103,8 +103,6 @@ public class Startup
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.UseGraphSearchtools();
-
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapContent();

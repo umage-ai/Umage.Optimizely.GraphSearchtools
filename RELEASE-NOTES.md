@@ -64,6 +64,6 @@ end-to-end walkthrough. In short:
 dotnet add package UmageAI.Optimizely.GraphSearchTools
 ```
 
-Then wire up `services.AddGraphSearchtools(...)`, `app.UseGraphSearchtools()`, and
+Then wire up `services.AddGraphSearchtools(...)` and
 `endpoints.MapGraphSearchtools()` in your CMS host, and set
 `UmageAI:GraphSearchTools:AuthorizedRoles` in `appsettings.json`.

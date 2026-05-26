@@ -25,14 +25,13 @@ services.AddGraphSearchtools(options => { … })          // Infrastructure
         .SemanticBlend(0.3, GraphRanking.Semantic)
         .UsesPinnedKey("alloy-{locale}"));
 
-app.UseGraphSearchtools();                               // Infrastructure
 endpoints.MapGraphSearchtools();                         // Infrastructure
 ```
 
 | Type | File | Why public |
 |---|---|---|
 | `ServiceCollectionExtensions` (static) | `Infrastructure/` | Registration entry point |
-| `ApplicationBuilderExtensions` (static) | `Infrastructure/` | Middleware activation (no-op today but reserved) |
+| `ApplicationBuilderExtensions` (static) | `Infrastructure/` | Holds `MapGraphSearchtools()` |
 | `IGraphSearchtoolsBuilder` | `Configuration/` | Return type of `AddGraphSearchtools`; chain target for `AddSearchChannel` |
 | `GraphSearchtoolsOptions` + nested `SavedQueriesOptions`, `GraphConnectionOptions` | `Configuration/` | Bound from `UmageAI:GraphSearchTools` config section |
 | `FeatureToggles` | `Configuration/` | Nested in `GraphSearchtoolsOptions.Features` |
