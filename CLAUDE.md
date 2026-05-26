@@ -12,6 +12,7 @@ relevancy tuning). Distributed as NuGet package `UmageAI.Optimizely.GraphSearchT
 - `src/GraphSearchtools.Tests/` - xUnit tests, multi-target
 - `docs/personas.md` - who we're designing for; read before UI/UX work
 - `docs/design-system.md` - shared UI patterns + components; read before UI work
+- `docs/public-api.md` - the addon's public NuGet surface; read before marking a type `public`
 - `docs/research/` - Optimizely Graph reference docs (capabilities, relevancy, auth)
 
 ## Tech Stack
@@ -117,6 +118,11 @@ is unused for static file serving.
   new shared partial / JS helper / `.gst-*` class, check the catalogue. **No new shared
   component without an entry; no entry change without user confirm.** Local one-off styles
   inside a single tool are fine.
+- **Public API**: The addon ships as a NuGet package; the public surface is contracted in
+  `docs/public-api.md`. Default visibility is `internal`. **No new `public` type without an
+  entry; no entry change without user confirm.** If a type only exists because Razor /
+  model binding / JSON serialisation needs it, it's almost certainly internal — the
+  assembly boundary is what matters, not the C# visibility check.
 
 ## Localization
 
