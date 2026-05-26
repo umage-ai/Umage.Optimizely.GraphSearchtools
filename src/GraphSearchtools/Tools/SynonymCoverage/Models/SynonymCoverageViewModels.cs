@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage.Models;
 /// former "suggested adds" pass — zero-result phrases that look like missing
 /// rules — moves to the per-channel insights pipeline.
 /// </summary>
-public sealed record SynonymCoverageResult
+internal sealed record SynonymCoverageResult
 {
     /// <summary>UTC stamp of when the analyzer ran.</summary>
     public DateTime GeneratedAt { get; init; }
@@ -37,7 +37,7 @@ public sealed record SynonymCoverageResult
 /// <param name="Language">BCP-47 locale, or <c>"Global"</c> for the tenant-wide blob.</param>
 /// <param name="Entry">The original rule line verbatim.</param>
 /// <param name="Hits">Sum of trigger-term hits in the analyzer's window.</param>
-public sealed record RuleActivityRow(string Language, string Entry, long Hits);
+internal sealed record RuleActivityRow(string Language, string Entry, long Hits);
 
 /// <summary>
 /// One synonym entry that didn't fire against any logged query in the window.
@@ -49,4 +49,4 @@ public sealed record RuleActivityRow(string Language, string Entry, long Hits);
 /// <param name="Reason">Short, human-readable explanation. v1 always surfaces
 /// "no logged query in last 30 days" but the field is open-ended so future
 /// reasons (orphaned target content, language drift) drop in cleanly.</param>
-public sealed record UnusedSynonymEntry(string Language, string Entry, string Reason);
+internal sealed record UnusedSynonymEntry(string Language, string Entry, string Reason);

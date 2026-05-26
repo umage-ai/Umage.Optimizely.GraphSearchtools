@@ -12,9 +12,9 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 
 /// <summary>
 /// Reads the channel registry + edit log and shapes both into JSON-friendly
-/// view models for the Channels UI. No writes — Phase 2.5 v1 is read-only.
+/// view models for the Channels UI. No writes — v1 is read-only.
 /// </summary>
-public sealed class ChannelsService
+internal sealed class ChannelsService
 {
     private readonly ISearchChannelRegistry _registry;
     private readonly AuditLogService _audit;
@@ -66,8 +66,8 @@ public sealed class ChannelsService
             SearchedFields = channel.SearchedFields ?? Array.Empty<string>(),
             PinnedKeySample = ResolvePinnedKeySample(channel),
             PinnedKeyIsSiteShared = IsPinnedKeySiteShared(channel),
-            // v1: counts that require live Graph calls are surfaced as 0 here.
-            // Phase 2.5 follow-up wires Graph admin calls per the design doc §3.
+            // v1: counts that require live Graph calls are surfaced as 0
+            // here; a follow-up will wire Graph admin calls.
             PinnedPhraseCount = 0,
             SynonymEntryCount = 0
         };

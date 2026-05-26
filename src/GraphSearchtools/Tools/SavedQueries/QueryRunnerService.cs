@@ -25,7 +25,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 ///     plus any extras from <see cref="SavedQueriesOptions.DefaultQueryVariables"/>.
 ///     UI knobs are ignored in this mode — the query owns its own ranking.
 /// </summary>
-public sealed class QueryRunnerService
+internal sealed class QueryRunnerService
 {
     private static readonly HashSet<string> AllowedRankings = new(StringComparer.OrdinalIgnoreCase)
     {

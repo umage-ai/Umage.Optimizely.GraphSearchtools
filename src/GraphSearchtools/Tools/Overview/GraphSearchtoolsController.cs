@@ -17,7 +17,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Overview;
 /// Actions map to menu items via Paths.ToResource("GraphSearchtools/{ActionName}").
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class GraphSearchtoolsController : Controller
+internal class GraphSearchtoolsController : Controller
 {
     private readonly FeatureAccessChecker _accessChecker;
     private readonly UiStringsProvider _uiStrings;

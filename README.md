@@ -141,8 +141,6 @@ public void Configure(IApplicationBuilder app)
 {
     // ... other middleware
 
-    app.UseGraphSearchtools();
-
     app.UseEndpoints(endpoints =>
     {
         endpoints.MapContent();

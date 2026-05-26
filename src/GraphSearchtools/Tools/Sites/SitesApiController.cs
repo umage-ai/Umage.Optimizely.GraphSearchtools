@@ -17,7 +17,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Sites;
 /// disables both has implicitly disabled the pickers too.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class SitesApiController : Controller
+internal class SitesApiController : Controller
 {
     private readonly LanguageSiteEnumerator _enumerator;
     private readonly IGraphAdminClient _graphClient;

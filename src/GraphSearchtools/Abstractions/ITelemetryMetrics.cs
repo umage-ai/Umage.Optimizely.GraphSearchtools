@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Abstractions;
 /// §3.2). External readers register no implementation; the Health surface
 /// then omits the telemetry probe.
 /// </summary>
-public interface ITelemetryMetrics
+internal interface ITelemetryMetrics
 {
     /// <summary>Approximate channel depth at the moment of the call.</summary>
     int ApproximateQueueDepth { get; }

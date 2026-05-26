@@ -15,7 +15,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Helpers;
 /// site's content model. Replaces the seed code's <c>StartPage.LanguageSitesOrDefault()</c>
 /// helper, which depended on a host-specific page type.
 /// </summary>
-public sealed class LanguageSiteEnumerator
+internal sealed class LanguageSiteEnumerator
 {
     private readonly ISiteDefinitionRepository _siteDefinitions;
     private readonly ILanguageBranchRepository _languageBranches;

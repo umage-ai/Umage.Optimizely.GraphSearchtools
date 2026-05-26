@@ -12,6 +12,7 @@ relevancy tuning). Distributed as NuGet package `UmageAI.Optimizely.GraphSearchT
 - `src/GraphSearchtools.Tests/` - xUnit tests, multi-target
 - `docs/personas.md` - who we're designing for; read before UI/UX work
 - `docs/design-system.md` - shared UI patterns + components; read before UI work
+- `docs/public-api.md` - the addon's public NuGet surface; read before marking a type `public`
 - `docs/research/` - Optimizely Graph reference docs (capabilities, relevancy, auth)
 
 ## Tech Stack
@@ -67,8 +68,7 @@ is unused for static file serving.
 
 ## Key Patterns (inherited from EditorPowertools framework)
 
-- **Registration**: `services.AddGraphSearchtools(...)` + `app.UseGraphSearchtools()` +
-  `endpoints.MapGraphSearchtools()`.
+- **Registration**: `services.AddGraphSearchtools(...)` + `endpoints.MapGraphSearchtools()`.
 - **Options**: `GraphSearchtoolsOptions` bound from `UmageAI:GraphSearchTools` config section.
 - **Permissions**: Three-layer — feature toggle gates *whether the tool is wired*;
   `AuthorizedRoles` policy (`umageai:graphsearchtools`) gates *who's in the door*
@@ -82,6 +82,9 @@ is unused for static file serving.
   read from it. `PermissionSeeder` grants every PermissionType to
   `AuthorizedRoles` on first boot so a fresh install never locks anyone out.
 - **Tool structure**: Each tool in `Tools/{ToolName}/` with Service + ApiController + view.
+- **Controllers**: All controllers are `internal` and discovered by `InternalControllerFeatureProvider`
+  so they (and their service / DTO dependencies) stay out of the public NuGet surface. See
+  `docs/public-api.md` for the policy.
 - **Menu**: `GraphSearchtoolsMenuProvider` uses `Paths.ToResource()` for controller routes.
 - **Static files**: Go in `modules/_protected/GraphSearchtools/ClientResources/`,
   referenced via `Paths.ToClientResource()`.
@@ -117,6 +120,11 @@ is unused for static file serving.
   new shared partial / JS helper / `.gst-*` class, check the catalogue. **No new shared
   component without an entry; no entry change without user confirm.** Local one-off styles
   inside a single tool are fine.
+- **Public API**: The addon ships as a NuGet package; the public surface is contracted in
+  `docs/public-api.md`. Default visibility is `internal`. **No new `public` type without an
+  entry; no entry change without user confirm.** If a type only exists because Razor /
+  model binding / JSON serialisation needs it, it's almost certainly internal — the
+  assembly boundary is what matters, not the C# visibility check.
 
 ## Localization
 

@@ -64,7 +64,6 @@ services.AddGraphSearchtools(o =>
         .UsesPinnedKey("site-{locale}"));
 
 // in Configure(...):
-app.UseGraphSearchtools();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapGraphSearchtools();

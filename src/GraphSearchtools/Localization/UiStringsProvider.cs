@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Localization;
 /// Provides all JavaScript UI strings from the localization service,
 /// serialized to window.GST_STRINGS in the layout.
 /// </summary>
-public class UiStringsProvider(LocalizationService loc)
+internal class UiStringsProvider(LocalizationService loc)
 {
     private string S(string key) => loc.GetString($"/graphsearchtools/ui/{key}");
 
@@ -135,10 +135,9 @@ public class UiStringsProvider(LocalizationService loc)
             empty = CL("empty"),
             load_failed = CL("load_failed")
         },
-        // Phase 2.5 — Search Channels. Reads from the top-level
-        // /graphsearchtools/channels/* tree rather than /ui/* so the loc paths
-        // line up with the design doc and stay grouped near the foundation
-        // agent's channel-builder strings.
+        // Search Channels strings. Reads from the top-level
+        // /graphsearchtools/channels/* tree rather than /ui/* so the loc
+        // paths stay grouped near the channel-builder strings.
         channels = new
         {
             requestFailed = P("requestFailed"),

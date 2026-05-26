@@ -7,7 +7,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 /// The HTTP status code is preserved so callers can map it back to a sensible
 /// response without leaking the upstream message body.
 /// </summary>
-public sealed class GraphSearchApiException : Exception
+internal sealed class GraphSearchApiException : Exception
 {
     public GraphSearchApiException(HttpStatusCode statusCode, string responseContent)
         : base($"Graph API request failed with status {(int)statusCode}.")

@@ -4,10 +4,10 @@ using UmageAI.Optimizely.GraphSearchTools.Services;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels.Models;
 
 /// <summary>
-/// Status displayed on the index table per design §4.7. The heuristic is
-/// intentionally simple in v1; richer derivations land with Phase 4 telemetry.
+/// Status displayed on the index table. The heuristic is intentionally
+/// simple in v1.
 /// </summary>
-public enum ChannelStatus
+internal enum ChannelStatus
 {
     /// <summary>Pinned/synonym data exists and the GraphQL document is wired up.</summary>
     Tuned = 0,
@@ -23,7 +23,7 @@ public enum ChannelStatus
 /// Row shape for the Channels index table. Keep flat — the JS table builder
 /// renders one row per summary without any joins.
 /// </summary>
-public sealed record ChannelSummary
+internal sealed record ChannelSummary
 {
     public string Key { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
@@ -51,7 +51,7 @@ public sealed record ChannelSummary
 /// require live Graph calls are zero in v1 — see notes in
 /// <see cref="ChannelsService"/>.
 /// </summary>
-public sealed record ChannelDetail
+internal sealed record ChannelDetail
 {
     public ChannelSummary Summary { get; init; } = new();
 
@@ -74,7 +74,7 @@ public sealed record ChannelDetail
 /// key:" line, and <see cref="CollectionId"/> so the JS can pass it back to
 /// the existing <c>/PinnedApi/CreateItem</c> endpoint without re-resolving.
 /// </summary>
-public sealed record ChannelPinnedResponse
+internal sealed record ChannelPinnedResponse
 {
     public string ChannelKey { get; init; } = string.Empty;
     public string? Site { get; init; }
@@ -93,7 +93,7 @@ public sealed record ChannelPinnedResponse
 /// Flat row shape per pinned item, decorated with the parent collection's key
 /// and id so the JS can route writes back through <c>PinnedApi/{Update,Delete}Item</c>.
 /// </summary>
-public sealed record ChannelPinnedRow
+internal sealed record ChannelPinnedRow
 {
     public string Id { get; init; } = string.Empty;
     public string CollectionId { get; init; } = string.Empty;
@@ -122,7 +122,7 @@ public sealed record ChannelPinnedRow
 /// localized strings here rather than in the view so the markup stays
 /// declarative.
 /// </summary>
-public sealed class ChannelDetailViewModel
+internal sealed class ChannelDetailViewModel
 {
     public string Key { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;

@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 /// degrade to no-op / empty when the store isn't available (e.g. outside an
 /// Optimizely host) rather than throwing.
 /// </remarks>
-public class AuditLogService
+internal class AuditLogService
 {
     /// <summary>Append a new audit row. Populates <see cref="AuditLogEntry.At"/> if unset.</summary>
     public virtual void Append(AuditLogEntry entry)

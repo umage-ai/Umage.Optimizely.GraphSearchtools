@@ -18,10 +18,9 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 namespace UmageAI.Optimizely.GraphSearchTools.Tests;
 
 /// <summary>
-/// Phase 2.5 §4.1 — guards the channel-scoping behaviour on
-/// <see cref="PinnedApiController"/>: writes require a <c>channelKey</c>;
-/// the audit log is appended on every successful write; and the legacy
-/// <c>/pinned</c> route 301-redirects to the Channels index.
+/// Guards channel-scoping on <see cref="PinnedApiController"/>: item
+/// writes require a <c>channelKey</c> query parameter, and the audit
+/// log is appended on every successful write.
 /// </summary>
 public class PinnedApiControllerChannelScopeTests
 {
@@ -75,36 +74,6 @@ public class PinnedApiControllerChannelScopeTests
         entry.Action.Should().Be("Created");
         entry.Subject.Should().Be("warranty");
         entry.At.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-    }
-
-    [Fact]
-    public void LegacyPinnedRoute_Returns301_To_ChannelsIndex()
-    {
-        var options = Options.Create(new GraphSearchtoolsOptions
-        {
-            Features = new FeatureToggles { Pinned = true },
-            CheckPermissionForEachFeature = false
-        });
-        var permissionService = new Mock<PermissionService>(MockBehavior.Loose, new object[0]).Object;
-        var accessChecker = new FeatureAccessChecker(options, permissionService);
-
-        // UiStringsProvider is constructed but never invoked from Pinned() —
-        // the action just returns a redirect, so a loose mock is fine.
-        var loc = new Mock<LocalizationService>(MockBehavior.Loose, new object[0]).Object;
-        var uiStrings = new UmageAI.Optimizely.GraphSearchTools.Localization.UiStringsProvider(loc);
-
-        var controller = new GraphSearchtoolsController(accessChecker, uiStrings);
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity("test")) }
-        };
-
-        var result = controller.Pinned();
-
-        // RedirectPermanent → IActionResult of type RedirectResult with Permanent = true.
-        var redirect = result.Should().BeOfType<RedirectResult>().Subject;
-        redirect.Permanent.Should().BeTrue();
-        redirect.Url.Should().Be("/EPiServer/cms/graphsearchtools/channels");
     }
 
     // ──────────────────────────────────────────────────────────────────

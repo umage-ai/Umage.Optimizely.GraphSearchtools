@@ -9,7 +9,7 @@ using UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage.Models;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 
 /// <summary>
-/// Phase 4 §6 audit composer. Pulls every pinned collection + item from Graph,
+/// Audit composer for Pinned Result Coverage. Pulls every pinned collection + item from Graph,
 /// joins each item against the CMS via <see cref="IContentLoader"/> to detect
 /// unpublished/deleted targets, joins against the 7-day search-log window for
 /// CTR, and groups phrases across collections to surface overlap conflicts.
@@ -23,7 +23,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 /// count. Tenants with hundreds of collections will see a multi-second
 /// latency; the UI hides it behind a "Run audit" button.
 /// </remarks>
-public sealed class PinnedCoverageService
+internal sealed class PinnedCoverageService
 {
     /// <summary>
     /// Window the CTR / no-activity heuristics span. Matches the Search Logs

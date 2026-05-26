@@ -17,7 +17,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 /// </summary>
 [ApiController]
 [Route("api/telemetry")]
-public sealed class TelemetryApiController : ControllerBase
+internal sealed class TelemetryApiController : ControllerBase
 {
     private const int MaxAllowedBodyBytes = 64 * 1024; // upper cap on the option
 
@@ -144,7 +144,7 @@ public sealed class TelemetryApiController : ControllerBase
     /// <c>resultCount</c>; "click" reads <c>rank</c> and the optional
     /// <c>originalBucketUtc</c> attribution timestamp.
     /// </summary>
-    public sealed class SearchLogPayload
+    internal sealed class SearchLogPayload
     {
         [JsonPropertyName("kind")] public string? Kind { get; set; }
         [JsonPropertyName("phrase")] public string? Phrase { get; set; }

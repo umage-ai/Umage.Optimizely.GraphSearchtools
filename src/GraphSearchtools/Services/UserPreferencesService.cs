@@ -25,7 +25,7 @@ public class UserPreferencesRecord : IDynamicData
 /// <summary>
 /// Service for reading/writing per-user tool preferences from DDS.
 /// </summary>
-public class UserPreferencesService
+internal class UserPreferencesService
 {
     public string? Get(string username, string toolName)
     {

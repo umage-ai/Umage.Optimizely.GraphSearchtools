@@ -72,29 +72,31 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SynonymsService>();
         services.AddHttpClient<QueryRunnerService>();
 
-        // Phase 2.5: Search Channels foundation. The registry collects every
+        // Search Channels foundation. The registry collects every
         // SearchChannel registered as a singleton (by AddSearchChannel).
         services.AddSingleton<ISearchChannelRegistry, SearchChannelRegistry>();
         services.AddSingleton<AuditLogService>();
         services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Channels.ChannelsService>();
 
-        // Phase 4 Wave 5: Search Logs UI — top phrases, zero-result phrases,
-        // low-CTR phrases, raw events. Thin wrapper around ITelemetryReader
-        // that defaults the time window and clamps `take`.
+        // Search Logs UI — top phrases, zero-result phrases, low-CTR
+        // phrases, raw events. Thin wrapper around ITelemetryReader that
+        // defaults the time window and clamps `take`.
         services.AddScoped<SearchLogsService>();
 
-        // Phase 4 Wave 5: Synonym Coverage — joins SynonymsService blobs with
-        // ITelemetryReader phrase aggregates. Read-only analyzer; the single
-        // GET endpoint serves a SynonymCoverageResult for the page to render.
+        // Synonym Coverage — joins SynonymsService blobs with
+        // ITelemetryReader phrase aggregates. Read-only analyzer; the
+        // single GET endpoint serves a SynonymCoverageResult for the
+        // page to render.
         services.AddScoped<SynonymCoverageService>();
 
-        // Phase 4 Wave 5 §6: Pinned Result Coverage audit. Read-only — joins
-        // Graph pinned data, IContentLoader content state, ISearchChannelRegistry
-        // (collection → channel mapping) and ITelemetryReader 7-day window.
+        // Pinned Result Coverage audit. Read-only — joins Graph pinned
+        // data, IContentLoader content state, ISearchChannelRegistry
+        // (collection → channel mapping) and ITelemetryReader 7-day
+        // window.
         services.AddScoped<PinnedCoverageService>();
 
-        // Aurora refactor: Insights dashboard. Pulls from the three services
-        // above — no new datastore. Scoped because it composes scoped deps.
+        // Insights dashboard. Pulls from the three services above — no
+        // new datastore. Scoped because it composes scoped deps.
         services.AddScoped<UmageAI.Optimizely.GraphSearchTools.Tools.Insights.InsightsService>();
 
         // Telemetry: local sink + bucket flusher + reader on by default. To
@@ -115,6 +117,18 @@ public static class ServiceCollectionExtensions
             {
                 Name = "GraphSearchtools"
             });
+        });
+
+        // Let MVC discover the addon's internal controllers. The default
+        // ControllerFeatureProvider only finds public types; without this
+        // registration, internalising controllers makes every endpoint
+        // 404. See InternalControllerFeatureProvider for the contract.
+        services.AddControllers().ConfigureApplicationPartManager(apm =>
+        {
+            if (!apm.FeatureProviders.OfType<InternalControllerFeatureProvider>().Any())
+            {
+                apm.FeatureProviders.Add(new InternalControllerFeatureProvider());
+            }
         });
 
         // Startup validator: runs StartupDiagnostics.Evaluate once and logs

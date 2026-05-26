@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Components;
 /// API endpoints for reusable UI components (content picker, content type picker).
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class ComponentsApiController : Controller
+internal class ComponentsApiController : Controller
 {
     private readonly IContentLoader _contentLoader;
     private readonly IContentRepository _contentRepository;

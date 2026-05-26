@@ -8,13 +8,13 @@ using UmageAI.Optimizely.GraphSearchTools.Services;
 namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 
 /// <summary>
-/// Read-only REST API for the Phase 4 Pinned Result Coverage tool. Mounted
+/// Read-only REST API for the Pinned Result Coverage tool. Mounted
 /// under <c>{basePath}/PinnedCoverageApi/{action}</c> by convention. Audit
 /// composition is on-demand and may take a few seconds on tenants with many
 /// collections — the JS shows a loading state while the request is in flight.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class PinnedCoverageApiController : Controller
+internal class PinnedCoverageApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.PinnedCoverage);
 

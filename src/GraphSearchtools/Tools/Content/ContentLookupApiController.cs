@@ -16,7 +16,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Content;
 /// inline content picker. Backed by the Optimizely Graph GraphQL endpoint.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class ContentLookupApiController : Controller
+internal class ContentLookupApiController : Controller
 {
     private readonly IContentLoader _contentLoader;
     private readonly IGraphAdminClient _graphClient;

@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 /// set on <c>UmageAI:GraphSearchTools:Graph</c> and falls back per-field to the
 /// host's <c>Optimizely:ContentGraph</c> section.
 /// </summary>
-public sealed class GraphCredentialsResolver : IGraphCredentialsResolver
+internal sealed class GraphCredentialsResolver : IGraphCredentialsResolver
 {
     private readonly IConfiguration _configuration;
     private readonly IOptions<GraphSearchtoolsOptions> _options;

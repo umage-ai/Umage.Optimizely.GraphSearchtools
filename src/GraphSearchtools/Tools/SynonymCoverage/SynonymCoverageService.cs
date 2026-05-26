@@ -20,7 +20,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage;
 /// new tenant) the pass falls back to the safe v1 behaviour: top N
 /// zero-result phrases that aren't already covered by the synonym set.
 /// </remarks>
-public sealed class SynonymCoverageService
+internal sealed class SynonymCoverageService
 {
     /// <summary>Default look-back when callers omit a window.</summary>
     public static readonly TimeSpan DefaultWindow = TimeSpan.FromDays(30);

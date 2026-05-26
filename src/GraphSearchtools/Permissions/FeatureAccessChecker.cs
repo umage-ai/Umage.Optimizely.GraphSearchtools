@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Permissions;
 /// 1. Feature toggle (is the feature enabled at all?)
 /// 2. EPiServer permission (optional, per-user check if CheckPermissionForEachFeature is true)
 /// </summary>
-public class FeatureAccessChecker
+internal class FeatureAccessChecker
 {
     private readonly IOptions<GraphSearchtoolsOptions> _options;
     private readonly PermissionService _permissionService;

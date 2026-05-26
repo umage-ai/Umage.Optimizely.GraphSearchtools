@@ -11,7 +11,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Permissions;
 /// and edit buttons off the resulting booleans so the UI matches the
 /// server-side authorization without a round-trip per element.
 /// </summary>
-public sealed class PermissionMap
+internal sealed class PermissionMap
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly FeatureAccessChecker _accessChecker;
@@ -38,7 +38,7 @@ public sealed class PermissionMap
         );
     }
 
-    public sealed record Snapshot(
+    internal sealed record Snapshot(
         bool channels,
         bool insights,
         bool pinned,

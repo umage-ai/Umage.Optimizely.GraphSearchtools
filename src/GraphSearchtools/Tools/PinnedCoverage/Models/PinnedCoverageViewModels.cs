@@ -8,7 +8,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage.Models;
 /// live Graph data, content-loader lookups and 7-day search-log aggregation,
 /// so there is no DDS table behind it.
 /// </summary>
-public sealed record PinnedCoverageResult
+internal sealed record PinnedCoverageResult
 {
     /// <summary>UTC moment when the audit was composed; surfaced as "Generated 30s ago".</summary>
     [JsonPropertyName("generatedAt")]
@@ -33,7 +33,7 @@ public sealed record PinnedCoverageResult
 /// than an enum so the JS can switch on it without a parsing layer; the values
 /// are stable contracts the view's badge logic depends on.
 /// </summary>
-public sealed record PinnedIssue
+internal sealed record PinnedIssue
 {
     /// <summary>
     /// One of <c>"Unpublished"</c>, <c>"Deleted"</c>, <c>"Expired"</c>,
@@ -83,7 +83,7 @@ public sealed record PinnedIssue
 /// channel names) because some collections aren't channel-bound and we want
 /// the row to be diagnostic even then.
 /// </summary>
-public sealed record PinnedOverlap
+internal sealed record PinnedOverlap
 {
     /// <summary>Phrase that's pinned across multiple collections.</summary>
     [JsonPropertyName("phrase")]

@@ -22,7 +22,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 /// plain integer. Both are normalised by <see cref="SearchLogsService"/>.
 /// </remarks>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class SearchLogsApiController : Controller
+internal class SearchLogsApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.SearchLogs);
 

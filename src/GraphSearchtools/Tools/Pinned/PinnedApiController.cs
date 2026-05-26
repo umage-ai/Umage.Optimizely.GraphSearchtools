@@ -16,14 +16,18 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// honour the optional per-feature permission gate.
 /// </summary>
 /// <remarks>
-/// Phase 2.5 §4.1: pinned data is scoped to <see cref="SearchChannel"/>s.
-/// Every write requires a <c>channelKey</c> query parameter; the controller
-/// resolves the Graph collection key from the channel + locale via
-/// <see cref="SearchChannel.PinnedKeyForLocale"/> so the marketer never types
-/// the key.
+/// Pinned data is scoped to <see cref="SearchChannel"/>s. Item writes
+/// (Create/Update/Delete on a pinned item) require a <c>channelKey</c>
+/// query parameter so the audit log can attribute the change; the
+/// controller resolves the Graph collection key from the channel +
+/// locale via <see cref="SearchChannel.PinnedKeyForLocale"/> so the
+/// marketer never types the key. Collection writes are intentionally
+/// channel-agnostic — a collection can serve any number of channels via
+/// <see cref="SearchChannel.PinnedKeyForLocale"/>, so their audit rows
+/// record the collection key without a channel.
 /// </remarks>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class PinnedApiController : Controller
+internal class PinnedApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Pinned);
 
@@ -305,6 +309,7 @@ public class PinnedApiController : Controller
     {
         if (!HasItemEditAccess()) return Forbid();
         if (string.IsNullOrWhiteSpace(collectionId)) return BadRequest(new { message = "collectionId is required." });
+        if (string.IsNullOrWhiteSpace(channelKey)) return BadRequest(new { message = "channelKey is required." });
         if (payload == null) return BadRequest(new { message = "Item payload is required." });
 
         var scope = ResolveScope(channelKey, site, locale);
@@ -343,6 +348,7 @@ public class PinnedApiController : Controller
         {
             return BadRequest(new { message = "collectionId and id are required." });
         }
+        if (string.IsNullOrWhiteSpace(channelKey)) return BadRequest(new { message = "channelKey is required." });
         if (payload == null) return BadRequest(new { message = "Item payload is required." });
 
         var scope = ResolveScope(channelKey, site, locale);
@@ -378,6 +384,7 @@ public class PinnedApiController : Controller
         {
             return BadRequest(new { message = "collectionId and id are required." });
         }
+        if (string.IsNullOrWhiteSpace(channelKey)) return BadRequest(new { message = "channelKey is required." });
 
         var scope = ResolveScope(channelKey, site, locale);
         if (scope.IsError) return scope.ErrorResult!;
