@@ -61,10 +61,16 @@ is unused for static file serving.
   confirm first.)
 - Pre-release local verification: `dotnet test` (no `--no-build` — that flag silently uses
   stale test DLLs and can miss compile errors introduced by signature changes).
-- `RELEASE-NOTES.md` at the repo root is a hand-curated, human-readable changelog. Update it
-  in the same PR that introduces user-visible changes. The workflow's auto-generated notes
-  (from PR titles between tags) handle the GitHub release body and `.nupkg`
-  `PackageReleaseNotes` field separately — `RELEASE-NOTES.md` itself is not read by CI.
+- `RELEASE-NOTES.md` at the repo root is a hand-curated, human-readable changelog and is
+  **the source of truth for the release body and the `.nupkg` `PackageReleaseNotes`
+  field**. The publish workflow carves out the `## v<version>` section matching the
+  pushed tag and uses it verbatim. **No matching section → the workflow fails before
+  build**, so the nupkg never ships without a curated body. Update `RELEASE-NOTES.md`
+  in the same PR that introduces user-visible changes.
+- **Before tagging a release, verify `RELEASE-NOTES.md` has an up-to-date
+  `## v<next-version>` section** covering everything merged since the previous tag.
+  If you skip this and CI fails on the tag, the recovery is: add the section, commit,
+  delete + recreate the tag at the new commit, re-push.
 
 ## Key Patterns (inherited from EditorPowertools framework)
 
