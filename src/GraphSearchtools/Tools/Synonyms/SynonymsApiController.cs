@@ -15,7 +15,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 /// the line-per-rule structure is enforced client-side and joined here.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class SynonymsApiController : Controller
+internal class SynonymsApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Synonyms);
 

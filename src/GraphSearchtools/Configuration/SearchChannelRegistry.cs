@@ -5,7 +5,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 /// <see cref="SearchChannel"/>s at construction time and serves read-only
 /// views on top.
 /// </summary>
-public sealed class SearchChannelRegistry : ISearchChannelRegistry
+internal sealed class SearchChannelRegistry : ISearchChannelRegistry
 {
     private readonly IReadOnlyList<SearchChannel> _all;
     private readonly Dictionary<string, SearchChannel> _byKey;

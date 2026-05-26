@@ -12,7 +12,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Components;
 /// and the user's permission grant pass.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class FeaturesApiController : Controller
+internal class FeaturesApiController : Controller
 {
     private readonly FeatureAccessChecker _accessChecker;
 

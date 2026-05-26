@@ -16,7 +16,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 /// than the eviction window can grow the dictionary; the global limiter still
 /// caps the cost they impose on the channel + flusher.
 /// </remarks>
-public sealed class TelemetryAbuseGuard
+internal sealed class TelemetryAbuseGuard
 {
     private readonly LocalTelemetryOptions _options;
     private readonly ConcurrentDictionary<string, FixedWindow> _perIp = new();

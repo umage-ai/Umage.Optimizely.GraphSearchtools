@@ -13,7 +13,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 /// the UI picks the call based on which card it's rendering.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public sealed class TelemetryAdminApiController : Controller
+internal sealed class TelemetryAdminApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Telemetry);
     private const int DefaultTake = 50;

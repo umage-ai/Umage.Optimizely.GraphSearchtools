@@ -11,7 +11,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 /// <see cref="ChannelsApiController"/>.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class ChannelsController : Controller
+internal class ChannelsController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Channels);
 

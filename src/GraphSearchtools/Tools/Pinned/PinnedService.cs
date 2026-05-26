@@ -7,7 +7,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// Thin orchestration around <see cref="IGraphAdminClient"/> for the pinned-results tool.
 /// Today the service is a pass-through; bug fixes or per-tenant logic land here.
 /// </summary>
-public sealed class PinnedService
+internal sealed class PinnedService
 {
     /// <summary>
     /// ContentGraph caps a single GET to <c>/api/pinned/collections/{id}/items</c>

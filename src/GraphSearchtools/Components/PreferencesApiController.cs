@@ -11,7 +11,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Components;
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
 [RequireAjax]
-public class PreferencesApiController : Controller
+internal class PreferencesApiController : Controller
 {
     private readonly UserPreferencesService _preferencesService;
     private readonly FeatureAccessChecker _accessChecker;

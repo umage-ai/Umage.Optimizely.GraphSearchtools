@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// should map this to 503 with a message that points the operator at the
 /// per-collection page rather than letting the full Pinned grid load forever.
 /// </summary>
-public sealed class BulkLoadCapExceededException : Exception
+internal sealed class BulkLoadCapExceededException : Exception
 {
     public BulkLoadCapExceededException(string collectionId, int cap)
         : base($"Collection '{collectionId}' exceeds the bulk-load safety cap of {cap} items.")

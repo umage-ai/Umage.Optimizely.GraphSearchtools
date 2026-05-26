@@ -16,7 +16,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 /// <c>/SavedQueriesApi/Run</c> unmodified.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class SavedQueriesApiController : Controller
+internal class SavedQueriesApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Pinned);
 

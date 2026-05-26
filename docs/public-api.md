@@ -90,12 +90,23 @@ Don't internalise without checking the framework's discovery rules.
 
 | Group | Discovery mechanism |
 |---|---|
-| All `*Controller` / `*ApiController` (~22 types under `Tools/`, `Components/`, `Menu/`) | ASP.NET routing scans `Controller`-derived types |
 | `GraphSearchtoolsMenuProvider` | EPiServer `IMenuProvider` discovery |
 | `GraphSearchtoolsPermissions` (static) | EPiServer `[PermissionTypes]` discovery |
 | `TelemetryRetentionJob` | EPiServer `[ScheduledPlugIn]` discovery |
 | `PermissionSeeder`, `GraphSearchtoolsStartupValidator`, `BucketFlusher` | `IHostedService` resolution |
 | `AuditLogEntry`, `SearchLogBucket`, `SearchLogRing`, `UserPreferencesRecord`, `PermissionSeederMarker` | DDS `IDynamicData` reflection-based instantiation |
+
+**Controllers are NOT in this list.** All `*Controller` / `*ApiController` types
+are `internal sealed` and discovered by `InternalControllerFeatureProvider`
+(`Infrastructure/InternalControllerFeatureProvider.cs`), which extends MVC's
+default `ControllerFeatureProvider` to include internal controllers from this
+assembly. The provider is registered inside `AddGraphSearchtools` via
+`services.AddControllers().ConfigureApplicationPartManager(...)`. Keeping
+controllers internal is what lets the per-tool services, view-models, and DTOs
+they reference also stay internal (CS0051 would otherwise force the entire
+transitive closure of controller parameter and return types to be public).
+If you add a new controller, the provider picks it up automatically — no extra
+registration step.
 
 ---
 
@@ -110,20 +121,23 @@ The agent survey flagged ten types as judgment calls. Decisions:
 | `LocalizedString` | **Keep public** | Implicit `string` conversion is used in the SampleSite's `AddSearchChannel(...)` call. |
 | `GraphCredentials` (record) | **Keep public** | Return type of `IGraphCredentialsResolver.Resolve`. |
 | `SearchChannel` | **Keep public** | Exposed on `IGraphSearchtoolsBuilder.Channels`. |
-| `ITelemetryMetrics` | **→ internal** in the sweep | One impl (`LocalTelemetrySink`), one consumer (Health endpoint, same assembly). Integrator-supplied `ITelemetryReader` doesn't need it. Muratori was right — interface theater. |
-| `PermissionMap` + nested `Snapshot` | **→ internal** in the sweep | Razor compiles inside the assembly; no external consumer. |
-| `FeatureAccessChecker` | **→ internal** in the sweep | Used only by addon controllers and `PermissionMap`. |
-| `StartupDiagnostics` + `Diagnostic` + `DiagnosticLevel` | **→ internal** in the sweep | Consumed only as JSON via the Overview health endpoint; integrators scrape JSON, not C# types. |
-| `AuditLogDto` | **→ internal** in the sweep | JSON response type only. |
-| `SearchLogPayload` (nested in `TelemetryApiController`) | **→ internal** in the sweep | MVC model binding works against internal types in modern ASP.NET. |
+| `ITelemetryMetrics` | **→ internal** | One impl (`LocalTelemetrySink`), one consumer (Health endpoint, same assembly). Integrator-supplied `ITelemetryReader` doesn't need it. Muratori was right — interface theater. |
+| `PermissionMap` + nested `Snapshot` | **→ internal** | Razor compiles inside the assembly; no external consumer. |
+| `FeatureAccessChecker` | **→ internal** | Used only by addon controllers and `PermissionMap`. |
+| `StartupDiagnostics` + `Diagnostic` + `DiagnosticLevel` | **→ internal** | Consumed only as JSON via the Overview health endpoint; integrators scrape JSON, not C# types. |
+| `AuditLogDto` | **→ internal** | JSON response type only. |
+| `SearchLogPayload` (nested in `TelemetryApiController`) | **→ internal** | MVC model binding works against internal types in modern ASP.NET. |
+| `GraphSearchApiException`, `BulkLoadCapExceededException` | **→ internal** | Thrown and caught inside the addon; no SampleSite or test consumer catches by type. |
 
 ---
 
-## Scheduled for internalisation (the sweep PR)
+## Internalised in the sweep
 
-The follow-up PR demotes ~52 types to `internal`. `InternalsVisibleTo("GraphSearchtools.Tests")`
-is already declared, so the test project keeps its access. Razor views compile
-inside the addon assembly, so `@inject` / `@model` against internal types is fine.
+These were demoted to `internal` once `InternalControllerFeatureProvider` made
+internal controllers viable. `InternalsVisibleTo("GraphSearchtools.Tests")` is
+declared in `GraphSearchtools.csproj`, so the test project keeps full access.
+Razor views compile inside the addon assembly, so `@inject` / `@model` against
+internal types is fine.
 
 **By group:**
 
@@ -135,7 +149,7 @@ inside the addon assembly, so `@inject` / `@model` against internal types is fin
 | Internal-only helpers, validators, exceptions | ~9 | `TelemetryAbuseGuard`, `LanguageSiteEnumerator`, `CmsLocaleResolver`, `BulkLoadCapExceededException`, `PermissionMap` (+ `Snapshot`), `FeatureAccessChecker`, `StartupDiagnostics` (+ `Diagnostic`, `DiagnosticLevel`), `AuditLogDto` |
 | `Services/GraphModels.cs` records not used by SampleSite seeding | ~7 | Anything in `GraphModels.cs` outside the Tier-3 list above |
 
-Net: **public surface drops from ~113 → ~51 types** (≈55% reduction).
+Net: **public surface drops from ~113 → 45 types** (≈60% reduction).
 
 ---
 

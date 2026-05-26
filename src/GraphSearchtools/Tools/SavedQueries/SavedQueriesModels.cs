@@ -5,7 +5,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SavedQueries;
 // The user-facing Saved Queries surface (preset CRUD, runner page) was
 // dropped — Graph's GraphiQL covers ad-hoc query exploration far better.
 
-public sealed record RunnerRequest
+internal sealed record RunnerRequest
 {
     public string Query { get; init; } = string.Empty;
     public string? Locale { get; init; }
@@ -22,7 +22,7 @@ public sealed record RunnerRequest
     public int Limit { get; init; } = 25;
 }
 
-public sealed record RunnerHit(
+internal sealed record RunnerHit(
     string Name,
     string ContentType,
     string Language,
@@ -53,7 +53,7 @@ public sealed record RunnerHit(
     /// </summary>
     bool Pinned);
 
-public sealed record RunnerResult(
+internal sealed record RunnerResult(
     int TotalCount,
     long DurationMs,
     string GraphQuery,

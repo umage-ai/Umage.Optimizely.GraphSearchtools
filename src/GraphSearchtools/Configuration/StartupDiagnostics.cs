@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 /// will run but something is likely misconfigured, <see cref="Error"/>
 /// means a required surface will not work.
 /// </summary>
-public enum DiagnosticLevel
+internal enum DiagnosticLevel
 {
     Info,
     Warning,
@@ -19,7 +19,7 @@ public enum DiagnosticLevel
 /// log filters, dashboards. <see cref="Message"/> is the human-readable
 /// explanation including the suggested fix.
 /// </summary>
-public sealed record Diagnostic(DiagnosticLevel Level, string Code, string Message);
+internal sealed record Diagnostic(DiagnosticLevel Level, string Code, string Message);
 
 /// <summary>
 /// Pure evaluator that turns the addon's configuration + registry state +
@@ -27,7 +27,7 @@ public sealed record Diagnostic(DiagnosticLevel Level, string Code, string Messa
 /// Shared between the startup logger and the JSON health endpoint so both
 /// surfaces report identical findings.
 /// </summary>
-public static class StartupDiagnostics
+internal static class StartupDiagnostics
 {
     /// <summary>
     /// Computes diagnostics for the current addon state. Pure — no DI,

@@ -23,7 +23,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 /// count. Tenants with hundreds of collections will see a multi-second
 /// latency; the UI hides it behind a "Run audit" button.
 /// </remarks>
-public sealed class PinnedCoverageService
+internal sealed class PinnedCoverageService
 {
     /// <summary>
     /// Window the CTR / no-activity heuristics span. Matches the Search Logs

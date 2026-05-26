@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.PinnedCoverage;
 /// collections — the JS shows a loading state while the request is in flight.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class PinnedCoverageApiController : Controller
+internal class PinnedCoverageApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.PinnedCoverage);
 

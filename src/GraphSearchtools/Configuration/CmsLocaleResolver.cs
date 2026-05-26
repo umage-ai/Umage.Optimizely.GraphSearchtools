@@ -21,7 +21,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Configuration;
 /// "static list" and "derive from CMS" channels look identical to the
 /// view-model layer above it.
 /// </summary>
-public sealed class CmsLocaleResolver
+internal sealed class CmsLocaleResolver
 {
     private readonly ISiteDefinitionRepository _siteDefinitions;
     private readonly ILanguageBranchRepository _languageBranches;

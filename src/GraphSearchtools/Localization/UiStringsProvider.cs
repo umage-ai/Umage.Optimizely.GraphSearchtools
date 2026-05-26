@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Localization;
 /// Provides all JavaScript UI strings from the localization service,
 /// serialized to window.GST_STRINGS in the layout.
 /// </summary>
-public class UiStringsProvider(LocalizationService loc)
+internal class UiStringsProvider(LocalizationService loc)
 {
     private string S(string key) => loc.GetString($"/graphsearchtools/ui/{key}");
 

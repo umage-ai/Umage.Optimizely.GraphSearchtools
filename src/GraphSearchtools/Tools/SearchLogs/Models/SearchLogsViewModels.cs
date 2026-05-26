@@ -7,7 +7,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs.Models;
 /// phrase-level cards (top, zero-result, low-CTR). Decoupled from the reader
 /// type so the wire shape can evolve independently.
 /// </summary>
-public sealed record SearchLogPhraseRow
+internal sealed record SearchLogPhraseRow
 {
     [JsonPropertyName("phrase")]
     public string Phrase { get; init; } = string.Empty;
@@ -41,7 +41,7 @@ public sealed record SearchLogPhraseRow
 /// require the host to send them. The card now shows search vs click as
 /// distinct rows (<c>Kind</c>) and the click rank when present.
 /// </remarks>
-public sealed record SearchLogRawRow
+internal sealed record SearchLogRawRow
 {
     [JsonPropertyName("at")]
     public DateTime At { get; init; }

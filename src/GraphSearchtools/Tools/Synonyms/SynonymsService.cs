@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Synonyms;
 /// <summary>
 /// Thin orchestration around <see cref="IGraphAdminClient"/> for the synonyms tool.
 /// </summary>
-public sealed class SynonymsService
+internal sealed class SynonymsService
 {
     private readonly IGraphAdminClient _client;
 

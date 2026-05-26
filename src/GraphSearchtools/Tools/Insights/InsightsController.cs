@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 /// <see cref="InsightsApiController"/>.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class InsightsController : Controller
+internal class InsightsController : Controller
 {
     private readonly FeatureAccessChecker _accessChecker;
 

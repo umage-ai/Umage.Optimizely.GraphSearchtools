@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Channels;
 /// Reads the channel registry + edit log and shapes both into JSON-friendly
 /// view models for the Channels UI. No writes — Phase 2.5 v1 is read-only.
 /// </summary>
-public sealed class ChannelsService
+internal sealed class ChannelsService
 {
     private readonly ISearchChannelRegistry _registry;
     private readonly AuditLogService _audit;

@@ -13,7 +13,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 /// content-type allow-list is supplied per call by the calling tool service so
 /// vanilla CMS installs work out of the box without any configuration.
 /// </summary>
-public sealed class GraphAdminClient : IGraphAdminClient
+internal sealed class GraphAdminClient : IGraphAdminClient
 {
     private readonly HttpClient _httpClient;
     private readonly IGraphCredentialsResolver _credentials;

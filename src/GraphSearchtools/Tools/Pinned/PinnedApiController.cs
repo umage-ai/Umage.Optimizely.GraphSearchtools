@@ -23,7 +23,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Pinned;
 /// the key.
 /// </remarks>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class PinnedApiController : Controller
+internal class PinnedApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Pinned);
 

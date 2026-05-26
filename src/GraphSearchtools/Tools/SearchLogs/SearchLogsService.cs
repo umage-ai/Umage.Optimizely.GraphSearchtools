@@ -16,7 +16,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SearchLogs;
 /// All four list operations (top / zero-result / low-CTR / raw) flow through
 /// this single service to keep the windowing and clamping policy in one place.
 /// </summary>
-public sealed class SearchLogsService
+internal sealed class SearchLogsService
 {
     /// <summary>Default page size when the caller omits <c>take</c>.</summary>
     public const int DefaultTake = 50;

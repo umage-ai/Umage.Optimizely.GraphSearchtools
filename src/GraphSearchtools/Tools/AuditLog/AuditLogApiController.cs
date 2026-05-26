@@ -13,7 +13,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.AuditLog;
 /// kinds they care about via the <c>kind</c> CSV query param.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class AuditLogApiController : Controller
+internal class AuditLogApiController : Controller
 {
     private readonly AuditLogService _audit;
     private readonly FeatureAccessChecker _accessChecker;
@@ -71,7 +71,7 @@ public class AuditLogApiController : Controller
 }
 
 /// <summary>JSON-friendly projection of <see cref="AuditLogEntry"/>.</summary>
-public sealed record AuditLogDto
+internal sealed record AuditLogDto
 {
     public DateTime At { get; init; }
     public string Kind { get; init; } = string.Empty;

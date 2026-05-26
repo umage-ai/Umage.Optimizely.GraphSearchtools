@@ -14,7 +14,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.SynonymCoverage;
 /// in the UI rather than POSTs.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class SynonymCoverageApiController : Controller
+internal class SynonymCoverageApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.SynonymCoverage);
 

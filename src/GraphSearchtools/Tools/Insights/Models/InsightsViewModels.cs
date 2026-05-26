@@ -6,7 +6,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights.Models;
 /// <c>ZeroResultRate</c>, so a marketer sees both "popular" and "needs
 /// attention" signals on one row.
 /// </summary>
-public sealed class InsightsPhraseRow
+internal sealed class InsightsPhraseRow
 {
     public string Phrase { get; init; } = string.Empty;
     public long Count { get; init; }
@@ -27,7 +27,7 @@ public sealed class InsightsPhraseRow
 /// Zero-result phrase variant — same shape as a regular phrase row but with
 /// the count interpreted as "sessions returning zero hits".
 /// </summary>
-public sealed class InsightsZeroResultRow
+internal sealed class InsightsZeroResultRow
 {
     public string Phrase { get; init; } = string.Empty;
     public long Count { get; init; }
@@ -43,7 +43,7 @@ public sealed class InsightsZeroResultRow
 /// (which scopes the lane tables); these KPIs are always 30-day so the
 /// sparkline has enough resolution to be useful.
 /// </summary>
-public sealed class InsightsSearchKpis
+internal sealed class InsightsSearchKpis
 {
     /// <summary>Total search hits across the window.</summary>
     public long TotalSearches { get; init; }

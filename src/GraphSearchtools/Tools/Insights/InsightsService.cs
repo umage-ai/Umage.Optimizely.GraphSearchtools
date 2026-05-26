@@ -10,7 +10,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 /// <see cref="SearchLogsService"/>. Read-only; everything here is a projection
 /// over the search-log telemetry the host SDK posts.
 /// </summary>
-public sealed class InsightsService
+internal sealed class InsightsService
 {
     /// <summary>
     /// Default window for all three lanes (7 days). The JS toggle exposes

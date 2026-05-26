@@ -13,7 +13,7 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Insights;
 /// <c>channelKey</c> / <c>locale</c> are optional filters.
 /// </summary>
 [Authorize(Policy = "umageai:graphsearchtools")]
-public class InsightsApiController : Controller
+internal class InsightsApiController : Controller
 {
     private const string FeatureName = nameof(FeatureToggles.Insights);
     private const int DefaultTake = 25;
