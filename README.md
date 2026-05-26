@@ -1,5 +1,7 @@
 # GraphSearchtools
 
+[![GitHub release](https://img.shields.io/github/v/release/umage-ai/Umage.Optimizely.GraphSearchtools)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/releases)
+[![Build](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/actions/workflows/publish.yml/badge.svg)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/actions/workflows/publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Marketer-facing admin tooling for **Optimizely Graph** site-search on Optimizely CMS 12 and CMS 13. Pinned-result curation, synonym management, a per-channel try-it playground, and click-through / zero-result insights — all integrated into the CMS shell. Distributed as the NuGet package `UmageAI.Optimizely.GraphSearchTools`.
