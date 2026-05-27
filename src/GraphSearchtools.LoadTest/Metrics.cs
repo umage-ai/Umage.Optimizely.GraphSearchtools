@@ -68,7 +68,7 @@ internal sealed class Metrics
         var totalUs = Volatile.Read(ref _searchTotalUs);
         var meanMs = samples == 0 ? 0 : totalUs / 1000.0 / samples;
         var snap = TakeSnapshot();
-        var achievedRps = elapsed.TotalSeconds == 0 ? 0 : snap.Total / elapsed.TotalSeconds;
+        var achievedRps = elapsed.Ticks == 0 ? 0 : snap.Total / elapsed.TotalSeconds;
 
         Console.WriteLine($"Sent:    {snap.Total:N0} search events in {elapsed.TotalSeconds:F1}s = {achievedRps:F0} rps achieved (target {targetRps:N0})");
         Console.WriteLine();

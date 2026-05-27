@@ -56,7 +56,7 @@ public static class HtmlHelpers
         }
 
         var buffer = new StringBuilder();
-        var writer = new StringWriter(buffer);
+        using var writer = new StringWriter(buffer);
         foreach (var menuItem in menuItems)
         {
             itemTemplate(menuItem).WriteTo(writer, HtmlEncoder.Default);

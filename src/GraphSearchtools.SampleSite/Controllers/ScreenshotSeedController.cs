@@ -502,7 +502,7 @@ public class ScreenshotSeedController : Controller
             foreach (var p in phrases)
             {
                 var weight = p.Weight;
-                if (p.Weight == 0.0 && trendBoost > 0)
+                if (p.Weight <= 0 && trendBoost > 0)
                 {
                     weight = trendBoost;
                 }

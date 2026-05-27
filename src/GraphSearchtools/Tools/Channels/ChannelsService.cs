@@ -93,7 +93,7 @@ internal sealed class ChannelsService
         {
             try
             {
-                var fullPath = Path.Combine(_hostEnvironment.ContentRootPath, channel.GraphQLDocumentPath);
+                var fullPath = Path.Join(_hostEnvironment.ContentRootPath, channel.GraphQLDocumentPath);
                 graphqlExists = File.Exists(fullPath);
                 if (graphqlExists)
                 {
@@ -169,7 +169,7 @@ internal sealed class ChannelsService
     {
         try
         {
-            var full = Path.Combine(_hostEnvironment.ContentRootPath, relativePath);
+            var full = Path.Join(_hostEnvironment.ContentRootPath, relativePath);
             return File.Exists(full);
         }
         catch (Exception)
