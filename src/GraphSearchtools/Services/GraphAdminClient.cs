@@ -15,20 +15,20 @@ namespace UmageAI.Optimizely.GraphSearchTools.Services;
 /// </summary>
 internal sealed class GraphAdminClient : IGraphAdminClient
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     private readonly HttpClient _httpClient;
     private readonly IGraphCredentialsResolver _credentials;
-    private readonly JsonSerializerOptions _serializerOptions;
 
     public GraphAdminClient(HttpClient httpClient, IGraphCredentialsResolver credentials)
     {
         _httpClient = httpClient;
         _credentials = credentials;
-        _serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
     }
 
     public async Task<IReadOnlyList<PinnedCollectionResult>> GetCollectionsAsync(CancellationToken cancellationToken)
@@ -250,7 +250,14 @@ internal sealed class GraphAdminClient : IGraphAdminClient
 
         var allowList = NormalizeContentTypes(contentTypes);
 
-#if OPTIMIZELY_CMS13
+        // Optimizely Graph's _metadata.key stores ContentGuid in "N" form (no
+        // hyphens, lowercase). Pinned items are persisted in canonical "D" form,
+        // so an unconverted `in:` clause never matches. The V2 schema (_Content /
+        // _metadata) is available on every modern Graph tenant regardless of
+        // CMS version, so we issue the same query on both TFMs.
+        var keyForms = guids
+            .Select(g => Guid.TryParse(g, out var parsed) ? parsed.ToString("N") : g)
+            .ToArray();
         var graphqlRequest = new
         {
             query = @"
@@ -271,30 +278,8 @@ internal sealed class GraphAdminClient : IGraphAdminClient
                         }
                     }
                 }",
-            variables = new { guids }
+            variables = new { guids = keyForms }
         };
-#else
-        var graphqlRequest = new
-        {
-            query = @"
-                query ResolveGuids($guids: [String!]!) {
-                    Content(
-                        limit: 100
-                        where: {
-                            ContentLink: { GuidValue: { in: $guids } }
-                        }
-                    ) {
-                        items {
-                            Name
-                            ContentType
-                            ContentLink { GuidValue }
-                            Language { Name }
-                        }
-                    }
-                }",
-            variables = new { guids }
-        };
-#endif
 
         return await ExecuteContentQueryAsync(creds, graphqlRequest, allowList, deduplicate: true, cancellationToken);
     }
@@ -317,7 +302,7 @@ internal sealed class GraphAdminClient : IGraphAdminClient
                 }
             }";
 
-        var json = JsonSerializer.Serialize(new { query = introspection }, _serializerOptions);
+        var json = JsonSerializer.Serialize(new { query = introspection }, SerializerOptions);
         using var request = new HttpRequestMessage(HttpMethod.Post, BuildQueryEndpoint(creds))
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -371,7 +356,7 @@ internal sealed class GraphAdminClient : IGraphAdminClient
         bool deduplicate,
         CancellationToken cancellationToken)
     {
-        var json = JsonSerializer.Serialize(graphqlRequest, _serializerOptions);
+        var json = JsonSerializer.Serialize(graphqlRequest, SerializerOptions);
         using var request = new HttpRequestMessage(HttpMethod.Post, BuildQueryEndpoint(creds))
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -418,6 +403,13 @@ internal sealed class GraphAdminClient : IGraphAdminClient
                 (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "key") : null)
                 ?? GetNestedString(item, "ContentLink", "GuidValue")
                 ?? string.Empty;
+            // CMS 13's _metadata.key is the GUID without hyphens; CMS 12 returns
+            // canonical "D" form. Normalise so callers and the JS-side targetKey
+            // index (hyphenated lowercase) can do a straight equality lookup.
+            if (Guid.TryParse(guidValue, out var parsed))
+            {
+                guidValue = parsed.ToString("D");
+            }
             if (seen != null && !seen.Add(guidValue)) continue;
 
             var name =
@@ -519,7 +511,7 @@ internal sealed class GraphAdminClient : IGraphAdminClient
     private HttpRequestMessage CreateJsonRequest(HttpMethod method, string path, object payload)
     {
         var request = CreateRequest(method, path);
-        var json = JsonSerializer.Serialize(payload, _serializerOptions);
+        var json = JsonSerializer.Serialize(payload, SerializerOptions);
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         return request;
     }
@@ -536,7 +528,7 @@ internal sealed class GraphAdminClient : IGraphAdminClient
         {
             return default;
         }
-        return JsonSerializer.Deserialize<T>(content, _serializerOptions);
+        return JsonSerializer.Deserialize<T>(content, SerializerOptions);
     }
 
     private async Task SendNoContentAsync(HttpRequestMessage request, CancellationToken cancellationToken)

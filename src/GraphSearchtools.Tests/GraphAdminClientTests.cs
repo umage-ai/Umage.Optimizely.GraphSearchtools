@@ -155,6 +155,55 @@ public class GraphAdminClientTests
         locales.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task ResolveByGuidsAsync_NormalisesResponseKeyToCanonicalGuid()
+    {
+        // Graph's `_metadata.key` is the GUID in "N" form (no hyphens, lowercase).
+        // Pinned items are stored in canonical "D" form, so the API must hand back
+        // canonical GUIDs or the JS-side target-name lookup misses every row.
+        const string responseBody = "{\"data\":{\"_Content\":{\"items\":[{\"_metadata\":{\"key\":\"fdac9c5f86b64223b4a6397fe72483f9\",\"displayName\":\"Alloy Plan\",\"locale\":\"en\",\"types\":[\"ProductPage\",\"_Page\"]}}]}}}";
+
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(responseBody, Encoding.UTF8, "application/json")
+        });
+        var client = new GraphAdminClient(new HttpClient(handler), QueryCredentialsResolver());
+
+        var hits = await client.ResolveByGuidsAsync(
+            new[] { "fdac9c5f-86b6-4223-b4a6-397fe72483f9" },
+            Array.Empty<string>(),
+            CancellationToken.None);
+
+        hits.Should().ContainSingle().Which.ContentGuid.Should().Be("fdac9c5f-86b6-4223-b4a6-397fe72483f9");
+    }
+
+    [Fact]
+    public async Task ResolveByGuidsAsync_SendsHyphenlessKeysInQueryVariables()
+    {
+        // Optimizely Graph's _metadata.key filter only matches when the GUID is
+        // in "N" form. Hyphenated inputs must be normalised before being placed
+        // in $guids or every lookup returns zero hits.
+        string? body = null;
+        var handler = new StubHttpMessageHandler(async request =>
+        {
+            body = request.Content == null ? null : await request.Content.ReadAsStringAsync();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"data\":{\"_Content\":{\"items\":[]}}}", Encoding.UTF8, "application/json")
+            };
+        });
+        var client = new GraphAdminClient(new HttpClient(handler), QueryCredentialsResolver());
+
+        await client.ResolveByGuidsAsync(
+            new[] { "fdac9c5f-86b6-4223-b4a6-397fe72483f9" },
+            Array.Empty<string>(),
+            CancellationToken.None);
+
+        body.Should().NotBeNull();
+        body!.Should().Contain("fdac9c5f86b64223b4a6397fe72483f9");
+        body.Should().NotContain("fdac9c5f-86b6-4223-b4a6-397fe72483f9");
+    }
+
     private static IGraphCredentialsResolver CredentialsResolver()
         => new StaticCredentialsResolver(new GraphCredentials(
             "https://cg.optimizely.com",
