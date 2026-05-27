@@ -87,7 +87,7 @@ internal sealed class BucketColumnMap
                 Clicks3       = Get(nameof(SearchLogBucket.Clicks3)),
             };
         }
-        catch
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             // Either DDS hasn't created the store yet (fresh install pre-
             // first-write), the connection string is unavailable, or the

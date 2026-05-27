@@ -63,7 +63,7 @@ internal sealed class TelemetryAdminApiController : Controller
             var rows = await _reader.RecentRawAsync(query, cancellationToken);
             return Ok(rows);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Telemetry RecentRawAsync failed.");
             return Problem(title: "Telemetry read failed.");

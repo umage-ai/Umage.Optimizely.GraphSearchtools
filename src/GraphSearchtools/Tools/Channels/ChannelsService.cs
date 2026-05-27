@@ -100,7 +100,7 @@ internal sealed class ChannelsService
                     content = File.ReadAllText(fullPath);
                 }
             }
-            catch
+            catch (Exception)
             {
                 graphqlExists = false;
                 content = null;
@@ -172,7 +172,7 @@ internal sealed class ChannelsService
             var full = Path.Combine(_hostEnvironment.ContentRootPath, relativePath);
             return File.Exists(full);
         }
-        catch
+        catch (Exception)
         {
             return false;
         }
@@ -183,7 +183,7 @@ internal sealed class ChannelsService
         if (channel.PinnedKeyForLocale == null) return null;
         var locale = channel.Locales?.FirstOrDefault() ?? "en";
         try { return channel.PinnedKeyForLocale(locale); }
-        catch { return null; }
+        catch (Exception) { return null; }
     }
 
     /// <summary>
@@ -203,7 +203,7 @@ internal sealed class ChannelsService
             // shows "site-{locale}" rather than "site-__locale__".
             return b.Replace("__locale__", "{locale}", StringComparison.Ordinal);
         }
-        catch
+        catch (Exception)
         {
             return ResolvePinnedKeySample(channel);
         }
@@ -228,7 +228,7 @@ internal sealed class ChannelsService
             // and the formula returns one value per locale, it's shared.
             return !string.IsNullOrEmpty(first);
         }
-        catch
+        catch (Exception)
         {
             return false;
         }
@@ -340,7 +340,7 @@ internal sealed class ChannelsService
                         ?.Id;
                 }
             }
-            catch
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
                 // Best-effort — fall through with no pin.
                 collectionId = null;
@@ -413,7 +413,7 @@ internal sealed class ChannelsService
                     result = result with { Hits = marked };
                 }
             }
-            catch
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
                 // Pinned-marking is decorative; never let it break the preview.
             }

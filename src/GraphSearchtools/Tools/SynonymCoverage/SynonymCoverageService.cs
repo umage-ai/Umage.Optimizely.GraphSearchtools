@@ -148,7 +148,7 @@ internal sealed class SynonymCoverageService
                         languages.Add(site.LanguageCode);
                 }
             }
-            catch
+            catch (Exception)
             {
                 // Enumerator depends on Optimizely runtime services; in a host-less
                 // environment it'll throw. Fall back to Global-only.
@@ -165,7 +165,7 @@ internal sealed class SynonymCoverageService
                     new Services.SynonymsQuery { LanguageRouting = language },
                     cancellationToken);
             }
-            catch
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
                 // Missing slot or transient error — skip this language; the
                 // rest of the analyzer still runs on whatever did load.
@@ -254,7 +254,7 @@ internal sealed class SynonymCoverageService
             var unwrapped = System.Text.Json.JsonSerializer.Deserialize<string>(content);
             return unwrapped ?? content;
         }
-        catch
+        catch (Exception)
         {
             return content;
         }

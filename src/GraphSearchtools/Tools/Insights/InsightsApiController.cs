@@ -50,7 +50,7 @@ internal class InsightsApiController : Controller
             var rows = await _service.TopPhrasesAsync(days, take ?? DefaultTake, channelKey, locale, date, cancellationToken);
             return Ok(rows);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -74,7 +74,7 @@ internal class InsightsApiController : Controller
             var rows = await _service.ZeroResultPhrasesAsync(days, take ?? DefaultTake, channelKey, locale, date, cancellationToken);
             return Ok(rows);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -98,7 +98,7 @@ internal class InsightsApiController : Controller
         {
             return Ok(await _service.SearchKpisAsync(channelKey, cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -121,7 +121,7 @@ internal class InsightsApiController : Controller
             var rows = await _service.LowCtrPhrasesAsync(days, take ?? DefaultTake, channelKey, locale, cancellationToken);
             return Ok(rows);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }

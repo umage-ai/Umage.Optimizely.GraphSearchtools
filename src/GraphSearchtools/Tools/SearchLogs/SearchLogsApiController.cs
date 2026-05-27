@@ -52,7 +52,7 @@ internal class SearchLogsApiController : Controller
         {
             return Ok(await _service.TopPhrasesAsync(since, take, channelKey, locale, until, cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -70,7 +70,7 @@ internal class SearchLogsApiController : Controller
         {
             return Ok(await _service.ZeroResultPhrasesAsync(since, take, channelKey, locale, until, cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -89,7 +89,7 @@ internal class SearchLogsApiController : Controller
         {
             return Ok(await _service.LowCtrPhrasesAsync(since, take, channelKey, locale, until, cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -109,7 +109,7 @@ internal class SearchLogsApiController : Controller
         {
             return Ok(await _service.RecentEntriesAsync(since, take, cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }

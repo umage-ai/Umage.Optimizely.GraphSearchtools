@@ -41,7 +41,7 @@ internal class SynonymCoverageApiController : Controller
             var result = await _service.AnalyzeAsync(cancellationToken);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }

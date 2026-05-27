@@ -443,6 +443,6 @@ query SavedQueriesRunner($q: String!, $limit: Int!, $locale: [Locales!]) {{
     private static string? PrettyJson(JsonElement element)
     {
         try { return JsonSerializer.Serialize(element, PrettyOptions); }
-        catch { return null; }
+        catch (Exception) { return null; }
     }
 }

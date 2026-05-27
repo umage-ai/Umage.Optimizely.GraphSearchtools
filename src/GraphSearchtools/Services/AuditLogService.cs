@@ -41,7 +41,7 @@ internal class AuditLogService
         {
             if (e.At == default) e.At = DateTime.UtcNow;
             try { store.Save(e); }
-            catch { /* one bad row mustn't break the rest */ }
+            catch (Exception) { /* one bad row mustn't break the rest */ }
         }
     }
 
@@ -95,7 +95,7 @@ internal class AuditLogService
             return DynamicDataStoreFactory.Instance?.GetStore(typeof(AuditLogEntry))
                 ?? DynamicDataStoreFactory.Instance?.CreateStore(typeof(AuditLogEntry));
         }
-        catch
+        catch (Exception)
         {
             return null;
         }
