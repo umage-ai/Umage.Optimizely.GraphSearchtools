@@ -1,5 +1,11 @@
 # Release Notes
 
+## v0.2.0
+
+### Changes
+
+- **Insights window set unified across the top-level dashboard and the per-channel Insights tab.** Both surfaces now expose **24h / 7d / 30d** with **7d** as the default. The top-level Insights toolbar gains the **24h** option; the Channel > Insights segmented control drops **1h** and its default moves from 24h to 7d.
+
 ## v0.1.1
 
 ### Fixes

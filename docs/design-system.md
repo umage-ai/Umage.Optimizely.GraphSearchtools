@@ -431,16 +431,15 @@ revealing a different panel. Visually a single rounded pill split into
 segments — the active segment fills with primary blue.
 
 **Use when** a single surface needs a small set of mutually-exclusive
-states (window pickers `[1h | 24h | 7d | 30d]`, sort modes, view density).
+states (window pickers `[24h | 7d | 30d]`, sort modes, view density).
 **Don't use** to swap panels — use **Tabs** above.
 
 ### Skeleton
 
 ```html
 <div class="gst-segmented" role="group" aria-label="Time window">
-    <button type="button" class="gst-segmented__btn" data-window="1h">1h</button>
-    <button type="button" class="gst-segmented__btn is-active" data-window="24h">24h</button>
-    <button type="button" class="gst-segmented__btn" data-window="7d">7d</button>
+    <button type="button" class="gst-segmented__btn" data-window="24h">24h</button>
+    <button type="button" class="gst-segmented__btn is-active" data-window="7d">7d</button>
     <button type="button" class="gst-segmented__btn" data-window="30d">30d</button>
 </div>
 ```

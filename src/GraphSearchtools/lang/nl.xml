@@ -101,6 +101,7 @@
         <insights>
           <title>Insights</title>
           <description>What people are searching for and how your tuning is keeping up. Top phrases, zero-result phrases, synonym coverage, and recent edits — across every channel.</description>
+          <window_24h>Last 24h</window_24h>
           <window_7d>Last 7d</window_7d>
           <window_30d>Last 30d</window_30d>
           <top_title>Top phrases</top_title>

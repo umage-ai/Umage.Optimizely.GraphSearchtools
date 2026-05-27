@@ -806,7 +806,7 @@
         // Time-window pills map to a since-millis offset. The ISO string is
         // recomputed at fetch time so the window is always anchored to "now"
         // rather than going stale across long-lived sessions.
-        var WINDOWS = { '1h': 3600e3, '24h': 86400e3, '7d': 7 * 86400e3, '30d': 30 * 86400e3 };
+        var WINDOWS = { '24h': 86400e3, '7d': 7 * 86400e3, '30d': 30 * 86400e3 };
 
         // Lane-local state. Each lane starts at INITIAL_TAKE rows and grows
         // by SHOW_MORE_STEP per "show more" click. Resets back to INITIAL_TAKE
@@ -823,7 +823,7 @@
         };
 
         var state = {
-            window: '24h',
+            window: '7d',
             inflight: null,
             takes: { top: INITIAL_TAKE, zero: INITIAL_TAKE, lowctr: INITIAL_TAKE },
             // When set (UTC midnight), overrides the window pill — the
@@ -855,7 +855,7 @@
         }
 
         function activeWindowMs() {
-            return WINDOWS[state.window] || WINDOWS['24h'];
+            return WINDOWS[state.window] || WINDOWS['7d'];
         }
 
         function setAlert(msg) {
@@ -872,7 +872,7 @@
                 if (pill.classList.contains('is-active') && !state.dateFilter) return;
                 pillEls.forEach(function (p) { p.classList.remove('is-active'); });
                 pill.classList.add('is-active');
-                state.window = pill.dataset.window || '24h';
+                state.window = pill.dataset.window || '7d';
                 clearDateFilter(/* silent: */ true);
                 resetTakes();
                 fetchAll();
