@@ -1,0 +1,54 @@
+  name: CI
+
+  on:
+    pull_request:
+      branches: [main]
+    push:
+      branches: [main]
+
+  # Two pushes in quick succession on the same PR — only build the latest.
+  concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+  permissions:
+    contents: read
+
+  jobs:
+    build-and-test:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Setup .NET 8
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: '8.0.x'
+
+        - name: Setup .NET 10
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: '10.0.x'
+
+        - name: Restore
+          run: |
+            dotnet restore src/GraphSearchtools/GraphSearchtools.csproj
+            dotnet restore src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj
+
+        - name: Build
+          run: dotnet build src/GraphSearchtools/GraphSearchtools.csproj -c Release --no-restore
+
+        - name: Test
+          # No --no-build — the flag silently runs stale test DLLs and can mask
+          # signature-level breakage. Test project multi-targets net8.0 and
+          # net10.0, so this single command covers both TFMs.
+          run: dotnet test src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj -c Release --logger "trx;LogFileName=test-results.trx"
+
+        - name: Upload test results
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: test-results
+            path: src/GraphSearchtools.Tests/TestResults/*.trx
