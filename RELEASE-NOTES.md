@@ -1,5 +1,11 @@
 # Release Notes
 
+## v0.1.1
+
+### Fixes
+
+- **Pinned target names now resolve correctly on both CMS 12 and CMS 13.** The pinned-target name resolver was returning "Content not in index" for every entry on CMS 13 (Graph stores `_metadata.key` in 32-char "N" form while pinned targets are persisted as canonical hyphenated GUIDs, so the `in:` filter never matched) and 400-ing on CMS 12 against modern V2 Graph tenants. `ResolveByGuidsAsync` now normalises GUIDs to "N" form on send and back to canonical "D" form on parse, and uses the V2 `_Content` schema on both CMS versions.
+
 ## v0.1.0
 
 First public release of GraphSearchtools for Optimizely CMS 12 and CMS 13.

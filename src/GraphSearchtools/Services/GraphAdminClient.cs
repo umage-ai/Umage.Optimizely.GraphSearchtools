@@ -250,7 +250,14 @@ internal sealed class GraphAdminClient : IGraphAdminClient
 
         var allowList = NormalizeContentTypes(contentTypes);
 
-#if OPTIMIZELY_CMS13
+        // Optimizely Graph's _metadata.key stores ContentGuid in "N" form (no
+        // hyphens, lowercase). Pinned items are persisted in canonical "D" form,
+        // so an unconverted `in:` clause never matches. The V2 schema (_Content /
+        // _metadata) is available on every modern Graph tenant regardless of
+        // CMS version, so we issue the same query on both TFMs.
+        var keyForms = guids
+            .Select(g => Guid.TryParse(g, out var parsed) ? parsed.ToString("N") : g)
+            .ToArray();
         var graphqlRequest = new
         {
             query = @"
@@ -271,30 +278,8 @@ internal sealed class GraphAdminClient : IGraphAdminClient
                         }
                     }
                 }",
-            variables = new { guids }
+            variables = new { guids = keyForms }
         };
-#else
-        var graphqlRequest = new
-        {
-            query = @"
-                query ResolveGuids($guids: [String!]!) {
-                    Content(
-                        limit: 100
-                        where: {
-                            ContentLink: { GuidValue: { in: $guids } }
-                        }
-                    ) {
-                        items {
-                            Name
-                            ContentType
-                            ContentLink { GuidValue }
-                            Language { Name }
-                        }
-                    }
-                }",
-            variables = new { guids }
-        };
-#endif
 
         return await ExecuteContentQueryAsync(creds, graphqlRequest, allowList, deduplicate: true, cancellationToken);
     }
@@ -418,6 +403,13 @@ internal sealed class GraphAdminClient : IGraphAdminClient
                 (meta.ValueKind == JsonValueKind.Object ? GetString(meta, "key") : null)
                 ?? GetNestedString(item, "ContentLink", "GuidValue")
                 ?? string.Empty;
+            // CMS 13's _metadata.key is the GUID without hyphens; CMS 12 returns
+            // canonical "D" form. Normalise so callers and the JS-side targetKey
+            // index (hyphenated lowercase) can do a straight equality lookup.
+            if (Guid.TryParse(guidValue, out var parsed))
+            {
+                guidValue = parsed.ToString("D");
+            }
             if (seen != null && !seen.Add(guidValue)) continue;
 
             var name =
