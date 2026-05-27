@@ -460,16 +460,11 @@ internal sealed class GraphAdminClient : IGraphAdminClient
             return "Content";
         }
 
-        foreach (var t in types.EnumerateArray())
-        {
-            var typeName = t.GetString();
-            if (string.IsNullOrWhiteSpace(typeName)) continue;
-            if (allowList.Count == 0 || allowList.Contains(typeName, StringComparer.OrdinalIgnoreCase))
-            {
-                return typeName!;
-            }
-        }
-        return "Content";
+        return types.EnumerateArray()
+            .Select(t => t.GetString())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .FirstOrDefault(name => allowList.Count == 0 || allowList.Contains(name!, StringComparer.OrdinalIgnoreCase))
+            ?? "Content";
     }
 
     private static string? GetNestedString(JsonElement el, string outer, string inner)
