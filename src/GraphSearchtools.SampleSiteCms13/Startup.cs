@@ -17,7 +17,7 @@ public class Startup(IWebHostEnvironment webHostingEnvironment)
     {
         if (webHostingEnvironment.IsDevelopment())
         {
-            AppDomain.CurrentDomain.SetData("DataDirectory", Path.Combine(webHostingEnvironment.ContentRootPath, "App_Data"));
+            AppDomain.CurrentDomain.SetData("DataDirectory", Path.Join(webHostingEnvironment.ContentRootPath, "App_Data"));
 
             services.Configure<SchedulerOptions>(options => options.Enabled = false);
         }
