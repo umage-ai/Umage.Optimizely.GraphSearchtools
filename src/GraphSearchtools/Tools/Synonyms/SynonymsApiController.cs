@@ -62,7 +62,7 @@ internal class SynonymsApiController : Controller
             // No synonym set for this scope — return empty.
             return Ok(new SynonymsResponse { Content = string.Empty });
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -93,7 +93,7 @@ internal class SynonymsApiController : Controller
             AppendSynonymDiff(previous, request.Content ?? string.Empty, query);
             return NoContent();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -126,7 +126,7 @@ internal class SynonymsApiController : Controller
             AppendSynonymDiff(previous, string.Empty, query);
             return NoContent();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -141,7 +141,7 @@ internal class SynonymsApiController : Controller
     private async Task<string> SafeGetAsync(SynonymsQuery query, CancellationToken cancellationToken)
     {
         try { return await _service.GetAsync(query, cancellationToken) ?? string.Empty; }
-        catch { return string.Empty; }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested) { return string.Empty; }
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ internal class SynonymsApiController : Controller
         if (raw.Length >= 2 && raw[0] == '"' && raw[^1] == '"')
         {
             try { raw = System.Text.Json.JsonSerializer.Deserialize<string>(raw) ?? raw; }
-            catch { /* leave as-is */ }
+            catch (Exception) { /* leave as-is */ }
         }
         return raw.Split('\n')
             .Select(l => l.Trim())

@@ -78,7 +78,7 @@ public class ScreenshotSeedController : Controller
             await SeedSynonymsAsync(report, cancellationToken);
             SeedTelemetry(report);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogError(ex, "Screenshot seed failed.");
             report.Error = ex.Message;
@@ -125,7 +125,7 @@ public class ScreenshotSeedController : Controller
                 await _graph.DeleteSynonymsAsync(new SynonymsQuery { LanguageRouting = lang }, ct);
                 report.SynonymSlotsCleared++;
             }
-            catch
+            catch (Exception) when (!ct.IsCancellationRequested)
             {
                 // Slot may not exist yet — DELETE of an absent slot is fine.
             }
@@ -164,7 +164,7 @@ public class ScreenshotSeedController : Controller
         if (depth > maxDepth || sink.Count >= 60) return;
         IEnumerable<PageData> children;
         try { children = _contentLoader.GetChildren<PageData>(parent); }
-        catch { return; }
+        catch (Exception) { return; }
 
         foreach (var child in children)
         {

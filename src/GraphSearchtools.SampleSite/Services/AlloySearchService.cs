@@ -189,7 +189,7 @@ public sealed class AlloySearchService
             });
             return ordered.Take(clamped).ToList();
         }
-        catch
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             // The autocomplete dropdown is best-effort; never let a Graph
             // hiccup block typing in the search bar.
@@ -302,7 +302,7 @@ public sealed class AlloySearchService
                 }
             }
         }
-        catch
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             // Pinning is a best-effort enhancement; never let a failed admin
             // call break the search itself.

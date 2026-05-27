@@ -113,7 +113,7 @@ internal class ChannelsApiController : Controller
                 Rows = rows
             });
         }
-        catch (Exception ex) { return Handle(ex); }
+        catch (Exception ex) when (ex is not OperationCanceledException) { return Handle(ex); }
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ internal class ChannelsApiController : Controller
             if (result == null) return NotFound();
             return Ok(result);
         }
-        catch (Exception ex) { return Handle(ex); }
+        catch (Exception ex) when (ex is not OperationCanceledException) { return Handle(ex); }
     }
 
     private bool HasAccess()

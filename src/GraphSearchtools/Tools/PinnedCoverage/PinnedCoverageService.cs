@@ -93,7 +93,7 @@ internal sealed class PinnedCoverageService
                     pairs.Add((col, item));
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // One bad collection shouldn't break the whole audit; log and
                 // skip. The audit's value is the surfaced issue list, not
@@ -258,7 +258,7 @@ internal sealed class PinnedCoverageService
             {
                 string? key;
                 try { key = channel.PinnedKeyForLocale(locale); }
-                catch { key = null; }
+                catch (Exception) { key = null; }
                 if (string.IsNullOrEmpty(key)) continue;
                 // First-write-wins: if two channels share a key, the earlier
                 // registration takes precedence. The UI exposes the conflict

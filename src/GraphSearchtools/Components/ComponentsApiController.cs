@@ -72,7 +72,7 @@ internal class ComponentsApiController : Controller
                 }
             }
         }
-        catch
+        catch (Exception)
         {
             // Fallback: return empty on error
         }
@@ -116,7 +116,7 @@ internal class ComponentsApiController : Controller
                 new LoaderOptions { LanguageLoaderOption.FallbackWithMaster() })
                 .Any();
         }
-        catch
+        catch (Exception)
         {
             hasChildren = false;
         }

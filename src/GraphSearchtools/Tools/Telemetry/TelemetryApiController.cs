@@ -80,7 +80,7 @@ internal sealed class TelemetryApiController : ControllerBase
         {
             return StatusCode(StatusCodes.Status413PayloadTooLarge);
         }
-        catch (Exception)
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             // Bad JSON / wrong shape — don't echo details; the host SDK
             // shouldn't depend on error bodies.

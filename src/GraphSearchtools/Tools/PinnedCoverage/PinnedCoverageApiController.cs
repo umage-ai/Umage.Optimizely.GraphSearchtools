@@ -40,7 +40,7 @@ internal class PinnedCoverageApiController : Controller
         {
             return Ok(await _service.RunAuditAsync(cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }

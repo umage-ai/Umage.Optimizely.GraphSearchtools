@@ -65,7 +65,7 @@ internal class PinnedApiController : Controller
         {
             return Ok(await _service.GetCollectionsAsync(cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -167,7 +167,7 @@ internal class PinnedApiController : Controller
                 cancellationToken);
             return Ok(new { collectionId = created.Id, key = created.Key, created = true });
         }
-        catch (Exception ex) { return HandleError(ex); }
+        catch (Exception ex) when (ex is not OperationCanceledException) { return HandleError(ex); }
     }
 
     private IEnumerable<(string CollectionKey, string ChannelKey, string Locale)> EnumerateChannelMatches()
@@ -185,7 +185,7 @@ internal class PinnedApiController : Controller
             {
                 string? key;
                 try { key = channel.PinnedKeyForLocale(locale); }
-                catch { key = null; }
+                catch (Exception) { key = null; }
                 if (string.IsNullOrEmpty(key)) continue;
                 yield return (key!, channel.Key, locale);
             }
@@ -204,7 +204,7 @@ internal class PinnedApiController : Controller
             AppendCollectionAudit(action: "Created", collectionKey: result?.Key ?? payload.Key);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -223,7 +223,7 @@ internal class PinnedApiController : Controller
             AppendCollectionAudit(action: "Updated", collectionKey: result?.Key ?? payload.Key ?? id);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -251,7 +251,7 @@ internal class PinnedApiController : Controller
             AppendCollectionAudit(action: "Deleted", collectionKey: string.IsNullOrEmpty(collectionKey) ? id : collectionKey);
             return NoContent();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -270,7 +270,7 @@ internal class PinnedApiController : Controller
         {
             return Ok(await _service.GetItemsAsync(collectionId, cancellationToken, offset));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -291,7 +291,7 @@ internal class PinnedApiController : Controller
             var items = await _service.LoadAllItemsAsync(collectionId, cancellationToken);
             return Ok(new { items, total = items.Count });
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -322,7 +322,7 @@ internal class PinnedApiController : Controller
             AppendAudit(scope, action: "Created", subject: payload.Phrases, collectionKey: collectionKey);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -361,7 +361,7 @@ internal class PinnedApiController : Controller
             AppendAudit(scope, action: "Updated", subject: payload.Phrases, collectionKey: collectionKey);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -396,7 +396,7 @@ internal class PinnedApiController : Controller
             AppendAudit(scope, action: "Deleted", subject: phrases ?? id, collectionKey: collectionKey);
             return NoContent();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return HandleError(ex);
         }
@@ -474,7 +474,7 @@ internal class PinnedApiController : Controller
             return collections.FirstOrDefault(c => string.Equals(c.Id, collectionId, StringComparison.OrdinalIgnoreCase))?.Key
                 ?? string.Empty;
         }
-        catch
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             return string.Empty;
         }

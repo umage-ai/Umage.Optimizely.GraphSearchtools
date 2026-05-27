@@ -69,7 +69,7 @@ public class SearchPageController : PageControllerBase<SearchPage>
                 model.ContentTypeFacet = result.ContentTypeFacet;
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Misconfigured tenants and gateway hiccups land here. The page
             // shows a banner instead of yelling at end users with a stack
