@@ -608,16 +608,12 @@ public sealed class AlloySearchService
     private static IReadOnlyList<string> NormaliseSelection(IEnumerable<string>? selection, IReadOnlyList<string>? whitelist = null)
     {
         if (selection == null) return Array.Empty<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        var ordered = new List<string>();
-        foreach (var raw in selection)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) continue;
-            var trimmed = raw.Trim();
-            if (whitelist != null && !whitelist.Contains(trimmed, StringComparer.Ordinal)) continue;
-            if (seen.Add(trimmed)) ordered.Add(trimmed);
-        }
-        return ordered;
+        return selection
+            .Where(raw => !string.IsNullOrWhiteSpace(raw))
+            .Select(raw => raw.Trim())
+            .Where(t => whitelist == null || whitelist.Contains(t, StringComparer.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
     }
 
     private static string? GetString(JsonElement el, string name)
