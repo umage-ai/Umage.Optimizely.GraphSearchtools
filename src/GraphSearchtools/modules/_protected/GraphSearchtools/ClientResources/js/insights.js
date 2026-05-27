@@ -5,7 +5,7 @@
  *   1. 30d KPI strip    — GET InsightsApi/SearchKpis (always 30d, sparklines).
  *                         Clicking a sparkline day filters the active lane
  *                         tab to that single UTC day.
- *   2. Toolbar          — Window select (7d/30d), Channel select, Locale
+ *   2. Toolbar          — Window select (24h/7d/30d), Channel select, Locale
  *                         select. Lives below the KPIs because these
  *                         controls only scope the tables.
  *   3. Tab strip        — one tab per lane (Top / Zero-result / Low-CTR),
@@ -367,7 +367,7 @@
             else if (k === 'locale') state.locale = v;
             else if (k === 'days') {
                 var d = parseInt(v, 10);
-                if (d === 7 || d === 30) state.days = d;
+                if (d === 1 || d === 7 || d === 30) state.days = d;
             }
             else if (k === 'sort') {
                 // sort=<lane>:<col>:<dir> — encodes the active lane's pick.

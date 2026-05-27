@@ -107,6 +107,7 @@
         <insights>
           <title>Insights</title>
           <description>What people search for across every channel — top phrases, zero-result phrases, and low-CTR phrases. Filter by channel to narrow.</description>
+          <window_24h>Last 24h</window_24h>
           <window_7d>Last 7d</window_7d>
           <window_30d>Last 30d</window_30d>
           <channel_filter_label>Filter by channel</channel_filter_label>

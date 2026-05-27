@@ -15,7 +15,7 @@ Six menu entries under a top-level **Graph Search Tools** section in the CMS she
 |------|-------------|
 | **Overview** | Landing dashboard with quick-access cards for the other tools. |
 | **Search channels** | Per-surface tuning index. Each registered search channel gets a detail page with KPI strip, Try-it live preview, and Insights / Pinned / Synonyms / Settings tabs scoped to that surface. |
-| **Insights** | Cross-channel marketer dashboard. Top phrases, zero-result candidates, low-CTR phrases, filterable by channel and locale over a 7d / 30d window. |
+| **Insights** | Cross-channel marketer dashboard. Top phrases, zero-result candidates, low-CTR phrases, filterable by channel and locale over a 24h / 7d / 30d window. |
 | **Pinned results** | Tenant-wide pin browser with Pins / Collections / Changelog tabs. Filter pins by collection or locale; jump to the owning channel with one click. Hits / CTR / zero-result columns surface coverage signals (unpublished targets, expired pins, low-CTR pins) inline. |
 | **Synonyms** | Replacement and equivalent synonym rules with a Rules + Changelog tab strip. Filter by scope (per-locale and tenant-global pools). Activity column shows last-30-days impact, and unused / missing-synonym signals surface in the same grid. |
 | **About** | Colophon: version, license, included tools, links. |
@@ -46,7 +46,7 @@ KPI strip (searches / CTR / zero-result) plus a Try-it live preview that runs th
 
 ![Insights](docs/screenshots/04-insights.webp)
 
-Cross-channel marketer dashboard. Switch tabs between Top phrases, Zero-result phrases, and Low-CTR phrases; filter by channel, locale, and 7d / 30d window. The shorter 1h / 24h windows live one level down on each Channel detail page, where they share state with the Try-it preview.
+Cross-channel marketer dashboard. Switch tabs between Top phrases, Zero-result phrases, and Low-CTR phrases; filter by channel, locale, and 24h / 7d / 30d window. The same window set scopes the Insights tab inside each Channel detail page, where it shares state with the Try-it preview.
 
 ### Pinned results
 
