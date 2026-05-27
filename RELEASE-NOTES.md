@@ -2,15 +2,17 @@
 
 ## v0.2.0
 
+### Fixes
+
+- **Pinned target names now resolve correctly on both CMS 12 and CMS 13.** The pinned-target name resolver was returning "Content not in index" for every entry on CMS 13 (Graph stores `_metadata.key` in 32-char "N" form while pinned targets are persisted as canonical hyphenated GUIDs, so the `in:` filter never matched) and 400-ing on CMS 12 against modern V2 Graph tenants. `ResolveByGuidsAsync` now normalises GUIDs to "N" form on send and back to canonical "D" form on parse, and uses the V2 `_Content` schema on both CMS versions.
+
 ### Changes
 
 - **Insights window set unified across the top-level dashboard and the per-channel Insights tab.** Both surfaces now expose **24h / 7d / 30d** with **7d** as the default. The top-level Insights toolbar gains the **24h** option; the Channel > Insights segmented control drops **1h** and its default moves from 24h to 7d.
 
-## v0.1.1
+### Performance
 
-### Fixes
-
-- **Pinned target names now resolve correctly on both CMS 12 and CMS 13.** The pinned-target name resolver was returning "Content not in index" for every entry on CMS 13 (Graph stores `_metadata.key` in 32-char "N" form while pinned targets are persisted as canonical hyphenated GUIDs, so the `in:` filter never matched) and 400-ing on CMS 12 against modern V2 Graph tenants. `ResolveByGuidsAsync` now normalises GUIDs to "N" form on send and back to canonical "D" form on parse, and uses the V2 `_Content` schema on both CMS versions.
+- **`JsonSerializerOptions` hoisted to `static readonly` fields** in five hot-path services so it's allocated once per process rather than per request. Closes a code-quality finding on the public telemetry ingest endpoint and the same pattern in four sibling services.
 
 ## v0.1.0
 
