@@ -32,10 +32,22 @@ internal sealed class QueryRunnerService
         "RELEVANCE", "SEMANTIC", "BOOST_ONLY", "DOC"
     };
 
+    // Optimizely Graph caches GraphQL requests by raw JSON bytes, not by parsed-string
+    // equivalence. With the default encoder, inner double-quotes in the query field
+    // serialize as `"` — Graph then evaluates that as a distinct (and, with
+    // usePinned, empty) query from the same logical document with `\"` escapes. Switch
+    // to the relaxed encoder so we emit `\"` and Graph routes the query through its
+    // normal cache.
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     private readonly HttpClient _http;
     private readonly IGraphCredentialsResolver _credentials;
     private readonly IOptions<GraphSearchtoolsOptions> _options;
-    private readonly JsonSerializerOptions _serializerOptions;
 
     public QueryRunnerService(
         HttpClient http,
@@ -45,19 +57,6 @@ internal sealed class QueryRunnerService
         _http = http;
         _credentials = credentials;
         _options = options;
-        _serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            // Optimizely Graph caches GraphQL requests by raw JSON bytes, not
-            // by parsed-string equivalence. With the default encoder, inner
-            // double-quotes in the query field serialize as `"` — Graph
-            // then evaluates that as a distinct (and, with usePinned, empty)
-            // query from the same logical document with `\"` escapes. Switch
-            // to the relaxed encoder so we emit `\"` and Graph routes the
-            // query through its normal cache.
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
     }
 
     /// <summary>True when an admin has configured a default GraphQL query that
@@ -142,7 +141,7 @@ internal sealed class QueryRunnerService
     {
         var creds = _credentials.Resolve();
         var graphqlRequest = new { query = queryDocument, variables };
-        var json = JsonSerializer.Serialize(graphqlRequest, _serializerOptions);
+        var json = JsonSerializer.Serialize(graphqlRequest, SerializerOptions);
         var endpoint = $"{creds.GatewayAddress.TrimEnd('/')}/content/v2?auth={creds.SingleKey}";
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {

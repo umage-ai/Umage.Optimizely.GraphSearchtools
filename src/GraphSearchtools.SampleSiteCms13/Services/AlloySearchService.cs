@@ -42,10 +42,15 @@ public sealed class AlloySearchService
         "ArticlePage", "NewsPage", "ProductPage", "StandardPage", "LandingPage", "ContactPage"
     };
 
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
     private readonly HttpClient _http;
     private readonly IGraphCredentialsResolver _credentials;
     private readonly IGraphAdminClient _graphAdmin;
-    private readonly JsonSerializerOptions _serializerOptions;
 
     /// <summary>
     /// Process-wide cache mapping pinned-collection key (e.g. <c>alloy-en</c>) →
@@ -62,11 +67,6 @@ public sealed class AlloySearchService
         _http = http;
         _credentials = credentials;
         _graphAdmin = graphAdmin;
-        _serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
-        };
     }
 
     public async Task<AlloySearchResult> SearchAsync(AlloySearchRequest request, CancellationToken cancellationToken)
@@ -436,7 +436,7 @@ public sealed class AlloySearchService
 
     private async Task<JsonDocument> ExecuteAsync(string endpoint, string queryDocument, CancellationToken cancellationToken)
     {
-        var json = JsonSerializer.Serialize(new { query = queryDocument }, _serializerOptions);
+        var json = JsonSerializer.Serialize(new { query = queryDocument }, SerializerOptions);
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
