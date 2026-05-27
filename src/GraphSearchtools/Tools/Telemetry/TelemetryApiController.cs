@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,11 @@ namespace UmageAI.Optimizely.GraphSearchTools.Tools.Telemetry;
 internal sealed class TelemetryApiController : ControllerBase
 {
     private const int MaxAllowedBodyBytes = 64 * 1024; // upper cap on the option
+
+    private static readonly JsonSerializerOptions PayloadJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
     private readonly IServiceProvider _services;
     private readonly TelemetryAbuseGuard _guard;
@@ -132,9 +138,7 @@ internal sealed class TelemetryApiController : ControllerBase
         }
         if (ms.Length == 0) return null;
         ms.Position = 0;
-        return await System.Text.Json.JsonSerializer.DeserializeAsync<SearchLogPayload>(ms,
-            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase },
-            ct);
+        return await JsonSerializer.DeserializeAsync<SearchLogPayload>(ms, PayloadJsonOptions, ct);
     }
 
     private sealed class PayloadTooLargeException : Exception { }
