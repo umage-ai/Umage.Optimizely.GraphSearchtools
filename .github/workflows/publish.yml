@@ -87,12 +87,21 @@ jobs:
           name: test-results
           path: src/GraphSearchtools.Tests/TestResults/*.trx
 
-      - name: Create or update GitHub release
+      - name: Create GitHub release with nupkg attached
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Pass the nupkg as positional args to `gh release create` so the
+          # asset is uploaded atomically with the release. A separate
+          # `gh release upload` step is rejected by the org's "immutable
+          # releases" policy with HTTP 422. If a partial/empty release
+          # already exists at this tag (e.g. from a prior failed run),
+          # delete it first so we can recreate it cleanly.
+          if gh release view ${{ github.ref_name }} >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists; deleting before recreate."
+            gh release delete ${{ github.ref_name }} --yes
+          fi
           gh release create ${{ github.ref_name }} \
             --title "${{ github.ref_name }}" \
             --notes-file release-notes.md \
-            2>/dev/null || echo "Release ${{ github.ref_name }} already exists; preserving existing body."
-          gh release upload ${{ github.ref_name }} ./nupkg/*.nupkg --clobber
+            ./nupkg/*.nupkg
