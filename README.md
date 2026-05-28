@@ -1,11 +1,12 @@
 # GraphSearchtools
 
 [![Build](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/actions/workflows/publish.yml/badge.svg)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/actions/workflows/publish.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/umage-ai/Umage.Optimizely.GraphSearchtools?sort=semver)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/LICENSE)
 
 Marketer-facing admin tooling for **Optimizely Graph** site-search on Optimizely CMS 12 and CMS 13. Pinned-result curation, synonym management, a per-channel try-it playground, and click-through / zero-result insights — all integrated into the CMS shell. Distributed as the NuGet package `UmageAI.Optimizely.GraphSearchTools`.
 
-![Channel detail](docs/screenshots/03-channel-detail.webp)
+![Channel detail](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/03-channel-detail.webp)
 
 ## Tools
 
@@ -26,37 +27,37 @@ Behind the scenes the addon also exposes a public ingest beacon (`POST /api/tele
 
 ### Overview
 
-![Overview](docs/screenshots/01-overview.webp)
+![Overview](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/01-overview.webp)
 
 Dashboard of all Graph Search Tools, with quick-access cards for each surface.
 
 ### Search channels
 
-![Search channels](docs/screenshots/02-channels.webp)
+![Search channels](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/02-channels.webp)
 
 Index of every registered channel. Filter by site or locale. Activity sparkline and totals come from the search-log table so you can spot dormant surfaces at a glance.
 
 ### Channel detail
 
-![Channel detail](docs/screenshots/03-channel-detail.webp)
+![Channel detail](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/03-channel-detail.webp)
 
 KPI strip (searches / CTR / zero-result) plus a Try-it live preview that runs the same GraphQL document your production storefront fires. The right pane swaps between **Insights** (per-channel top phrases / zero-result / low-CTR) and **Pinned / Synonyms / Settings** tabs without losing the preview state.
 
 ### Insights
 
-![Insights](docs/screenshots/04-insights.webp)
+![Insights](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/04-insights.webp)
 
 Cross-channel marketer dashboard. Switch tabs between Top phrases, Zero-result phrases, and Low-CTR phrases; filter by channel, locale, and 24h / 7d / 30d window. The same window set scopes the Insights tab inside each Channel detail page, where it shares state with the Try-it preview.
 
 ### Pinned results
 
-![Pinned results](docs/screenshots/05-pinned.webp)
+![Pinned results](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/05-pinned.webp)
 
 Tenant-wide pin browser. The **Pins** tab lists one row per `(phrase, collection, locale)` with the resolved channel link, item count, and last-30-days activity from search logs; a sibling **Collections** tab manages the underlying pinned-result collections, and **Changelog** records every create / update / delete sent to Graph.
 
 ### Synonyms
 
-![Synonyms](docs/screenshots/06-synonyms.webp)
+![Synonyms](https://raw.githubusercontent.com/umage-ai/Umage.Optimizely.GraphSearchtools/main/docs/screenshots/06-synonyms.webp)
 
 Replacement and equivalent rules per locale, with last-30-days activity. Graph synonyms live in a tenant-global pool, so this surface is channel-agnostic by design.
 
@@ -200,13 +201,13 @@ Run on demand from the CMS admin Scheduled Jobs page.
 
 ## Documentation
 
-- [Integrator quickstart](docs/integrator/quickstart.md) — install, register a search channel, and see a telemetry event in Insights.
-- [Server-rendered ASP.NET pattern](docs/integrator/pattern-server-rendered.md) — inject `ITelemetrySink` and emit events from your search controller.
-- [Headless deployment pattern](docs/integrator/pattern-headless.md) — beacon events from a SPA/SSR frontend to the public ingest endpoint.
-- [3rd-party telemetry pattern](docs/integrator/pattern-third-party-telemetry.md) — decorate `ITelemetrySink` to fan out, or replace `ITelemetryReader` to source aggregates from your own warehouse.
-- [Design system](docs/design-system.md) — shared visual patterns and components.
-- [Personas](docs/personas.md) — who the addon is designed for.
-- [Optimizely Graph research notes](docs/research/) — reference docs on Graph capabilities, relevancy, and authentication.
+- [Integrator quickstart](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/docs/integrator/quickstart.md) — install, register a search channel, and see a telemetry event in Insights.
+- [Server-rendered ASP.NET pattern](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/docs/integrator/pattern-server-rendered.md) — inject `ITelemetrySink` and emit events from your search controller.
+- [Headless deployment pattern](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/docs/integrator/pattern-headless.md) — beacon events from a SPA/SSR frontend to the public ingest endpoint.
+- [3rd-party telemetry pattern](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/docs/integrator/pattern-third-party-telemetry.md) — decorate `ITelemetrySink` to fan out, or replace `ITelemetryReader` to source aggregates from your own warehouse.
+- [Design system](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/docs/design-system.md) — shared visual patterns and components.
+- [Personas](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/docs/personas.md) — who the addon is designed for.
+- [Optimizely Graph research notes](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/tree/main/docs/research) — reference docs on Graph capabilities, relevancy, and authentication.
 
 ## Tech Stack
 
@@ -219,10 +220,10 @@ Run on demand from the CMS admin Scheduled Jobs page.
 
 ## Contributing
 
-See [`CLAUDE.md`](CLAUDE.md) for architecture patterns and conventions.
+See [`CLAUDE.md`](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/CLAUDE.md) for architecture patterns and conventions.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/blob/main/LICENSE).
 
 Powered by [umage.ai](https://umage.ai).

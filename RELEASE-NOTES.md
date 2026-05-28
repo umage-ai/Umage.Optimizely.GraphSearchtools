@@ -1,5 +1,15 @@
 # Release Notes
 
+## v0.2.1
+
+### Fixes
+
+- **README images and doc links now render on nuget.org.** The packed `README.md` used repo-relative paths for screenshots, `LICENSE`, `CLAUDE.md`, and the `docs/` integrator guides, which resolve fine on GitHub but 404 from the nuget.org package page. All in-repo references are now absolute `https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/...` URLs (images via `raw.githubusercontent.com`).
+
+### Changes
+
+- **Added a Release badge** to the README header (`img.shields.io/github/v/release`) linking to the latest GitHub release. Sits between the existing Build and License badges.
+
 ## v0.2.0
 
 ### Fixes
