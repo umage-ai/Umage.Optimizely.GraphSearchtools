@@ -1,14 +1,17 @@
 # Release Notes
 
-## v0.2.1
+## v0.2.2
 
 ### Fixes
 
 - **README images and doc links now render on nuget.org.** The packed `README.md` used repo-relative paths for screenshots, `LICENSE`, `CLAUDE.md`, and the `docs/` integrator guides, which resolve fine on GitHub but 404 from the nuget.org package page. All in-repo references are now absolute `https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools/...` URLs (images via `raw.githubusercontent.com`).
+- **Publish workflow attaches the `.nupkg` atomically at release creation.** The previous two-step pattern (`gh release create` then `gh release upload --clobber`) was rejected with HTTP 422 by the org's immutable-releases policy, leaving v0.2.1 as an empty release with no package. The workflow now uploads the package as part of the create call and pre-deletes any partial release at the same tag.
 
 ### Changes
 
 - **Added a Release badge** to the README header (`img.shields.io/github/v/release`) linking to the latest GitHub release. Sits between the existing Build and License badges.
+
+> v0.2.1 was reserved by an empty release shell before the workflow fix landed; immutable releases prevents re-using the version name, so this ships as v0.2.2.
 
 ## v0.2.0
 
