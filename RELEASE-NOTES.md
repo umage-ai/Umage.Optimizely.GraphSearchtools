@@ -1,5 +1,15 @@
 # Release Notes
 
+## v0.2.4
+
+### Changes
+
+- **New package `UmageAI.Optimizely.GraphSearchTools.Cms12` for CMS 12 sites on .NET 10.** Optimizely supports CMS 12 on .NET 10, but NuGet chooses dependency groups by target framework alone, so the main package's `net10.0` build always brought in CMS 13 and failed restore on CMS 12 hosts (NU1107). The new package is built from the same source with `-p:GraphSearchToolsCmsVersion=12`, targets CMS 12 on both `net8.0` and `net10.0`, and is published alongside the main package at the same version. The main package is unchanged: CMS 12 on `net8.0`, CMS 13 on `net10.0`.
+
+### Fixes
+
+- **Restore on CMS 13.5+ no longer fails with NU1605.** CMS 13.5 requires `Microsoft.Data.SqlClient` 7.x, and the addon's explicit `6.*` reference downgraded it. On CMS 13 the addon now takes SqlClient transitively from `EPiServer.CMS`.
+
 ## v0.2.3
 
 ### Fixes
