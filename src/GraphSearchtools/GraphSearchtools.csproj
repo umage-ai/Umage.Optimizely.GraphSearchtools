@@ -11,8 +11,8 @@
     <Version>0.0.1-local</Version>
     <Authors>UmageAI</Authors>
     <Company>UmageAI</Company>
-    <Description>Graph search tooling for Optimizely CMS — pinned results, synonyms, query playground, and relevancy tuning.</Description>
-    <PackageTags>Optimizely;CMS;Graph;Search;Synonyms;PinnedResults;Relevancy;Autocomplete</PackageTags>
+    <Description>Graph search tooling for Optimizely CMS 12 (.NET 8) and CMS 13 (.NET 10): pinned results, synonyms, query playground, and relevancy tuning. On a CMS 12 site that targets .NET 10, install UmageAI.Optimizely.GraphSearchTools.Cms12 instead.</Description>
+    <PackageTags>Optimizely;CMS;CMS12;CMS13;Graph;Search;Synonyms;PinnedResults;Relevancy;Autocomplete</PackageTags>
     <PackageProjectUrl>https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/umage-ai/Umage.Optimizely.GraphSearchtools</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -36,7 +36,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(GraphSearchToolsCmsVersion)' == '12'">
     <PackageId>UmageAI.Optimizely.GraphSearchTools.Cms12</PackageId>
-    <Description>Graph search tooling for Optimizely CMS 12 (.NET 8 and .NET 10): pinned results, synonyms, query playground, and relevancy tuning.</Description>
+    <Description>Graph search tooling for Optimizely CMS 12 on .NET 8 and .NET 10: pinned results, synonyms, query playground, and relevancy tuning. This is the CMS 12 build of UmageAI.Optimizely.GraphSearchTools, which targets CMS 13 on .NET 10.</Description>
   </PropertyGroup>
 
   <!-- Compile-time version symbols -->
@@ -67,27 +67,35 @@
     DDS' underlying tblBigTable). EPiServer.CMS pulls in the SqlClient
     transitively; we add an explicit reference per-CMS version so the addon builds
     standalone, with a version range that matches what CMS itself
-    constrains to on CMS 12 (5.*). CMS 13 has no explicit reference: its
+    constrains to on CMS 12. The version is a minimum, not a range: NuGet
+    would otherwise freeze a floating range at whatever was latest when the
+    package was packed. 5.1.3 is the first release with the CVE-2024-0056
+    fix. CMS 13 has no explicit reference: its
     minors move SqlClient across majors (13.5 requires 7.x), and any
     direct reference below that fails restore with NU1605, so the version
     comes transitively from EPiServer.CMS.
   -->
   <ItemGroup Condition="'$(GstCmsVersion)' == '12'">
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.*" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.3" />
   </ItemGroup>
 
   <!--
-    CMS 12 / CMS 13 packages (picked by GstCmsVersion) use floating major-version ranges so the
-    add-on doesn't force a specific patch level on consumers.
+    CMS 12 / CMS 13 packages (picked by GstCmsVersion) are referenced at the oldest version the
+    add-on supports, which is also the minimum written into the nuspec. A floating range such as
+    12.* would be frozen at the latest version when packing, forcing every host up to it and
+    pulling EPiServer.CMS.UI.Core ahead of the host's own EPiServer.CMS, which fails at startup.
+    12.17.0 is the first CMS 12 release on Microsoft.Data.SqlClient 5, matching the reference above,
+    and the add-on compiled cleanly against 12.10.0 through 12.30.0. Hosts always reference
+    EPiServer.CMS themselves, so they run on their own version.
   -->
   <ItemGroup Condition="'$(GstCmsVersion)' == '12'">
-    <PackageReference Include="EPiServer.CMS" Version="12.*" />
-    <PackageReference Include="EPiServer.CMS.UI.Core" Version="12.*" />
+    <PackageReference Include="EPiServer.CMS" Version="12.17.0" />
+    <PackageReference Include="EPiServer.CMS.UI.Core" Version="12.17.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GstCmsVersion)' == '13'">
-    <PackageReference Include="EPiServer.CMS" Version="13.*" />
-    <PackageReference Include="EPiServer.CMS.UI.Core" Version="13.*" />
+    <PackageReference Include="EPiServer.CMS" Version="13.0.0" />
+    <PackageReference Include="EPiServer.CMS.UI.Core" Version="13.0.0" />
   </ItemGroup>
 
   <!-- Localization language files (Optimizely XML format) -->
