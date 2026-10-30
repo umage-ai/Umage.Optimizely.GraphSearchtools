@@ -9,10 +9,17 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+  <!-- Mirrors GstCmsVersion in GraphSearchtools.csproj. -->
+  <PropertyGroup>
+    <GstCmsVersion>$(GraphSearchToolsCmsVersion)</GstCmsVersion>
+    <GstCmsVersion Condition="'$(GstCmsVersion)' == '' and '$(TargetFramework)' == 'net8.0'">12</GstCmsVersion>
+    <GstCmsVersion Condition="'$(GstCmsVersion)' == '' and '$(TargetFramework)' == 'net10.0'">13</GstCmsVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GstCmsVersion)' == '12'">
     <DefineConstants>$(DefineConstants);OPTIMIZELY_CMS12</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <PropertyGroup Condition="'$(GstCmsVersion)' == '13'">
     <DefineConstants>$(DefineConstants);OPTIMIZELY_CMS13</DefineConstants>
   </PropertyGroup>
 

@@ -104,10 +104,23 @@ GraphSearchtools is multi-targeted: the same NuGet package supports both Optimiz
 
 The repo ships two reference sample sites — `src/GraphSearchtools.SampleSite` (CMS 12) and `src/GraphSearchtools.SampleSiteCms13` (CMS 13) — to use as templates for either platform version.
 
+### Which package do I install?
+
+| Your site | Package |
+|---|---|
+| CMS 12 on .NET 8 | `UmageAI.Optimizely.GraphSearchTools` |
+| CMS 12 on .NET 10 | `UmageAI.Optimizely.GraphSearchTools.Cms12` |
+| CMS 13 on .NET 10 | `UmageAI.Optimizely.GraphSearchTools` |
+
+Optimizely supports CMS 12 on .NET 10, but NuGet chooses dependencies by target framework alone, so the main package's `net10.0` build always needs CMS 13. If you install the main package on a CMS 12 site that targets `net10.0`, restore fails with a version conflict on `EPiServer.CMS`, and the fix is to install the `.Cms12` package instead. It is built from the same source and ships the same version number, and it builds against CMS 12 on both `net8.0` and `net10.0`.
+
 ## Installation
 
 ```bash
 dotnet add package UmageAI.Optimizely.GraphSearchTools
+
+# CMS 12 site targeting net10.0:
+dotnet add package UmageAI.Optimizely.GraphSearchTools.Cms12
 ```
 
 ### Registration

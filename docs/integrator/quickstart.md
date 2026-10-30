@@ -18,6 +18,10 @@ You will need:
 dotnet add package UmageAI.Optimizely.GraphSearchTools
 ```
 
+On a CMS 12 host that targets `net10.0`, install
+`UmageAI.Optimizely.GraphSearchTools.Cms12` instead. The main package's
+`net10.0` build brings in CMS 13.
+
 ## 2. Configure Graph and roles
 
 In `appsettings.json`:

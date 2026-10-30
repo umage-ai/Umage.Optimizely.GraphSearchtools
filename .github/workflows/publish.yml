@@ -74,6 +74,23 @@ jobs:
             -p:Version=${{ steps.version.outputs.VERSION }} \
             --no-build -o ./nupkg
 
+      - name: Build, test and pack CMS 12 flavour
+        # UmageAI.Optimizely.GraphSearchTools.Cms12: CMS 12 on both net8.0 and
+        # net10.0, for CMS 12 sites on .NET 10. Runs after the default pack
+        # because both flavours share obj/ and bin/.
+        run: |
+          export PackageReleaseNotes="$(cat release-notes.md)"
+          dotnet build src/GraphSearchtools/GraphSearchtools.csproj -c Release \
+            -p:GraphSearchToolsCmsVersion=12 \
+            -p:Version=${{ steps.version.outputs.VERSION }}
+          dotnet test src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj -c Release \
+            -p:GraphSearchToolsCmsVersion=12 \
+            --logger "trx;LogFileName=test-results-cms12.trx"
+          dotnet pack src/GraphSearchtools/GraphSearchtools.csproj -c Release \
+            -p:GraphSearchToolsCmsVersion=12 \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            --no-build -o ./nupkg
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:

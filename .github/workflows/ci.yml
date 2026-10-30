@@ -46,6 +46,16 @@
           # net10.0, so this single command covers both TFMs.
           run: dotnet test src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj -c Release --logger "trx;LogFileName=test-results.trx"
 
+        - name: Test CMS 12 flavour (CMS 12 on net8.0 and net10.0)
+          # Builds the UmageAI.Optimizely.GraphSearchTools.Cms12 package's
+          # configuration. Runs after the default flavour because both share obj/.
+          run: dotnet test src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj -c Release -p:GraphSearchToolsCmsVersion=12 --logger "trx;LogFileName=test-results-cms12.trx"
+
+        - name: Verify package contents
+          # Packs both flavours and asserts each one's CMS dependency group per TFM and its
+          # build/<tfm>/<PackageId>.targets name.
+          run: .github/scripts/verify-packages.sh
+
         - name: Upload test results
           if: always()
           uses: actions/upload-artifact@v4
