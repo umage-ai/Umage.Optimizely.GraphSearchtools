@@ -86,11 +86,13 @@
     pulling EPiServer.CMS.UI.Core ahead of the host's own EPiServer.CMS, which fails at startup.
     12.17.0 is the first CMS 12 release on Microsoft.Data.SqlClient 5, matching the reference above,
     and the add-on compiled cleanly against 12.10.0 through 12.30.0. Hosts always reference
-    EPiServer.CMS themselves, so they run on their own version.
+    EPiServer.CMS themselves, so they run on their own version. The CMS 12 build also has an
+    upper bound of 13.0.0, so a CMS 13 host that installs the Cms12 package fails restore instead
+    of loading the CMS 12 admin layout on CMS 13 at runtime.
   -->
   <ItemGroup Condition="'$(GstCmsVersion)' == '12'">
-    <PackageReference Include="EPiServer.CMS" Version="12.17.0" />
-    <PackageReference Include="EPiServer.CMS.UI.Core" Version="12.17.0" />
+    <PackageReference Include="EPiServer.CMS" Version="[12.17.0,13.0.0)" />
+    <PackageReference Include="EPiServer.CMS.UI.Core" Version="[12.17.0,13.0.0)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GstCmsVersion)' == '13'">

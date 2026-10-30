@@ -15,25 +15,26 @@ dotnet pack "$project" -c Release -p:Version=0.0.0-ci -p:GraphSearchToolsCmsVers
 
 fail=0
 
-# Prints the major version of EPiServer.CMS in a package's dependency group for one TFM.
-cms_major() {
+# Prints the EPiServer.CMS version range in a package's dependency group for one TFM.
+cms_range() {
   local dir=$1 tfm=$2
   awk -v tfm="$tfm" '
     /<group targetFramework="/ { in_group = ($0 ~ "targetFramework=\"" tfm "\"") }
     in_group && /<dependency id="EPiServer.CMS"/ {
-      match($0, /version="[0-9]+/); print substr($0, RSTART + 9, RLENGTH - 9); exit
+      match($0, /version="[^"]*"/); print substr($0, RSTART + 9, RLENGTH - 10); exit
     }' "$dir"/*.nuspec
 }
 
 check() {
   local id=$1 tfm=$2 want=$3 dir=$4
   local got
-  got="$(cms_major "$dir" "$tfm")"
-  if [ "$got" != "$want" ]; then
-    echo "FAIL: $id $tfm depends on EPiServer.CMS ${got:-none}, expected $want"
+  got="$(cms_range "$dir" "$tfm")"
+  # $want is a regex for the version range, e.g. "^13\." or a CMS 12 range capped below 13.
+  if ! [[ "$got" =~ $want ]]; then
+    echo "FAIL: $id $tfm depends on EPiServer.CMS '${got:-none}', expected it to match $want"
     fail=1
   else
-    echo "ok:   $id $tfm depends on EPiServer.CMS $want"
+    echo "ok:   $id $tfm depends on EPiServer.CMS $got"
   fi
   # NuGet only auto-imports build/<tfm>/<PackageId>.targets.
   if [ ! -f "$dir/build/$tfm/$id.targets" ]; then
@@ -55,9 +56,11 @@ cms12_id=UmageAI.Optimizely.GraphSearchTools.Cms12
 main_dir="$(unpack "$main_id")"
 cms12_dir="$(unpack "$cms12_id")"
 
-check "$main_id" net8.0 12 "$main_dir"
-check "$main_id" net10.0 13 "$main_dir"
-check "$cms12_id" net8.0 12 "$cms12_dir"
-check "$cms12_id" net10.0 12 "$cms12_dir"
+# CMS 12 builds are capped below 13.0.0, so a CMS 13 host cannot install them by mistake.
+cms12_range='^\[12\.[0-9.]+, ?13\.0\.0\)$'
+check "$main_id" net8.0 "$cms12_range" "$main_dir"
+check "$main_id" net10.0 '^13\.' "$main_dir"
+check "$cms12_id" net8.0 "$cms12_range" "$cms12_dir"
+check "$cms12_id" net10.0 "$cms12_range" "$cms12_dir"
 
 exit "$fail"
