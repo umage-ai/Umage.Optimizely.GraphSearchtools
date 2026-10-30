@@ -4,7 +4,8 @@
 
 ### Changes
 
-- **New package `UmageAI.Optimizely.GraphSearchTools.Cms12` for CMS 12 sites on .NET 10.** Optimizely supports CMS 12 on .NET 10, but NuGet chooses dependency groups by target framework alone, so the main package's `net10.0` build always brought in CMS 13 and failed restore on CMS 12 hosts (NU1107). The new package is built from the same source with `-p:GraphSearchToolsCmsVersion=12`, targets CMS 12 on both `net8.0` and `net10.0`, and is published alongside the main package at the same version. The main package is unchanged: CMS 12 on `net8.0`, CMS 13 on `net10.0`.
+- **New package `UmageAI.Optimizely.GraphSearchTools.Cms12` for CMS 12 sites on .NET 10.** Optimizely supports CMS 12 on .NET 10, but NuGet chooses dependency groups by target framework alone, so the main package's `net10.0` build always brought in CMS 13 and failed restore on CMS 12 hosts (NU1107). The new package is built from the same source with `-p:GraphSearchToolsCmsVersion=12`, targets CMS 12 on both `net8.0` and `net10.0`, and is published alongside the main package at the same version. The main package is unchanged: CMS 12 on `net8.0`, CMS 13 on `net10.0`. Installing the main package on a CMS 12 site that targets `net10.0` still fails restore with a version conflict on `EPiServer.CMS`, and the README now has a table showing which package each kind of site needs.
+- **The addon now declares minimum CMS versions instead of the latest.** The `12.*` and `13.*` references were frozen at the newest release when the package was built, so hosts on older CMS patches were pushed up to it, and a host on CMS 12.34 then failed at startup because `EPiServer.CMS.UI.Core` ran ahead of `EPiServer.CMS`. The package now requires CMS 12.17.0 (the first release on `Microsoft.Data.SqlClient` 5) or CMS 13.0.0 as a minimum, and `Microsoft.Data.SqlClient` 5.1.3 or later on CMS 12.
 
 ### Fixes
 
