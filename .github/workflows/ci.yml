@@ -51,6 +51,11 @@
           # configuration. Runs after the default flavour because both share obj/.
           run: dotnet test src/GraphSearchtools.Tests/GraphSearchtools.Tests.csproj -c Release -p:GraphSearchToolsCmsVersion=12 --logger "trx;LogFileName=test-results-cms12.trx"
 
+        - name: Verify package contents
+          # Packs both flavours and asserts each one's CMS dependency group per TFM and its
+          # build/<tfm>/<PackageId>.targets name.
+          run: .github/scripts/verify-packages.sh
+
         - name: Upload test results
           if: always()
           uses: actions/upload-artifact@v4
