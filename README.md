@@ -104,6 +104,8 @@ GraphSearchtools is multi-targeted: the same NuGet package supports both Optimiz
 
 The repo ships two reference sample sites — `src/GraphSearchtools.SampleSite` (CMS 12) and `src/GraphSearchtools.SampleSiteCms13` (CMS 13) — to use as templates for either platform version.
 
+Run the samples with `dotnet run`. `dotnet publish` of a sample is not supported: the samples reference the addon by project, so the addon's own restore resolves the CMS UI packages at the addon's minimum versions while the sample resolves newer ones, and publish stops with NETSDK1152 because both versions' module zips land in the same output path. Builds and `dotnet run` are unaffected, and a real host that installs the NuGet package resolves a single version.
+
 ### Which package do I install?
 
 | Your site | Package |

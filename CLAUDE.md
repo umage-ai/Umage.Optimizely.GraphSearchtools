@@ -32,6 +32,13 @@ dotnet test                                                 # Run tests on both 
 
 Pre-release local verification: `dotnet test` (no `--no-build`).
 
+`dotnet publish` of a sample site fails with NETSDK1152 and is not supported. The samples reference
+the addon by project, so the addon resolves `EPiServer.CMS.UI.*` at its declared minimum versions
+while the sample resolves newer ones, and both versions' module zips collide in the publish output.
+Pinning the packages in the sample or marking them `PrivateAssets` in the addon does not help,
+because the colliding zips come from transitive dependencies of the addon's project assets.
+Build and `dotnet run` are fine.
+
 ### Iterating on UI assets against a running SampleSite
 
 EPiServer serves module assets from the **consumer's content root** (e.g.
